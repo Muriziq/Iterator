@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Canvas 2D Editor</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header></header>
+    <main>
+      <aside class="leftSidebar">
+        <div class="addObject">
+          <h3>Add Object</h3>
+          <button class="addRectangle">Add Rectangle</button>
+          <button class="addEllipse">Add Circle</button>
+          <button class="addPolygon">Add Polygon</button>
+          <button class="addLine">Add Line</button>
+          <button class="addTextbox">Add Textbox</button>
+          <button class="file">
+            Upload Image
+            <input type="file" id="file" />
+          </button>
+        </div>
+        <div class="objectProps">
+          <button id="duplicate">Duplicate Object</button>
+          <button id="deleter">Delete Object</button>
+          <button id="pageEnd">Page End</button>
+          <button id="pageTop">Page Top</button>
+        </div>
+      </aside>
+      <section class="middlesec">
+        <div class="canvasProperties">
+          <div class="">
+            Size:<input type="text" id="width" />x<input
+              type="text"
+              id="height"
+            />
+          </div>
+          <div>
+            <select name="measurement" id="measurement">
+              <option value="px" selected>Pixels</option>
+              <option value="pt">Points</option>
+              <option value="in">Inches</option>
+              <option value="m">Meters</option>
+              <option value="cm">Centimeters</option>
+              <option value="mm">Millimeters</option>
+            </select>
+            <select name="paperSize" id="paperSize">
+              <option value="a1">A1</option>
+              <option value="a2">A2</option>
+              <option value="a3">A3</option>
+              <option value="a4">A4</option>
+              <option value="a5">A5</option>
+              <option value="a6">A6</option>
+              <option value="business-card">Business Card</option>
+              <option value="letter" selected>Letter</option>
+            </select>
+          </div>
+          <select name="orientation" id="orientation">
+            <option value="potrait">Potrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </div>
+        <div class="canvas">
+          <canvas id="canvas"></canvas>
+        </div>
+      </section>
+
+      <aside id="propertiesTab">
+        <h3>Properties</h3>
+        <div id="properties">
+          <p>No object selected</p>
+        </div>
+      </aside>
+    </main>
+    <footer class="generate">
+            <div class="buttonSide">
+        <button class="generateButton" onclick="generateCard()">
+          Generate Button
+        </button>
+        <button class="saveAsPdf">Save As Pdf</button>
+        <button class="saveAsImage">Save As Image</button>
+        <select name="renderPage" id="renderPage">
+          <option value="auto">Per Page</option>
+          <option value="a0">A0</option>
+          <option value="a1">A1</option>
+          <option value="a2">A2</option>
+          <option value="a3">A3</option>
+          <option value="a4">A4</option>
+          <option value="a5">A5</option>
+          <option value="a6">Legal</option>
+          <option value="letter">Letter</option>
+        </select>
+        <div class="perRow" style="display: none;">
+          No Per Row: 
+          <input type="number" name="noPerRow" id="noPerRow">
+          <input type="number" name="noPerColumn" id="noPerColumn">
+        </div>
+      </div>
+      <article id="generationArea"></article>
+
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- 2. dom-to-image -->
+    <script src="https://cdn.jsdelivr.net/npm/dom-to-image@2.6.0/src/dom-to-image.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
