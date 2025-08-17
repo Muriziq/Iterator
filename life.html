@@ -2,16 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Button Press Effect</title>
   <style>
-    input{
-      border: none;
-      outline: none;
+    .real-button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: 2px solid rgb(12, 238, 12);
+      border-radius: 8px;
+      box-shadow: inset 0px 0px   #2d6b35;
+      cursor: pointer;
+      transition: all 0.1s ease-in-out;
+      position: relative;
+    }
+
+    .real-button:active {
+      box-shadow: inset 0px 0px 5px 5px  #2d6b35;
     }
   </style>
 </head>
 <body>
-  <input type="text" value="Add Textbox">
+
+  <button class="real-button">Click Me</button>
+
 </body>
 </html>

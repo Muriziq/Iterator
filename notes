@@ -149,3 +149,31 @@ async function saveAsPDF() {
 
   pdf.save("content.pdf");
 }
+
+
+
+    for(let i=0;i<objects.length;i++){
+      snapping = false
+      if(objects[i] != selectedObj){
+          
+        let snippet = objects[i].whereToSnap({x: selectedObj.x,y: selectedObj.y},10)
+        if(snippet.x != null || snippet.y != null){
+          snap = snippet
+          snapping = true
+        }
+        if(snap.x != null || snap.y != null) break
+      }
+
+    }
+    if(snapping){
+    if(snap.x != null){
+      drawSnapLineX(snap.x)
+      selectedObj.x = snap.x
+      lastMouseX = snap.x
+    }
+    if(snap.y != null){
+      drawSnapLineY(snap.y)
+      selectedObj.y = snap.y
+      lastMouseY = snap.y
+    }
+    }

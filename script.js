@@ -79,7 +79,6 @@ class Rectangle {
   }
   addObject() {
     ctx.save();
-
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
     ctx.translate(centerX, centerY);
@@ -392,6 +391,13 @@ class Rectangle {
     ctx.lineTo(x, y + radius);
     ctx.quadraticCurveTo(x, y, x + radius, y);
     ctx.closePath();
+  }
+  whereToSnap() {
+    return {
+      x: [this.x, this.x + this.width / 2, this.x + this.width],
+      y: [this.y, this.y + this.height / 2, this.y + this.height],
+      pos: {x: this.x,y:this.y,width:this.width,height:this.height}
+    };
   }
 }
 
@@ -1805,28 +1811,40 @@ document.getElementById("duplicate").addEventListener("click", () => {
   }
 });
 document.getElementById("pageTop").addEventListener("click", () => {
-
-    if (selectedObj) {
+  if (selectedObj) {
     let index = objects.indexOf(selectedObj);
     if (index !== -1) {
-      objects.splice(index, 1); 
-      objects.push(selectedObj); 
-      draw()
+      objects.splice(index, 1);
+      objects.push(selectedObj);
+      draw();
     }
   }
 });
 document.getElementById("pageEnd").addEventListener("click", () => {
-
-    if (selectedObj) {
+  if (selectedObj) {
     let index = objects.indexOf(selectedObj);
     if (index !== -1) {
-      objects.splice(index, 1); 
+      objects.splice(index, 1);
       objects.unshift(selectedObj);
-      draw() 
+      draw();
     }
   }
 });
-document.getElementById("deleter").addEventListener("click")
+document.getElementById("deleter").addEventListener("click", () => {
+  if (selectedObj) {
+    let index = objects.indexOf(selectedObj);
+    objects.splice(index, 1);
+    selectedObj = null;
+    propertiesBar.innerHTML = "";
+    draw();
+  } else if (selectedText) {
+    let index = objects.indexOf(selectedText);
+    selectedText.input.remove();
+    textBoxes.splice(index, 1);
+    selectedText = null;
+    propertiesBar.innerHTML = "";
+  }
+});
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
   const style = window.getComputedStyle(canvass);
@@ -2284,8 +2302,7 @@ canvas.addEventListener("mousemove", (event) => {
   const pos = getMousePos(canvas, event);
   if (cloneObj) {
     cloneObj.formatSelected(pos);
-  }
-  if ((isDraggingObject || isRotatingObject) && selectedObj) {
+  } else if ((isDraggingObject || isRotatingObject) && selectedObj) {
     selectedObj.formatSelected(pos);
     selectedObj.formatProperties();
   }
@@ -2303,8 +2320,7 @@ canvass.addEventListener("mousemove", (event) => {
     cloneText.input.style.top = `${
       textPos.y - cloneText.input.getBoundingClientRect().height / 2
     }px`;
-  }
-  if (isDraggingText && selectedText) {
+  } else if (isDraggingText && selectedText) {
     selectedText.formatSelected({ x: event.clientX, y: event.clientY });
     selectedText.formatProperties();
   }
@@ -2314,12 +2330,58 @@ canvass.addEventListener("mousemove", (event) => {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let snap = { x: null, y: null };
+  if (selectedObj) {
+    for (let i = 0; i < objects.length; i++) {
+      if (objects[i] !== selectedObj) {
+        let snapX = objects[i].whereToSnap().x;
+        let snapY = objects[i].whereToSnap().y;
+        for (let j = 0; j < snapX.length; j++) {
+          if (Math.abs(selectedObj.x - snapX[j]) < 10) {
+            snap.x = snapX[j];
+            break;
+          }
+        }
+        for (let j = 0; j < snapY.length; j++) {
+          if (Math.abs(selectedObj.y - snapY[j]) < 10) {
+            snap.y = snapY[j];
+            break;
+          }
+        }
+      }
+    }
+    if (snap.x != null) {
+      ctx.strokeStyle = "blue";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(snap.x, 0);
+      ctx.lineTo(snap.x, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      selectedObj.x = snap.x;
+      lastMouseX = snap.x;
+    }
+    if (snap.y != null) {
+      ctx.strokeStyle = "blue";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(0, snap.y);
+      ctx.lineTo(canvas.width, snap.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      selectedObj.y = snap.y;
+      lastMouseY = snap.y;
+    }
+  }
   if (cloneObj) {
     cloneObj.addObject();
   }
   objects.forEach((obj) => {
     obj.addObject();
   });
+  console.log(snap);
 }
 
 draw();
