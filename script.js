@@ -399,6 +399,17 @@ class Rectangle {
       pos: {x: this.x,y:this.y,width:this.width,height:this.height}
     };
   }
+  RectProperties(){
+    return {x: this.x,y:this.y,width:this.width,height:this.height}
+  }
+  changeLocation(value,type){
+    if(type === "x"){
+      this.x = value
+    }
+    else{
+      this.y = value
+    }
+  }
 }
 
 class Ellipse {
@@ -2334,16 +2345,18 @@ function draw() {
   if (selectedObj) {
     for (let i = 0; i < objects.length; i++) {
       if (objects[i] !== selectedObj) {
+        let select = selectedObj.RectProperties()
         let snapX = objects[i].whereToSnap().x;
         let snapY = objects[i].whereToSnap().y;
+        let pos = objects[i].whereToSnap().pos
         for (let j = 0; j < snapX.length; j++) {
-          if (Math.abs(selectedObj.x - snapX[j]) < 10) {
+          if (Math.abs(select.x - snapX[j]) < 10 && ((Math.abs(pos.y + pos.height - select.y) < 50) || (Math.abs(pos.y - select.y) < 20) || (Math.abs(pos.y - select.y - select.height) < 20) )) {
             snap.x = snapX[j];
             break;
           }
         }
         for (let j = 0; j < snapY.length; j++) {
-          if (Math.abs(selectedObj.y - snapY[j]) < 10) {
+          if (Math.abs(select.y - snapY[j]) < 10 && ((Math.abs(pos.x + pos.width - select.x) < 50) || Math.abs(pos.x - select.x) < 10 || Math.abs(pos.x - select.x - select.width) < 10)) {
             snap.y = snapY[j];
             break;
           }
@@ -2359,7 +2372,7 @@ function draw() {
       ctx.lineTo(snap.x, canvas.height);
       ctx.stroke();
       ctx.setLineDash([]);
-      selectedObj.x = snap.x;
+      selectedObj.changeLocation(snap.x,"x")
       lastMouseX = snap.x;
     }
     if (snap.y != null) {
@@ -2371,7 +2384,7 @@ function draw() {
       ctx.lineTo(canvas.width, snap.y);
       ctx.stroke();
       ctx.setLineDash([]);
-      selectedObj.y = snap.y;
+      selectedObj.changeLocation(snap.y,"y")
       lastMouseY = snap.y;
     }
   }
