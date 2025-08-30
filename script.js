@@ -155,12 +155,15 @@ class Rectangle {
 
     ctx.closePath();
 
-    ctx.fillStyle = "#ffcccc";
+    ctx.fillStyle = this.color;
     ctx.fill();
-
-    ctx.strokeStyle = "#cc0000";
-    ctx.lineWidth = 2;
+    if(this.outline){
+          ctx.lineJoin = this.lineJoin;
+      ctx.lineWidth = this.outlineThickness;
+      ctx.strokeStyle = this.outlineColor;
     ctx.stroke();
+    }
+
 
     this.points.forEach((p, i) => {
       ctx.beginPath();
@@ -193,7 +196,7 @@ class Rectangle {
 
     ctx.fill();
     ctx.closePath();
-    if (this.outline) {
+    if (this.outline && this.roundedOrbeveled !== "shaped") {
       ctx.beginPath();
       ctx.lineJoin = this.lineJoin;
       ctx.lineWidth = this.outlineThickness;
@@ -477,9 +480,12 @@ class Rectangle {
           : ""
       }  
     </div>
+    <button class="convert">Convert</button>
 
   `;
-
+    document.querySelector(".convert").addEventListener("click",()=>{
+    this.points[this.selectedPointIndex].edgeModes = !this.points[this.selectedPointIndex].edgeModes
+    })
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
         "input",
