@@ -18,30 +18,32 @@
 <body>
 
 <canvas id="canvas" width="600" height="400"></canvas>
-<div id="info">Click "Curve Mode" to toggle curve editing. Double-click a line to split. Double-click a point to delete it.</div>
-<button id="curveModeBtn">Curve Mode: Off</button>
+<div id="info">Double-click near an edge to toggle between line/curve for that edge.</div>
 
 <script>
 class ShapeToolRect {
   constructor(x, y, width, height) {
+    // Corners
     this.points = [
-      { x: x, y: y },                     // top-left
-      { x: x + width, y: y },             // top-right
-      { x: x + width, y: y + height },    // bottom-right
-      { x: x, y: y + height }             // bottom-left
+      { x: x, y: y },                     // P0: top-left
+      { x: x + width, y: y },             // P1: top-right
+      { x: x + width, y: y + height },    // P2: bottom-right
+      { x: x, y: y + height }             // P3: bottom-left
     ];
 
+    // Control points for curves, 2 per edge (4 edges)
     this.controls = [
-      [null, null],
-      [null, null],
-      [null, null],
-      [null, null]
+      [ {x: x + width * 0.25, y: y}, {x: x + width * 0.75, y: y} ],              // top edge
+      [ {x: x + width, y: y + height * 0.25}, {x: x + width, y: y + height * 0.75} ], // right edge
+      [ {x: x + width * 0.75, y: y + height}, {x: x + width * 0.25, y: y + height} ], // bottom edge
+      [ {x: x, y: y + height * 0.75}, {x: x, y: y + height * 0.25} ]             // left edge
     ];
 
+    // Edge modes: false = line, true = curve
     this.edgeModes = [false, false, false, false];
 
-    this.selectedPointIndex = null;
-    this.selectedControl = null;
+    this.selectedPointIndex = null;  // dragging corner point
+    this.selectedControl = null;     // dragging control point
   }
 
   draw(ctx) {
@@ -49,18 +51,22 @@ class ShapeToolRect {
     ctx.beginPath();
     ctx.moveTo(this.points[0].x, this.points[0].y);
 
-    for (let i = 0; i < this.points.length; i++) {
-      const next = (i + 1) % this.points.length;
+    for(let i = 0; i < 4; i++) {
+      const next = (i + 1) % 4;
       if (this.edgeModes[i]) {
+        // curved edge
         const cp1 = this.controls[i][0];
         const cp2 = this.controls[i][1];
-        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, this.points[next].x, this.points[next].y);
+        const pNext = this.points[next];
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
       } else {
+        // straight line edge
         ctx.lineTo(this.points[next].x, this.points[next].y);
       }
     }
 
     ctx.closePath();
+
     ctx.fillStyle = "#ffcccc";
     ctx.fill();
 
@@ -68,7 +74,7 @@ class ShapeToolRect {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Draw points
+    // Draw corners (blue)
     this.points.forEach((p, i) => {
       ctx.beginPath();
       ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
@@ -78,7 +84,7 @@ class ShapeToolRect {
       ctx.stroke();
     });
 
-    // Draw control points
+    // Draw control points (green) only for edges in curve mode
     this.edgeModes.forEach((isCurve, i) => {
       if (isCurve) {
         this.controls[i].forEach((cp, j) => {
@@ -97,24 +103,26 @@ class ShapeToolRect {
   }
 
   hitTest(mouseX, mouseY) {
-    for (let i = 0; i < this.points.length; i++) {
+    // Hit test corners first
+    for(let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const dx = mouseX - p.x;
       const dy = mouseY - p.y;
-      if (dx * dx + dy * dy < 10 * 10) {
+      if(dx*dx + dy*dy < 10*10) {
         this.selectedPointIndex = i;
         this.selectedControl = null;
         return true;
       }
     }
 
-    for (let i = 0; i < this.edgeModes.length; i++) {
+    // Hit test control points only for curved edges
+    for(let i = 0; i < this.edgeModes.length; i++) {
       if (this.edgeModes[i]) {
-        for (let j = 0; j < 2; j++) {
+        for(let j = 0; j < 2; j++) {
           const cp = this.controls[i][j];
           const dx = mouseX - cp.x;
           const dy = mouseY - cp.y;
-          if (dx * dx + dy * dy < 10 * 10) {
+          if(dx*dx + dy*dy < 10*10) {
             this.selectedControl = { curveIndex: i, controlIndex: j };
             this.selectedPointIndex = null;
             return true;
@@ -123,6 +131,7 @@ class ShapeToolRect {
       }
     }
 
+    // Nothing hit
     this.selectedPointIndex = null;
     this.selectedControl = null;
     return false;
@@ -130,87 +139,40 @@ class ShapeToolRect {
 
   moveSelected(x, y) {
     if (this.selectedPointIndex !== null) {
-      this.points[this.selectedPointIndex] = { x, y };
+      this.points[this.selectedPointIndex].x = x;
+      this.points[this.selectedPointIndex].y = y;
+
+      // Optionally: update controls to stay relative to corners?
+      // (Could be implemented here)
     }
     if (this.selectedControl !== null) {
       const { curveIndex, controlIndex } = this.selectedControl;
-      this.controls[curveIndex][controlIndex] = { x, y };
+      this.controls[curveIndex][controlIndex].x = x;
+      this.controls[curveIndex][controlIndex].y = y;
     }
   }
 
+  // Detect which edge is clicked near (for toggling edge mode)
   getEdgeAtPosition(x, y) {
-    const threshold = 10;
-    for (let i = 0; i < this.points.length; i++) {
+    const threshold = 10; // pixels
+    for(let i = 0; i < 4; i++) {
       const p1 = this.points[i];
-      const p2 = this.points[(i + 1) % this.points.length];
+      const p2 = this.points[(i+1) % 4];
+
+      // Distance from point (x,y) to line segment p1-p2:
       const dist = pointLineDistance(x, y, p1.x, p1.y, p2.x, p2.y);
       if (dist <= threshold) return i;
     }
     return null;
   }
 
-  toggleEdgeMode(i) {
-    if (i == null) return;
-    this.edgeModes[i] = !this.edgeModes[i];
-    if (this.edgeModes[i]) {
-      const p1 = this.points[i];
-      const p2 = this.points[(i + 1) % this.points.length];
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      this.controls[i] = [
-        { x: p1.x + dx * 0.33, y: p1.y + dy * 0.33 },
-        { x: p1.x + dx * 0.66, y: p1.y + dy * 0.66 }
-      ];
-    } else {
-      this.controls[i] = [null, null];
-    }
-  }
-
-  splitEdgeAt(i, x, y) {
-    const insertIndex = (i + 1) % this.points.length;
-    this.points.splice(insertIndex, 0, { x, y });
-
-    const mode = this.edgeModes[i];
-    this.edgeModes.splice(insertIndex, 0, mode);
-
-    if (mode) {
-      const [cp1, cp2] = this.controls[i];
-      const midCP1 = {
-        x: (cp1.x + x) / 2,
-        y: (cp1.y + y) / 2
-      };
-      const midCP2 = {
-        x: (cp2.x + x) / 2,
-        y: (cp2.y + y) / 2
-      };
-      this.controls.splice(insertIndex, 0, [midCP1, midCP2]);
-      this.controls[i] = [
-        { x: (this.points[i].x + x) / 2, y: (this.points[i].y + y) / 2 },
-        { x: (cp1.x + x) / 2, y: (cp1.y + y) / 2 }
-      ];
-    } else {
-      this.controls.splice(insertIndex, 0, [null, null]);
-    }
-  }
-
-  deletePointAt(x, y) {
-    if (this.points.length <= 4) return; // Prevent deleting the original rectangle
-    for (let i = 0; i < this.points.length; i++) {
-      const p = this.points[i];
-      const dx = x - p.x;
-      const dy = y - p.y;
-      if (dx * dx + dy * dy < 10 * 10) {
-        this.points.splice(i, 1);
-        this.edgeModes.splice(i, 1);
-        this.controls.splice(i, 1);
-        return true;
-      }
-    }
-    return false;
+  toggleEdgeMode(edgeIndex) {
+    if (edgeIndex === null) return;
+    this.edgeModes[edgeIndex] = !this.edgeModes[edgeIndex];
   }
 }
 
-// Utility
+// Utility: distance from point to line segment
 function pointLineDistance(px, py, x1, y1, x2, y2) {
   const A = px - x1;
   const B = py - y1;
@@ -240,19 +202,12 @@ function pointLineDistance(px, py, x1, y1, x2, y2) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-// Setup
+// Setup canvas and shape
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 let shapeRect = new ShapeToolRect(100, 100, 200, 150);
 let dragging = false;
-let curveModeEnabled = false;
-
-const curveModeBtn = document.getElementById("curveModeBtn");
-curveModeBtn.addEventListener("click", () => {
-  curveModeEnabled = !curveModeEnabled;
-  curveModeBtn.textContent = "Curve Mode: " + (curveModeEnabled ? "On" : "Off");
-});
 
 function getMousePos(evt) {
   const rect = canvas.getBoundingClientRect();
@@ -262,50 +217,16 @@ function getMousePos(evt) {
   };
 }
 
-// Click to toggle edge curve in curve mode
-canvas.addEventListener("click", (e) => {
-  if (!curveModeEnabled) return;
-  const pos = getMousePos(e);
-  const edgeIndex = shapeRect.getEdgeAtPosition(pos.x, pos.y);
-  if (edgeIndex !== null) {
-    shapeRect.toggleEdgeMode(edgeIndex);
-    draw();
-  }
-});
-
-// Double-click to split or delete
-canvas.addEventListener("dblclick", (e) => {
-  const pos = getMousePos(e);
-
-  // If clicked on a point, delete it
-  const deleted = shapeRect.deletePointAt(pos.x, pos.y);
-  if (deleted) {
-    draw();
-    return;
-  }
-
-  // Otherwise split or toggle curve
-  const edgeIndex = shapeRect.getEdgeAtPosition(pos.x, pos.y);
-  if (edgeIndex !== null) {
-    if (shapeRect.edgeModes[edgeIndex]) {
-      shapeRect.toggleEdgeMode(edgeIndex);
-    } else {
-      shapeRect.splitEdgeAt(edgeIndex, pos.x, pos.y);
-    }
-    draw();
-  }
-});
-
 canvas.addEventListener("mousedown", (e) => {
   const pos = getMousePos(e);
-  if (shapeRect.hitTest(pos.x, pos.y)) {
+  if(shapeRect.hitTest(pos.x, pos.y)) {
     dragging = true;
     draw();
   }
 });
 
 canvas.addEventListener("mousemove", (e) => {
-  if (!dragging) return;
+  if(!dragging) return;
   const pos = getMousePos(e);
   shapeRect.moveSelected(pos.x, pos.y);
   draw();
@@ -323,6 +244,16 @@ canvas.addEventListener("mouseleave", () => {
   shapeRect.selectedPointIndex = null;
   shapeRect.selectedControl = null;
   draw();
+});
+
+// Toggle edge mode on double click near edge
+canvas.addEventListener("dblclick", (e) => {
+  const pos = getMousePos(e);
+  const edgeIndex = shapeRect.getEdgeAtPosition(pos.x, pos.y);
+  if(edgeIndex !== null) {
+    shapeRect.toggleEdgeMode(edgeIndex);
+    draw();
+  }
 });
 
 function draw() {

@@ -3,164 +3,29 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Canvas Snap Demo</title>
+<title>Shape Tool Rectangle Demo</title>
 <style>
-  canvas { border: 1px solid black; }
+  canvas {
+    border: 1px solid #ccc;
+    cursor: crosshair;
+  }
 </style>
 </head>
 <body>
 
 <canvas id="canvas" width="600" height="400"></canvas>
-
 <script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const snapDistance = 10;
-
-class Rect {
-  constructor(x, y, w, h, color) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.color = color;
-  }
-
-  draw() {
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x, this.y, this.w, this.h);
-  }
-
-  centerX() {
-    return this.x + this.w / 2;
-  }
-
-  centerY() {
-    return this.y + this.h / 2;
-  }
-
-  left() {
-    return this.x;
-  }
-
-  right() {
-    return this.x + this.w;
-  }
-}
-
-const rects = [
-  new Rect(100, 150, 100, 80, "skyblue"),
-  new Rect(350, 150, 100, 80, "salmon"),
-];
-
-let draggingRect = null;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-
-function drawSnapLine(x, y1, y2) {
-  ctx.strokeStyle = "green";
-  ctx.lineWidth = 2;
-  ctx.setLineDash([5, 5]);
-  ctx.beginPath();
-  ctx.moveTo(x, y1);
-  ctx.lineTo(x, y2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw snapping guides if dragging
-  if (draggingRect) {
-    const otherRect = rects.find(r => r !== draggingRect);
-
-    // Positions to check snapping against
-    const targets = [
-      otherRect.left(),
-      otherRect.right(),
-      otherRect.centerX(),
-      canvas.width / 2,
-    ];
-
-    // Candidate edges of the dragging rect (left, right, center)
-    const candidates = [
-      draggingRect.left(),
-      draggingRect.right(),
-      draggingRect.centerX(),
-    ];
-
-    // Find snap x position if close to any target
-    let snapX = null;
-    let snapToCandidateIndex = null;
-    let snapToTargetIndex = null;
-
-    for (let i = 0; i < candidates.length; i++) {
-      for (let j = 0; j < targets.length; j++) {
-        if (Math.abs(candidates[i] - targets[j]) < snapDistance) {
-          snapX = targets[j] - (candidates[i] - draggingRect.x);
-          snapToCandidateIndex = i;
-          snapToTargetIndex = j;
-          break;
-        }
-      }
-      if (snapX !== null) break;
-    }
-
-    // If snapX found, adjust draggingRect.x accordingly
-    if (snapX !== null) {
-      draggingRect.x = snapX;
-
-      // Draw snap guide line for the snapping position
-      drawSnapLine(targets[snapToTargetIndex], 0, canvas.height);
-    }
-  }
-
-  // Draw rectangles
-  rects.forEach(r => r.draw());
-}
-
-canvas.addEventListener("mousedown", e => {
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-
-  // Check if mouse down inside a rect (start dragging)
-  for (const r of rects) {
-    if (
-      mouseX > r.x && mouseX < r.x + r.w &&
-      mouseY > r.y && mouseY < r.y + r.h
-    ) {
-      draggingRect = r;
-      dragOffsetX = mouseX - r.x;
-      dragOffsetY = mouseY - r.y;
-      break;
-    }
-  }
-});
-
-canvas.addEventListener("mousemove", e => {
-  if (!draggingRect) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-
-  // Move the rect with mouse, apply offset
-  draggingRect.x = mouseX - dragOffsetX;
-  draggingRect.y = mouseY - dragOffsetY;
-
-  draw();
-});
-
-canvas.addEventListener("mouseup", e => {
-  draggingRect = null;
-  draw();
-});
-
-// Initial draw
-draw();
+  const canvas = document.getElementById("canvas")
+  const ctx = canvas.getContext("2d")
+  
+ctx.beginPath();
+ctx.moveTo(50, 50); // Start point
+ctx.quadraticCurveTo(50, 200, 150, 50); // Control point (100,0), end point (150,50)
+ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(50, 150); // Start point
+ctx.bezierCurveTo(70, 100, 30, 100, 150, 150); // Two control points and end point
+ctx.stroke();
 </script>
 
 </body>
