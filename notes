@@ -177,3 +177,19 @@ async function saveAsPDF() {
       lastMouseY = snap.y
     }
     }
+
+
+
+
+
+              paragraph.style.position = "absolute";
+                paragraph.style.top =
+        (parseFloat(this.input.style.top) / canvassRect.height) *
+          iteratedBox.height +
+        parseFloat(this.input.style.paddingTop) +
+        "px";
+      paragraph.style.left =
+        (parseFloat(this.input.style.left) / canvassRect.width) *
+          iteratedBox.width +
+        parseFloat(this.input.style.paddingLeft) +
+        "px";

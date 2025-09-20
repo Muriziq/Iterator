@@ -46,7 +46,7 @@ main {
 
 .canvas {
   width: 100%;
-  padding: 2rem;
+  height: 100%;
   position: relative;
   flex: 1;
   display: flex;

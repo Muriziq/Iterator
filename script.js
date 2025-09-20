@@ -1522,6 +1522,7 @@ class TextBox {
     this.input.style.backgroundColor = "transparent";
     this.input.style.border = "none";
     this.input.style.textAlign = "left";
+    this.input.style.fontFamily = "san-serif"
     this.input.addEventListener("input", (e) => {
       this.text = e.target.value;
     });
@@ -1816,28 +1817,27 @@ class TextBox {
   generateText(num, iteratedBox) {
     const paragraph = document.createElement("p");
     const canvassRect = canvass.getBoundingClientRect();
-    if (num < this.textArea.split("\n").length) {
-      if (this.iterated) {
-        paragraph.textContent = this.textArea.split("\n")[num];
-      } else {
+    if(this.iterated && num < this.textArea.split("\n").length){
+paragraph.textContent = this.textArea.split("\n")[num];
+    }    
+    else{
         paragraph.textContent = this.text;
-      }
-
-      paragraph.style.position = "absolute";
-      paragraph.style.top =
-        (parseFloat(this.input.style.top) / canvassRect.height) *
-          iteratedBox.height +
-        parseFloat(this.input.style.paddingTop) +
-        "px";
-      paragraph.style.left =
-        (parseFloat(this.input.style.left) / canvassRect.width) *
-          iteratedBox.width +
-        parseFloat(this.input.style.paddingLeft) +
-        "px";
-      paragraph.style.fontSize = this.input.style.fontSize;
-    } else {
-      paragraph.textContent = "";
     }
+    paragraph.style.position = "absolute"
+    paragraph.style.left = `${parseFloat(this.input.style.left) /canvassRect.width * 100}%`
+    paragraph.style.top = `${parseFloat(this.input.style.top) /canvassRect.height * 100}%`
+    paragraph.style.fontSize = parseFloat(this.input.style.fontSize) * (iteratedBox.width/canvassRect.width) + "px"
+    paragraph.style.color = this.input.style.color
+    paragraph.style.width =parseFloat(this.input.offsetWidth) * (iteratedBox.width/canvassRect.width) + "px"
+    paragraph.style.height =parseFloat(this.input.offsetHeight) * (iteratedBox.height/canvassRect.height) + "px"
+    paragraph.style.paddingLeft = parseFloat(this.input.style.paddingLeft) * (iteratedBox.width/canvassRect.width) + "px"
+    paragraph.style.paddingRight = parseFloat(this.input.style.paddingRight) * (iteratedBox.width/canvassRect.width) + "px"
+    paragraph.style.paddingTop = parseFloat(this.input.style.paddingTop) * (iteratedBox.height/canvassRect.height) + "px"
+    paragraph.style.paddingBottom = parseFloat(this.input.style.paddingBottom) * (iteratedBox.height/canvassRect.height) + "px"
+    paragraph.style.textAlign = this.input.style.textAlign
+    paragraph.style.fontFamily = this.input.style.fontFamily
+
+
     return paragraph;
   }
   showClone() {
@@ -2566,8 +2566,6 @@ async function generateCard() {
     cellWidth / canvaDefault.width,
     cellHeight / canvaDefault.height
   );
-
-  // Determine the max iterations (e.g., lines in text or length of iterated files)
   let iterationLength = 1;
   if (textBoxes.length > 0) {
     iterationLength = Math.max(
