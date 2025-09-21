@@ -193,3 +193,17 @@ async function saveAsPDF() {
           iteratedBox.width +
         parseFloat(this.input.style.paddingLeft) +
         "px";
+
+
+
+
+
+              
+      this.points.splice(next, 0, {
+        points: { x: localMouseX, y: localMouseY },
+        edgeModes: this.points[next].edgeModes,
+        controls: [
+          {x:null,y:null},
+          {x:null,y:null}
+        ]
+      })

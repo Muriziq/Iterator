@@ -2,233 +2,189 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hybrid Rectangle Edges</title>
+<title>Editable Rectangle with Points and Drag</title>
 <style>
   canvas {
     border: 1px solid #ccc;
-    cursor: crosshair;
-  }
-  #info {
-    margin-top: 10px;
-    font-family: Arial, sans-serif;
   }
 </style>
 </head>
 <body>
 
-<canvas id="canvas" width="600" height="400"></canvas>
-<div id="info">Click "Curve Mode" to toggle curve editing. Double-click a line to split. Double-click a point to delete it.</div>
-<button id="curveModeBtn">Curve Mode: Off</button>
+<button id="toggleEdit">Toggle Edit Mode</button>
+<canvas id="myCanvas" width="600" height="400"></canvas>
 
 <script>
-class ShapeToolRect {
-  constructor(x, y, width, height) {
-    this.points = [
-      { x: x, y: y },                     // top-left
-      { x: x + width, y: y },             // top-right
-      { x: x + width, y: y + height },    // bottom-right
-      { x: x, y: y + height }             // bottom-left
-    ];
+const canvas = document.getElementById('myCanvas');
+const ctx = canvas.getContext('2d');
 
-    this.controls = [
-      [null, null],
-      [null, null],
-      [null, null],
-      [null, null]
-    ];
+let editMode = true;
+const toggleBtn = document.getElementById('toggleEdit');
 
-    this.edgeModes = [false, false, false, false];
+let shape = [
+  { x: 100, y: 100 },
+  { x: 300, y: 100 },
+  { x: 300, y: 200 },
+  { x: 100, y: 200 }
+];
 
-    this.selectedPointIndex = null;
-    this.selectedControl = null;
+let draggingPointIndex = null;
+let draggingShape = false;
+let dragOffset = { x: 0, y: 0 };
+
+function drawShape() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.beginPath();
+  ctx.moveTo(shape[0].x, shape[0].y);
+  for(let i=1; i < shape.length; i++) {
+    ctx.lineTo(shape[i].x, shape[i].y);
   }
+  ctx.closePath();
 
-  draw(ctx) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.beginPath();
-    ctx.moveTo(this.points[0].x, this.points[0].y);
+  ctx.fillStyle = 'rgba(0, 150, 255, 0.3)';
+  ctx.fill();
+  ctx.strokeStyle = 'blue';
+  ctx.lineWidth = 2;
+  ctx.stroke();
 
-    for (let i = 0; i < this.points.length; i++) {
-      const next = (i + 1) % this.points.length;
-      if (this.edgeModes[i]) {
-        const cp1 = this.controls[i][0];
-        const cp2 = this.controls[i][1];
-        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, this.points[next].x, this.points[next].y);
-      } else {
-        ctx.lineTo(this.points[next].x, this.points[next].y);
-      }
-    }
-
-    ctx.closePath();
-    ctx.fillStyle = "#ffcccc";
-    ctx.fill();
-
-    ctx.strokeStyle = "#cc0000";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Draw points
-    this.points.forEach((p, i) => {
+  if(editMode) {
+    // Draw draggable points
+    for(let i=0; i < shape.length; i++) {
+      const pt = shape[i];
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-      ctx.fillStyle = (i === this.selectedPointIndex) ? "#0000ff" : "#0000ff88";
+      ctx.arc(pt.x, pt.y, 6, 0, Math.PI*2);
+      ctx.fillStyle = 'red';
       ctx.fill();
-      ctx.strokeStyle = "#000";
+      ctx.strokeStyle = 'black';
       ctx.stroke();
-    });
-
-    // Draw control points
-    this.edgeModes.forEach((isCurve, i) => {
-      if (isCurve) {
-        this.controls[i].forEach((cp, j) => {
-          ctx.beginPath();
-          ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
-          const isSelected = this.selectedControl &&
-                             this.selectedControl.curveIndex === i &&
-                             this.selectedControl.controlIndex === j;
-          ctx.fillStyle = isSelected ? "#00cc00" : "#00cc0088";
-          ctx.fill();
-          ctx.strokeStyle = "#000";
-          ctx.stroke();
-        });
-      }
-    });
-  }
-
-  hitTest(mouseX, mouseY) {
-    for (let i = 0; i < this.points.length; i++) {
-      const p = this.points[i];
-      const dx = mouseX - p.x;
-      const dy = mouseY - p.y;
-      if (dx * dx + dy * dy < 10 * 10) {
-        this.selectedPointIndex = i;
-        this.selectedControl = null;
-        return true;
-      }
     }
-
-    for (let i = 0; i < this.edgeModes.length; i++) {
-      if (this.edgeModes[i]) {
-        for (let j = 0; j < 2; j++) {
-          const cp = this.controls[i][j];
-          const dx = mouseX - cp.x;
-          const dy = mouseY - cp.y;
-          if (dx * dx + dy * dy < 10 * 10) {
-            this.selectedControl = { curveIndex: i, controlIndex: j };
-            this.selectedPointIndex = null;
-            return true;
-          }
-        }
-      }
-    }
-
-    this.selectedPointIndex = null;
-    this.selectedControl = null;
-    return false;
-  }
-
-  moveSelected(x, y) {
-    if (this.selectedPointIndex !== null) {
-      this.points[this.selectedPointIndex] = { x, y };
-    }
-    if (this.selectedControl !== null) {
-      const { curveIndex, controlIndex } = this.selectedControl;
-      this.controls[curveIndex][controlIndex] = { x, y };
-    }
-  }
-
-  getEdgeAtPosition(x, y) {
-    const threshold = 10;
-    for (let i = 0; i < this.points.length; i++) {
-      const p1 = this.points[i];
-      const p2 = this.points[(i + 1) % this.points.length];
-      const dist = pointLineDistance(x, y, p1.x, p1.y, p2.x, p2.y);
-      if (dist <= threshold) return i;
-    }
-    return null;
-  }
-
-  
-  toggleEdgeMode(i) {
-    if (i == null) return;
-    this.edgeModes[i] = !this.edgeModes[i];
-    if (this.edgeModes[i]) {
-      const p1 = this.points[i];
-      const p2 = this.points[(i + 1) % this.points.length];
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      this.controls[i] = [
-        { x: p1.x + dx * 0.33, y: p1.y + dy * 0.33 },
-        { x: p1.x + dx * 0.66, y: p1.y + dy * 0.66 }
-      ];
-    } else {
-      this.controls[i] = [null, null];
-    }
-  }
-
-  splitEdgeAt(i, x, y) {
-    const insertIndex = (i + 1) % this.points.length;
-    this.points.splice(insertIndex, 0, { x, y });
-
-    const mode = this.edgeModes[i];
-    this.edgeModes.splice(insertIndex, 0, mode);
-
-    if (mode) {
-      const [cp1, cp2] = this.controls[i];
-      const midCP1 = {
-        x: (cp1.x + x) / 2,
-        y: (cp1.y + y) / 2
-      };
-      const midCP2 = {
-        x: (cp2.x + x) / 2,
-        y: (cp2.y + y) / 2
-      };
-      this.controls.splice(insertIndex, 0, [midCP1, midCP2]);
-      this.controls[i] = [
-        { x: (this.points[i].x + x) / 2, y: (this.points[i].y + y) / 2 },
-        { x: (cp1.x + x) / 2, y: (cp1.y + y) / 2 }
-      ];
-    } else {
-      this.controls.splice(insertIndex, 0, [null, null]);
-    }
-  }
-
-  deletePointAt(x, y) {
-    if (this.points.length <= 4) return; // Prevent deleting the original rectangle
-    for (let i = 0; i < this.points.length; i++) {
-      const p = this.points[i];
-      const dx = x - p.x;
-      const dy = y - p.y;
-      if (dx * dx + dy * dy < 10 * 10) {
-        this.points.splice(i, 1);
-        this.edgeModes.splice(i, 1);
-        this.controls.splice(i, 1);
-        return true;
-      }
-    }
-    return false;
   }
 }
 
-// Utility
-function pointLineDistance(px, py, x1, y1, x2, y2) {
-  const A = px - x1;
-  const B = py - y1;
+// Utility to check if mouse is close to a point
+function hitTestPoint(pos) {
+  for(let i=0; i < shape.length; i++) {
+    const pt = shape[i];
+    const dx = pt.x - pos.x;
+    const dy = pt.y - pos.y;
+    if(Math.sqrt(dx*dx + dy*dy) < 10) {
+      return i;
+    }
+  }
+  return null;
+}
+
+// Utility to check if point is inside polygon (ray-casting method)
+function pointInPolygon(point, polygon) {
+  let inside = false;
+  for(let i=0, j=polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+
+    const intersect = ((yi > point.y) != (yj > point.y)) &&
+      (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+    if(intersect) inside = !inside;
+  }
+  return inside;
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+  if(editMode) {
+    // Try to drag a point
+    const ptIndex = hitTestPoint(mousePos);
+    if(ptIndex !== null) {
+      draggingPointIndex = ptIndex;
+      return;
+    }
+
+    // If clicked on edge, add a new point there
+    // (We'll add point on nearest edge if clicked close enough)
+    for(let i=0; i < shape.length; i++) {
+      const p1 = shape[i];
+      const p2 = shape[(i+1) % shape.length];
+
+      // Distance from point to segment
+      const dist = pointToSegmentDistance(mousePos, p1, p2);
+      if(dist < 8) {
+        // Insert new point between p1 and p2
+        shape.splice(i+1, 0, mousePos);
+        drawShape();
+        draggingPointIndex = i+1;
+        return;
+      }
+    }
+  } else {
+    // Move whole shape mode
+    if(pointInPolygon(mousePos, shape)) {
+      draggingShape = true;
+      dragOffset.x = mousePos.x;
+      dragOffset.y = mousePos.y;
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if(draggingPointIndex === null && !draggingShape) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+  if(editMode && draggingPointIndex !== null) {
+    // Move the dragged point
+    shape[draggingPointIndex].x = mousePos.x;
+    shape[draggingPointIndex].y = mousePos.y;
+    drawShape();
+  } else if(!editMode && draggingShape) {
+    // Move whole shape by the delta of mouse movement
+    const dx = mousePos.x - dragOffset.x;
+    const dy = mousePos.y - dragOffset.y;
+    for(let pt of shape) {
+      pt.x += dx;
+      pt.y += dy;
+    }
+    dragOffset.x = mousePos.x;
+    dragOffset.y = mousePos.y;
+    drawShape();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  draggingPointIndex = null;
+  draggingShape = false;
+});
+
+toggleBtn.addEventListener('click', () => {
+  editMode = !editMode;
+  toggleBtn.textContent = editMode ? "Switch to Move Mode" : "Switch to Edit Mode";
+  drawShape();
+});
+
+// Helper function for distance from point to segment
+function pointToSegmentDistance(pt, p1, p2) {
+  const x = pt.x, y = pt.y;
+  const x1 = p1.x, y1 = p1.y;
+  const x2 = p2.x, y2 = p2.y;
+
+  const A = x - x1;
+  const B = y - y1;
   const C = x2 - x1;
   const D = y2 - y1;
 
   const dot = A * C + B * D;
   const len_sq = C * C + D * D;
   let param = -1;
-  if (len_sq !== 0) param = dot / len_sq;
+  if(len_sq !== 0) param = dot / len_sq;
 
   let xx, yy;
 
-  if (param < 0) {
+  if(param < 0) {
     xx = x1;
     yy = y1;
-  } else if (param > 1) {
+  } else if(param > 1) {
     xx = x2;
     yy = y2;
   } else {
@@ -236,101 +192,13 @@ function pointLineDistance(px, py, x1, y1, x2, y2) {
     yy = y1 + param * D;
   }
 
-  const dx = px - xx;
-  const dy = py - yy;
+  const dx = x - xx;
+  const dy = y - yy;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-// Setup
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-let shapeRect = new ShapeToolRect(100, 100, 200, 150);
-let dragging = false;
-let curveModeEnabled = false;
-
-const curveModeBtn = document.getElementById("curveModeBtn");
-curveModeBtn.addEventListener("click", () => {
-  curveModeEnabled = !curveModeEnabled;
-  curveModeBtn.textContent = "Curve Mode: " + (curveModeEnabled ? "On" : "Off");
-});
-
-function getMousePos(evt) {
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: evt.clientX - rect.left,
-    y: evt.clientY - rect.top
-  };
-}
-
-// Click to toggle edge curve in curve mode
-canvas.addEventListener("click", (e) => {
-  if (!curveModeEnabled) return;
-  const pos = getMousePos(e);
-  const edgeIndex = shapeRect.getEdgeAtPosition(pos.x, pos.y);
-  if (edgeIndex !== null) {
-    shapeRect.toggleEdgeMode(edgeIndex);
-    draw();
-  }
-});
-
-// Double-click to split or delete
-canvas.addEventListener("dblclick", (e) => {
-  const pos = getMousePos(e);
-
-  // If clicked on a point, delete it
-  const deleted = shapeRect.deletePointAt(pos.x, pos.y);
-  if (deleted) {
-    draw();
-    return;
-  }
-
-  // Otherwise split or toggle curve
-  const edgeIndex = shapeRect.getEdgeAtPosition(pos.x, pos.y);
-  if (edgeIndex !== null) {
-    if (shapeRect.edgeModes[edgeIndex]) {
-      shapeRect.toggleEdgeMode(edgeIndex);
-    } else {
-      shapeRect.splitEdgeAt(edgeIndex, pos.x, pos.y);
-    }
-    draw();
-  }
-});
-
-canvas.addEventListener("mousedown", (e) => {
-  const pos = getMousePos(e);
-  if (shapeRect.hitTest(pos.x, pos.y)) {
-    dragging = true;
-    draw();
-  }
-});
-
-canvas.addEventListener("mousemove", (e) => {
-  if (!dragging) return;
-  const pos = getMousePos(e);
-  shapeRect.moveSelected(pos.x, pos.y);
-  draw();
-});
-
-canvas.addEventListener("mouseup", () => {
-  dragging = false;
-  shapeRect.selectedPointIndex = null;
-  shapeRect.selectedControl = null;
-  draw();
-});
-
-canvas.addEventListener("mouseleave", () => {
-  dragging = false;
-  shapeRect.selectedPointIndex = null;
-  shapeRect.selectedControl = null;
-  draw();
-});
-
-function draw() {
-  shapeRect.draw(ctx);
-}
-
-draw();
+// Initial draw
+drawShape();
 </script>
 
 </body>
