@@ -1,205 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Editable Rectangle with Points and Drag</title>
-<style>
-  canvas {
-    border: 1px solid #ccc;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Radial Gradient with 3 Colors</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #eee;
+    }
+    canvas {
+      border: 1px solid #333;
+    }
+  </style>
 </head>
 <body>
+  <canvas id="myCanvas" width="400" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
 
-<button id="toggleEdit">Toggle Edit Mode</button>
-<canvas id="myCanvas" width="600" height="400"></canvas>
+    // Define center and radius for radial gradient
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const innerRadius = 0;
+    const outerRadius = 150;
 
-<script>
-const canvas = document.getElementById('myCanvas');
-const ctx = canvas.getContext('2d');
+    // Create radial gradient: from inner circle (centerX, centerY, innerRadius)
+    // to outer circle (centerX, centerY, outerRadius)
+    const grad = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, outerRadius);
 
-let editMode = true;
-const toggleBtn = document.getElementById('toggleEdit');
+    // Add 3 color stops
+    grad.addColorStop(0, 'red');       // center: red
+    grad.addColorStop(0.5, 'yellow');  // middle: yellow
+    grad.addColorStop(1, 'blue');      // edge: blue
 
-let shape = [
-  { x: 100, y: 100 },
-  { x: 300, y: 100 },
-  { x: 300, y: 200 },
-  { x: 100, y: 200 }
-];
-
-let draggingPointIndex = null;
-let draggingShape = false;
-let dragOffset = { x: 0, y: 0 };
-
-function drawShape() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  ctx.beginPath();
-  ctx.moveTo(shape[0].x, shape[0].y);
-  for(let i=1; i < shape.length; i++) {
-    ctx.lineTo(shape[i].x, shape[i].y);
-  }
-  ctx.closePath();
-
-  ctx.fillStyle = 'rgba(0, 150, 255, 0.3)';
-  ctx.fill();
-  ctx.strokeStyle = 'blue';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  if(editMode) {
-    // Draw draggable points
-    for(let i=0; i < shape.length; i++) {
-      const pt = shape[i];
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 6, 0, Math.PI*2);
-      ctx.fillStyle = 'red';
-      ctx.fill();
-      ctx.strokeStyle = 'black';
-      ctx.stroke();
-    }
-  }
-}
-
-// Utility to check if mouse is close to a point
-function hitTestPoint(pos) {
-  for(let i=0; i < shape.length; i++) {
-    const pt = shape[i];
-    const dx = pt.x - pos.x;
-    const dy = pt.y - pos.y;
-    if(Math.sqrt(dx*dx + dy*dy) < 10) {
-      return i;
-    }
-  }
-  return null;
-}
-
-// Utility to check if point is inside polygon (ray-casting method)
-function pointInPolygon(point, polygon) {
-  let inside = false;
-  for(let i=0, j=polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x, yi = polygon[i].y;
-    const xj = polygon[j].x, yj = polygon[j].y;
-
-    const intersect = ((yi > point.y) != (yj > point.y)) &&
-      (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-    if(intersect) inside = !inside;
-  }
-  return inside;
-}
-
-canvas.addEventListener('mousedown', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-
-  if(editMode) {
-    // Try to drag a point
-    const ptIndex = hitTestPoint(mousePos);
-    if(ptIndex !== null) {
-      draggingPointIndex = ptIndex;
-      return;
-    }
-
-    // If clicked on edge, add a new point there
-    // (We'll add point on nearest edge if clicked close enough)
-    for(let i=0; i < shape.length; i++) {
-      const p1 = shape[i];
-      const p2 = shape[(i+1) % shape.length];
-
-      // Distance from point to segment
-      const dist = pointToSegmentDistance(mousePos, p1, p2);
-      if(dist < 8) {
-        // Insert new point between p1 and p2
-        shape.splice(i+1, 0, mousePos);
-        drawShape();
-        draggingPointIndex = i+1;
-        return;
-      }
-    }
-  } else {
-    // Move whole shape mode
-    if(pointInPolygon(mousePos, shape)) {
-      draggingShape = true;
-      dragOffset.x = mousePos.x;
-      dragOffset.y = mousePos.y;
-    }
-  }
-});
-
-canvas.addEventListener('mousemove', (e) => {
-  if(draggingPointIndex === null && !draggingShape) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-
-  if(editMode && draggingPointIndex !== null) {
-    // Move the dragged point
-    shape[draggingPointIndex].x = mousePos.x;
-    shape[draggingPointIndex].y = mousePos.y;
-    drawShape();
-  } else if(!editMode && draggingShape) {
-    // Move whole shape by the delta of mouse movement
-    const dx = mousePos.x - dragOffset.x;
-    const dy = mousePos.y - dragOffset.y;
-    for(let pt of shape) {
-      pt.x += dx;
-      pt.y += dy;
-    }
-    dragOffset.x = mousePos.x;
-    dragOffset.y = mousePos.y;
-    drawShape();
-  }
-});
-
-canvas.addEventListener('mouseup', () => {
-  draggingPointIndex = null;
-  draggingShape = false;
-});
-
-toggleBtn.addEventListener('click', () => {
-  editMode = !editMode;
-  toggleBtn.textContent = editMode ? "Switch to Move Mode" : "Switch to Edit Mode";
-  drawShape();
-});
-
-// Helper function for distance from point to segment
-function pointToSegmentDistance(pt, p1, p2) {
-  const x = pt.x, y = pt.y;
-  const x1 = p1.x, y1 = p1.y;
-  const x2 = p2.x, y2 = p2.y;
-
-  const A = x - x1;
-  const B = y - y1;
-  const C = x2 - x1;
-  const D = y2 - y1;
-
-  const dot = A * C + B * D;
-  const len_sq = C * C + D * D;
-  let param = -1;
-  if(len_sq !== 0) param = dot / len_sq;
-
-  let xx, yy;
-
-  if(param < 0) {
-    xx = x1;
-    yy = y1;
-  } else if(param > 1) {
-    xx = x2;
-    yy = y2;
-  } else {
-    xx = x1 + param * C;
-    yy = y1 + param * D;
-  }
-
-  const dx = x - xx;
-  const dy = y - yy;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// Initial draw
-drawShape();
-</script>
-
+    // Fill a rectangle with the radial gradient
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  </script>
 </body>
 </html>

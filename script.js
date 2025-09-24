@@ -62,7 +62,7 @@ class Rectangle {
     this.y = 100;
     this.width = 150;
     this.height = 100;
-    this.color = "#ff0000";
+    this.color = ["#ff0000","#00ff00","#0000ff","#ffff00","#00ffff"];
     this.outline = false;
     this.outlineColor = "#00ff00";
     this.outlineThickness = 2;
@@ -130,6 +130,9 @@ class Rectangle {
     this.shapeType;
     this.selectedLineIndex = null;
     this.mode = "edit";
+    this.colorFill = "linear"
+    this.colorDeg = 2;
+    this.colorVertex = "horizontal"
   }
   addObject() {
     ctx.save();
@@ -139,7 +142,7 @@ class Rectangle {
     ctx.rotate(this.angle);
 
     ctx.beginPath();
-    ctx.fillStyle = this.color;
+    ctx.fillStyle = this.colorType();
     if (this.roundedOrbeveled === "rounded") {
       this.drawRoundedRect(
         -this.width / 2,
@@ -157,23 +160,9 @@ class Rectangle {
         this.cornerRadius
       );
     } else if (this.roundedOrbeveled === "shaped") {
-      ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
+this.createPath()
 
-      for (let i = 0; i < this.points.length; i++) {
-        const next = (i + 1) % this.points.length;
-        if (this.points[i].edgeModes) {
-          const cp1 = this.points[i].controls[0];
-          const cp2 = this.points[i].controls[1];
-          const pNext = this.points[next].points;
-          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
-        } else {
-          ctx.lineTo(this.points[next].points.x, this.points[next].points.y);
-        }
-      }
-
-      ctx.closePath();
-
-      ctx.fillStyle = this.color;
+      ctx.fillStyle = this.colorType();
       ctx.fill();
       if (this.outline) {
         ctx.save();
@@ -267,7 +256,50 @@ class Rectangle {
     }
     ctx.restore();
   }
+createPath() {
+  ctx.beginPath();
+  ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
 
+  for (let i = 0; i < this.points.length; i++) {
+    const next = (i + 1) % this.points.length;
+
+    if (this.points[i].edgeModes) {
+      const cp1 = this.points[i].controls[0];
+      const cp2 = this.points[i].controls[1];
+      const pNext = this.points[next].points;
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
+    } else {
+      ctx.lineTo(this.points[next].points.x, this.points[next].points.y);
+    }
+  }
+
+  ctx.closePath();
+}
+colorType(){
+  if(this.colorFill === "fill"){
+    return this.color[0]
+  }
+  else if(this.colorFill === "linear"){
+      const xs = this.points.map(p => p.points.x);
+  const ys = this.points.map(p => p.points.y);
+
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const maxX = Math.max(...xs);
+  const maxY = Math.max(...ys);
+let length = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2);
+
+  const endX = minX + length * Math.cos(this.colorDeg)
+  const endY = minY + length * Math.sin(this.colorDeg)
+  const grad = ctx.createLinearGradient(minX,minY,endX,endY)
+  this.color.forEach((c,i)=>{
+    let equation = (i)/(this.color.length -1)
+    grad.addColorStop(equation,c)
+  })
+  return grad
+
+  }
+}
   whatSelected(mouse) {
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
@@ -285,25 +317,15 @@ class Rectangle {
       } else {
         const localX = dx * cos - dy * sin;
         const localY = dx * sin + dy * cos;
+  this.createPath();
 
-        let inside = false;
-        for (
-          let i = 0, j = this.points.length - 1;
-          i < this.points.length;
-          j = i++
-        ) {
-          const xi = this.points[i].points.x,
-            yi = this.points[i].points.y;
-          const xj = this.points[j].points.x,
-            yj = this.points[j].points.y;
+    const isInside = ctx.isPointInPath(localX, localY);
+    ctx.restore();
 
-          const intersect =
-            yi > localY != yj > localY &&
-            localX < ((xj - xi) * (localY - yi)) / (yj - yi) + xi;
-          if (intersect) inside = !inside;
-        }
-        this.selectedArea = "Selected"
-        return inside;
+    if (isInside) {
+      this.selectedArea = "Selected";
+    }
+    return isInside;
       }
       return false;
     } else {
