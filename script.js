@@ -131,8 +131,7 @@ class Rectangle {
     this.selectedLineIndex = null;
     this.mode = "edit";
     this.colorFill = "linear"
-    this.colorDeg = 2;
-    this.colorVertex = "horizontal"
+    this.colorDeg = 0.2
   }
   addObject() {
     ctx.save();
@@ -241,17 +240,43 @@ this.createPath()
       ctx.stroke();
       ctx.closePath();
     }
-    if (selectedObj === this && this.roundedOrbeveled !== "shaped") {
-      ctx.beginPath();
-      ctx.lineWidth = 1;
+    if (selectedObj === this) {
+            ctx.beginPath();
+                         ctx.lineWidth = 1;
       ctx.strokeStyle = "#0000ff";
       ctx.setLineDash([5, 3]);
+      if(this.roundedOrbeveled !== "shaped"){
+
+
       ctx.strokeRect(
         -this.width / 2 - 2,
         -this.height / 2 - 2,
         this.width + 4,
         this.height + 4
-      );
+      ); 
+      }else{
+              const xs = this.points.map(p => p.points.x);
+  const ys = this.points.map(p => p.points.y);
+
+   const minX = Math.min(...xs);
+   const minY = Math.min(...ys);
+   const maxX = Math.max(...xs);
+   const maxY = Math.max(...ys);  
+      ctx.strokeRect(
+        minX,
+        minY,
+        maxX-minX,
+        maxY-minY
+      ); 
+      if(this.mode === "scale"){
+        ctx.beginPath()
+        ctx.fillStyle = "#000000"
+        ctx.fillRect(maxX-10,maxY-10,20,20)
+
+      }
+      }
+
+
       ctx.closePath();
     }
     ctx.restore();
@@ -280,13 +305,22 @@ colorType(){
     return this.color[0]
   }
   else if(this.colorFill === "linear"){
+          let minX, minY, maxX, maxY;
+    if(this.roundedOrbeveled === "shaped"){
       const xs = this.points.map(p => p.points.x);
   const ys = this.points.map(p => p.points.y);
 
-  const minX = Math.min(...xs);
-  const minY = Math.min(...ys);
-  const maxX = Math.max(...xs);
-  const maxY = Math.max(...ys);
+   minX = Math.min(...xs);
+   minY = Math.min(...ys);
+   maxX = Math.max(...xs);
+   maxY = Math.max(...ys);      
+    }else{
+       minX = -this.width / 2
+       minY = -this.height / 2
+       maxX = -this.width / 2 + this.width
+       maxY = -this.height / 2 + this.height
+    }
+
 let length = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2);
 
   const endX = minX + length * Math.cos(this.colorDeg)
@@ -296,8 +330,36 @@ let length = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2);
     let equation = (i)/(this.color.length -1)
     grad.addColorStop(equation,c)
   })
+
   return grad
 
+  }
+  else if(this.colorFill === "radial"){
+          let minX, minY, maxX, maxY;
+    if(this.roundedOrbeveled === "shaped"){
+      const xs = this.points.map(p => p.points.x);
+  const ys = this.points.map(p => p.points.y);
+
+   minX = Math.min(...xs);
+   minY = Math.min(...ys);
+   maxX = Math.max(...xs);
+   maxY = Math.max(...ys);      
+    }else{
+       minX = -this.width / 2
+       minY = -this.height / 2
+       maxX = -this.width / 2 + this.width
+       maxY = -this.height / 2 + this.height
+    }
+  const centerX = (minX + maxX) / 2;
+const centerY = (minY + maxY) / 2;
+
+const radius = Math.max(maxX - minX, maxY - minY) / 2;
+const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+  this.color.forEach((c,i)=>{
+    let equation = (i)/(this.color.length -1)
+    grad.addColorStop(equation,c)
+  })
+  return grad
   }
 }
   whatSelected(mouse) {
@@ -314,6 +376,8 @@ let length = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2);
       if (this.mode === "edit") {
         if (this.getPointPositon(mouse) || this.getEdgeAtPosition(mouse))
           return true;
+      }else if(this.mode === "scale"){
+
       } else {
         const localX = dx * cos - dy * sin;
         const localY = dx * sin + dy * cos;
@@ -538,6 +602,8 @@ let length = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2);
     </div>
     <button class="convert">Convert</button>
     <button class="normal">Normal</button>
+    <button class="scale">Scale</button>
+    
 
   `;
 
@@ -550,6 +616,10 @@ let length = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2);
       this.mode = this.mode === "normal" ? "edit" : "normal";
       draw();
     });
+    document.querySelector(".scale").addEventListener("click",()=>{
+      this.mode = "scale"
+      draw()
+    })
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
         "input",

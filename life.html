@@ -1,46 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Radial Gradient with 3 Colors</title>
+  <meta charset="UTF-8">
+  <title>Scale Shape from Points</title>
   <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background: #eee;
-    }
     canvas {
-      border: 1px solid #333;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
-  <canvas id="myCanvas" width="400" height="400"></canvas>
+  <canvas id="myCanvas" width="800" height="600"></canvas>
+
   <script>
-    const canvas = document.getElementById('myCanvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById("myCanvas");
+    const ctx = canvas.getContext("2d");
 
-    // Define center and radius for radial gradient
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const innerRadius = 0;
-    const outerRadius = 150;
+    // Translate canvas origin to center
+    ctx.translate(canvas.width / 2, canvas.height / 2);
 
-    // Create radial gradient: from inner circle (centerX, centerY, innerRadius)
-    // to outer circle (centerX, centerY, outerRadius)
-    const grad = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, outerRadius);
+    // Original shape points
+    const originalPoints = [
+      { points: { x: -75, y: -50 } },
+      { points: { x: 72.94817032704938, y: 105.18801741748516 } },
+      { points: { x: 224.83016256500548, y: -16.097172493521498 } },
+      { points: { x: 408.74566698060414, y: -21.135585717182124 } },
+      { points: { x: 260.906254934257, y: 124.16094991793841 } },
+      { points: { x: 13.961324625851262, y: 226.01564018352968 } },
+      { points: { x: -111.01080609702615, y: 218.0270370254441 } },
+      { points: { x: -75, y: 50 } }
+    ];
 
-    // Add 3 color stops
-    grad.addColorStop(0, 'red');       // center: red
-    grad.addColorStop(0.5, 'yellow');  // middle: yellow
-    grad.addColorStop(1, 'blue');      // edge: blue
+    // Deep copy of points to preserve original
+    function clonePoints(points) {
+      return points.map(p => ({
+        points: { x: p.points.x, y: p.points.y }
+      }));
+    }
 
-    // Fill a rectangle with the radial gradient
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Scale shape based on its bounding box center
+    function scalePoints(points, scale) {
+      const allX = points.map(p => p.points.x);
+      const allY = points.map(p => p.points.y);
+
+      const minX = Math.min(...allX);
+      const maxX = Math.max(...allX);
+      const minY = Math.min(...allY);
+      const maxY = Math.max(...allY);
+
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      return points.map(p => ({
+        points: {
+          x: centerX + (p.points.x - centerX) * scale,
+          y: centerY + (p.points.y - centerY) * scale
+        }
+      }));
+    }
+
+    // Draw shape from scaled points
+    function drawShape(points) {
+      if (points.length < 2) return;
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].points.x, points[0].points.y);
+
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].points.x, points[i].points.y);
+      }
+
+      ctx.closePath();
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw small red dots at each point
+      points.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.points.x, p.points.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = "red";
+        ctx.fill();
+      });
+    }
+
+    // Example: draw scaled versions
+    const shape1x = clonePoints(originalPoints);      // original
+    const shape1_5x = scalePoints(clonePoints(originalPoints), 1.5); // 1.5x bigger
+    const shape0_5x = scalePoints(clonePoints(originalPoints), 0.5); // 0.5x smaller
+
+    // Offset each shape so you can see them separately
+    function offsetPoints(points, dx, dy) {
+      return points.map(p => ({
+        points: {
+          x: p.points.x + dx,
+          y: p.points.y + dy
+        }
+      }));
+    }
+
+    // Draw all three for comparison
+    drawShape(offsetPoints(shape0_5x, -300, 0)); // small (left)
+    drawShape(shape1x);                         // original (center)
+    drawShape(offsetPoints(shape1_5x, 300, 0)); // big (right)
+
   </script>
 </body>
 </html>
