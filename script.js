@@ -377,7 +377,17 @@ const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, rad
         if (this.getPointPositon(mouse) || this.getEdgeAtPosition(mouse))
           return true;
       }else if(this.mode === "scale"){
-
+                const localX = dx * cos - dy * sin;
+        const localY = dx * sin + dy * cos;
+                      const xs = this.points.map(p => p.points.x);
+  const ys = this.points.map(p => p.points.y);
+           const minX = Math.min(...xs);
+   const minY = Math.min(...ys);
+   const maxX = Math.max(...xs);
+   const maxY = Math.max(...ys);  
+        if(localX > minX && localX < maxX && localY > minY && localY < maxY) this.selectedArea = "scale"
+          
+        return true
       } else {
         const localX = dx * cos - dy * sin;
         const localY = dx * sin + dy * cos;
@@ -535,8 +545,97 @@ const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, rad
           this.x += mouse.x - lastMouseX;
           this.y += mouse.y - lastMouseY;
         }
+if (this.selectedArea === "scale") {
+  const xs = this.points.map(p => p.points.x);
+  const ys = this.points.map(p => p.points.y);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const maxX = Math.max(...xs);
+  const maxY = Math.max(...ys);
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const originalWidth = maxX - minX;
+  const originalHeight = maxY - minY;
+  const lastWidth = lastMouseX - centerX;
+  const lastHeight = lastMouseY - centerY;
+  const currentWidth = mouse.x - centerX;
+  const currentHeight = mouse.y - centerY;
+  const scaleX = currentWidth / lastWidth;
+  const scaleY = currentHeight / lastHeight;
+  this.points.forEach(p => {
+    p.points.x = centerX + (p.points.x - centerX) * scaleX;
+    p.points.y = centerY + (p.points.y - centerY) * scaleY;
+    p.controls[0].x = centerX + (p.controls[0].x - centerX) * scaleX;
+    p.controls[0].y = centerY + (p.controls[0].y - centerY) * scaleY;
+    p.controls[1].x = centerX + (p.controls[1].x - centerX) * scaleX;
+    p.controls[1].y = centerY + (p.controls[1].y - centerY) * scaleY;
+  });
+}
+
       }
     }
+     if(this.roundedOrbeveled === "shaped"){
+      const xs = this.points.map(p => p.points.x);
+  const ys = this.points.map(p => p.points.y);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const maxX = Math.max(...xs);
+  const maxY = Math.max(...ys);
+  this.width = maxX - minX;
+  this.height = maxY - minY;
+  this.x = minX
+  this.y = minY
+  }else{    this.points = [
+      {
+        points: { x: -this.width / 2, y: -this.height / 2 },
+        edgeModes: false,
+        controls: [
+          { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
+          { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
+        ],
+      },
+      {
+        points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
+        edgeModes: false,
+        controls: [
+          {
+            x: -this.width / 2 + this.width,
+            y: -this.height / 2 + this.height * 0.25,
+          },
+          {
+            x: -this.width / 2 + this.width,
+            y: -this.height / 2 + this.height * 0.75,
+          },
+        ],
+      },
+      {
+        points: {
+          x: -this.width / 2 + this.width,
+          y: -this.height / 2 + this.height,
+        },
+        edgeModes: false,
+        controls: [
+          {
+            x: -this.width / 2 + this.width * 0.75,
+            y: -this.height / 2 + this.height,
+          },
+          {
+            x: -this.width / 2 + this.width * 0.25,
+            y: -this.height / 2 + this.height,
+          },
+        ],
+      },
+      {
+        points: { x: -this.width / 2, y: -this.height / 2 + this.height },
+        edgeModes: false,
+        controls: [
+          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
+          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
+        ],
+      },
+    ];
+
+  }
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
