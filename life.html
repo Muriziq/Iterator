@@ -1,109 +1,275 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Scale Shape from Points</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
   <style>
-    canvas {
-      border: 1px solid #ccc;
+    body{
+      width: 100vw;
+      height: 100vh;
+    }
+    canvas{
+      width: 80%;
+      height: 80%;
+      margin: auto;
+      background-color: aqua;
     }
   </style>
 </head>
 <body>
-  <canvas id="myCanvas" width="800" height="600"></canvas>
+  <canvas></canvas>
+</body>
+<script>
+  const canvas = document.querySelector("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = canvas.getBoundingClientRect().width;
+canvas.height = canvas.getBoundingClientRect().height;
 
-  <script>
-    const canvas = document.getElementById("myCanvas");
-    const ctx = canvas.getContext("2d");
-
-    // Translate canvas origin to center
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-
-    // Original shape points
-    const originalPoints = [
-      { points: { x: -75, y: -50 } },
-      { points: { x: 72.94817032704938, y: 105.18801741748516 } },
-      { points: { x: 224.83016256500548, y: -16.097172493521498 } },
-      { points: { x: 408.74566698060414, y: -21.135585717182124 } },
-      { points: { x: 260.906254934257, y: 124.16094991793841 } },
-      { points: { x: 13.961324625851262, y: 226.01564018352968 } },
-      { points: { x: -111.01080609702615, y: 218.0270370254441 } },
-      { points: { x: -75, y: 50 } }
-    ];
-
-    // Deep copy of points to preserve original
-    function clonePoints(points) {
-      return points.map(p => ({
-        points: { x: p.points.x, y: p.points.y }
-      }));
+const rect = [
+    {
+        "x": 100,
+        "y": 100,
+        "width": 150,
+        "height": 100,
+    },
+    {
+        "x": 108.99213358182769,
+        "y": 126.97639896964569,
+        "width": 272.6774413867232,
+        "height": 112.0783430386114,
+    },
+    [
+    {
+        "points": {
+            "x": -75,
+            "y": -50
+        },
+        "edgeModes": false,
+        "controls": [
+            {
+                "x": -37.5,
+                "y": -50
+            },
+            {
+                "x": 37.5,
+                "y": -50
+            }
+        ]
+    },
+    {
+        "points": {
+            "x": 75,
+            "y": -50
+        },
+        "edgeModes": false,
+        "controls": [
+            {
+                "x": 75,
+                "y": -25
+            },
+            {
+                "x": 75,
+                "y": 25
+            }
+        ]
+    },
+    {
+        "points": {
+            "x": 163.70715896648534,
+            "y": 145.00579172307778
+        },
+        "edgeModes": false,
+        "controls": [
+            {
+                "x": 130.41871367888595,
+                "y": 145.91608522540693
+            },
+            {
+                "x": 55.41871367888595,
+                "y": 145.91608522540693
+            }
+        ]
+    },
+    {
+        "points": {
+            "x": -75,
+            "y": 50
+        },
+        "edgeModes": false,
+        "controls": [
+            {
+                "x": -75,
+                "y": 25
+            },
+            {
+                "x": -75,
+                "y": -25
+            }
+        ]
     }
+]
+]
 
-    // Scale shape based on its bounding box center
-    function scalePoints(points, scale) {
-      const allX = points.map(p => p.points.x);
-      const allY = points.map(p => p.points.y);
+ctx.fillStyle = "#ff0000";
+ctx.fillRect(rect[0].x, rect[0].y, rect[0].width, rect[0].height);
 
-      const minX = Math.min(...allX);
-      const maxX = Math.max(...allX);
-      const minY = Math.min(...allY);
-      const maxY = Math.max(...allY);
+ctx.beginPath();
+ctx.rect(rect[0].x, rect[0].y, rect[0].width, rect[0].height);
+ctx.closePath()
+ctx.clip();
 
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
+// Draw second rectangle (clipped)
+ctx.beginPath()
+ctx.fillStyle = "#00ff00";
+ctx.fillRect(rect[1].x, rect[1].y, rect[1].width, rect[1].height);
+ctx.closePath()
 
-      return points.map(p => ({
-        points: {
-          x: centerX + (p.points.x - centerX) * scale,
-          y: centerY + (p.points.y - centerY) * scale
-        }
-      }));
+</script>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clip to Polygon Demo</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; overflow: hidden;
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh;
+    background: #eee;
+  }
+  canvas {
+    background: #ccc;
+    border: 1px solid #333;
+  }
+</style>
+</head>
+<body>
+<canvas id="c" width="600" height="400"></canvas>
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+// The points you gave
+const points = [
+  {
+    points: { x: -75, y: -50 },
+    edgeModes: false,
+    controls: [
+      { x: -37.5, y: -50 },
+      { x: 37.5, y: -50 },
+    ],
+  },
+  {
+    points: { x: 75, y: -50 },
+    edgeModes: false,
+    controls: [
+      { x: 75, y: -25 },
+      { x: 75, y: 25 },
+    ],
+  },
+  {
+    points: { x: 163.70715896648534, y: 145.00579172307778 },
+    edgeModes: false,
+    controls: [
+      { x: 130.41871367888595, y: 145.91608522540693 },
+      { x: 55.41871367888595, y: 145.91608522540693 },
+    ],
+  },
+  {
+    points: { x: -75, y: 50 },
+    edgeModes: false,
+    controls: [
+      { x: -75, y: 25 },
+      { x: -75, y: -25 },
+    ],
+  },
+];
+
+// Center to translate canvas drawing (so polygon is centered)
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+
+// Load an image to clip inside polygon (optional)
+const img = new Image();
+img.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80";
+img.crossOrigin = "anonymous";
+
+img.onload = () => {
+  draw();
+};
+
+img.onerror = () => {
+  draw(); // fallback if image fails
+};
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.translate(centerX, centerY);
+
+  // Build the polygon path from points
+  ctx.beginPath();
+  ctx.moveTo(points[0].points.x, points[0].points.y);
+  for (let i = 0; i < points.length; i++) {
+    const next = (i + 1) % points.length;
+    if (points[i].edgeModes) {
+      const cp1 = points[i].controls[0];
+      const cp2 = points[i].controls[1];
+      const pNext = points[next].points;
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
+    } else {
+      ctx.lineTo(points[next].points.x, points[next].points.y);
     }
+  }
+  ctx.closePath();
 
-    // Draw shape from scaled points
-    function drawShape(points) {
-      if (points.length < 2) return;
+  // Clip to polygon
+  ctx.clip();
 
-      ctx.beginPath();
-      ctx.moveTo(points[0].points.x, points[0].points.y);
+  // Draw clipped image or fallback rect inside polygon
+  if (img.complete && img.naturalWidth !== 0) {
+    // Draw image centered, scale to roughly cover polygon bounds
+    const scale = 1.2;
+    const imgX = -img.width / 2 * scale;
+    const imgY = -img.height / 2 * scale;
+    ctx.drawImage(img, imgX, imgY, img.width * scale, img.height * scale);
+  } else {
+    // fallback: draw colored rect inside polygon
+    ctx.fillStyle = "orange";
+    ctx.fillRect(-150, -100, 300, 200);
+  }
 
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].points.x, points[i].points.y);
-      }
+  ctx.restore();
 
-      ctx.closePath();
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Draw small red dots at each point
-      points.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.points.x, p.points.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "red";
-        ctx.fill();
-      });
+  // Draw polygon outline for reference
+  ctx.save();
+  ctx.translate(centerX, centerY);
+  ctx.beginPath();
+  ctx.moveTo(points[0].points.x, points[0].points.y);
+  for (let i = 0; i < points.length; i++) {
+    const next = (i + 1) % points.length;
+    if (points[i].edgeModes) {
+      const cp1 = points[i].controls[0];
+      const cp2 = points[i].controls[1];
+      const pNext = points[next].points;
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
+    } else {
+      ctx.lineTo(points[next].points.x, points[next].points.y);
     }
-
-    // Example: draw scaled versions
-    const shape1x = clonePoints(originalPoints);      // original
-    const shape1_5x = scalePoints(clonePoints(originalPoints), 1.5); // 1.5x bigger
-    const shape0_5x = scalePoints(clonePoints(originalPoints), 0.5); // 0.5x smaller
-
-    // Offset each shape so you can see them separately
-    function offsetPoints(points, dx, dy) {
-      return points.map(p => ({
-        points: {
-          x: p.points.x + dx,
-          y: p.points.y + dy
-        }
-      }));
-    }
-
-    // Draw all three for comparison
-    drawShape(offsetPoints(shape0_5x, -300, 0)); // small (left)
-    drawShape(shape1x);                         // original (center)
-    drawShape(offsetPoints(shape1_5x, 300, 0)); // big (right)
-
-  </script>
+  }
+  ctx.closePath();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "black";
+  ctx.stroke();
+  ctx.restore();
+}
+</script>
 </body>
 </html>
