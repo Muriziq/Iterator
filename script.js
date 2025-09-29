@@ -273,6 +273,38 @@ class Rectangle {
       ctx.closePath();
     }
     ctx.restore();
+    if(this.clips.length > 0){
+    ctx.save()
+        ctx.translate(centerX, centerY);
+    ctx.rotate(this.angle);
+
+       if (this.roundedOrbeveled === "rounded") {
+      this.drawRoundedRect(
+        -this.width / 2,
+        -this.height / 2,
+        this.width,
+        this.height,
+        this.cornerRadius
+      );
+    } else if (this.roundedOrbeveled === "beveled") {
+      this.drawBeveledRect(
+        -this.width / 2,
+        -this.height / 2,
+        this.width,
+        this.height,
+        this.cornerRadius
+      );
+    }
+    else if (this.roundedOrbeveled === "shaped") this.createPath();
+
+         ctx.clip()
+             ctx.translate(-centerX, -centerY);
+         
+    this.clips.forEach(clip=> clip.addObject())
+        ctx.restore()
+    }
+
+    
   }
   createPath() {
     ctx.beginPath();
