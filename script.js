@@ -19,6 +19,7 @@ let cloneText = null;
 let renderPageRow = 1;
 let renderPageColumn = 1;
 let renderPageSize = "auto";
+let pen = null
 const measurementArr = [
   { width: 2244, height: 3182 },
   { width: 1588, height: 2244 },
@@ -181,7 +182,7 @@ class Rectangle {
           ctx.fillStyle =
             i === this.selectedPointIndex ? "#0000ff" : "#0000ff88";
           ctx.fill();
-          ctx.strokeStyle = "#000";
+          ctx.strokeStyle = "#000000";
           ctx.stroke();
         });
 
@@ -273,7 +274,7 @@ class Rectangle {
       ctx.closePath();
     }
     ctx.restore();
-    if(this.clips.length > 0){
+    if(this.clips.length > 0 && this.clipped !== "editclip"){
     ctx.save()
         ctx.translate(centerX, centerY);
     ctx.rotate(this.angle);
@@ -569,6 +570,9 @@ class Rectangle {
         if (this.selectedArea === "Selected") {
           this.x += mouse.x - lastMouseX;
           this.y += mouse.y - lastMouseY;
+          if(this.clips.length > 0){
+            this.clips.forEach(clip => clip.moveClip(mouse.x - lastMouseX,mouse.y - lastMouseY))
+          }
         }
         if (this.selectedArea === "scale") {
           const xs = this.points.map((p) => p.points.x);
@@ -662,10 +666,26 @@ class Rectangle {
     <button class="convert">Convert</button>
     <button class="normal">Normal</button>
     <button class="scale">Scale</button>
+    <button class="editclip">Edit Clip</button>
     
 
   `;
+    if(this.clips.length > 0){
+      document.querySelector(".editclip").addEventListener("click",()=>{
+      this.clipped = this.clipped === "editclip" ? "clipper" : "editclip"
+      if(this.clipped === "editclip"){
+        this.clips.forEach(clip => objects.push(clip))
+        this.color =  this.color.map(c=> c + "80")
+      }else{
+        this.clips.forEach(clip =>{
+          let index = objects.indexOf(clip)
+          objects.splice(index,1)
+          this.color = this.color.map(c=> c.slice(0,-2))
+        })
+      }
+      })
 
+    }
     document.querySelector(".convert").addEventListener("click", () => {
       this.points[this.selectedPointIndex].edgeModes =
         !this.points[this.selectedPointIndex].edgeModes;
@@ -1619,94 +1639,41 @@ class Polygon {
 }
 class Line {
   constructor() {
-    this.startingPointX = 100;
-    this.startingPointY = 100;
-    this.lengthX = 200;
-    this.lengthY = 0;
-    this.strokeStyle = "#FF0000";
-    this.lineWidth = 2;
-    this.angle = 0;
-    this.isDoubleClicked = false;
-    this.selectedArea;
+    this.points = []
+    this.color = "#ff0000"
+    this.outlineColor = "#000000"
+    
   }
   addObject() {
-    ctx.save();
+    if(this.points.length > 0){
     ctx.beginPath();
-    ctx.moveTo(this.startingPointX, this.startingPointY);
-    ctx.lineTo(
-      this.startingPointX + this.lengthX,
-      this.startingPointY + this.lengthY
-    );
-    ctx.strokeStyle = this.strokeStyle;
-    ctx.lineWidth = this.lineWidth;
-    ctx.stroke();
-    ctx.closePath();
-    ctx.restore();
-  }
-  isMouseNearLine(mouse, threshold = 5) {
-    const x1 = this.startingPointX;
-    const y1 = this.startingPointY;
-    const x2 = this.startingPointX + this.lengthX;
-    const y2 = this.startingPointY + this.lengthY;
-    const x0 = mouse.x;
-    const y0 = mouse.y;
+    ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
 
-    // Compute distance from point to line segment
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const lengthSquared = dx * dx + dy * dy;
+    for (let i = 0; i < this.points.length; i++) {
 
-    if (lengthSquared === 0) return false; // line is a point
-
-    let t = ((x0 - x1) * dx + (y0 - y1) * dy) / lengthSquared;
-    t = Math.max(0, Math.min(1, t));
-
-    const closestX = x1 + t * dx;
-    const closestY = y1 + t * dy;
-
-    const dist = Math.hypot(x0 - closestX, y0 - closestY);
-    return dist <= threshold;
-  }
-
-  whatSelected(mouse) {
-    const edgeThreshold = 10;
-    const nearLeft = Math.abs(mouse.x - this.startingPointX) < edgeThreshold;
-    const nearRight =
-      Math.abs(mouse.x - (this.startingPointX + this.lengthX)) < edgeThreshold;
-    const nearTop = Math.abs(mouse.y - this.startingPointY) < edgeThreshold;
-    const nearBottom =
-      Math.abs(mouse.y - (this.startingPointY + this.lengthY)) < edgeThreshold;
-    if (nearLeft && nearTop) this.selectedArea = "TopLeft";
-    else if (nearRight && nearBottom) this.selectedArea = "BottomRight";
-    else if (this.isMouseNearLine(mouse, 10)) {
-      this.selectedArea = "Selected";
-    } else {
-      this.selectedArea = null;
-    }
-    return this.selectedArea != null;
-  }
-  formatSelected(mouse) {
-    if (this.isDoubleClicked) {
-      this.angle =
-        Math.atan2(
-          mouse.y - this.startingPointY,
-          mouse.x - this.startingPointX
-        ) -
-        Math.PI / 2;
-    } else {
-      if (this.selectedArea === "TopLeft") {
-        this.startingPointX = mouse.x;
-        this.startingPointY = mouse.y;
-      } else if (this.selectedArea === "BottomRight") {
-        this.lengthX = mouse.x - this.startingPointX;
-        this.lengthY = mouse.y - this.startingPointY;
+      if (this.points[i].edgeModes) {
+        const cp1 = this.points[i].controls[0];
+        const cp2 = this.points[i].controls[1];
+        const pNext = this.points[i].points;
+        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, this.points[i].x, this.points[i].y);
       } else {
-        this.startingPointX += mouse.x - lastMouseX;
-        this.startingPointY += mouse.y - lastMouseY;
+        ctx.lineTo(this.points[i].points.x, this.points[i].points.y);
       }
     }
+    ctx.stroke()
+    ctx.closePath();
+    }
+
   }
-  formatProperties() {}
+  drawPen(mouse){
+    this.points.push({points: {x:mouse.x,y:mouse.y},edgeModes:false,controls:[null,null]})
+    console.log(this.points)
+
+  }
+
+  formatProperties() {
+
+  }
 }
 
 class TextBox {
@@ -2183,6 +2150,11 @@ class Images {
     }
     ctx.restore();
   }
+  moveClip(x,y){
+    this.x += x
+    this.y += y
+
+  }
   whatSelected(mouse) {
     const threshold = 10;
     const centerX = this.x + this.width / 2;
@@ -2402,6 +2374,20 @@ class Images {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+   whereToSnap() {
+    return {
+      x: [this.x, this.x + this.width / 2, this.x + this.width],
+      y: [this.y, this.y + this.height / 2, this.y + this.height],
+      pos: { x: this.x, y: this.y, width: this.width, height: this.height },
+    };
+  }
+    changeLocation(value, type) {
+    if (type === "x") {
+      this.x = value;
+    } else {
+      this.y = value;
+    }
   }
 }
 document.querySelector(".addRectangle").addEventListener("click", addRectangle);
@@ -2756,6 +2742,7 @@ function addPolygon() {
 function addLine() {
   const line = new Line();
   objects.push(line);
+  pen = line
   draw();
 }
 function addRectangle() {
@@ -2916,7 +2903,10 @@ canvas.addEventListener("mousedown", (event) => {
 
   selectedObj = null;
   isDraggingObject = false;
-  if (clipped !== null) {
+  if(pen !== null){
+    pen.drawPen(pos)
+  }
+  else if (clipped !== null) {
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].whatSelected(pos)) {
         objects[i].clips.push(clipped);
@@ -2924,6 +2914,13 @@ canvas.addEventListener("mousedown", (event) => {
         objects[i].clipped = "clipper";
         let index = objects.indexOf(clipped);
         objects.splice(index, 1);
+
+        const objectsCoordinate = objects[i].whereToSnap().pos
+        const clippedCoordinate = clipped.whereToSnap().pos
+        if(clippedCoordinate.x > (objectsCoordinate.x + objectsCoordinate.width)){
+          clipped.changeLocation(objectsCoordinate.x + (objectsCoordinate.width - clippedCoordinate.width) / 2,"x")
+          clipped.changeLocation(objectsCoordinate.y + (objectsCoordinate.height - clippedCoordinate.height) / 2,"y")
+        }
         alert("clipped");
       }
     }
