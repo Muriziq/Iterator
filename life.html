@@ -1,148 +1,89 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Clip to Polygon Demo</title>
-<style>
-  body, html {
-    margin: 0; padding: 0; overflow: hidden;
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh;
-    background: #eee;
-  }
-  canvas {
-    background: #ccc;
-    border: 1px solid #333;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Rounded Polygon with Canvas</title>
+  <style>
+    body {
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      background: white;
+    }
+  </style>
 </head>
 <body>
-<canvas id="c" width="600" height="400"></canvas>
-<script>
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+  <canvas id="canvas" width="600" height="400"></canvas>
 
-// The points you gave
-const points = [
-  {
-    points: { x: -75, y: -50 },
-    edgeModes: false,
-    controls: [
-      { x: -37.5, y: -50 },
-      { x: 37.5, y: -50 },
-    ],
-  },
-  {
-    points: { x: 75, y: -50 },
-    edgeModes: false,
-    controls: [
-      { x: 75, y: -25 },
-      { x: 75, y: 25 },
-    ],
-  },
-  {
-    points: { x: 163.70715896648534, y: 145.00579172307778 },
-    edgeModes: false,
-    controls: [
-      { x: 130.41871367888595, y: 145.91608522540693 },
-      { x: 55.41871367888595, y: 145.91608522540693 },
-    ],
-  },
-  {
-    points: { x: -75, y: 50 },
-    edgeModes: false,
-    controls: [
-      { x: -75, y: 25 },
-      { x: -75, y: -25 },
-    ],
-  },
-];
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-// Center to translate canvas drawing (so polygon is centered)
-const centerX = canvas.width / 2;
-const centerY = canvas.height / 2;
+    // Define the points of the irregular shape
+    const points = [
+      { x: 100, y: 100 },
+      { x: 250, y: 80 },
+      { x: 350, y: 200 },
+      { x: 280, y: 300 },
+      { x: 150, y: 250 },
+    ];
 
-// Load an image to clip inside polygon (optional)
-const img = new Image();
-img.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80";
-img.crossOrigin = "anonymous";
+    const cornerRadius = 25; // adjust for more/less rounding
 
-img.onload = () => {
-  draw();
-};
+    function drawRoundedShape(ctx, points, radius, closed = true) {
+      if (points.length < 2) return;
 
-img.onerror = () => {
-  draw(); // fallback if image fails
-};
+      ctx.beginPath();
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < points.length; i++) {
+        const prev = points[(i - 1 + points.length) % points.length];
+        const curr = points[i];
+        const next = points[(i + 1) % points.length];
 
-  ctx.save();
-  ctx.translate(centerX, centerY);
+        const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+        const len1 = Math.hypot(v1.x, v1.y);
+        v1.x /= len1;
+        v1.y /= len1;
+        const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+        const len2 = Math.hypot(v2.x, v2.y);
+        v2.x /= len2;
+        v2.y /= len2;
+        const p1 = {
+          x: curr.x - v1.x * Math.min(radius, len1 / 2),
+          y: curr.y - v1.y * Math.min(radius, len1 / 2),
+        };
+        const p2 = {
+          x: curr.x + v2.x * Math.min(radius, len2 / 2),
+          y: curr.y + v2.y * Math.min(radius, len2 / 2),
+        };
 
-  // Build the polygon path from points
-  ctx.beginPath();
-  ctx.moveTo(points[0].points.x, points[0].points.y);
-  for (let i = 0; i < points.length; i++) {
-    const next = (i + 1) % points.length;
-    if (points[i].edgeModes) {
-      const cp1 = points[i].controls[0];
-      const cp2 = points[i].controls[1];
-      const pNext = points[next].points;
-      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
-    } else {
-      ctx.lineTo(points[next].points.x, points[next].points.y);
+        if (i === 0) {
+          ctx.moveTo(p1.x, p1.y);
+        } else {
+          ctx.lineTo(p1.x, p1.y);
+        }
+
+        ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+      }
+
+      if (closed) {
+        ctx.closePath();
+      }
+
+      // Style and draw the shape
+      ctx.fillStyle = '#4A90E2';
+      ctx.strokeStyle = '#2C3E50';
+      ctx.lineWidth = 3;
+      ctx.fill();
+      ctx.stroke();
     }
-  }
-  ctx.closePath();
-    ctx.clip();
-  ctx.restore()
 
-  // Clip to polygon
-
-  ctx.save()
-    ctx.translate(centerX, centerY);
-
-  // Draw clipped image or fallback rect inside polygon
-  if (img.complete && img.naturalWidth !== 0) {
-    // Draw image centered, scale to roughly cover polygon bounds
-    const scale = 1.2;
-    const imgX = -img.width / 2 * scale;
-    const imgY = -img.height / 2 * scale;
-    ctx.drawImage(img, imgX, imgY, img.width * scale, img.height * scale);
-  } else {
-    // fallback: draw colored rect inside polygon
-    ctx.fillStyle = "orange";
-    ctx.fillRect(-150, -100, 300, 200);
-  }
-
-  ctx.restore();
-
-  // Draw polygon outline for reference
-  ctx.save();
-  ctx.translate(centerX, centerY);
-  ctx.beginPath();
-  ctx.moveTo(points[0].points.x, points[0].points.y);
-  for (let i = 0; i < points.length; i++) {
-    const next = (i + 1) % points.length;
-    if (points[i].edgeModes) {
-      const cp1 = points[i].controls[0];
-      const cp2 = points[i].controls[1];
-      const pNext = points[next].points;
-      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
-    } else {
-      ctx.lineTo(points[next].points.x, points[next].points.y);
-    }
-  }
-  ctx.closePath();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "black";
-  ctx.stroke();
-  ctx.restore();
-}
-</script>
+    drawRoundedShape(ctx, points, cornerRadius);
+  </script>
 </body>
 </html>

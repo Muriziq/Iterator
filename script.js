@@ -19,7 +19,7 @@ let cloneText = null;
 let renderPageRow = 1;
 let renderPageColumn = 1;
 let renderPageSize = "auto";
-let pen = null
+let pen = null;
 const measurementArr = [
   { width: 2244, height: 3182 },
   { width: 1588, height: 2244 },
@@ -128,9 +128,6 @@ class Rectangle {
         ],
       },
     ];
-    this.selectedPointIndex = null;
-    this.selectedControl = null;
-    this.shapeType;
     this.selectedLineIndex = null;
     this.mode = "edit";
     this.colorFill = "linear";
@@ -144,28 +141,10 @@ class Rectangle {
     ctx.rotate(this.angle);
 
     ctx.beginPath();
+    this.createPath();
     ctx.fillStyle = this.colorType();
-    if (this.roundedOrbeveled === "rounded") {
-      this.drawRoundedRect(
-        -this.width / 2,
-        -this.height / 2,
-        this.width,
-        this.height,
-        this.cornerRadius
-      );
-    } else if (this.roundedOrbeveled === "beveled") {
-      this.drawBeveledRect(
-        -this.width / 2,
-        -this.height / 2,
-        this.width,
-        this.height,
-        this.cornerRadius
-      );
-    } else if (this.roundedOrbeveled === "shaped") {
-      this.createPath();
-
-      ctx.fillStyle = this.colorType();
-      ctx.fill();
+    ctx.fill();
+    if (this.roundedOrbeveled === "shaped") {
       if (this.outline) {
         ctx.save();
         ctx.lineWidth = this.outlineThickness;
@@ -211,7 +190,6 @@ class Rectangle {
         });
       }
     }
-    ctx.fill();
     ctx.closePath();
     if (
       (this.outline && this.roundedOrbeveled !== "shaped") ||
@@ -274,12 +252,44 @@ class Rectangle {
       ctx.closePath();
     }
     ctx.restore();
-    if(this.clips.length > 0 && this.clipped !== "editclip"){
-    ctx.save()
-        ctx.translate(centerX, centerY);
-    ctx.rotate(this.angle);
+    if (this.clips.length > 0 && this.clipped !== "editclip") {
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(this.angle);
 
-       if (this.roundedOrbeveled === "rounded") {
+      this.createPath();
+      ctx.clip();
+      ctx.translate(-centerX, -centerY);
+
+      this.clips.forEach((clip) => clip.addObject());
+      ctx.restore();
+    }
+  }
+  createPath() {
+    if (this.roundedOrbeveled === "shaped") {
+      if(this.mode === "shapeRounded") drawRoundedShape(this.points,this.cornerRadius);
+      else{
+      ctx.beginPath();
+      ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
+
+      for (let i = 0; i < this.points.length; i++) {
+        const next = (i + 1) % this.points.length;
+
+        if (this.points[i].edgeModes) {
+          const cp1 = this.points[i].controls[0];
+          const cp2 = this.points[i].controls[1];
+          const pNext = this.points[next].points;
+          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
+        } else {
+          ctx.lineTo(this.points[next].points.x, this.points[next].points.y);
+        }
+      }
+      ctx.closePath();
+      }
+
+
+    } 
+    else if (this.roundedOrbeveled === "rounded") {
       this.drawRoundedRect(
         -this.width / 2,
         -this.height / 2,
@@ -296,35 +306,6 @@ class Rectangle {
         this.cornerRadius
       );
     }
-    else if (this.roundedOrbeveled === "shaped") this.createPath();
-
-         ctx.clip()
-             ctx.translate(-centerX, -centerY);
-         
-    this.clips.forEach(clip=> clip.addObject())
-        ctx.restore()
-    }
-
-    
-  }
-  createPath() {
-    ctx.beginPath();
-    ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
-
-    for (let i = 0; i < this.points.length; i++) {
-      const next = (i + 1) % this.points.length;
-
-      if (this.points[i].edgeModes) {
-        const cp1 = this.points[i].controls[0];
-        const cp2 = this.points[i].controls[1];
-        const pNext = this.points[next].points;
-        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
-      } else {
-        ctx.lineTo(this.points[next].points.x, this.points[next].points.y);
-      }
-    }
-
-    ctx.closePath();
   }
   colorType() {
     if (this.colorFill === "fill") {
@@ -403,28 +384,40 @@ class Rectangle {
     const sin = Math.sin(-this.angle);
 
     if (this.roundedOrbeveled === "shaped") {
-      if (this.mode === "edit") {
-        if (this.getPointPositon(mouse) || this.getEdgeAtPosition(mouse))
-          return true;
+      const localMouseX = dx * cos - dy * sin;
+      const localMouseY = dx * sin + dy * cos;
+      if (
+        this.mode === "edit" &&
+        (getPointPositon(localMouseX, localMouseY, this.points) ||
+          getEdgeAtPosition(localMouseX, localMouseY, this.points))
+      ) {
+        const answer =
+          getPointPositon(localMouseX, localMouseY, this.points) === false
+            ? getEdgeAtPosition(localMouseX, localMouseY, this.points)
+            : getPointPositon(localMouseX, localMouseY, this.points);
+        this.selectedArea = answer.type;
+        this.selectedLineIndex = answer.value;
+        return true;
       } else if (this.mode === "scale") {
-        const localX = dx * cos - dy * sin;
-        const localY = dx * sin + dy * cos;
         const xs = this.points.map((p) => p.points.x);
         const ys = this.points.map((p) => p.points.y);
         const minX = Math.min(...xs);
         const minY = Math.min(...ys);
         const maxX = Math.max(...xs);
         const maxY = Math.max(...ys);
-        if (localX > minX && localX < maxX && localY > minY && localY < maxY)
+        if (
+          localMouseX > minX &&
+          localMouseX < maxX &&
+          localMouseY > minY &&
+          localMouseY < maxY
+        )
           this.selectedArea = "scale";
 
         return true;
       } else {
-        const localX = dx * cos - dy * sin;
-        const localY = dx * sin + dy * cos;
         this.createPath();
 
-        const isInside = ctx.isPointInPath(localX, localY);
+        const isInside = ctx.isPointInPath(localMouseX, localMouseY);
         ctx.restore();
 
         if (isInside) {
@@ -433,33 +426,17 @@ class Rectangle {
         return isInside;
       }
       return false;
-    } else {
-      const threshold = 10;
+    }  else {
       const localX = dx * cos - dy * sin + this.width / 2;
       const localY = dx * sin + dy * cos + this.height / 2;
-      const nearLeft = Math.abs(localX) < threshold;
-      const nearRight = Math.abs(localX - this.width) < threshold;
-      const nearTop = Math.abs(localY) < threshold;
-      const nearBottom = Math.abs(localY - this.height) < threshold;
 
-      if (nearLeft && nearTop) this.selectedArea = "TopLeft";
-      else if (nearRight && nearTop) this.selectedArea = "TopRight";
-      else if (nearLeft && nearBottom) this.selectedArea = "BottomLeft";
-      else if (nearRight && nearBottom) this.selectedArea = "BottomRight";
-      else if (nearLeft) this.selectedArea = "Left";
-      else if (nearRight) this.selectedArea = "Right";
-      else if (nearTop) this.selectedArea = "Top";
-      else if (nearBottom) this.selectedArea = "Bottom";
-      else if (
-        localX > 0 &&
-        localX < this.width &&
-        localY > 0 &&
-        localY < this.height
-      ) {
-        this.selectedArea = "Selected";
-      } else {
-        this.selectedArea = null;
-      }
+      this.selectedArea = getNormalPostion(
+        localX,
+        localY,
+        this.width,
+        this.height,
+        10
+      );
 
       return this.selectedArea !== null;
     }
@@ -477,11 +454,9 @@ class Rectangle {
     if (this.roundedOrbeveled === "shaped" && this.mode === "edit") {
       const deltaX = mouse.x - lastMouseX;
       const deltaY = mouse.y - lastMouseY;
-      const cos = Math.cos(-this.angle);
-      const sin = Math.sin(-this.angle);
       const localDeltaX = deltaX * cos - deltaY * sin;
       const localDeltaY = deltaX * sin + deltaY * cos;
-      if (this.shapeType === "line") {
+      if (this.selectedArea === "lineIndex") {
         const next = (this.selectedLineIndex + 1) % this.points.length;
         this.points[this.selectedLineIndex].points.x += localDeltaX;
         this.points[this.selectedLineIndex].points.y += localDeltaY;
@@ -495,21 +470,17 @@ class Rectangle {
         this.points[next].controls[0].y += localDeltaY;
         this.points[next].controls[1].x += localDeltaX;
         this.points[next].controls[1].y += localDeltaY;
-      } else {
-        if (this.selectedPointIndex !== null) {
-          this.points[this.selectedPointIndex].points.x = localMouseX;
-          this.points[this.selectedPointIndex].points.y = localMouseY;
-          this.points[this.selectedPointIndex].controls[0].x += localDeltaX;
-          this.points[this.selectedPointIndex].controls[0].y += localDeltaY;
-          this.points[this.selectedPointIndex].controls[1].x += localDeltaX;
-          this.points[this.selectedPointIndex].controls[1].y += localDeltaY;
-        }
-
-        if (this.selectedControl !== null) {
-          const { curveIndex, controlIndex } = this.selectedControl;
-          this.points[curveIndex].controls[controlIndex].x = localMouseX;
-          this.points[curveIndex].controls[controlIndex].y = localMouseY;
-        }
+      } else if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].points.x = localMouseX;
+        this.points[this.selectedLineIndex].points.y = localMouseY;
+        this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
+        this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
+        this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
+        this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
+      } else if (this.selectedArea === "curveIndex") {
+        const { curveIndex, controlIndex } = this.selectedLineIndex;
+        this.points[curveIndex].controls[controlIndex].x = localMouseX;
+        this.points[curveIndex].controls[controlIndex].y = localMouseY;
       }
     } else {
       if (this.isDoubleClicked) {
@@ -570,8 +541,10 @@ class Rectangle {
         if (this.selectedArea === "Selected") {
           this.x += mouse.x - lastMouseX;
           this.y += mouse.y - lastMouseY;
-          if(this.clips.length > 0){
-            this.clips.forEach(clip => clip.moveClip(mouse.x - lastMouseX,mouse.y - lastMouseY))
+          if (this.clips.length > 0) {
+            this.clips.forEach((clip) =>
+              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY)
+            );
           }
         }
         if (this.selectedArea === "scale") {
@@ -667,24 +640,34 @@ class Rectangle {
     <button class="normal">Normal</button>
     <button class="scale">Scale</button>
     <button class="editclip">Edit Clip</button>
+    <button class="shapeRounded">ShapeRounded</button>
     
 
   `;
-    if(this.clips.length > 0){
-      document.querySelector(".editclip").addEventListener("click",()=>{
-      this.clipped = this.clipped === "editclip" ? "clipper" : "editclip"
-      if(this.clipped === "editclip"){
-        this.clips.forEach(clip => objects.push(clip))
-        this.color =  this.color.map(c=> c + "80")
-      }else{
-        this.clips.forEach(clip =>{
-          let index = objects.indexOf(clip)
-          objects.splice(index,1)
-          this.color = this.color.map(c=> c.slice(0,-2))
-        })
+    document.querySelector(".shapeRounded").addEventListener("click", () => {
+      let agree = "every";
+      this.points.forEach((p) => {
+        if (p.edgeModes) agree = "none";
+      });
+      if (agree === "every" && this.points.length > 2) {
+        this.mode =
+          this.mode === "shapeRounded" ? "edit" : "shapeRounded";
       }
-      })
-
+    });
+    if (this.clips.length > 0) {
+      document.querySelector(".editclip").addEventListener("click", () => {
+        this.clipped = this.clipped === "editclip" ? "clipper" : "editclip";
+        if (this.clipped === "editclip") {
+          this.clips.forEach((clip) => objects.push(clip));
+          this.color = this.color.map((c) => c + "80");
+        } else {
+          this.clips.forEach((clip) => {
+            let index = objects.indexOf(clip);
+            objects.splice(index, 1);
+            this.color = this.color.map((c) => c.slice(0, -2));
+          });
+        }
+      });
     }
     document.querySelector(".convert").addEventListener("click", () => {
       this.points[this.selectedPointIndex].edgeModes =
@@ -707,53 +690,7 @@ class Rectangle {
       );
     });
   }
-  getPointPositon(mouse) {
-    const centerX = this.x + this.width / 2;
-    const centerY = this.y + this.height / 2;
 
-    const dx = mouse.x - centerX;
-    const dy = mouse.y - centerY;
-
-    const cos = Math.cos(-this.angle);
-    const sin = Math.sin(-this.angle);
-
-    const localMouseX = dx * cos - dy * sin;
-    const localMouseY = dx * sin + dy * cos;
-
-    for (let i = 0; i < this.points.length; i++) {
-      const p = this.points[i].points;
-      const pdx = localMouseX - p.x;
-      const pdy = localMouseY - p.y;
-      if (pdx * pdx + pdy * pdy < 10 * 10) {
-        this.selectedPointIndex = i;
-        this.selectedControl = null;
-        this.selectedLineIndex = null;
-        this.shapeType = "point";
-        return true;
-      }
-    }
-
-    for (let i = 0; i < this.points.length; i++) {
-      if (this.points[i].edgeModes) {
-        for (let j = 0; j < 2; j++) {
-          const cp = this.points[i].controls[j];
-          const cdx = localMouseX - cp.x;
-          const cdy = localMouseY - cp.y;
-          if (cdx * cdx + cdy * cdy < 10 * 10) {
-            this.selectedControl = { curveIndex: i, controlIndex: j };
-            this.selectedPointIndex = null;
-            this.selectedLineIndex = null;
-            this.shapeType = "point";
-            return true;
-          }
-        }
-      }
-    }
-
-    this.selectedPointIndex = null;
-    this.selectedControl = null;
-    return false;
-  }
   changeProperties(e) {
     const name = e.target.name;
     if (e.target.name === "angle") {
@@ -824,6 +761,21 @@ class Rectangle {
     ctx.closePath();
   }
   whereToSnap() {
+    if (
+      this.roundedOrbeveled === "shaped"
+    ) {
+      const xs = this.points.map((p) => p.points.x);
+      const ys = this.points.map((p) => p.points.y);
+      const minX = Math.min(...xs);
+      const minY = Math.min(...ys);
+      const maxX = Math.max(...xs);
+      const maxY = Math.max(...ys);
+      return {
+        x: [this.x, this.x + this.width / 2, this.x + this.width],
+        y: [this.y, this.y + this.height / 2, this.y + this.height],
+        pos: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+      };
+    }
     return {
       x: [this.x, this.x + this.width / 2, this.x + this.width],
       y: [this.y, this.y + this.height / 2, this.y + this.height],
@@ -837,118 +789,6 @@ class Rectangle {
     } else {
       this.y = value;
     }
-  }
-  pointLineDistance(px, py, x1, y1, x2, y2) {
-    const A = px - x1;
-    const B = py - y1;
-    const C = x2 - x1;
-    const D = y2 - y1;
-
-    const dot = A * C + B * D;
-    const len_sq = C * C + D * D;
-    let param = -1;
-    if (len_sq !== 0) param = dot / len_sq;
-
-    let xx, yy;
-
-    if (param < 0) {
-      xx = x1;
-      yy = y1;
-    } else if (param > 1) {
-      xx = x2;
-      yy = y2;
-    } else {
-      xx = x1 + param * C;
-      yy = y1 + param * D;
-    }
-
-    const dx = px - xx;
-    const dy = py - yy;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
-  computeBezierPoint(p0, p1, p2, p3, t) {
-    const x =
-      Math.pow(1 - t, 3) * p0.x +
-      3 * Math.pow(1 - t, 2) * t * p1.x +
-      3 * (1 - t) * Math.pow(t, 2) * p2.x +
-      Math.pow(t, 3) * p3.x;
-
-    const y =
-      Math.pow(1 - t, 3) * p0.y +
-      3 * Math.pow(1 - t, 2) * t * p1.y +
-      3 * (1 - t) * Math.pow(t, 2) * p2.y +
-      Math.pow(t, 3) * p3.y;
-
-    return { x, y };
-  }
-
-  getEdgeAtPosition(mouse) {
-    const threshold = 10;
-    const centerX = this.x + this.width / 2;
-    const centerY = this.y + this.height / 2;
-
-    const dx = mouse.x - centerX;
-    const dy = mouse.y - centerY;
-
-    const cos = Math.cos(-this.angle);
-    const sin = Math.sin(-this.angle);
-
-    const localMouseX = dx * cos - dy * sin;
-    const localMouseY = dx * sin + dy * cos;
-
-    for (let i = 0; i < this.points.length; i++) {
-      const current = this.points[i];
-      const next = this.points[(i + 1) % this.points.length];
-
-      const p1 = current.points;
-      const p2 = next.points;
-
-      if (current.edgeModes) {
-        const cp1 = current.controls[0];
-        const cp2 = current.controls[1];
-
-        const steps = 50;
-        let prev = this.computeBezierPoint(p1, cp1, cp2, p2, 0);
-
-        for (let t = 1; t <= steps; t++) {
-          const tNorm = t / steps;
-          const curr = this.computeBezierPoint(p1, cp1, cp2, p2, tNorm);
-          const dist = this.pointLineDistance(
-            localMouseX,
-            localMouseY,
-            prev.x,
-            prev.y,
-            curr.x,
-            curr.y
-          );
-          if (dist < threshold) {
-            this.shapeType = "line";
-            this.selectedLineIndex = i;
-            this.selectedPointIndex = null;
-            this.selectedControl = null;
-            return true;
-          }
-          prev = curr;
-        }
-      } else {
-        const dist = this.pointLineDistance(
-          localMouseX,
-          localMouseY,
-          p1.x,
-          p1.y,
-          p2.x,
-          p2.y
-        );
-        if (dist <= threshold) {
-          this.shapeType = "line";
-          this.selectedLineIndex = i;
-          this.selectedPointIndex = null;
-          this.selectedControl = null;
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   doubleClicked(mouse) {
@@ -1639,40 +1479,193 @@ class Polygon {
 }
 class Line {
   constructor() {
-    this.points = []
-    this.color = "#ff0000"
-    this.outlineColor = "#000000"
-    
+    this.points = [];
+    this.color = "#ff0000";
+    this.outlineColor = "#000000";
+    this.outlineThickness = 2;
+    this.outline = true;
+    this.mode = "edit";
+    this.selectedPointIndex = null;
+    this.selectedControl = null;
+    this.selectedLineIndex = null;
+    this.angle = 0;
+    this.x;
+    this.y;
+    this.shapeType = null;
   }
   addObject() {
-    if(this.points.length > 0){
-    ctx.beginPath();
-    ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
+    if (this.points.length > 0) {
+      ctx.save();
+      if (this.mode !== "edit") {
+        const xs = this.points.map((p) => p.points.x);
+        const ys = this.points.map((p) => p.points.y);
+        const minX = Math.min(...xs);
+        const minY = Math.min(...ys);
+        const maxX = Math.max(...xs);
+        const maxY = Math.max(...ys);
+        const centerX = this.x + (maxX - minX) / 2;
+        const centerY = this.y + (maxY - minY) / 2;
+        ctx.translate(centerX, centerY);
+        ctx.rotate(this.angle);
+        ctx.beginPath();
+        ctx.moveTo(
+          this.points[0].points.x - centerX,
+          this.points[0].points.y - centerY
+        );
 
-    for (let i = 0; i < this.points.length; i++) {
+        for (let i = 0; i < this.points.length; i++) {
+          if (this.points[i].edgeModes) {
+            const cp1 = this.points[i].controls[0];
+            const cp2 = this.points[i].controls[1];
+            ctx.bezierCurveTo(
+              cp1.x - centerX,
+              cp1.y - centerY,
+              cp2.x - centerX,
+              cp2.y - centerY,
+              this.points[i].points.x - centerX,
+              this.points[i].points.y - centerY
+            );
+          } else {
+            ctx.lineTo(
+              this.points[i].points.x - centerX,
+              this.points[i].points.y - centerY
+            );
+          }
+        }
+        ctx.stroke();
+        ctx.closePath();
 
-      if (this.points[i].edgeModes) {
-        const cp1 = this.points[i].controls[0];
-        const cp2 = this.points[i].controls[1];
-        const pNext = this.points[i].points;
-        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, this.points[i].x, this.points[i].y);
+        if (this.mode === "edit") {
+          this.points.forEach((p, i) => {
+            ctx.beginPath();
+            ctx.arc(
+              p.points.x - centerX,
+              p.points.y - centerY,
+              7,
+              0,
+              Math.PI * 2
+            );
+            ctx.fillStyle =
+              i === this.selectedPointIndex ? "#0000ff" : "#0000ff88";
+            ctx.fill();
+            ctx.strokeStyle = "#000000";
+            ctx.stroke();
+          });
+
+          this.points.forEach((isCurve, i) => {
+            if (isCurve.edgeModes) {
+              isCurve.controls.forEach((cp, j) => {
+                ctx.beginPath();
+                ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
+                const isSelected =
+                  this.selectedControl &&
+                  this.selectedControl.curveIndex === i &&
+                  this.selectedControl.controlIndex === j;
+                ctx.fillStyle = isSelected ? "#00cc00" : "#00cc0088";
+                ctx.fill();
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(
+                  isCurve.points.x - centerX,
+                  isCurve.points.y - centerY
+                );
+                ctx.lineTo(cp.x - centerX, cp.y - centerY);
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+              });
+            }
+          });
+        }
       } else {
-        ctx.lineTo(this.points[i].points.x, this.points[i].points.y);
+        ctx.beginPath();
+        ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
+
+        for (let i = 0; i < this.points.length; i++) {
+          if (this.points[i].edgeModes) {
+            const cp1 = this.points[i].controls[0];
+            const cp2 = this.points[i].controls[1];
+            ctx.bezierCurveTo(
+              cp1.x,
+              cp1.y,
+              cp2.x,
+              cp2.y,
+              this.points[i].points.x,
+              this.points[i].points.y
+            );
+          } else {
+            ctx.lineTo(this.points[i].points.x, this.points[i].points.y);
+          }
+        }
+        ctx.stroke();
+        ctx.closePath();
+
+        if (this.mode === "edit") {
+          this.points.forEach((p, i) => {
+            ctx.beginPath();
+            ctx.arc(p.points.x, p.points.y, 7, 0, Math.PI * 2);
+            ctx.fillStyle =
+              i === this.selectedPointIndex ? "#0000ff" : "#0000ff88";
+            ctx.fill();
+            ctx.strokeStyle = "#000000";
+            ctx.stroke();
+          });
+
+          this.points.forEach((isCurve, i) => {
+            if (isCurve.edgeModes) {
+              isCurve.controls.forEach((cp, j) => {
+                ctx.beginPath();
+                ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
+                const isSelected =
+                  this.selectedControl &&
+                  this.selectedControl.curveIndex === i &&
+                  this.selectedControl.controlIndex === j;
+                ctx.fillStyle = isSelected ? "#00cc00" : "#00cc0088";
+                ctx.fill();
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(isCurve.points.x, isCurve.points.y);
+                ctx.lineTo(cp.x, cp.y);
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+              });
+            }
+          });
+        }
       }
+
+      ctx.restore();
     }
-    ctx.stroke()
-    ctx.closePath();
-    }
-
   }
-  drawPen(mouse){
-    this.points.push({points: {x:mouse.x,y:mouse.y},edgeModes:false,controls:[null,null]})
-    console.log(this.points)
-
+  drawPen(mouse) {
+    this.points.push({
+      points: { x: mouse.x, y: mouse.y },
+      edgeModes: false,
+      controls: [
+        { x: mouse.x - 20, y: mouse.y },
+        { x: mouse.x + 20, y: mouse.y },
+      ],
+    });
+    console.log(this.points);
   }
-
   formatProperties() {
-
+    propertiesBar.innerHTML = `
+    <button class="done">Done</button>
+    `;
+    document.querySelector(".done").addEventListener("click", () => {
+      pen = null;
+      const xs = this.points.map((p) => p.points.x);
+      const ys = this.points.map((p) => p.points.y);
+      const minX = Math.min(...xs);
+      const minY = Math.min(...ys);
+      this.x = minX;
+      this.y = minY;
+    });
   }
 }
 
@@ -2150,10 +2143,9 @@ class Images {
     }
     ctx.restore();
   }
-  moveClip(x,y){
-    this.x += x
-    this.y += y
-
+  moveClip(x, y) {
+    this.x += x;
+    this.y += y;
   }
   whatSelected(mouse) {
     const threshold = 10;
@@ -2375,14 +2367,14 @@ class Images {
       reader.readAsDataURL(file);
     });
   }
-   whereToSnap() {
+  whereToSnap() {
     return {
       x: [this.x, this.x + this.width / 2, this.x + this.width],
       y: [this.y, this.y + this.height / 2, this.y + this.height],
       pos: { x: this.x, y: this.y, width: this.width, height: this.height },
     };
   }
-    changeLocation(value, type) {
+  changeLocation(value, type) {
     if (type === "x") {
       this.x = value;
     } else {
@@ -2715,6 +2707,85 @@ async function saveAsImage() {
   }
 }
 
+function pointLineDistance(px, py, x1, y1, x2, y2) {
+  const A = px - x1;
+  const B = py - y1;
+  const C = x2 - x1;
+  const D = y2 - y1;
+
+  const dot = A * C + B * D;
+  const len_sq = C * C + D * D;
+  let param = -1;
+  if (len_sq !== 0) param = dot / len_sq;
+
+  let xx, yy;
+
+  if (param < 0) {
+    xx = x1;
+    yy = y1;
+  } else if (param > 1) {
+    xx = x2;
+    yy = y2;
+  } else {
+    xx = x1 + param * C;
+    yy = y1 + param * D;
+  }
+
+  const dx = px - xx;
+  const dy = py - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+function computeBezierPoint(p0, p1, p2, p3, t) {
+  const x =
+    Math.pow(1 - t, 3) * p0.x +
+    3 * Math.pow(1 - t, 2) * t * p1.x +
+    3 * (1 - t) * Math.pow(t, 2) * p2.x +
+    Math.pow(t, 3) * p3.x;
+
+  const y =
+    Math.pow(1 - t, 3) * p0.y +
+    3 * Math.pow(1 - t, 2) * t * p1.y +
+    3 * (1 - t) * Math.pow(t, 2) * p2.y +
+    Math.pow(t, 3) * p3.y;
+
+  return { x, y };
+}
+
+function drawRoundedShape(points, radius) {
+  if (points.length < 2) return;
+  ctx.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    const prev = points[(i - 1 + points.length) % points.length].points;
+    const curr = points[i].points;
+    const next = points[(i + 1) % points.length].points;
+
+    const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+    const len1 = Math.hypot(v1.x, v1.y);
+    v1.x /= len1;
+    v1.y /= len1;
+    const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+    const len2 = Math.hypot(v2.x, v2.y);
+    v2.x /= len2;
+    v2.y /= len2;
+    const p1 = {
+      x: curr.x - v1.x * Math.min(radius, len1 / 2),
+      y: curr.y - v1.y * Math.min(radius, len1 / 2),
+    };
+    const p2 = {
+      x: curr.x + v2.x * Math.min(radius, len2 / 2),
+      y: curr.y + v2.y * Math.min(radius, len2 / 2),
+    };
+
+    if (i === 0) {
+      ctx.moveTo(p1.x, p1.y);
+    } else {
+      ctx.lineTo(p1.x, p1.y);
+    }
+
+    ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+  }
+  ctx.closePath();
+}
 function addImage(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2742,7 +2813,7 @@ function addPolygon() {
 function addLine() {
   const line = new Line();
   objects.push(line);
-  pen = line
+  pen = line;
   draw();
 }
 function addRectangle() {
@@ -2773,6 +2844,103 @@ function textMousePos(evt) {
     x: evt.x - rect.left,
     y: evt.y - rect.top,
   };
+}
+
+function getEdgeAtPosition(localMouseX, localMouseY, points) {
+  let threshold = 10;
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const next = points[(i + 1) % points.length];
+
+    const p1 = current.points;
+    const p2 = next.points;
+
+    if (current.edgeModes) {
+      const cp1 = current.controls[0];
+      const cp2 = current.controls[1];
+
+      const steps = 50;
+      let prev = computeBezierPoint(p1, cp1, cp2, p2, 0);
+
+      for (let t = 1; t <= steps; t++) {
+        const tNorm = t / steps;
+        const curr = computeBezierPoint(p1, cp1, cp2, p2, tNorm);
+        const dist = pointLineDistance(
+          localMouseX,
+          localMouseY,
+          prev.x,
+          prev.y,
+          curr.x,
+          curr.y
+        );
+        if (dist < threshold) return { value: i, type: "lineIndex" };
+        prev = curr;
+      }
+    } else {
+      const dist = pointLineDistance(
+        localMouseX,
+        localMouseY,
+        p1.x,
+        p1.y,
+        p2.x,
+        p2.y
+      );
+      if (dist <= threshold) return { value: i, type: "lineIndex" };
+    }
+  }
+  return false;
+}
+function getPointPositon(localMouseX, localMouseY, points) {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i].points;
+    const pdx = localMouseX - p.x;
+    const pdy = localMouseY - p.y;
+    if (pdx * pdx + pdy * pdy < 10 * 10) {
+      return { value: i, type: "pointIndex" };
+    }
+  }
+
+  for (let i = 0; i < points.length; i++) {
+    if (points[i].edgeModes) {
+      for (let j = 0; j < 2; j++) {
+        const cp = points[i].controls[j];
+        const cdx = localMouseX - cp.x;
+        const cdy = localMouseY - cp.y;
+        if (cdx * cdx + cdy * cdy < 10 * 10) {
+          return {
+            value: { curveIndex: i, controlIndex: j },
+            type: "curveIndex",
+          };
+        }
+      }
+    }
+  }
+
+  return false;
+}
+function getNormalPostion(localX, localY, width, height, threshold) {
+  let selectedArea = null;
+  const nearLeft = Math.abs(localX) < threshold;
+  const nearRight = Math.abs(localX - width) < threshold;
+  const nearTop = Math.abs(localY) < threshold;
+  const nearBottom = Math.abs(localY - height) < threshold;
+  if (nearLeft && nearTop) selectedArea = "TopLeft";
+  else if (nearRight && nearTop) selectedArea = "TopRight";
+  else if (nearLeft && nearBottom) selectedArea = "BottomLeft";
+  else if (nearRight && nearBottom) selectedArea = "BottomRight";
+  else if (nearLeft) selectedArea = "Left";
+  else if (nearRight) selectedArea = "Right";
+  else if (nearTop) selectedArea = "Top";
+  else if (nearBottom) selectedArea = "Bottom";
+  else if (
+    localX > 0 &&
+    localX < this.width &&
+    localY > 0 &&
+    localY < this.height
+  ) {
+    selectedArea = "Selected";
+  }
+  return selectedArea;
 }
 async function generateCard() {
   selectedObj = null;
@@ -2903,10 +3071,11 @@ canvas.addEventListener("mousedown", (event) => {
 
   selectedObj = null;
   isDraggingObject = false;
-  if(pen !== null){
-    pen.drawPen(pos)
-  }
-  else if (clipped !== null) {
+  if (pen !== null) {
+    pen.drawPen(pos);
+    selectedObj = pen;
+    selectedObj.formatProperties();
+  } else if (clipped !== null) {
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].whatSelected(pos)) {
         objects[i].clips.push(clipped);
@@ -2915,20 +3084,31 @@ canvas.addEventListener("mousedown", (event) => {
         let index = objects.indexOf(clipped);
         objects.splice(index, 1);
 
-        const objectsCoordinate = objects[i].whereToSnap().pos
-        const clippedCoordinate = clipped.whereToSnap().pos
-        if(clippedCoordinate.x > (objectsCoordinate.x + objectsCoordinate.width)){
-          clipped.changeLocation(objectsCoordinate.x + (objectsCoordinate.width - clippedCoordinate.width) / 2,"x")
-          clipped.changeLocation(objectsCoordinate.y + (objectsCoordinate.height - clippedCoordinate.height) / 2,"y")
+        const objectsCoordinate = objects[i].whereToSnap().pos;
+        const clippedCoordinate = clipped.whereToSnap().pos;
+        if (
+          clippedCoordinate.x >
+          objectsCoordinate.x + objectsCoordinate.width
+        ) {
+          clipped.changeLocation(
+            objectsCoordinate.x +
+              (objectsCoordinate.width - clippedCoordinate.width) / 2,
+            "x"
+          );
+          clipped.changeLocation(
+            objectsCoordinate.y +
+              (objectsCoordinate.height - clippedCoordinate.height) / 2,
+            "y"
+          );
         }
         alert("clipped");
       }
     }
     if (clipped === null) alert("Pls select an object");
-    else{
-canvas.style.cursor = "default";
-        clipped = null;
-    }         
+    else {
+      canvas.style.cursor = "default";
+      clipped = null;
+    }
   } else if (cloneObj) {
     let cloned = cloneObj.showClone();
     objects.push(cloned);
