@@ -56,9 +56,374 @@ window.addEventListener("load", () => {
   width.value = canvas.width;
   height.value = canvas.height;
 });
+class LineUtils{
+  static getEdgeAtPosition(localMouseX, localMouseY, points) {
+  let threshold = 10;
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const next = points[(i + 1) % points.length];
 
-class Rectangle {
+    const p1 = current.points;
+    const p2 = next.points;
+
+    if (current.edgeModes) {
+      const cp1 = current.controls[0];
+      const cp2 = current.controls[1];
+
+      const steps = 50;
+      let prev = this.computeBezierPoint(p1, cp1, cp2, p2, 0);
+
+      for (let t = 1; t <= steps; t++) {
+        const tNorm = t / steps;
+        const curr = this.computeBezierPoint(p1, cp1, cp2, p2, tNorm);
+        const dist = this.pointLineDistance(
+          localMouseX,
+          localMouseY,
+          prev.x,
+          prev.y,
+          curr.x,
+          curr.y
+        );
+        if (dist < threshold) return { value: i, type: "lineIndex" };
+        prev = curr;
+      }
+    } else {
+      const dist = this.pointLineDistance(
+        localMouseX,
+        localMouseY,
+        p1.x,
+        p1.y,
+        p2.x,
+        p2.y
+      );
+      if (dist <= threshold) return { value: i, type: "lineIndex" };
+    }
+  }
+  return false;
+}
+static getPointPositon(localMouseX, localMouseY, points) {
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i].points;
+    const pdx = localMouseX - p.x;
+    const pdy = localMouseY - p.y;
+    if (pdx * pdx + pdy * pdy < 10 * 10) {
+      return { value: i, type: "pointIndex" };
+    }
+  }
+
+  for (let i = 0; i < points.length; i++) {
+    if (points[i].edgeModes) {
+      for (let j = 0; j < 2; j++) {
+        const cp = points[i].controls[j];
+        const cdx = localMouseX - cp.x;
+        const cdy = localMouseY - cp.y;
+        if (cdx * cdx + cdy * cdy < 10 * 10) {
+          return {
+            value: { curveIndex: i, controlIndex: j },
+            type: "curveIndex",
+          };
+        }
+      }
+    }
+  }
+
+  return false;
+}
+static drawRoundedShape(points, radius) {
+  if (points.length < 2) return;
+  ctx.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    const prev = points[(i - 1 + points.length) % points.length].points;
+    const curr = points[i].points;
+    const next = points[(i + 1) % points.length].points;
+
+    const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+    const len1 = Math.hypot(v1.x, v1.y);
+    v1.x /= len1;
+    v1.y /= len1;
+    const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+    const len2 = Math.hypot(v2.x, v2.y);
+    v2.x /= len2;
+    v2.y /= len2;
+    const p1 = {
+      x: curr.x - v1.x * Math.min(radius, len1 / 2),
+      y: curr.y - v1.y * Math.min(radius, len1 / 2),
+    };
+    const p2 = {
+      x: curr.x + v2.x * Math.min(radius, len2 / 2),
+      y: curr.y + v2.y * Math.min(radius, len2 / 2),
+    };
+
+    if (i === 0) {
+      ctx.moveTo(p1.x, p1.y);
+    } else {
+      ctx.lineTo(p1.x, p1.y);
+    }
+
+    ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+  }
+  ctx.closePath();
+}
+static drawLineShape(points){
+      ctx.beginPath();
+      ctx.moveTo(points[0].points.x, points[0].points.y);
+
+      for (let i = 0; i < points.length; i++) {
+        const next = (i + 1) % points.length;
+
+        if (points[i].edgeModes) {
+          const cp1 = points[i].controls[0];
+          const cp2 = points[i].controls[1];
+          const pNext = points[next].points;
+          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
+        } else {
+          ctx.lineTo(points[next].points.x, points[next].points.y);
+        }
+      }
+      ctx.closePath();
+}
+static drawEditArcs(points,selectedArea,selectedLineIndex){
+        points.forEach((p, i) => {
+          ctx.beginPath();
+          ctx.arc(p.points.x, p.points.y, 7, 0, Math.PI * 2);
+          if(selectedArea === "pointIndex" && i === selectedLineIndex)ctx.fillStyle =  "#0000ff";
+          else ctx.fillStyle =  "#0000ff88";
+          ctx.fill();
+          ctx.strokeStyle = "#000000";
+          ctx.stroke();
+        });
+
+        points.forEach((isCurve, i) => {
+          if (isCurve.edgeModes) {
+            isCurve.controls.forEach((cp, j) => {
+              ctx.beginPath();
+              ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
+              const isSelected =
+                selectedArea === "curveIndex"  &&
+                selectedLineIndex.curveIndex === i &&
+                selectedLineIndex.controlIndex === j;
+              ctx.fillStyle = isSelected ? "#00cc00" : "#00cc0088";
+              ctx.fill();
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 1;
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(isCurve.points.x, isCurve.points.y);
+              ctx.lineTo(cp.x, cp.y);
+              ctx.strokeStyle = "#000000";
+              ctx.lineWidth = 2;
+              ctx.stroke();
+            });
+          }
+        });
+
+}
+static getNormalPostion(localX, localY, width, height, threshold) {
+  let selectedArea = null;
+  const nearLeft = Math.abs(localX) < threshold;
+  const nearRight = Math.abs(localX - width) < threshold;
+  const nearTop = Math.abs(localY) < threshold;
+  const nearBottom = Math.abs(localY - height) < threshold;
+  if (nearLeft && nearTop) selectedArea = "TopLeft";
+  else if (nearRight && nearTop) selectedArea = "TopRight";
+  else if (nearLeft && nearBottom) selectedArea = "BottomLeft";
+  else if (nearRight && nearBottom) selectedArea = "BottomRight";
+  else if (nearLeft) selectedArea = "Left";
+  else if (nearRight) selectedArea = "Right";
+  else if (nearTop) selectedArea = "Top";
+  else if (nearBottom) selectedArea = "Bottom";
+  else if (
+    localX > 0 &&
+    localX < width  &&
+    localY > 0 &&
+    localY < height
+  ) {
+    selectedArea = "Selected";
+  }
+  return selectedArea;
+}
+static pointLineDistance(px, py, x1, y1, x2, y2) {
+  const A = px - x1;
+  const B = py - y1;
+  const C = x2 - x1;
+  const D = y2 - y1;
+
+  const dot = A * C + B * D;
+  const len_sq = C * C + D * D;
+  let param = -1;
+  if (len_sq !== 0) param = dot / len_sq;
+
+  let xx, yy;
+
+  if (param < 0) {
+    xx = x1;
+    yy = y1;
+  } else if (param > 1) {
+    xx = x2;
+    yy = y2;
+  } else {
+    xx = x1 + param * C;
+    yy = y1 + param * D;
+  }
+
+  const dx = px - xx;
+  const dy = py - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+static computeBezierPoint(p0, p1, p2, p3, t) {
+  const x =
+    Math.pow(1 - t, 3) * p0.x +
+    3 * Math.pow(1 - t, 2) * t * p1.x +
+    3 * (1 - t) * Math.pow(t, 2) * p2.x +
+    Math.pow(t, 3) * p3.x;
+
+  const y =
+    Math.pow(1 - t, 3) * p0.y +
+    3 * Math.pow(1 - t, 2) * t * p1.y +
+    3 * (1 - t) * Math.pow(t, 2) * p2.y +
+    Math.pow(t, 3) * p3.y;
+
+  return { x, y };
+}
+}
+class Formats{
+  lineFormat(localMouseX,localMouseY,localDeltaX,localDeltaY){
+      if (this.selectedArea === "lineIndex") {
+        const next = (this.selectedLineIndex + 1) % this.points.length;
+        this.points[this.selectedLineIndex].points.x += localDeltaX;
+        this.points[this.selectedLineIndex].points.y += localDeltaY;
+        this.points[next].points.x += localDeltaX;
+        this.points[next].points.y += localDeltaY;
+        this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
+        this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
+        this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
+        this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
+        this.points[next].controls[0].x += localDeltaX;
+        this.points[next].controls[0].y += localDeltaY;
+        this.points[next].controls[1].x += localDeltaX;
+        this.points[next].controls[1].y += localDeltaY;
+      } else if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].points.x = localMouseX;
+        this.points[this.selectedLineIndex].points.y = localMouseY;
+        this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
+        this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
+        this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
+        this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
+      } else if (this.selectedArea === "curveIndex") {
+        const { curveIndex, controlIndex } = this.selectedLineIndex;
+        this.points[curveIndex].controls[controlIndex].x = localMouseX;
+        this.points[curveIndex].controls[controlIndex].y = localMouseY;
+      }
+  }
+  rectFormat(mouse){
+          if (this.selectedArea === "Left") {
+            const newWidth = this.width + (this.x - mouse.x);
+            if (newWidth > 0) {
+              this.x = mouse.x;
+              this.width = newWidth;
+            }
+          } else if (this.selectedArea === "Right") {
+            this.width = mouse.x - this.x;
+          } else if (this.selectedArea === "Top") {
+            const newHeight = this.height + (this.y - mouse.y);
+            if (newHeight > 0) {
+              this.y = mouse.y;
+              this.height = newHeight;
+            }
+          } else if (this.selectedArea === "Bottom") {
+            this.height = mouse.y - this.y;
+          } else if (this.selectedArea === "TopLeft") {
+            const newWidth = this.width + (this.x - mouse.x);
+            if (newWidth > 0) {
+              this.x = mouse.x;
+              this.width = newWidth;
+            }
+            const newHeight = this.height + (this.y - mouse.y);
+            if (newHeight > 0) {
+              this.y = mouse.y;
+              this.height = newHeight;
+            }
+          } else if (this.selectedArea === "TopRight") {
+            this.width = mouse.x - this.x;
+            const newHeight = this.height + (this.y - mouse.y);
+            if (newHeight > 0) {
+              this.y = mouse.y;
+              this.height = newHeight;
+            }
+          } else if (this.selectedArea === "BottomLeft") {
+            const newWidth = this.width + (this.x - mouse.x);
+            if (newWidth > 0) {
+              this.x = mouse.x;
+              this.width = newWidth;
+            }
+            this.height = mouse.y - this.y;
+          } else if (this.selectedArea === "BottomRight") {
+            this.width = mouse.x - this.x;
+            this.height = mouse.y - this.y;
+          }
+  }
+  circFormat(mouse,x,y){
+    if (this.isDoubleClicked) {
+      this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
+    } else {
+      if (this.selectedArea === "Left") {
+        const newRadiusX = this.radiusX + (x - mouse.x);
+        if (newRadiusX > 0) {
+          this.radiusX = newRadiusX;
+        }
+      } else if (this.selectedArea === "Right") {
+        this.radiusX = mouse.x - this.x;
+      } else if (this.selectedArea === "Top") {
+        const newRadiusY = this.radiusY + (y - mouse.y);
+        if (newRadiusY > 0) {
+          this.radiusY = newRadiusY;
+        }
+      } else if (this.selectedArea === "Bottom") {
+        const newRadiusY = mouse.y - this.y;
+        if (newRadiusY > 0) {
+          this.radiusY = newRadiusY;
+        }
+      } else if (this.selectedArea === "TopLeft") {
+        const newRadiusY = this.radiusY + (y - mouse.y);
+        if (newRadiusY > 0) {
+          this.radiusY = newRadiusY;
+        }
+        const newRadiusX = this.radiusX + (x - mouse.x);
+        if (newRadiusX > 0) {
+          this.radiusX = newRadiusX;
+        }
+      } else if (this.selectedArea === "TopRight") {
+        const newRadiusY = this.radiusY + (y - mouse.y);
+        if (newRadiusY > 0) {
+          this.radiusY = newRadiusY;
+        }
+        this.radiusX = mouse.x - this.x;
+      } else if (this.selectedArea === "BottomLeft") {
+        const newRadiusY = mouse.y - this.y;
+        if (newRadiusY > 0) {
+          this.radiusY = newRadiusY;
+        }
+        const newRadiusX = this.radiusX + (x - mouse.x);
+        if (newRadiusX > 0) {
+          this.radiusX = newRadiusX;
+        }
+      } else if (this.selectedArea === "BottomRight") {
+        const newRadiusY = mouse.y - this.y;
+        if (newRadiusY > 0) {
+          this.radiusY = newRadiusY;
+        }
+        this.radiusX = mouse.x - this.x;
+      } else if (this.selectedArea === "Selected") {
+        this.x += mouse.x - lastMouseX;
+        this.y += mouse.y - lastMouseY;
+      }
+    }
+  }
+
+}
+class Rectangle extends Formats {
   constructor() {
+    super()
     this.x = 100;
     this.y = 100;
     this.width = 150;
@@ -134,6 +499,13 @@ class Rectangle {
     this.colorDeg = 0.2;
   }
   addObject() {
+            const xs = this.points.map((p) => p.points.x);
+        const ys = this.points.map((p) => p.points.y);
+
+        this.minX = Math.min(...xs);
+        this.minY = Math.min(...ys);
+        this.maxX = Math.max(...xs);
+        this.maxY = Math.max(...ys);
     ctx.save();
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
@@ -154,46 +526,11 @@ class Rectangle {
         ctx.stroke();
         ctx.restore();
       }
-      if (this.mode === "edit") {
-        this.points.forEach((p, i) => {
-          ctx.beginPath();
-          ctx.arc(p.points.x, p.points.y, 7, 0, Math.PI * 2);
-          ctx.fillStyle =
-            i === this.selectedPointIndex ? "#0000ff" : "#0000ff88";
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
-          ctx.stroke();
-        });
-
-        this.points.forEach((isCurve, i) => {
-          if (isCurve.edgeModes) {
-            isCurve.controls.forEach((cp, j) => {
-              ctx.beginPath();
-              ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
-              const isSelected =
-                this.selectedControl &&
-                this.selectedControl.curveIndex === i &&
-                this.selectedControl.controlIndex === j;
-              ctx.fillStyle = isSelected ? "#00cc00" : "#00cc0088";
-              ctx.fill();
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 1;
-              ctx.stroke();
-              ctx.beginPath();
-              ctx.moveTo(isCurve.points.x, isCurve.points.y);
-              ctx.lineTo(cp.x, cp.y);
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 2;
-              ctx.stroke();
-            });
-          }
-        });
-      }
+      if (this.mode === "edit") LineUtils.drawEditArcs(this.points,this.selectedArea,this.selectedLineIndex)
     }
     ctx.closePath();
     if (
-      (this.outline && this.roundedOrbeveled !== "shaped") ||
-      this.roundedOrbeveled !== "normal"
+      (this.outline && this.roundedOrbeveled !== "shaped")
     ) {
       ctx.beginPath();
       ctx.lineJoin = this.lineJoin;
@@ -234,18 +571,11 @@ class Rectangle {
           this.height + 4
         );
       } else {
-        const xs = this.points.map((p) => p.points.x);
-        const ys = this.points.map((p) => p.points.y);
-
-        const minX = Math.min(...xs);
-        const minY = Math.min(...ys);
-        const maxX = Math.max(...xs);
-        const maxY = Math.max(...ys);
-        ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+        ctx.strokeRect(this.minX, this.minY, this.maxX - this.minX, this.maxY - this.minY);
         if (this.mode === "scale") {
           ctx.beginPath();
           ctx.fillStyle = "#000000";
-          ctx.fillRect(maxX - 10, maxY - 10, 20, 20);
+          ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
         }
       }
 
@@ -267,27 +597,8 @@ class Rectangle {
   }
   createPath() {
     if (this.roundedOrbeveled === "shaped") {
-      if(this.mode === "shapeRounded") drawRoundedShape(this.points,this.cornerRadius);
-      else{
-      ctx.beginPath();
-      ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
-
-      for (let i = 0; i < this.points.length; i++) {
-        const next = (i + 1) % this.points.length;
-
-        if (this.points[i].edgeModes) {
-          const cp1 = this.points[i].controls[0];
-          const cp2 = this.points[i].controls[1];
-          const pNext = this.points[next].points;
-          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
-        } else {
-          ctx.lineTo(this.points[next].points.x, this.points[next].points.y);
-        }
-      }
-      ctx.closePath();
-      }
-
-
+      if(this.mode === "shapeRounded") LineUtils.drawRoundedShape(this.points,this.cornerRadius);
+      else LineUtils.drawLineShape(this.points)
     } 
     else if (this.roundedOrbeveled === "rounded") {
       this.drawRoundedRect(
@@ -313,13 +624,10 @@ class Rectangle {
     } else if (this.colorFill === "linear") {
       let minX, minY, maxX, maxY;
       if (this.roundedOrbeveled === "shaped") {
-        const xs = this.points.map((p) => p.points.x);
-        const ys = this.points.map((p) => p.points.y);
-
-        minX = Math.min(...xs);
-        minY = Math.min(...ys);
-        maxX = Math.max(...xs);
-        maxY = Math.max(...ys);
+        minX = this.minX;
+        minY = this.minY;
+        maxX = this.maxX;
+        maxY = this.maxY;
       } else {
         minX = -this.width / 2;
         minY = -this.height / 2;
@@ -341,13 +649,10 @@ class Rectangle {
     } else if (this.colorFill === "radial") {
       let minX, minY, maxX, maxY;
       if (this.roundedOrbeveled === "shaped") {
-        const xs = this.points.map((p) => p.points.x);
-        const ys = this.points.map((p) => p.points.y);
-
-        minX = Math.min(...xs);
-        minY = Math.min(...ys);
-        maxX = Math.max(...xs);
-        maxY = Math.max(...ys);
+        minX = this.minX;
+        minY = this.minY;
+        maxX = this.maxX;
+        maxY = this.maxY;
       } else {
         minX = -this.width / 2;
         minY = -this.height / 2;
@@ -388,35 +693,26 @@ class Rectangle {
       const localMouseY = dx * sin + dy * cos;
       if (
         this.mode === "edit" &&
-        (getPointPositon(localMouseX, localMouseY, this.points) ||
-          getEdgeAtPosition(localMouseX, localMouseY, this.points))
+        (LineUtils.getPointPositon(localMouseX, localMouseY, this.points) ||
+          LineUtils.getEdgeAtPosition(localMouseX, localMouseY, this.points))
       ) {
         const answer =
-          getPointPositon(localMouseX, localMouseY, this.points) === false
-            ? getEdgeAtPosition(localMouseX, localMouseY, this.points)
-            : getPointPositon(localMouseX, localMouseY, this.points);
+          LineUtils.getPointPositon(localMouseX, localMouseY, this.points) === false
+            ? LineUtils.getEdgeAtPosition(localMouseX, localMouseY, this.points)
+            : LineUtils.getPointPositon(localMouseX, localMouseY, this.points);
         this.selectedArea = answer.type;
         this.selectedLineIndex = answer.value;
         return true;
-      } else if (this.mode === "scale") {
-        const xs = this.points.map((p) => p.points.x);
-        const ys = this.points.map((p) => p.points.y);
-        const minX = Math.min(...xs);
-        const minY = Math.min(...ys);
-        const maxX = Math.max(...xs);
-        const maxY = Math.max(...ys);
+      } else if (this.mode === "normal") {
         if (
-          localMouseX > minX &&
-          localMouseX < maxX &&
-          localMouseY > minY &&
-          localMouseY < maxY
-        )
+          Math.abs(localMouseX - this.maxX) < 10 && Math.abs(localMouseY - this.maxY) < 10
+        ){
           this.selectedArea = "scale";
 
         return true;
-      } else {
-        this.createPath();
+        }
 
+        this.createPath();
         const isInside = ctx.isPointInPath(localMouseX, localMouseY);
         ctx.restore();
 
@@ -424,13 +720,13 @@ class Rectangle {
           this.selectedArea = "Selected";
         }
         return isInside;
-      }
+      } 
       return false;
     }  else {
       const localX = dx * cos - dy * sin + this.width / 2;
       const localY = dx * sin + dy * cos + this.height / 2;
 
-      this.selectedArea = getNormalPostion(
+      this.selectedArea = LineUtils.getNormalPostion(
         localX,
         localY,
         this.width,
@@ -456,32 +752,7 @@ class Rectangle {
       const deltaY = mouse.y - lastMouseY;
       const localDeltaX = deltaX * cos - deltaY * sin;
       const localDeltaY = deltaX * sin + deltaY * cos;
-      if (this.selectedArea === "lineIndex") {
-        const next = (this.selectedLineIndex + 1) % this.points.length;
-        this.points[this.selectedLineIndex].points.x += localDeltaX;
-        this.points[this.selectedLineIndex].points.y += localDeltaY;
-        this.points[next].points.x += localDeltaX;
-        this.points[next].points.y += localDeltaY;
-        this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
-        this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
-        this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
-        this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
-        this.points[next].controls[0].x += localDeltaX;
-        this.points[next].controls[0].y += localDeltaY;
-        this.points[next].controls[1].x += localDeltaX;
-        this.points[next].controls[1].y += localDeltaY;
-      } else if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].points.x = localMouseX;
-        this.points[this.selectedLineIndex].points.y = localMouseY;
-        this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
-        this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
-        this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
-        this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
-      } else if (this.selectedArea === "curveIndex") {
-        const { curveIndex, controlIndex } = this.selectedLineIndex;
-        this.points[curveIndex].controls[controlIndex].x = localMouseX;
-        this.points[curveIndex].controls[controlIndex].y = localMouseY;
-      }
+      super.lineFormat(localMouseX,localMouseY,localDeltaX,localDeltaY)
     } else {
       if (this.isDoubleClicked) {
         const center = {
@@ -492,51 +763,7 @@ class Rectangle {
           Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
       } else {
         if (this.roundedOrbeveled !== "shaped") {
-          if (this.selectedArea === "Left") {
-            const newWidth = this.width + (this.x - mouse.x);
-            if (newWidth > 0) {
-              this.x = mouse.x;
-              this.width = newWidth;
-            }
-          } else if (this.selectedArea === "Right") {
-            this.width = mouse.x - this.x;
-          } else if (this.selectedArea === "Top") {
-            const newHeight = this.height + (this.y - mouse.y);
-            if (newHeight > 0) {
-              this.y = mouse.y;
-              this.height = newHeight;
-            }
-          } else if (this.selectedArea === "Bottom") {
-            this.height = mouse.y - this.y;
-          } else if (this.selectedArea === "TopLeft") {
-            const newWidth = this.width + (this.x - mouse.x);
-            if (newWidth > 0) {
-              this.x = mouse.x;
-              this.width = newWidth;
-            }
-            const newHeight = this.height + (this.y - mouse.y);
-            if (newHeight > 0) {
-              this.y = mouse.y;
-              this.height = newHeight;
-            }
-          } else if (this.selectedArea === "TopRight") {
-            this.width = mouse.x - this.x;
-            const newHeight = this.height + (this.y - mouse.y);
-            if (newHeight > 0) {
-              this.y = mouse.y;
-              this.height = newHeight;
-            }
-          } else if (this.selectedArea === "BottomLeft") {
-            const newWidth = this.width + (this.x - mouse.x);
-            if (newWidth > 0) {
-              this.x = mouse.x;
-              this.width = newWidth;
-            }
-            this.height = mouse.y - this.y;
-          } else if (this.selectedArea === "BottomRight") {
-            this.width = mouse.x - this.x;
-            this.height = mouse.y - this.y;
-          }
+          super.rectFormat(mouse)
         }
         if (this.selectedArea === "Selected") {
           this.x += mouse.x - lastMouseX;
@@ -548,14 +775,8 @@ class Rectangle {
           }
         }
         if (this.selectedArea === "scale") {
-          const xs = this.points.map((p) => p.points.x);
-          const ys = this.points.map((p) => p.points.y);
-          const minX = Math.min(...xs);
-          const minY = Math.min(...ys);
-          const maxX = Math.max(...xs);
-          const maxY = Math.max(...ys);
-          const centerX = (minX + maxX) / 2;
-          const centerY = (minY + maxY) / 2;
+          const centerX = (this.minX + this.maxX) / 2;
+          const centerY = (this.minY + this.maxY) / 2;
           const lastWidth = lastMouseX - centerX;
           const lastHeight = lastMouseY - centerY;
           const currentWidth = mouse.x - centerX;
@@ -638,7 +859,6 @@ class Rectangle {
     </div>
     <button class="convert">Convert</button>
     <button class="normal">Normal</button>
-    <button class="scale">Scale</button>
     <button class="editclip">Edit Clip</button>
     <button class="shapeRounded">ShapeRounded</button>
     
@@ -670,16 +890,13 @@ class Rectangle {
       });
     }
     document.querySelector(".convert").addEventListener("click", () => {
-      this.points[this.selectedPointIndex].edgeModes =
-        !this.points[this.selectedPointIndex].edgeModes;
+      if(this.selectedArea === "pointIndex"){
+        this.points[this.selectedLineIndex].edgeModes = !this.points[this.selectedLineIndex].edgeModes
+      }
       draw();
     });
     document.querySelector(".normal").addEventListener("click", () => {
       this.mode = this.mode === "normal" ? "edit" : "normal";
-      draw();
-    });
-    document.querySelector(".scale").addEventListener("click", () => {
-      this.mode = "scale";
       draw();
     });
     propertiesBar.querySelectorAll("input").forEach((input) => {
@@ -764,16 +981,10 @@ class Rectangle {
     if (
       this.roundedOrbeveled === "shaped"
     ) {
-      const xs = this.points.map((p) => p.points.x);
-      const ys = this.points.map((p) => p.points.y);
-      const minX = Math.min(...xs);
-      const minY = Math.min(...ys);
-      const maxX = Math.max(...xs);
-      const maxY = Math.max(...ys);
       return {
         x: [this.x, this.x + this.width / 2, this.x + this.width],
         y: [this.y, this.y + this.height / 2, this.y + this.height],
-        pos: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+        pos: { x: this.minX, y: this.minY, width: this.maxX - this.minX, height: this.maxY - this.minY },
       };
     }
     return {
@@ -804,13 +1015,13 @@ class Rectangle {
     const localMouseX = dx * cos - dy * sin;
     const localMouseY = dx * sin + dy * cos;
     if (this.roundedOrbeveled === "shaped") {
-      if (this.selectedPointIndex != null) {
+      if (this.selectedLineIndex === "pointIndex") {
         if (this.points.length > 3) {
           this.points.splice(this.selectedPointIndex, 1);
           return true;
         }
       }
-      if (this.selectedLineIndex != null) {
+      if (this.selectedLineIndex === "lineIndex") {
         const next = (this.selectedLineIndex + 1) % this.points.length;
         if (this.points[this.selectedLineIndex].edgeModes !== true) {
           const prev = this.points[this.selectedLineIndex];
@@ -845,8 +1056,9 @@ class Rectangle {
   }
 }
 
-class Ellipse {
+class Ellipse extends Formats {
   constructor() {
+    super()
     this.x = 100;
     this.y = 100;
     this.radiusX = 50;
@@ -904,7 +1116,6 @@ class Ellipse {
     ctx.restore();
   }
   whatSelected(mouse) {
-    const threshold = 10;
     const rectW = this.radiusX * 2;
     const rectH = this.radiusY * 2;
 
@@ -916,85 +1127,13 @@ class Ellipse {
     const localX = dx * cos - dy * sin + rectW / 2;
     const localY = dx * sin + dy * cos + rectH / 2;
 
-    const nearLeft = Math.abs(localX) < threshold;
-    const nearRight = Math.abs(localX - rectW) < threshold;
-    const nearTop = Math.abs(localY) < threshold;
-    const nearBottom = Math.abs(localY - rectH) < threshold;
-
-    if (nearLeft && nearTop) this.selectedArea = "TopLeft";
-    else if (nearRight && nearTop) this.selectedArea = "TopRight";
-    else if (nearLeft && nearBottom) this.selectedArea = "BottomLeft";
-    else if (nearRight && nearBottom) this.selectedArea = "BottomRight";
-    else if (nearLeft) this.selectedArea = "Left";
-    else if (nearRight) this.selectedArea = "Right";
-    else if (nearTop) this.selectedArea = "Top";
-    else if (nearBottom) this.selectedArea = "Bottom";
-    else if (localX > 0 && localX < rectW && localY > 0 && localY < rectH) {
-      this.selectedArea = "Selected";
-    } else {
-      this.selectedArea = null;
-    }
-
+    this.selectedArea = LineUtils.getNormalPostion(localX,localY,rectW,rectH,10)
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
     const x = this.x - this.radiusX;
     const y = this.y - this.radiusY;
-    if (this.isDoubleClicked) {
-      this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
-    } else {
-      if (this.selectedArea === "Left") {
-        const newRadiusX = this.radiusX + (x - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "Right") {
-        this.radiusX = mouse.x - this.x;
-      } else if (this.selectedArea === "Top") {
-        const newRadiusY = this.radiusY + (y - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-      } else if (this.selectedArea === "Bottom") {
-        const newRadiusY = mouse.y - this.y;
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-      } else if (this.selectedArea === "TopLeft") {
-        const newRadiusY = this.radiusY + (y - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        const newRadiusX = this.radiusX + (x - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "TopRight") {
-        const newRadiusY = this.radiusY + (y - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        this.radiusX = mouse.x - this.x;
-      } else if (this.selectedArea === "BottomLeft") {
-        const newRadiusY = mouse.y - this.y;
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        const newRadiusX = this.radiusX + (x - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "BottomRight") {
-        const newRadiusY = mouse.y - this.y;
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        this.radiusX = mouse.x - this.x;
-      } else if (this.selectedArea === "Selected") {
-        this.x += mouse.x - lastMouseX;
-        this.y += mouse.y - lastMouseY;
-      }
-    }
+    super.circFormat(mouse,x,y)
   }
   formatProperties() {
     propertiesBar.innerHTML = `
@@ -1125,11 +1264,12 @@ class Ellipse {
     }
   }
 }
-class Polygon {
+class Polygon extends Formats{
   constructor() {
+    super()
     this.sides = 6;
-    this.centerX = 100;
-    this.centerY = 100;
+    this.x= 100;
+    this.y = 100;
     this.radiusX = 50;
     this.radiusY = 30;
     this.angle = 0;
@@ -1143,103 +1283,62 @@ class Polygon {
     this.lineDashSpacing = 3;
     this.selectedArea = null;
     this.isDoubleClicked = false;
+    this.points = []
+    this.mode = "normal"
+    this.cornerRadius
   }
 
   addObject() {
+
     if (this.sides < 3) return;
+                    const xs = this.points.map((p) => p.points.x);
+        const ys = this.points.map((p) => p.points.y);
 
+         this.minX = Math.min(...xs);
+         this.minY = Math.min(...ys);
+         this.maxX = Math.max(...xs);
+         this.maxY = Math.max(...ys);
     const angleStep = (2 * Math.PI) / this.sides;
-    const points = [];
-
-    this.minX = Infinity;
-    this.minY = Infinity;
-    this.maxX = -Infinity;
-    this.maxY = -Infinity;
-
-    // === Generate original (fill) points ===
     for (let i = 0; i <= this.sides; i++) {
       const angle = i * angleStep - Math.PI / 2;
-      const x = this.radiusX * Math.cos(angle);
-      const y = this.radiusY * Math.sin(angle);
+      const x = this.x * Math.cos(angle);
+      const y = this.x * Math.sin(angle);
 
       const rotatedX = x * Math.cos(this.angle) - y * Math.sin(this.angle);
       const rotatedY = x * Math.sin(this.angle) + y * Math.cos(this.angle);
 
-      const finalX = this.centerX + rotatedX;
-      const finalY = this.centerY + rotatedY;
+      const finalX = this.x + rotatedX;
+      const finalY = this.x + rotatedY;
 
-      points.push({ x: finalX, y: finalY });
-
-      this.minX = Math.min(this.minX, finalX);
-      this.minY = Math.min(this.minY, finalY);
-      this.maxX = Math.max(this.maxX, finalX);
-      this.maxY = Math.max(this.maxY, finalY);
+      this.points.push({points:{ x: finalX, y: finalY },edgeModes:false,controls:[{ x: finalX - 20, y: finalY },{ x: finalX + 20, y: finalY }]});
     }
 
     ctx.save();
-
-    ctx.beginPath();
-    points.forEach((pt, i) => {
-      if (i === 0) ctx.moveTo(pt.x, pt.y);
-      else ctx.lineTo(pt.x, pt.y);
-    });
-    ctx.closePath();
-    ctx.fillStyle = this.color;
-    ctx.fill();
-
-    if (this.outline) {
-      const outlinePoints = points.map((pt) => {
-        const dx = pt.x - this.centerX;
-        const dy = pt.y - this.centerY;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        if (len === 0) return pt;
-        const offset = this.outlineThickness / 2;
-        return {
-          x: pt.x + (dx / len) * offset,
-          y: pt.y + (dy / len) * offset,
-        };
-      });
-
-      ctx.beginPath();
-      outlinePoints.forEach((pt, i) => {
-        if (i === 0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
-      });
-      ctx.closePath();
-
-      ctx.lineWidth = this.outlineThickness;
-      ctx.strokeStyle = this.outlineColor;
-      ctx.setLineDash(this.outlineType);
-      ctx.stroke();
-    }
-
-    if (selectedObj === this) {
-      const corners = [
-        { x: this.minX, y: this.minY },
-        { x: this.maxX, y: this.minY },
-        { x: this.maxX, y: this.maxY },
-        { x: this.minX, y: this.maxY },
-      ];
-
-      ctx.beginPath();
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 3]);
-      ctx.strokeStyle = "#FF0000";
-      ctx.moveTo(corners[0].x, corners[0].y);
-      for (let i = 1; i < corners.length; i++) {
-        ctx.lineTo(corners[i].x, corners[i].y);
+    ctx.beginPath()
+    if(this.mode === "rounded") LineUtils.drawRoundedShape(this.points,this.cornerRadius)
+    else LineUtils.drawLineShape(this.points)
+    ctx.fillStyle = this.color
+    ctx.fill()
+          if (this.outline) {
+        ctx.save();
+        ctx.lineWidth = this.outlineThickness;
+        ctx.setLineDash(this.outlineType);
+        ctx.strokeStyle = this.outlineColor;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+        ctx.restore();
       }
-      ctx.closePath();
-      ctx.stroke();
-    }
+      if(selectedObj === this){
 
-    ctx.setLineDash([]);
+        ctx.strokeRect(this.minX, this.minY, this.maxX - this.minX, this.maxY - this.minY);
+      }
+    
+
+
     ctx.restore();
   }
 
   whatSelected(mouse) {
-    const threshold = 8;
-
     const centerX = (this.minX + this.maxX) / 2;
     const centerY = (this.minY + this.maxY) / 2;
     const width = this.maxX - this.minX;
@@ -1253,76 +1352,13 @@ class Polygon {
     const localX = dx * cos - dy * sin + width / 2;
     const localY = dx * sin + dy * cos + height / 2;
 
-    const nearLeft = Math.abs(localX) < threshold;
-    const nearRight = Math.abs(localX - width) < threshold;
-    const nearTop = Math.abs(localY) < threshold;
-    const nearBottom = Math.abs(localY - height) < threshold;
-
-    if (nearLeft && nearTop) this.selectedArea = "TopLeft";
-    else if (nearRight && nearTop) this.selectedArea = "TopRight";
-    else if (nearLeft && nearBottom) this.selectedArea = "BottomLeft";
-    else if (nearRight && nearBottom) this.selectedArea = "BottomRight";
-    else if (nearLeft) this.selectedArea = "Left";
-    else if (nearRight) this.selectedArea = "Right";
-    else if (nearTop) this.selectedArea = "Top";
-    else if (nearBottom) this.selectedArea = "Bottom";
-    else if (localX > 0 && localX < width && localY > 0 && localY < height) {
-      this.selectedArea = "Selected";
-    } else {
-      this.selectedArea = null;
-    }
-
+    this.selectedArea = LineUtils.getNormalPostion(localX,localY,width,height,10)
     return this.selectedArea !== null;
   }
 
   formatSelected(mouse) {
-    if (this.isDoubleClicked) {
-      this.angle =
-        Math.atan2(mouse.y - this.minY, mouse.x - this.minX) - Math.PI / 2;
-    } else {
-      if (this.selectedArea === "Left") {
-        const newRadiusX = this.radiusX + (this.minX - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "Right") {
-        this.radiusX = (mouse.x - this.minX) / 2;
-      } else if (this.selectedArea === "Top") {
-        const newRadiusY = this.radiusY + (this.minY - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-      } else if (this.selectedArea === "Bottom") {
-        this.radiusY = (mouse.y - this.minY) / 2;
-      } else if (this.selectedArea === "TopLeft") {
-        const newRadiusY = this.radiusY + (this.minY - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        const newRadiusX = this.radiusX + (this.minX - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "TopRight") {
-        const newRadiusY = this.radiusY + (this.minY - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        this.radiusX = (mouse.x - this.minX) / 2;
-      } else if (this.selectedArea === "BottomLeft") {
-        this.radiusY = (mouse.y - this.minY) / 2;
-        const newRadiusX = this.radiusX + (this.minX - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "BottomRight") {
-        this.radiusY = (mouse.y - this.minY) / 2;
-        this.radiusX = (mouse.x - this.minX) / 2;
-      } else if (this.selectedArea === "Selected") {
-        this.centerX += mouse.x - lastMouseX;
-        this.centerY += mouse.y - lastMouseY;
-      }
-    }
+ 
+    
   }
   formatProperties() {
     propertiesBar.innerHTML = `
@@ -2097,8 +2133,9 @@ class TextBox {
     }
   }
 }
-class Images {
+class Images extends Formats{
   constructor(image, width, height, originalFile) {
+    super()
     this.x = 100;
     this.y = 100;
     this.width = 150;
@@ -2159,91 +2196,23 @@ class Images {
     const sin = Math.sin(-this.angle);
     const localX = dx * cos - dy * sin + this.width / 2;
     const localY = dx * sin + dy * cos + this.height / 2;
-
-    const nearLeft = Math.abs(localX) < threshold;
-    const nearRight = Math.abs(localX - this.width) < threshold;
-    const nearTop = Math.abs(localY) < threshold;
-    const nearBottom = Math.abs(localY - this.height) < threshold;
-
-    if (nearLeft && nearTop) this.selectedArea = "TopLeft";
-    else if (nearRight && nearTop) this.selectedArea = "TopRight";
-    else if (nearLeft && nearBottom) this.selectedArea = "BottomLeft";
-    else if (nearRight && nearBottom) this.selectedArea = "BottomRight";
-    else if (nearLeft) this.selectedArea = "Left";
-    else if (nearRight) this.selectedArea = "Right";
-    else if (nearTop) this.selectedArea = "Top";
-    else if (nearBottom) this.selectedArea = "Bottom";
-    else if (
-      localX > 0 &&
-      localX < this.width &&
-      localY > 0 &&
-      localY < this.height
-    ) {
-      this.selectedArea = "Selected";
-    } else {
-      this.selectedArea = null;
-    }
+          this.selectedArea = LineUtils.getNormalPostion(
+        localX,
+        localY,
+        this.width,
+        this.height,
+        10
+      );
 
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
-    if (this.isDoubleClicked) {
-      const center = {
-        x: this.x + this.width / 2,
-        y: this.y + this.height / 2,
-      };
-      this.angle =
-        Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
-    } else {
-      if (this.selectedArea === "Left") {
-        const newWidth = this.width + (this.x - mouse.x);
-        if (newWidth > 0) {
-          this.x = mouse.x;
-          this.width = newWidth;
-        }
-      } else if (this.selectedArea === "Right") {
-        this.width = mouse.x - this.x;
-      } else if (this.selectedArea === "Top") {
-        const newHeight = this.height + (this.y - mouse.y);
-        if (newHeight > 0) {
-          this.y = mouse.y;
-          this.height = newHeight;
-        }
-      } else if (this.selectedArea === "Bottom") {
-        this.height = mouse.y - this.y;
-      } else if (this.selectedArea === "TopLeft") {
-        const newWidth = this.width + (this.x - mouse.x);
-        if (newWidth > 0) {
-          this.x = mouse.x;
-          this.width = newWidth;
-        }
-        const newHeight = this.height + (this.y - mouse.y);
-        if (newHeight > 0) {
-          this.y = mouse.y;
-          this.height = newHeight;
-        }
-      } else if (this.selectedArea === "TopRight") {
-        this.width = mouse.x - this.x;
-        const newHeight = this.height + (this.y - mouse.y);
-        if (newHeight > 0) {
-          this.y = mouse.y;
-          this.height = newHeight;
-        }
-      } else if (this.selectedArea === "BottomLeft") {
-        const newWidth = this.width + (this.x - mouse.x);
-        if (newWidth > 0) {
-          this.x = mouse.x;
-          this.width = newWidth;
-        }
-        this.height = mouse.y - this.y;
-      } else if (this.selectedArea === "BottomRight") {
-        this.width = mouse.x - this.x;
-        this.height = mouse.y - this.y;
-      } else if (this.selectedArea === "Selected") {
+    super.rectFormat(mouse)
+      if (this.selectedArea === "Selected") {
         this.x += mouse.x - lastMouseX;
         this.y += mouse.y - lastMouseY;
       }
-    }
+    
   }
   formatProperties() {
     propertiesBar.innerHTML = `
@@ -2707,85 +2676,9 @@ async function saveAsImage() {
   }
 }
 
-function pointLineDistance(px, py, x1, y1, x2, y2) {
-  const A = px - x1;
-  const B = py - y1;
-  const C = x2 - x1;
-  const D = y2 - y1;
 
-  const dot = A * C + B * D;
-  const len_sq = C * C + D * D;
-  let param = -1;
-  if (len_sq !== 0) param = dot / len_sq;
 
-  let xx, yy;
 
-  if (param < 0) {
-    xx = x1;
-    yy = y1;
-  } else if (param > 1) {
-    xx = x2;
-    yy = y2;
-  } else {
-    xx = x1 + param * C;
-    yy = y1 + param * D;
-  }
-
-  const dx = px - xx;
-  const dy = py - yy;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-function computeBezierPoint(p0, p1, p2, p3, t) {
-  const x =
-    Math.pow(1 - t, 3) * p0.x +
-    3 * Math.pow(1 - t, 2) * t * p1.x +
-    3 * (1 - t) * Math.pow(t, 2) * p2.x +
-    Math.pow(t, 3) * p3.x;
-
-  const y =
-    Math.pow(1 - t, 3) * p0.y +
-    3 * Math.pow(1 - t, 2) * t * p1.y +
-    3 * (1 - t) * Math.pow(t, 2) * p2.y +
-    Math.pow(t, 3) * p3.y;
-
-  return { x, y };
-}
-
-function drawRoundedShape(points, radius) {
-  if (points.length < 2) return;
-  ctx.beginPath();
-  for (let i = 0; i < points.length; i++) {
-    const prev = points[(i - 1 + points.length) % points.length].points;
-    const curr = points[i].points;
-    const next = points[(i + 1) % points.length].points;
-
-    const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
-    const len1 = Math.hypot(v1.x, v1.y);
-    v1.x /= len1;
-    v1.y /= len1;
-    const v2 = { x: next.x - curr.x, y: next.y - curr.y };
-    const len2 = Math.hypot(v2.x, v2.y);
-    v2.x /= len2;
-    v2.y /= len2;
-    const p1 = {
-      x: curr.x - v1.x * Math.min(radius, len1 / 2),
-      y: curr.y - v1.y * Math.min(radius, len1 / 2),
-    };
-    const p2 = {
-      x: curr.x + v2.x * Math.min(radius, len2 / 2),
-      y: curr.y + v2.y * Math.min(radius, len2 / 2),
-    };
-
-    if (i === 0) {
-      ctx.moveTo(p1.x, p1.y);
-    } else {
-      ctx.lineTo(p1.x, p1.y);
-    }
-
-    ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
-  }
-  ctx.closePath();
-}
 function addImage(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2846,102 +2739,7 @@ function textMousePos(evt) {
   };
 }
 
-function getEdgeAtPosition(localMouseX, localMouseY, points) {
-  let threshold = 10;
-  for (let i = 0; i < points.length; i++) {
-    const current = points[i];
-    const next = points[(i + 1) % points.length];
 
-    const p1 = current.points;
-    const p2 = next.points;
-
-    if (current.edgeModes) {
-      const cp1 = current.controls[0];
-      const cp2 = current.controls[1];
-
-      const steps = 50;
-      let prev = computeBezierPoint(p1, cp1, cp2, p2, 0);
-
-      for (let t = 1; t <= steps; t++) {
-        const tNorm = t / steps;
-        const curr = computeBezierPoint(p1, cp1, cp2, p2, tNorm);
-        const dist = pointLineDistance(
-          localMouseX,
-          localMouseY,
-          prev.x,
-          prev.y,
-          curr.x,
-          curr.y
-        );
-        if (dist < threshold) return { value: i, type: "lineIndex" };
-        prev = curr;
-      }
-    } else {
-      const dist = pointLineDistance(
-        localMouseX,
-        localMouseY,
-        p1.x,
-        p1.y,
-        p2.x,
-        p2.y
-      );
-      if (dist <= threshold) return { value: i, type: "lineIndex" };
-    }
-  }
-  return false;
-}
-function getPointPositon(localMouseX, localMouseY, points) {
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i].points;
-    const pdx = localMouseX - p.x;
-    const pdy = localMouseY - p.y;
-    if (pdx * pdx + pdy * pdy < 10 * 10) {
-      return { value: i, type: "pointIndex" };
-    }
-  }
-
-  for (let i = 0; i < points.length; i++) {
-    if (points[i].edgeModes) {
-      for (let j = 0; j < 2; j++) {
-        const cp = points[i].controls[j];
-        const cdx = localMouseX - cp.x;
-        const cdy = localMouseY - cp.y;
-        if (cdx * cdx + cdy * cdy < 10 * 10) {
-          return {
-            value: { curveIndex: i, controlIndex: j },
-            type: "curveIndex",
-          };
-        }
-      }
-    }
-  }
-
-  return false;
-}
-function getNormalPostion(localX, localY, width, height, threshold) {
-  let selectedArea = null;
-  const nearLeft = Math.abs(localX) < threshold;
-  const nearRight = Math.abs(localX - width) < threshold;
-  const nearTop = Math.abs(localY) < threshold;
-  const nearBottom = Math.abs(localY - height) < threshold;
-  if (nearLeft && nearTop) selectedArea = "TopLeft";
-  else if (nearRight && nearTop) selectedArea = "TopRight";
-  else if (nearLeft && nearBottom) selectedArea = "BottomLeft";
-  else if (nearRight && nearBottom) selectedArea = "BottomRight";
-  else if (nearLeft) selectedArea = "Left";
-  else if (nearRight) selectedArea = "Right";
-  else if (nearTop) selectedArea = "Top";
-  else if (nearBottom) selectedArea = "Bottom";
-  else if (
-    localX > 0 &&
-    localX < this.width &&
-    localY > 0 &&
-    localY < this.height
-  ) {
-    selectedArea = "Selected";
-  }
-  return selectedArea;
-}
 async function generateCard() {
   selectedObj = null;
   selectedText = null;
