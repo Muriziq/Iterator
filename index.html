@@ -6,35 +6,26 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header></header>
-    <main>
-      <aside class="leftSidebar">
-        <div class="addObject">
-          <h3>Add Object</h3>
-          <button class="addRectangle">Add Rectangle</button>
-          <button class="addEllipse">Add Circle</button>
-          <button class="addPolygon">Add Polygon</button>
-          <button class="addLine">Add Pen</button>
-          <button class="addTextbox">Add Textbox</button>
-          <button class="file">
-            Upload Image
-            <input type="file" id="file" />
-          </button>
-        </div>
-        <div class="objectProps">
-          <button id="duplicate">Duplicate Object</button>
-          <button id="deleter">Delete Object</button>
-          <button id="pageEnd">Page End</button>
-          <button id="pageTop">Page Top</button>
-        </div>
-      </aside>
-      <section class="middlesec">
-        <div class="canvasProperties">
-          <div class="">
-            Size:<input type="text" id="width" />x<input
+    <header>
+           <div class="first-header">
+            Size: <div>
+              <div>
+                Width:
+<input type="text" id="width" />
+              </div>
+              <div>
+                Height:
+<input
               type="text"
               id="height"
             />
+              </div>
+
+            </div>
+          </div>
+          <div class="second-header">
+            <button onclick="changeOrientation('potrait')"></button>
+            <button onclick="changeOrientation('landscape')"></button>
           </div>
           <div>
             <select name="measurement" id="measurement">
@@ -56,24 +47,34 @@
               <option value="letter" selected>Letter</option>
             </select>
           </div>
-          <select name="orientation" id="orientation">
-            <option value="potrait">Potrait</option>
-            <option value="landscape">Landscape</option>
-          </select>
-        </div>
-        <div style="padding: 2rem; height: 100%;">
+    </header>
+    <main>
+
+      <aside class="leftSidebar">
+        <button><img src="images/Vector 160.svg" alt=""></button>
+        <button onclick="addRectangle()"><img src="images/Rectangle 86.svg" alt=""></button>
+        <button onclick="addTextbox()"><img src="images/Group 8.svg" alt=""></button>
+      </aside>
+      <section>
+        <section class="upsec">
+
+        </section>
         <div class="canvas">
+          <div></div>
           <canvas id="canvas"></canvas>
-        </div>
         </div>
 
       </section>
 
       <aside id="propertiesTab">
+        <div>
         <h3>Properties</h3>
-        <div id="properties">
-          <p>No object selected</p>
+        <button style="display: none;"></button>
         </div>
+
+        <section id="properties">
+          <p>No object selected</p>
+        </section>
       </aside>
     </main>
     <footer class="generate">

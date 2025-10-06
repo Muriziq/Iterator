@@ -3,6 +3,7 @@ const ctx = canvas.getContext("2d");
 canvas.width = canvas.getBoundingClientRect().width;
 canvas.height = canvas.getBoundingClientRect().height;
 const canvass = document.querySelector(".canvas");
+const canvassDiv = canvass.querySelector("div")
 const propertiesBar = document.getElementById("properties");
 const textBoxes = [];
 const generationArea = document.getElementById("generationArea");
@@ -53,8 +54,10 @@ fetch(
   .catch(console.error);
 
 window.addEventListener("load", () => {
-  width.value = canvas.width;
-  height.value = canvas.height;
+  
+  width.value =  measurement.width; 
+  height.value  = measurement.height;
+  canvasSize()
 });
 class LineUtils{
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
@@ -499,6 +502,7 @@ class Rectangle extends Formats {
     this.colorDeg = 0.2;
   }
   addObject() {
+
             const xs = this.points.map((p) => p.points.x);
         const ys = this.points.map((p) => p.points.y);
 
@@ -506,12 +510,13 @@ class Rectangle extends Formats {
         this.minY = Math.min(...ys);
         this.maxX = Math.max(...xs);
         this.maxY = Math.max(...ys);
+        
+            
     ctx.save();
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(this.angle);
-
     ctx.beginPath();
     this.createPath();
     ctx.fillStyle = this.colorType();
@@ -572,7 +577,7 @@ class Rectangle extends Formats {
         );
       } else {
         ctx.strokeRect(this.minX, this.minY, this.maxX - this.minX, this.maxY - this.minY);
-        if (this.mode === "scale") {
+        if (this.mode === "normal") {
           ctx.beginPath();
           ctx.fillStyle = "#000000";
           ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
@@ -804,25 +809,36 @@ class Rectangle extends Formats {
 
   formatProperties() {
     propertiesBar.innerHTML = `
-    <label>x:</label><input type="number" name="x" value="${changeValues(
-      this.x
-    )}">
-    <label>y:</label><input type="number" name="y" value="${changeValues(
+    <div>
+    <h3>Coordinate</h3>
+    <div class="two-grid">
+    <div>X    <input type="number" name="x" value="${this.roundedOrbeveled === "shaped"?changeValues(this.x + this.minX + this.width/2)  :changeValues(
+      this.x)}"></div>
+    <div> Y   <input type="number" name="y" value="${this.roundedOrbeveled === "shaped"?changeValues(this.x + this.minY + this.height/2)  :changeValues(
       this.y
-    )}">
-    <label>width:</label><input type="number" name="width" value="${changeValues(
-      this.width
-    )}">
-    <label>height:</label><input type="number" name="height" value="${changeValues(
+    )}"></div>
+    <div>W    <input type="number" name="width" value="${this.roundedOrbeveled === "shaped"? changeValues(this.maxX - this.minX) :changeValues(
+      this.width)}"></div>
+    <div> H  <input type="number" name="height" value="${this.roundedOrbeveled === "shaped"? changeValues(this.maxY - this.minY):changeValues(
       this.height
-    )}">
+    )}"> </div> 
+    <div style="grid-column: span 2;">Rotation <input type="number" name="angle" value="${
+      radToDeg(this.angle,"deg")
+    }"><p style="color:var(--input-color)">deg</p></div>
+    </div>
+    </div>
+    <div>
+    <h3>Fill</h3>
+    <select>
+    <option>None</option>
+    <option selected>Uniform</option>
+    <option>Linear-Gradient</option>
+    <option>Radial-Gradient</option>
+    </select>
+    </div>
     <label>Background Color:</label> <input type="color" name="color" value="${
       this.color
     }">
-    <label>Rotation (inRad):</label> <input type="number" name="angle" value="${
-      this.angle
-    }">
-    <hr>
     <p>
     <span>Rounded:<input type="radio" name="roundedOrbeveled" value="rounded" ${
       this.roundedOrbeveled === "rounded" ? "checked" : ""
@@ -910,45 +926,43 @@ class Rectangle extends Formats {
 
   changeProperties(e) {
     const name = e.target.name;
-    if (e.target.name === "angle") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (e.target.type === "number") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = backValues(value);
-      }
-    } else if (name === "outlineType") {
-      const value = e.target.value;
-      if (value === "dashed") {
-        this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-        this.isDashed = true;
-      } else {
-        this.outlineType = [];
-        this.isDashed = false;
-      }
-      this.formatProperties();
-    } else if (name === "outline") {
-      const value = e.target.value;
-      if (value === "true") {
-        this[name] = true;
-      } else {
-        this[name] = false;
-      }
-      this.formatProperties();
-    } else {
-      const value = e.target.value;
-      if (value != NaN) {
-        this[name] = value;
+    if(name === "angle"){
+      this.angle = radToDeg(e.target.value,"rad")
+    }
+    else if(e.target.type === "number"){
+      const value = backValues(parseFloat(e.target.value))
+      if(!isNaN(value) && value!== null){
+        if(e.target.name === "x"){
+          this.x = this.roundedOrbeveled === "shaped" ? value - this.minX - this.width/2 : value;
+        }
+        else if(e.target.name === "y"){
+                   this.y = this.roundedOrbeveled === "shaped" ? value - this.minY - this.height/2 : value;
+ 
+        }
+        else if(e.target.name === "width"){
+          if(this.roundedOrbeveled === "shaped"){
+            const scaleX = value / (this.maxX - this.minX)
+            this.points.forEach(p =>{
+              p.points.x *= scaleX
+              p.controls[0].x *= scaleX
+              p.controls[1].x *=scaleX
+            })
+          }else this.width = value
+        }
+        else if(e.target.name === "height"){
+          if(this.roundedOrbeveled === "shaped"){
+            const scaleY = value / (this.maxY - this.minY)
+            this.points.forEach(p =>{
+              p.points.y *= scaleY
+              p.controls[0].y *= scaleY
+              p.controls[1].y *=scaleY
+            })
+          }else this.height = value
+        }
+
       }
     }
-    if (this.isDashed) {
-      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    } else {
-      this.outlineType = [];
-    }
+  
 
     draw();
   }
@@ -984,7 +998,7 @@ class Rectangle extends Formats {
       return {
         x: [this.x, this.x + this.width / 2, this.x + this.width],
         y: [this.y, this.y + this.height / 2, this.y + this.height],
-        pos: { x: this.minX, y: this.minY, width: this.maxX - this.minX, height: this.maxY - this.minY },
+        pos: { x: this.minX + this.x + this.width / 2 , y: this.minY + this.y + this.height / 2, width: this.maxX - this.minX, height: this.maxY - this.minY },
       };
     }
     return {
@@ -2036,46 +2050,51 @@ class TextBox {
   generateText(num, iteratedBox) {
     const paragraph = document.createElement("p");
     const canvassRect = canvass.getBoundingClientRect();
+    const cropOffset = canvassDiv.getBoundingClientRect()
+    const inputRect = this.input.getBoundingClientRect()
+
     if (this.iterated && num < this.textArea.split("\n").length) {
       paragraph.textContent = this.textArea.split("\n")[num];
     } else {
       paragraph.textContent = this.text;
     }
+
+    const ratio = iteratedBox.width / cropOffset.width
+
+
     paragraph.style.position = "absolute";
-    paragraph.style.left = `${
-      (parseFloat(this.input.style.left) / canvassRect.width) * 100
-    }%`;
-    paragraph.style.top = `${
-      (parseFloat(this.input.style.top) / canvassRect.height) * 100
-    }%`;
+    paragraph.style.left = `${(inputRect.x - cropOffset.x) * ratio}px`;
+  paragraph.style.top = `${(inputRect.y - cropOffset.y) * ratio}px`;
+
+
     paragraph.style.fontSize =
       parseFloat(this.input.style.fontSize) *
-        (iteratedBox.width / canvassRect.width) +
+        ratio +
       "px";
     paragraph.style.color = this.input.style.color;
     paragraph.style.width =
       parseFloat(this.input.offsetWidth) *
-        (iteratedBox.width / canvassRect.width) +
+        ratio +
       "px";
     paragraph.style.height =
       parseFloat(this.input.offsetHeight) *
-        (iteratedBox.height / canvassRect.height) +
+        ratio +
       "px";
     paragraph.style.paddingLeft =
       parseFloat(this.input.style.paddingLeft) *
-        (iteratedBox.width / canvassRect.width) +
+        ratio +
       "px";
     paragraph.style.paddingRight =
       parseFloat(this.input.style.paddingRight) *
-        (iteratedBox.width / canvassRect.width) +
+        ratio +
       "px";
     paragraph.style.paddingTop =
       parseFloat(this.input.style.paddingTop) *
-        (iteratedBox.height / canvassRect.height) +
+        ratio +
       "px";
     paragraph.style.paddingBottom =
       parseFloat(this.input.style.paddingBottom) *
-        (iteratedBox.height / canvassRect.height) +
+        ratio +
       "px";
     paragraph.style.textAlign = this.input.style.textAlign;
     paragraph.style.fontFamily = this.input.style.fontFamily;
@@ -2351,21 +2370,17 @@ class Images extends Formats{
     }
   }
 }
-document.querySelector(".addRectangle").addEventListener("click", addRectangle);
-document.querySelector(".addEllipse").addEventListener("click", addEllipse);
-document.querySelector(".addPolygon").addEventListener("click", addPolygon);
-document.querySelector(".addLine").addEventListener("click", addLine);
-document.querySelector(".addTextbox").addEventListener("click", addTextbox);
-document.getElementById("file").addEventListener("change", (e) => addImage(e));
-document.querySelector(".saveAsPdf").addEventListener("click", saveAsPDF);
-document.getElementById("orientation").addEventListener("change", (e) => {
-  canvasOrientation = e.target.value;
-  canvasSize(measurement);
-});
+
+// document.querySelector(".saveAsPdf").addEventListener("click", saveAsPDF);
+function changeOrientation(value){
+  canvasOrientation = value;
+  canvasSize();
+}
+
 document.getElementById("measurement").addEventListener("change", (e) => {
   whatsMeasured = e.target.value;
-  width.value = changeValues(canvas.getBoundingClientRect().width);
-  height.value = changeValues(canvas.getBoundingClientRect().height);
+  width.value = changeValues(canvassDiv.getBoundingClientRect().width);
+  height.value = changeValues(canvassDiv.getBoundingClientRect().height);
   draw();
   if (selectedObj) selectedObj.formatProperties();
   if (selectedText) selectedText.formatProperties();
@@ -2374,29 +2389,22 @@ document.getElementById("paperSize").addEventListener("change", (e) => {
   const value = e.target.value;
   if (value === "a1") {
     measurement = measurementArr[0];
-    canvasSize();
   } else if (value === "a2") {
     measurement = measurementArr[1];
-    canvasSize();
   } else if (value === "a3") {
     measurement = measurementArr[2];
-    canvasSize();
   } else if (value === "a4") {
     measurement = measurementArr[3];
-    canvasSize();
   } else if (value === "a5") {
     measurement = measurementArr[4];
-    canvasSize();
   } else if (value === "a6") {
     measurement = measurementArr[5];
-    canvasSize();
   } else if (value === "business-card") {
     measurement = measurementArr[6];
-    canvasSize();
   } else if (value === "letter") {
     measurement = measurementArr[7];
-    canvasSize();
   }
+  canvasSize()
 });
 width.addEventListener("input", (e) => {
   const widthValue = backValues(e.target.value);
@@ -2441,92 +2449,89 @@ document.getElementById("noPerColumn").addEventListener("input", (e) => {
   renderPageColumn = e.target.value;
 });
 let duplicateClicked = false;
-document.getElementById("duplicate").addEventListener("click", () => {
-  duplicateClicked = !duplicateClicked;
-  if (duplicateClicked) {
-    if (selectedObj) {
-      cloneObj = selectedObj.showClone();
-    } else if (selectedText) {
-      cloneText = selectedText.showClone();
-    } else {
-      alert("No Selected Object");
-    }
-  } else {
-    if (cloneText) {
-      cloneText.input.remove();
-    }
-    cloneObj = null;
-    cloneText = null;
-  }
-});
-document.getElementById("pageTop").addEventListener("click", () => {
-  if (selectedObj) {
-    let index = objects.indexOf(selectedObj);
-    if (index !== -1) {
-      objects.splice(index, 1);
-      objects.push(selectedObj);
-      draw();
-    }
-  }
-});
-document.getElementById("pageEnd").addEventListener("click", () => {
-  if (selectedObj) {
-    let index = objects.indexOf(selectedObj);
-    if (index !== -1) {
-      objects.splice(index, 1);
-      objects.unshift(selectedObj);
-      draw();
-    }
-  }
-});
-document.getElementById("deleter").addEventListener("click", () => {
-  if (selectedObj) {
-    let index = objects.indexOf(selectedObj);
-    objects.splice(index, 1);
-    selectedObj = null;
-    propertiesBar.innerHTML = "";
-    draw();
-  } else if (selectedText) {
-    let index = objects.indexOf(selectedText);
-    selectedText.input.remove();
-    textBoxes.splice(index, 1);
-    selectedText = null;
-    propertiesBar.innerHTML = "";
-  }
-});
+// document.getElementById("duplicate").addEventListener("click", () => {
+//   duplicateClicked = !duplicateClicked;
+//   if (duplicateClicked) {
+//     if (selectedObj) {
+//       cloneObj = selectedObj.showClone();
+//     } else if (selectedText) {
+//       cloneText = selectedText.showClone();
+//     } else {
+//       alert("No Selected Object");
+//     }
+//   } else {
+//     if (cloneText) {
+//       cloneText.input.remove();
+//     }
+//     cloneObj = null;
+//     cloneText = null;
+//   }
+// });
+// document.getElementById("pageTop").addEventListener("click", () => {
+//   if (selectedObj) {
+//     let index = objects.indexOf(selectedObj);
+//     if (index !== -1) {
+//       objects.splice(index, 1);
+//       objects.push(selectedObj);
+//       draw();
+//     }
+//   }
+// });
+// document.getElementById("pageEnd").addEventListener("click", () => {
+//   if (selectedObj) {
+//     let index = objects.indexOf(selectedObj);
+//     if (index !== -1) {
+//       objects.splice(index, 1);
+//       objects.unshift(selectedObj);
+//       draw();
+//     }
+//   }
+// });
+// document.getElementById("deleter").addEventListener("click", () => {
+//   if (selectedObj) {
+//     let index = objects.indexOf(selectedObj);
+//     objects.splice(index, 1);
+//     selectedObj = null;
+//     propertiesBar.innerHTML = "";
+//     draw();
+//   } else if (selectedText) {
+//     let index = objects.indexOf(selectedText);
+//     selectedText.input.remove();
+//     textBoxes.splice(index, 1);
+//     selectedText = null;
+//     propertiesBar.innerHTML = "";
+//   }
+// });
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
-  const style = window.getComputedStyle(canvass);
   const canvassRect = canvass.getBoundingClientRect();
   width.value = changeValues(measurement.width);
   height.value = changeValues(measurement.height);
   const rect = {
-    width: canvassRect.width - parseFloat(style.padding) * 2,
-    height: canvassRect.height - parseFloat(style.padding) * 2,
+    width: canvassRect.width - 50,
+    height: canvassRect.height - 50,
   };
   if (canvasOrientation === "potrait") {
     if (measurement.height > measurement.width) {
       const newWidth = (measurement.width / measurement.height) * rect.height;
-      canvas.style.width = newWidth + "px";
-      canvas.style.height = rect.height + "px";
+      canvassDiv.style.width = newWidth + "px";
+      canvassDiv.style.height = rect.height + "px";
     } else {
       const newHeight = (measurement.height / measurement.width) * rect.width;
-      canvas.style.width = rect.width + "px";
-      canvas.style.height = newHeight + "px";
+      canvassDiv.style.width = rect.width + "px";
+      canvassDiv.style.height = newHeight + "px";
     }
   } else {
     if (measurement.height > measurement.width) {
       const newHeight = (measurement.width / measurement.height) * rect.width;
-      canvas.style.width = rect.width + "px";
-      canvas.style.height = newHeight + "px";
+      canvassDiv.style.width = rect.width + "px";
+      canvassDiv.style.height = newHeight + "px";
     } else {
       const newWidth = (measurement.height / measurement.width) * rect.height;
-      canvas.style.width = newWidth + "px";
-      canvas.style.height = rect.height + "px";
+      canvassDiv.style.width = newWidth + "px";
+      canvassDiv.style.height = rect.height + "px";
     }
   }
-  canvas.width = parseFloat(canvas.style.width);
-  canvas.height = parseFloat(canvas.style.height);
   fitToPage();
   draw();
 }
@@ -2560,27 +2565,33 @@ function backValues(x) {
     return x * 3.78;
   }
 }
+function radToDeg(val,type){
+  if(type === "rad"){
+    return val * Math.PI / 180
+  }
+  else{
+    return val * 180 / Math.PI
+  }
+}
 function fitToPage() {
-  const style = window.getComputedStyle(canvass);
-  const rect = canvas.getBoundingClientRect();
+  const rect = canvassDiv.getBoundingClientRect();
   const container = canvass.getBoundingClientRect();
 
   const widthDifference =
-    rect.width - container.width + parseFloat(style.padding) * 2;
+    rect.width - container.width + 50;
   const heightDifference =
-    rect.height - container.height + parseFloat(style.padding) * 2;
-  console.log(rect.height, container.height);
+    rect.height - container.height + 50;
   if (heightDifference > 0 || widthDifference > 0) {
     if (heightDifference > widthDifference) {
-      canvas.style.width =
-        rect.width - heightDifference - parseFloat(style.padding) + "px";
-      canvas.style.height =
-        rect.height - heightDifference - parseFloat(style.padding) + "px";
+      canvassDiv.style.width =
+        rect.width - heightDifference - 25 + "px";
+      canvassDiv.style.height =
+        rect.height - heightDifference - 25 + "px";
     } else {
-      canvas.style.width =
-        rect.width - widthDifference - parseFloat(style.padding) + "px";
-      canvas.style.height =
-        rect.height - widthDifference - parseFloat(style.padding) + "px";
+      canvassDiv.style.width =
+        rect.width - widthDifference - 25 + "px";
+      canvassDiv.style.height =
+        rect.height - widthDifference - 25 + "px";
     }
   }
 }
@@ -2744,7 +2755,7 @@ async function generateCard() {
   selectedObj = null;
   selectedText = null;
   generationArea.innerHTML = "";
-  const canvaDefault = canvas.getBoundingClientRect();
+  const canvaDefault = canvassDiv.getBoundingClientRect();
   const boxesPerPage = renderPageColumn * renderPageRow;
 
   const createNewPage = () => {
@@ -2806,21 +2817,30 @@ async function generateCard() {
         imgObj.addObject();
       }
     }
-    const canvasData = canvas.toDataURL();
+    const croppedCanvas = document.createElement("canvas")
+    const cty = croppedCanvas.getContext('2d');
+const rect = canvas.getBoundingClientRect();
+
+croppedCanvas.width = canvaDefault.width
+croppedCanvas.height = canvaDefault.height
+
+cty.drawImage(canvas, canvaDefault.x - rect.x, canvaDefault.y - rect.y, canvaDefault.width, canvaDefault.height, 0, 0, canvaDefault.width, canvaDefault.height);
+    const canvasData = croppedCanvas.toDataURL();
+
     const div = document.createElement("div");
     const img = document.createElement("img");
     img.src = canvasData;
 
     div.style.position = "relative";
-    div.style.backgroundColor = "lightblue";
+    div.style.backgroundColor = "#ffffff";
     div.style.display = "flex";
     div.style.alignItems = "center";
     div.style.justifyContent = "center";
     if (renderPageResolution === "auto") {
-      div.style.width = "90%";
+      div.style.width = "100%";
       img.style.width = "100%";
       img.style.height = "100%";
-      img.style.objectFit = "contain";
+      img.style.objectFit = "cover";
       div.append(img);
       generationArea.append(div);
       div.style.height = `${
