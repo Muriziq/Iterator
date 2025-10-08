@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rounded and Bezier Shape</title>
+  <style>
+    canvas {
+      border: 1px solid #ccc;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="700" height="500"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  // Define shape points
+  const points = [
+    {
+      points: { x: 100, y: 100 },
+      edgeModes: null,
+    },
+    {
+      points: { x: 250, y: 80 },
+      edgeModes: "rounded",  // Rounded corner
+    },
+    {
+      points: { x: 400, y: 100 },
+      edgeModes: true,
+      controls: [  // Bezier curve from previous point to here
+        { x: 400, y: 20 },
+        { x: 350, y: 180 }
+      ]
+    },
+    {
+      points: { x: 450, y: 250 },
+      edgeModes: "rounded"
+    },
+    {
+      points: { x: 300, y: 300 },
+      edgeModes: null
+    },
+    {
+      points: { x: 150, y: 250 },
+      edgeModes: null
+    }
+  ];
+
+  function drawSmartShape(points, radius) {
+    if (points.length < 2) return;
+
+    ctx.beginPath();
+
+    for (let i = 0; i < points.length; i++) {
+      const curr = points[i].points;
+      const prevIdx = (i - 1 + points.length) % points.length;
+      const nextIdx = (i + 1) % points.length;
+      const prev = points[prevIdx].points;
+      const next = points[nextIdx].points;
+      const mode = points[i].edgeModes;
+      if (mode === "rounded") {
+        // Vector from previous to current
+        const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+        const len1 = Math.hypot(v1.x, v1.y);
+        v1.x /= len1;
+        v1.y /= len1;
+
+        // Vector from current to next
+        const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+        const len2 = Math.hypot(v2.x, v2.y);
+        v2.x /= len2;
+        v2.y /= len2;
+
+        const p1 = {
+          x: curr.x - v1.x * Math.min(radius, len1 / 2),
+          y: curr.y - v1.y * Math.min(radius, len1 / 2)
+        };
+        const p2 = {
+          x: curr.x + v2.x * Math.min(radius, len2 / 2),
+          y: curr.y + v2.y * Math.min(radius, len2 / 2)
+        };
+
+        if (i === 0) {
+          ctx.moveTo(p1.x, p1.y);
+        } else {
+          // If previous edge was bezier, use bezier
+          const prevPoint = points[prevIdx];
+          if (prevPoint.edgeModes && prevPoint.controls) {
+            const cp1 = prevPoint.controls[0];
+            const cp2 = prevPoint.controls[1];
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p1.x, p1.y);
+          } else {
+            ctx.lineTo(p1.x, p1.y);
+          }
+        }
+
+        ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+
+      } else {
+        if (i === 0) {
+          ctx.moveTo(curr.x, curr.y);
+        } else {
+          const prevPoint = points[prevIdx];
+          if (prevPoint.edgeModes) {
+            const cp1 = prevPoint.controls[0];
+            const cp2 = prevPoint.controls[1];
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, curr.x, curr.y);
+          } else {
+            ctx.lineTo(curr.x, curr.y);
+          }
+        }
+      }
+    }
+    const last = points[points.length - 1];
+    const first = points[0];
+    if (last.edgeModes) {
+      const cp1 = last.controls[0];
+      const cp2 = last.controls[1];
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, first.points.x, first.points.y);
+    } else {
+      ctx.lineTo(first.points.x, first.points.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  drawSmartShape(points, 25);
+</script>
+</body>
+</html>

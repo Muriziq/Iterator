@@ -7,7 +7,7 @@
   --h3-fill: #e4e4e4;
   --border-bottom: 2px solid #616161;
   --close-button: #929292;
-  --input-color: #f8f8f8
+  --input-color: #f8f8f8;
 }
 *{
   margin: 0;
@@ -40,7 +40,7 @@ header{
   flex-direction: column;
   gap: 0.3rem;
 }
-.first-header > div div,.two-grid > div{
+.first-header > div div,.two-grid > div,.thick{
   font-size: 0.7rem;
   background-color: var(--input-img);
   width: auto;
@@ -50,7 +50,11 @@ header{
   gap: 0.5rem;
   border-radius: 0.3rem;
   font-weight: bold;
+  color: var(--h3-fill);
 
+}
+.thick{
+  text-wrap: nowrap;
 }
 .first-header input{
   outline: none;
@@ -94,7 +98,7 @@ header{
   height:27px ;
 }
 header select{
-  height: 50px;
+  height: 40px;
   outline: none;
   background-color: var(--icon-img);
   border: none;
@@ -134,9 +138,10 @@ main{
   background-color: var(--side-color);
 }
 #propertiesTab{
-  width: 300px;
+  width: 400px;
   background-color: var(--side-color);
   height: 100%;
+  overflow-y: auto;
 }
 main > section{
   position: relative;
@@ -174,6 +179,7 @@ main > section{
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  font-size: 0.7rem;
 }
 .two-grid{
    display: grid;
@@ -189,7 +195,7 @@ main > section{
   display: flex;
   flex-direction: row;
 }
-.two-grid input{
+.two-grid input,.color-div input[type="number"],.color-sec input,.thick input{
     outline: none;
   background-color: transparent;
   border: none;
@@ -199,7 +205,108 @@ main > section{
   width: 100%;
   color: var(--input-color);
 }
-
+#properties select{
+  padding: 0.5rem;
+  outline: none;
+  border: none;
+  border-radius: 0.3rem;
+  background-color: var(--input-img);
+  color: var(--input-color);
+  
+}
+.color-div,.uniform-div{
+  background-color:var(--icon-img);
+  color:var(--input-color);
+  padding:0.5rem;
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+  border-radius: 0.3rem;
+  display: flex;
+  gap: 0.3rem;
+  
+}
+.color-div > div{
+  background-color: var(--input-img);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.5rem;
+  border-radius: 0.1rem;
+}
+.color-div > div input[type="number"]{
+  min-width: 30px;
+  width: 100%;
+}
+.color-div input[type="color"],.uniform-div input[type="color"]{
+  background-color: var(--input-img);
+  outline: none;
+  border: none;
+  padding: 0.2rem;
+}
+.color-div button{
+  width: 20px;
+  height: 5px;
+  background-color: var(--h3-fill) ;
+  border: none;
+  border-radius: 0.3rem;
+}
+.color-sec{
+  display: flex;
+  flex-direction: row;
+  font-size: 0.7rem;
+  gap: 1rem;
+}
+.color-sec div,.color-sec button{
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  font-size: inherit;
+  text-wrap: nowrap;
+  align-items: center;
+    background-color: var(--input-img);
+  color: var(--input-color);
+  border: none;
+  border-radius: 0.2rem;
+}
+.color-sec button{
+  gap: 0.5rem;
+}
+#properties .color-sec input{
+  margin-left: 0.5rem;
+  padding-right: 0;
+}
+.color-sec img{
+  width: 15px;
+  height: auto;
+  object-fit: cover;
+}
+.normalb ,.dashedb{
+  height: 35px;
+  width: 34px;
+  background-color: var(--input-img);
+  border-radius: 0.2rem;
+  position: relative;
+  border: none;
+  margin-left: 0.5rem;
+}
+.normalb::before,.dashedb::before{
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+  width: 20px;
+  height: 15px;
+}
+.normalb::before{
+  border: 2px solid var(--input-color);
+}
+.dashedb::before{
+  border: 2px dashed var(--input-color);
+}
 .canvas{
   width: 100%;
   height: 100%;
@@ -219,7 +326,57 @@ main > section{
   height: 100%;
 }
 
-
+.outlinet,.outlinef{
+  position: relative;
+  border: none;
+    background-color: var(--h3-fill);
+      height: 5px;
+  border-radius: 0.5rem;
+}
+.outlinet{
+  width: 40px;
+}
+.outlinef,.outlinef::before{
+  width: 20px;
+}
+.outlinef::before{
+  content: "";
+      background-color: var(--h3-fill);
+      height: 5px;
+  border-radius: 0.5rem;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%) rotate(90deg);
+}
+.shape > div{
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: center;
+}
+.shape button{
+  width: 40px;
+  height: 40px;
+  border-radius: 0.3rem;
+  border: none;
+  background-color: var(--icon-img);
+  padding: 0.5rem;
+}
+.shape .normal{
+  background-color: var(--icon-img);
+  border-radius: 0.3rem;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  width: auto;
+  height: auto;
+  color: var(--input-color);
+}
+.shape img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 footer{
   background-color: var(--side-color);
   padding: 1rem;

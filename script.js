@@ -69,7 +69,7 @@ class LineUtils{
     const p1 = current.points;
     const p2 = next.points;
 
-    if (current.edgeModes) {
+    if (current.edgeModes === "shaped") {
       const cp1 = current.controls[0];
       const cp2 = current.controls[1];
 
@@ -115,7 +115,7 @@ static getPointPositon(localMouseX, localMouseY, points) {
   }
 
   for (let i = 0; i < points.length; i++) {
-    if (points[i].edgeModes) {
+    if (points[i].edgeModes === "shaped") {
       for (let j = 0; j < 2; j++) {
         const cp = points[i].controls[j];
         const cdx = localMouseX - cp.x;
@@ -167,55 +167,111 @@ static drawRoundedShape(points, radius) {
   }
   ctx.closePath();
 }
-static drawLineShape(points){
-      ctx.beginPath();
-      ctx.moveTo(points[0].points.x, points[0].points.y);
+  static drawSmartShape(points) {
+    if (points.length < 2) return;
 
-      for (let i = 0; i < points.length; i++) {
-        const next = (i + 1) % points.length;
+    ctx.beginPath();
 
-        if (points[i].edgeModes) {
-          const cp1 = points[i].controls[0];
-          const cp2 = points[i].controls[1];
-          const pNext = points[next].points;
-          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, pNext.x, pNext.y);
+    for (let i = 0; i < points.length; i++) {
+      const curr = points[i].points;
+      const prevIdx = (i - 1 + points.length) % points.length;
+      const nextIdx = (i + 1) % points.length;
+      const prev = points[prevIdx].points;
+      const next = points[nextIdx].points;
+      const mode = points[i].edgeModes;
+      if (mode === "rounded") {
+        const radius = points[i].cornerRadius
+        const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+        const len1 = Math.hypot(v1.x, v1.y);
+        v1.x /= len1;
+        v1.y /= len1;
+        const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+        const len2 = Math.hypot(v2.x, v2.y);
+        v2.x /= len2;
+        v2.y /= len2
+        const p1 = {
+          x: curr.x - v1.x * Math.min(radius, len1 / 2),
+          y: curr.y - v1.y * Math.min(radius, len1 / 2)
+        };
+        const p2 = {
+          x: curr.x + v2.x * Math.min(radius, len2 / 2),
+          y: curr.y + v2.y * Math.min(radius, len2 / 2)
+        };
+
+        if (i === 0) {
+          ctx.moveTo(p1.x, p1.y);
         } else {
-          ctx.lineTo(points[next].points.x, points[next].points.y);
+          const prevPoint = points[prevIdx];
+          if (prevPoint.edgeModes && prevPoint.controls) {
+            const cp1 = prevPoint.controls[0];
+            const cp2 = prevPoint.controls[1];
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p1.x, p1.y);
+          } else {
+            ctx.lineTo(p1.x, p1.y);
+          }
+        }
+
+        ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+
+      } else {
+        if (i === 0) {
+          ctx.moveTo(curr.x, curr.y);
+        } else {
+          const prevPoint = points[prevIdx];
+          if (prevPoint.edgeModes === "shaped") {
+            const cp1 = prevPoint.controls[0];
+            const cp2 = prevPoint.controls[1];
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, curr.x, curr.y);
+          } else {
+            ctx.lineTo(curr.x, curr.y);
+          }
         }
       }
-      ctx.closePath();
-}
+    }
+    const last = points[points.length - 1];
+    const first = points[0];
+    if (last.edgeModes === "shaped") {
+      const cp1 = last.controls[0];
+      const cp2 = last.controls[1];
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, first.points.x, first.points.y);
+    } else {
+      ctx.lineTo(first.points.x, first.points.y);
+    }
+    ctx.closePath();
+  }
+
 static drawEditArcs(points,selectedArea,selectedLineIndex){
         points.forEach((p, i) => {
           ctx.beginPath();
-          ctx.arc(p.points.x, p.points.y, 7, 0, Math.PI * 2);
+          ctx.rect(p.points.x-4,p.points.y-4,8,8)
+
           if(selectedArea === "pointIndex" && i === selectedLineIndex)ctx.fillStyle =  "#0000ff";
           else ctx.fillStyle =  "#0000ff88";
-          ctx.fill();
-          ctx.strokeStyle = "#000000";
+                    ctx.strokeStyle = "#e4e4e4"
+          ctx.fill()
+          ctx.lineWidth = 2
           ctx.stroke();
         });
 
         points.forEach((isCurve, i) => {
-          if (isCurve.edgeModes) {
+          if (isCurve.edgeModes === "shaped") {
             isCurve.controls.forEach((cp, j) => {
+
               ctx.beginPath();
-              ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
+              ctx.moveTo(isCurve.points.x, isCurve.points.y);
+              ctx.lineTo(cp.x, cp.y);
+              ctx.strokeStyle = "#0000ff88";
+              ctx.lineWidth = 2;
+              ctx.stroke();
+                            ctx.beginPath();
+              ctx.rect(cp.x-3,cp.y-3,6,6)
               const isSelected =
                 selectedArea === "curveIndex"  &&
                 selectedLineIndex.curveIndex === i &&
                 selectedLineIndex.controlIndex === j;
-              ctx.fillStyle = isSelected ? "#00cc00" : "#00cc0088";
+              ctx.fillStyle = isSelected ? "#00ff00" : "#00ff0088";
               ctx.fill();
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 1;
-              ctx.stroke();
-              ctx.beginPath();
-              ctx.moveTo(isCurve.points.x, isCurve.points.y);
-              ctx.lineTo(cp.x, cp.y);
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 2;
-              ctx.stroke();
+              ctx.stroke()
             });
           }
         });
@@ -431,34 +487,34 @@ class Rectangle extends Formats {
     this.y = 100;
     this.width = 150;
     this.height = 100;
-    this.color = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff"];
+    this.color = ["#ff0000", "#0000ff"];
     this.outline = false;
     this.outlineColor = "#00ff00";
     this.outlineThickness = 2;
-    this.lineJoin = "round";
     this.lineDashWidth = 5;
     this.lineDashSpacing = 3;
     this.selectedArea = null;
     this.outlineType = [];
-    this.isDashed = false;
     this.isDoubleClicked = false;
     this.angle = 0;
     this.roundedOrbeveled = "shaped";
     this.cornerRadius = 0;
     this.clipped = "none";
     this.clips = [];
+    this.opacity = 100
     this.points = [
       {
         points: { x: -this.width / 2, y: -this.height / 2 },
-        edgeModes: false,
+        edgeModes: null,
         controls: [
           { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
           { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
         ],
+        cornerRadius: 0
       },
       {
         points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
-        edgeModes: false,
+        edgeModes: null,
         controls: [
           {
             x: -this.width / 2 + this.width,
@@ -469,13 +525,14 @@ class Rectangle extends Formats {
             y: -this.height / 2 + this.height * 0.75,
           },
         ],
+        cornerRadius: 0
       },
       {
         points: {
           x: -this.width / 2 + this.width,
           y: -this.height / 2 + this.height,
         },
-        edgeModes: false,
+        edgeModes: null,
         controls: [
           {
             x: -this.width / 2 + this.width * 0.75,
@@ -486,20 +543,23 @@ class Rectangle extends Formats {
             y: -this.height / 2 + this.height,
           },
         ],
+        cornerRadius: 0
       },
       {
         points: { x: -this.width / 2, y: -this.height / 2 + this.height },
-        edgeModes: false,
+        edgeModes: null,
         controls: [
           { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
           { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
         ],
+        cornerRadius: 0
       },
     ];
     this.selectedLineIndex = null;
     this.mode = "edit";
-    this.colorFill = "linear";
+    this.colorFill = "uniform";
     this.colorDeg = 0.2;
+    this.colorStop = []
   }
   addObject() {
 
@@ -527,18 +587,16 @@ class Rectangle extends Formats {
         ctx.lineWidth = this.outlineThickness;
         ctx.setLineDash(this.outlineType);
         ctx.strokeStyle = this.outlineColor;
-        ctx.lineJoin = "round";
         ctx.stroke();
         ctx.restore();
       }
-      if (this.mode === "edit") LineUtils.drawEditArcs(this.points,this.selectedArea,this.selectedLineIndex)
+      if (this.mode === "edit" && selectedObj === this) LineUtils.drawEditArcs(this.points,this.selectedArea,this.selectedLineIndex)
     }
     ctx.closePath();
     if (
       (this.outline && this.roundedOrbeveled !== "shaped")
     ) {
       ctx.beginPath();
-      ctx.lineJoin = this.lineJoin;
       ctx.lineWidth = this.outlineThickness;
       ctx.strokeStyle = this.outlineColor;
       ctx.setLineDash(this.outlineType);
@@ -602,8 +660,18 @@ class Rectangle extends Formats {
   }
   createPath() {
     if (this.roundedOrbeveled === "shaped") {
-      if(this.mode === "shapeRounded") LineUtils.drawRoundedShape(this.points,this.cornerRadius);
-      else LineUtils.drawLineShape(this.points)
+      let edgeCurve = false
+      this.points.forEach(p=>{
+        if(p.edgeModes !== null) edgeCurve = true
+      })
+      if(edgeCurve)LineUtils.drawSmartShape(this.points)
+      else{
+    LineUtils.drawRoundedShape(this.points,this.cornerRadius)
+    this.points.forEach(p => {
+      p.cornerRadius = this.cornerRadius
+    })
+      } 
+      
     } 
     else if (this.roundedOrbeveled === "rounded") {
       this.drawRoundedRect(
@@ -624,7 +692,9 @@ class Rectangle extends Formats {
     }
   }
   colorType() {
-    if (this.colorFill === "fill") {
+              const colors = this.color.map(color => applyOpacityToHex(color,this.opacity))
+          this.color = colors
+    if (this.colorFill === "uniform") {
       return this.color[0];
     } else if (this.colorFill === "linear") {
       let minX, minY, maxX, maxY;
@@ -645,10 +715,14 @@ class Rectangle extends Formats {
       const endX = minX + length * Math.cos(this.colorDeg);
       const endY = minY + length * Math.sin(this.colorDeg);
       const grad = ctx.createLinearGradient(minX, minY, endX, endY);
+      if(this.colorStop.length === 0){
       this.color.forEach((c, i) => {
         let equation = i / (this.color.length - 1);
-        grad.addColorStop(equation, c);
+        this.colorStop.push(equation)  
       });
+      }
+      this.colorStop.forEach((stop,i)=>grad.addColorStop(stop, this.color[i]))
+      
 
       return grad;
     } else if (this.colorFill === "radial") {
@@ -676,10 +750,14 @@ class Rectangle extends Formats {
         centerY,
         radius
       );
+      if(this.colorStop.length === 0){
       this.color.forEach((c, i) => {
         let equation = i / (this.color.length - 1);
-        grad.addColorStop(equation, c);
+        this.colorStop.push(equation)  
       });
+      }
+      this.colorStop.forEach((stop,i)=>grad.addColorStop(stop, this.color[i]))
+      
       return grad;
     }
   }
@@ -822,72 +900,114 @@ class Rectangle extends Formats {
     <div> H  <input type="number" name="height" value="${this.roundedOrbeveled === "shaped"? changeValues(this.maxY - this.minY):changeValues(
       this.height
     )}"> </div> 
-    <div style="grid-column: span 2;">Rotation <input type="number" name="angle" value="${
+    <div>Rotation <input type="number" name="angle" value="${
       radToDeg(this.angle,"deg")
-    }"><p style="color:var(--input-color)">deg</p></div>
+    }"></div>
+    <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
     </div>
     </div>
     <div>
     <h3>Fill</h3>
-    <select>
-    <option>None</option>
-    <option selected>Uniform</option>
-    <option>Linear-Gradient</option>
-    <option>Radial-Gradient</option>
+    <select class="color-select">
+    <option value="none" ${this.colorFill === "none" ? "selected":""}>None</option>
+    <option value="uniform" ${this.colorFill === "uniform" ? "selected":""}>Uniform</option>
+    <option value="linear" ${this.colorFill === "linear" ? "selected":""}>Linear-Gradient</option>
+    <option value="radial"${this.colorFill === "radial" ? "selected":""}>Radial-Gradient</option>
     </select>
+    <div class="uniform-div" style="display: ${this.colorFill === "uniform" ? "flex":"none"}">
+    Background-Color: <input type="color" value="${this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]
+}" name="bgColor">
     </div>
-    <label>Background Color:</label> <input type="color" name="color" value="${
-      this.color
-    }">
-    <p>
-    <span>Rounded:<input type="radio" name="roundedOrbeveled" value="rounded" ${
-      this.roundedOrbeveled === "rounded" ? "checked" : ""
-    }/></span>
-    <span>Beveled:<input type="radio" name="roundedOrbeveled" value="beveled" ${
-      this.roundedOrbeveled === "rounded" ? "" : "checked"
-    }/></span>
-    </p>
-    <label>Corner Radius</label><input type="number" name="cornerRadius" value="${
-      this.cornerRadius
-    }" />
-    <hr>
-        <label>Outline True <input type="checkbox" name="outline" value="true" ${
-          this.outline ? "checked" : ""
-        }/></label>
-    <div id="outline" style="display: ${this.outline ? "flex" : "none"}">
-    <label>Outline Properties:</label><p><span><input type="radio" name="outlineType" value="solid" ${
-      this.isDashed ? "" : "checked"
-    }/>Solid</span><span><input type="radio" name="outlineType" value="dashed" ${
-      this.isDashed ? "checked" : ""
-    }/>Dashed</span></p>
-      <label>Outline Color:</label><input type="color" name="outlineColor" value="${
-        this.outlineColor
-      }">
-      <label>outlineThickness:</label><input type="number" name="outlineThickness" value="${
-        this.outlineThickness
-      }">
+    <div
+    <div style="display:${this.colorFill === "linear" ||this.colorFill === "radial" ? "flex":"none"};flex-direction:column;gap:1rem">
       ${
-        this.isDashed
-          ? `<label>Line Dash Width:</label><input type="number" name="lineDashWidth" value="${this.lineDashWidth}"/>
-          <label>Line Dash Spacing:</label><input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}"/>`
-          : ""
-      }  
+        this.color.map((color,i)=>
+          `<div class="color-div">
+          <div style="text-wrap:nowrap; padding:0.5rem 1rem">Index: ${i}</div>
+          <div>Stop:<input type="number" min="0" max="1" step="0.01"  value="${this.colorStop[i]}"></div>
+          <input type="color" value="${color.length > 7 ? color.slice(0,7) : color}">
+          <button></button>
+          </div>`
+        ).join("")
+      }
+      <section class="color-sec">
+      <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
+      <div style="display:${this.colorFill === "linear" ? "flex" : "none"}">Rotation <input type="number" name="colorDeg" value="${radToDeg(this.colorDeg,"deg")}">deg</div>
+      </section>
+      
+
     </div>
-    <button class="convert">Convert</button>
-    <button class="normal">Normal</button>
-    <button class="editclip">Edit Clip</button>
-    <button class="shapeRounded">ShapeRounded</button>
-    
+        </div>
+        
+    <div style="display: flex; flex-direction: column; gap:1rem">
+    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center">
+    <h3>Outline</h3>
+    <button class="${this.outline ? "outlinet" : "outlinef"}" id="outline"></button>    
+    </div>
+    <div style="display: ${this.outline ? "flex" : "none"}; flex-direction: column; gap:1rem">
+    <div class="uniform-div">Outiline Color <input type="color" name="outlineColor" value="${this.outlineColor}"></div>
+    <div class="thick">Outline Thickness <input type="number" name="outlineThickness" value="${changeValues(this.outlineThickness)}"></div>
+    <div class="uniform-div">Outline Type <div><button class="normalb"></button><button class="dashedb"></button></div></div>
+      <div class="two-grid" style="display:${this.outlineType.length !== 0 ? "grid":"none"}">
+    <div>Width<input type="number" name="lineDashWidth" value="${this.lineDashWidth}"></div>
+    <div>Spacing<input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}"></div>
+    </div>
+    </div>
+    </div>
+      <div class="shape">
+        <div><button class="beveled"></button><button class="rounded"></button><button class="shapetool"><img src="images/Group 33.svg"></button></div>
+        <div style="display:${this.roundedOrbeveled === "shaped" ? "flex":"none"}"><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
+        <div style="display:${this.selectedArea === "pointIndex" && this.points[this.selectedLineIndex].edgeModes === "shaped" ? "none" : "flex"}" class="thick">Corner Radius <input type="number" name="cornerRadius" value="${this.selectedArea === "pointIndex" ? changeValues(this.points[this.selectedLineIndex].cornerRadius) : changeValues(this.cornerRadius)}"></div>
+        <div style="display:${this.roundedOrbeveled === "shaped" ? "flex":"none"} ;justify-content:end;align-items:end"><button class="normal">${this.mode=== "edit" ? "Done" : "Edit"}</button></div>
+      </div>
+
 
   `;
-    document.querySelector(".shapeRounded").addEventListener("click", () => {
-      let agree = "every";
-      this.points.forEach((p) => {
-        if (p.edgeModes) agree = "none";
-      });
-      if (agree === "every" && this.points.length > 2) {
-        this.mode =
-          this.mode === "shapeRounded" ? "edit" : "shapeRounded";
+  document.querySelector(".normalb").addEventListener("click",()=>{this.outlineType = []; this.formatProperties()} )
+  document.querySelector(".dashedb").addEventListener("click",()=>{this.outlineType = [this.lineDashWidth,this.lineDashSpacing]; this.formatProperties()})
+  document.getElementById("outline").addEventListener("click",()=>{
+    this.outline = !this.outline
+    this.formatProperties()
+  })
+  if(this.colorFill === "linear" || this.colorFill === "radial"){
+    document.querySelector(".addColor").addEventListener("click",()=>{
+      this.color.push("#ff0000")
+      this.colorStop = []
+      draw()
+      this.formatProperties()
+
+    })
+  document.querySelectorAll(".color-div").forEach((div,i)=>{
+    div.querySelector("input[type='number']").addEventListener("input",(e)=>{
+      this.colorStop[i] = e.target.value
+
+    })
+    div.querySelector("input[type='color']").addEventListener("input",(e)=>{
+      this.color[i] = e.target.value
+
+    })
+    div.querySelector("button").addEventListener("click",(e)=>{
+      this.color.splice(i,1)
+      this.colorStop = []
+      draw()
+      this.formatProperties()
+
+    })
+  })
+  }
+
+  document.querySelector(".color-select").addEventListener("change",(e)=>{
+    this.colorFill = e.target.value
+    this.formatProperties()
+  })
+  document.querySelector(".beveled").addEventListener("click",()=>{this.roundedOrbeveled = "beveled"; this.formatProperties()})
+  document.querySelector(".rounded").addEventListener("click",()=>{this.roundedOrbeveled = "rounded"; this.formatProperties()})
+  document.querySelector(".shapetool").addEventListener("click",()=>{this.roundedOrbeveled = "shaped";this.cornerRadius = 0; this.formatProperties()})
+
+  
+    document.querySelector(".rounded-edge").addEventListener("click", () => {
+      if(this.selectedArea === "pointIndex"){
+        this.points[this.selectedLineIndex].edgeModes = "rounded"
       }
     });
     if (this.clips.length > 0) {
@@ -907,13 +1027,12 @@ class Rectangle extends Formats {
     }
     document.querySelector(".convert").addEventListener("click", () => {
       if(this.selectedArea === "pointIndex"){
-        this.points[this.selectedLineIndex].edgeModes = !this.points[this.selectedLineIndex].edgeModes
+        this.points[this.selectedLineIndex].edgeModes = "shaped"
       }
-      draw();
     });
     document.querySelector(".normal").addEventListener("click", () => {
       this.mode = this.mode === "normal" ? "edit" : "normal";
-      draw();
+      this.formatProperties()
     });
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
@@ -922,12 +1041,23 @@ class Rectangle extends Formats {
         1000
       );
     });
+    
+    draw()
   }
 
   changeProperties(e) {
     const name = e.target.name;
     if(name === "angle"){
       this.angle = radToDeg(e.target.value,"rad")
+    }
+    else if(name === "bgColor"){
+      this.color[0] = e.target.value
+    }
+    else if(name === "colorDeg"){
+      this.colorDeg = radToDeg(e.target.value,"rad")
+    }
+    else if(name === "outlineColor"){
+      this.outlineColor = e.target.value
     }
     else if(e.target.type === "number"){
       const value = backValues(parseFloat(e.target.value))
@@ -938,6 +1068,14 @@ class Rectangle extends Formats {
         else if(e.target.name === "y"){
                    this.y = this.roundedOrbeveled === "shaped" ? value - this.minY - this.height/2 : value;
  
+        }
+        else if(e.target.name === "cornerRadius"){
+          if(this.selectedArea === "pointIndex" && this.points[this.selectedLineIndex].edgeModes === "rounded") this.points[this.selectedLineIndex].cornerRadius = value
+          else this.cornerRadius = value
+        }
+        else if(e.target.name === 'opacity'){
+          this.opacity = Number(e.target.value)
+
         }
         else if(e.target.name === "width"){
           if(this.roundedOrbeveled === "shaped"){
@@ -958,12 +1096,14 @@ class Rectangle extends Formats {
               p.controls[1].y *=scaleY
             })
           }else this.height = value
+        }else{
+          this[e.target.name] = value
         }
 
       }
     }
   
-
+    if(this.outlineType.length !== 0) this.outlineType = [this.lineDashWidth,this.lineDashSpacing]
     draw();
   }
   drawBeveledRect(x, y, width, height, bevel) {
@@ -1029,13 +1169,13 @@ class Rectangle extends Formats {
     const localMouseX = dx * cos - dy * sin;
     const localMouseY = dx * sin + dy * cos;
     if (this.roundedOrbeveled === "shaped") {
-      if (this.selectedLineIndex === "pointIndex") {
+      if (this.selectedArea === "pointIndex") {
         if (this.points.length > 3) {
           this.points.splice(this.selectedPointIndex, 1);
           return true;
         }
       }
-      if (this.selectedLineIndex === "lineIndex") {
+      if (this.selectedArea === "lineIndex") {
         const next = (this.selectedLineIndex + 1) % this.points.length;
         if (this.points[this.selectedLineIndex].edgeModes !== true) {
           const prev = this.points[this.selectedLineIndex];
@@ -1056,8 +1196,9 @@ class Rectangle extends Formats {
           };
           this.points.splice(next, 0, {
             points: { x: localMouseX, y: localMouseY },
-            edgeModes: false,
+            edgeModes: null,
             controls: [control1, control2],
+            cornerRadius: 0
           });
         }
         return true;
@@ -2535,6 +2676,18 @@ function canvasSize() {
   fitToPage();
   draw();
 }
+function applyOpacityToHex(hexColor, opacityPercent) {
+  if(hexColor.length >= 9) hexColor = hexColor.slice(0,7)
+    let alpha = Math.round(opacityPercent / 100 * 255);
+    let alphaHex = alpha.toString(16).padStart(2, '0');
+    hexColor = hexColor.replace('#', '');
+    if (hexColor.length === 3) {
+        hexColor = hexColor.split('').map(c => c + c).join('');
+    }
+    return `#${hexColor}${alphaHex}`;
+}
+
+
 function changeValues(x) {
   if (whatsMeasured === "px") {
     return x;
