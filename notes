@@ -1,5 +1,17 @@
-  if (e.target.name === "angle") {
+    if (this.isDashed) {
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+    } else if (e.target.name === "angle") {
       const value = parseFloat(e.target.value);
+      if (value != NaN) {
+        this[name] = value;
+      }
+    } else if (name === "x") {
+      const value = backValues(parseFloat(e.target.value)) + this.radiusX;
+      if (value != NaN) {
+        this[name] = value;
+      }
+    } else if (name === "y") {
+      const value = backValues(parseFloat(e.target.value)) + this.radiusY;
       if (value != NaN) {
         this[name] = value;
       }
@@ -32,8 +44,4 @@
         this[name] = value;
       }
     }
-    if (this.isDashed) {
-      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    } else {
-      this.outlineType = [];
-    }
+    draw();

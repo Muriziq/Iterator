@@ -377,6 +377,10 @@ main > section{
   height: 100%;
   object-fit: contain;
 }
+.two-grid img{
+  width: 20px;
+  height: auto;
+}
 footer{
   background-color: var(--side-color);
   padding: 1rem;

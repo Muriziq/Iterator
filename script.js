@@ -346,6 +346,45 @@ static computeBezierPoint(p0, p1, p2, p3, t) {
 }
 }
 class Formats{
+  similarPropties(){
+      document.querySelector(".normalb").addEventListener("click",()=>{this.outlineType = []; this.formatProperties()} )
+  document.querySelector(".dashedb").addEventListener("click",()=>{this.outlineType = [this.lineDashWidth,this.lineDashSpacing]; this.formatProperties()})
+  document.getElementById("outline").addEventListener("click",()=>{
+    this.outline = !this.outline
+    this.formatProperties()
+  })
+  if(this.colorFill === "linear" || this.colorFill === "radial"){
+    document.querySelector(".addColor").addEventListener("click",()=>{
+      this.color.push("#ff0000")
+      this.colorStop = []
+      draw()
+      this.formatProperties()
+
+    })
+  document.querySelectorAll(".color-div").forEach((div,i)=>{
+    div.querySelector("input[type='number']").addEventListener("input",(e)=>{
+      this.colorStop[i] = e.target.value
+
+    })
+    div.querySelector("input[type='color']").addEventListener("input",(e)=>{
+      this.color[i] = e.target.value
+
+    })
+    div.querySelector("button").addEventListener("click",(e)=>{
+      this.color.splice(i,1)
+      this.colorStop = []
+      draw()
+      this.formatProperties()
+
+    })
+  })
+  }
+
+  document.querySelector(".color-select").addEventListener("change",(e)=>{
+    this.colorFill = e.target.value
+    this.formatProperties()
+  })
+  }
   lineFormat(localMouseX,localMouseY,localDeltaX,localDeltaY){
       if (this.selectedArea === "lineIndex") {
         const next = (this.selectedLineIndex + 1) % this.points.length;
@@ -478,7 +517,6 @@ class Formats{
       }
     }
   }
-
 }
 class Rectangle extends Formats {
   constructor() {
@@ -557,7 +595,7 @@ class Rectangle extends Formats {
     ];
     this.selectedLineIndex = null;
     this.mode = "edit";
-    this.colorFill = "uniform";
+    this.colorFill = "linear";
     this.colorDeg = 0.2;
     this.colorStop = []
   }
@@ -579,8 +617,11 @@ class Rectangle extends Formats {
     ctx.rotate(this.angle);
     ctx.beginPath();
     this.createPath();
+    if(this.colorFill !== "none"){
     ctx.fillStyle = this.colorType();
     ctx.fill();
+    }
+
     if (this.roundedOrbeveled === "shaped") {
       if (this.outline) {
         ctx.save();
@@ -658,40 +699,7 @@ class Rectangle extends Formats {
       ctx.restore();
     }
   }
-  createPath() {
-    if (this.roundedOrbeveled === "shaped") {
-      let edgeCurve = false
-      this.points.forEach(p=>{
-        if(p.edgeModes !== null) edgeCurve = true
-      })
-      if(edgeCurve)LineUtils.drawSmartShape(this.points)
-      else{
-    LineUtils.drawRoundedShape(this.points,this.cornerRadius)
-    this.points.forEach(p => {
-      p.cornerRadius = this.cornerRadius
-    })
-      } 
-      
-    } 
-    else if (this.roundedOrbeveled === "rounded") {
-      this.drawRoundedRect(
-        -this.width / 2,
-        -this.height / 2,
-        this.width,
-        this.height,
-        this.cornerRadius
-      );
-    } else if (this.roundedOrbeveled === "beveled") {
-      this.drawBeveledRect(
-        -this.width / 2,
-        -this.height / 2,
-        this.width,
-        this.height,
-        this.cornerRadius
-      );
-    }
-  }
-  colorType() {
+      colorType() {
               const colors = this.color.map(color => applyOpacityToHex(color,this.opacity))
           this.color = colors
     if (this.colorFill === "uniform") {
@@ -761,6 +769,40 @@ class Rectangle extends Formats {
       return grad;
     }
   }
+  createPath() {
+    if (this.roundedOrbeveled === "shaped") {
+      let edgeCurve = false
+      this.points.forEach(p=>{
+        if(p.edgeModes !== null) edgeCurve = true
+      })
+      if(edgeCurve)LineUtils.drawSmartShape(this.points)
+      else{
+    LineUtils.drawRoundedShape(this.points,this.cornerRadius)
+    this.points.forEach(p => {
+      p.cornerRadius = this.cornerRadius
+    })
+      } 
+      
+    } 
+    else if (this.roundedOrbeveled === "rounded") {
+      this.drawRoundedRect(
+        -this.width / 2,
+        -this.height / 2,
+        this.width,
+        this.height,
+        this.cornerRadius
+      );
+    } else if (this.roundedOrbeveled === "beveled") {
+      this.drawBeveledRect(
+        -this.width / 2,
+        -this.height / 2,
+        this.width,
+        this.height,
+        this.cornerRadius
+      );
+    }
+  }
+
   whatSelected(mouse) {
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
@@ -963,43 +1005,7 @@ class Rectangle extends Formats {
 
 
   `;
-  document.querySelector(".normalb").addEventListener("click",()=>{this.outlineType = []; this.formatProperties()} )
-  document.querySelector(".dashedb").addEventListener("click",()=>{this.outlineType = [this.lineDashWidth,this.lineDashSpacing]; this.formatProperties()})
-  document.getElementById("outline").addEventListener("click",()=>{
-    this.outline = !this.outline
-    this.formatProperties()
-  })
-  if(this.colorFill === "linear" || this.colorFill === "radial"){
-    document.querySelector(".addColor").addEventListener("click",()=>{
-      this.color.push("#ff0000")
-      this.colorStop = []
-      draw()
-      this.formatProperties()
-
-    })
-  document.querySelectorAll(".color-div").forEach((div,i)=>{
-    div.querySelector("input[type='number']").addEventListener("input",(e)=>{
-      this.colorStop[i] = e.target.value
-
-    })
-    div.querySelector("input[type='color']").addEventListener("input",(e)=>{
-      this.color[i] = e.target.value
-
-    })
-    div.querySelector("button").addEventListener("click",(e)=>{
-      this.color.splice(i,1)
-      this.colorStop = []
-      draw()
-      this.formatProperties()
-
-    })
-  })
-  }
-
-  document.querySelector(".color-select").addEventListener("change",(e)=>{
-    this.colorFill = e.target.value
-    this.formatProperties()
-  })
+      super.similarPropties()
   document.querySelector(".beveled").addEventListener("click",()=>{this.roundedOrbeveled = "beveled"; this.formatProperties()})
   document.querySelector(".rounded").addEventListener("click",()=>{this.roundedOrbeveled = "rounded"; this.formatProperties()})
   document.querySelector(".shapetool").addEventListener("click",()=>{this.roundedOrbeveled = "shaped";this.cornerRadius = 0; this.formatProperties()})
@@ -1062,22 +1068,22 @@ class Rectangle extends Formats {
     else if(e.target.type === "number"){
       const value = backValues(parseFloat(e.target.value))
       if(!isNaN(value) && value!== null){
-        if(e.target.name === "x"){
+        if(name === "x"){
           this.x = this.roundedOrbeveled === "shaped" ? value - this.minX - this.width/2 : value;
         }
-        else if(e.target.name === "y"){
+        else if(name === "y"){
                    this.y = this.roundedOrbeveled === "shaped" ? value - this.minY - this.height/2 : value;
  
         }
-        else if(e.target.name === "cornerRadius"){
+        else if(name === "cornerRadius"){
           if(this.selectedArea === "pointIndex" && this.points[this.selectedLineIndex].edgeModes === "rounded") this.points[this.selectedLineIndex].cornerRadius = value
           else this.cornerRadius = value
         }
-        else if(e.target.name === 'opacity'){
+        else if(name === 'opacity'){
           this.opacity = Number(e.target.value)
 
         }
-        else if(e.target.name === "width"){
+        else if(name === "width"){
           if(this.roundedOrbeveled === "shaped"){
             const scaleX = value / (this.maxX - this.minX)
             this.points.forEach(p =>{
@@ -1087,7 +1093,7 @@ class Rectangle extends Formats {
             })
           }else this.width = value
         }
-        else if(e.target.name === "height"){
+        else if(name === "height"){
           if(this.roundedOrbeveled === "shaped"){
             const scaleY = value / (this.maxY - this.minY)
             this.points.forEach(p =>{
@@ -1097,7 +1103,7 @@ class Rectangle extends Formats {
             })
           }else this.height = value
         }else{
-          this[e.target.name] = value
+          this[name] = value
         }
 
       }
@@ -1219,8 +1225,8 @@ class Ellipse extends Formats {
     this.radiusX = 50;
     this.radiusY = 50;
     this.angle = 0;
-    this.color = "#ff0000";
-    this.outline = false;
+    this.color = ["#ff0000","#00ff00"];
+    this.outline = true;
     this.outlineColor = "#00ff00";
     this.outlineThickness = 10;
     this.lineDashWidth = 5;
@@ -1229,46 +1235,112 @@ class Ellipse extends Formats {
     this.lineDashSpacing = 3;
     this.isDoubleClicked = false;
     this.selectedArea;
+    this.opacity = 100
+    this.arcStart = 0
+    this.arcEnd = 2 * Math.PI
+    this.colorFill = "uniform"
+    this.mode = "pie"
+    this.colorStop = []
+    this.colorDeg = 0
+
   }
-  addObject() {
-    ctx.save();
-    ctx.beginPath();
-    if (this.outline) {
-      ctx.lineWidth = this.outlineThickness;
-      ctx.strokeStyle = this.outlineColor;
-      ctx.setLineDash(this.outlineType);
-    }
-    ctx.fillStyle = this.color;
+addObject() {
+  ctx.save();
+  ctx.translate(this.x, this.y);
+  ctx.rotate(this.angle);         
+
+  ctx.beginPath();
+  if (this.mode === "pie") {
+    ctx.moveTo(0, 0);
     ctx.ellipse(
-      this.x,
-      this.y,
+      0, 0,
       this.radiusX,
       this.radiusY,
-      this.angle,
       0,
-      2 * Math.PI
+      this.arcStart,
+      this.arcEnd
     );
-    ctx.stroke();
-    ctx.fill();
 
+  } else {
+    ctx.ellipse(
+      0, 0,
+      this.radiusX,
+      this.radiusY,
+      0,
+      this.arcStart,
+      this.arcEnd
+    );
+  }
+   if(this.mode !== "curve") ctx.closePath()
+if(this.colorFill !== "none")  ctx.fillStyle = this.colorType();
+  if(this.mode !== "curve" && this.colorFill !== "none")ctx.fill();
+  if (this.outline) {
+    ctx.lineWidth = this.outlineThickness;
+    ctx.strokeStyle = this.outlineColor;
+    ctx.setLineDash(this.outlineType);
+      ctx.stroke();
+  }
+  if (selectedObj === this) {
+    ctx.beginPath();
+    ctx.strokeStyle = "#0000ff";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 3]);
+    ctx.strokeRect(
+      -this.radiusX ,
+      -this.radiusY,
+      this.radiusX * 2,
+      this.radiusY * 2
+    );
     ctx.closePath();
+  }
 
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-    if (selectedObj === this) {
-      ctx.beginPath();
-      ctx.strokeStyle = "#0000ff";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 3]);
-      ctx.strokeRect(
-        -this.radiusX,
-        -this.radiusY,
-        this.radiusX * 2,
-        this.radiusY * 2
+  ctx.restore();
+}
+
+
+    colorType() {
+              const colors = this.color.map(color => applyOpacityToHex(color,this.opacity))
+          this.color = colors
+    if (this.colorFill === "uniform") {
+      return this.color[0];
+    } else if (this.colorFill === "linear") {
+
+      let length = Math.sqrt((this.radiusX * 2) ** 2 + (this.radiusY * 2) ** 2);
+
+      const endX = -this.radiusX  + length * Math.cos(this.colorDeg);
+      const endY = -this.radiusY + length * Math.sin(this.colorDeg);
+      const grad = ctx.createLinearGradient(-this.radiusX ,-this.radiusY, endX, endY);
+      if(this.colorStop.length === 0){
+      this.color.forEach((c, i) => {
+        let equation = i / (this.color.length - 1);
+        this.colorStop.push(equation)  
+      });
+      }
+      this.colorStop.forEach((stop,i)=>grad.addColorStop(stop, this.color[i]))
+      
+
+      return grad;
+    } else if (this.colorFill === "radial") {
+ 
+      const radius = Math.max(this.radiusX, this.radiusY);
+      const grad = ctx.createRadialGradient(
+        0,
+        0,
+        0,
+      0,
+        0,
+        radius
       );
-      ctx.closePath();
+      if(this.colorStop.length === 0){
+      this.color.forEach((c, i) => {
+        let equation = i / (this.color.length - 1);
+        this.colorStop.push(equation)  
+      });
+      }
+      this.colorStop.forEach((stop,i)=>grad.addColorStop(stop, this.color[i]))
+      
+      return grad;
     }
-    ctx.restore();
   }
   whatSelected(mouse) {
     const rectW = this.radiusX * 2;
@@ -1292,49 +1364,97 @@ class Ellipse extends Formats {
   }
   formatProperties() {
     propertiesBar.innerHTML = `
-    <label>x:</label><input type="number" name="x" value="${changeValues(
-      this.x - this.radiusX
-    )}">
-    <label>y:</label><input type="number" name="y" value="${changeValues(
-      this.y - this.radiusY
-    )}">
-    <label>radiusX:</label><input type="number" name="radiusX" value="${changeValues(
-      this.radiusX
-    )}">
-    <label>radiusY:</label><input type="number" name="radiusY" value="${changeValues(
+    <div>
+    <h3>Coordinate</h3>
+        <div class="two-grid">
+    <div>X    <input type="number" name="x" value="${changeValues(
+      this.x - this.radiusX)}"></div>
+    <div> Y   <input type="number" name="y" value="${changeValues(
+      this.y
+    )}"></div>
+    <div>W    <input type="number" name="radiusX" value="${changeValues(
+      this.radiusX)}"></div>
+    <div> H  <input type="number" name="radiusY" value="${changeValues(
       this.radiusY
-    )}">
-    <label>Background Color:</label><input type="color" name="color" value="${
-      this.color
-    }">
-    <label>Rotation (inRad):</label><input type="number" name="angle" value="${
-      this.angle
-    }">
-    <hr>
-        <label>Outline True <input type="checkbox" name="outline" value="true" ${
-          this.outline ? "checked" : ""
-        }/></label>
-    <div id="outline" style="display: ${this.outline ? "flex" : "none"}">
-    <label>Outline Properties:</label><p><span><input type="radio" name="outlineType" value="solid" ${
-      this.isDashed ? "" : "checked"
-    }/>Solid</span><span><input type="radio" name="outlineType" value="dashed" ${
-      this.isDashed ? "checked" : ""
-    }/>Dashed</span></p>
-      <label>Outline Color:</label><input type="color" name="outlineColor" value="${
-        this.outlineColor
-      }">
-      <label>outlineThickness:</label><input type="number" name="outlineThickness" value="${
-        this.outlineThickness
-      }">
+    )}"> </div> 
+    <div>Rotation <input type="number" name="angle" value="${
+      radToDeg(this.angle,"deg")
+    }"></div>
+    <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
+    </div>
+    </div>
+        <div>
+    <h3>Fill</h3>
+    <select class="color-select">
+    <option value="none" ${this.colorFill === "none" ? "selected":""}>None</option>
+    <option value="uniform" ${this.colorFill === "uniform" ? "selected":""}>Uniform</option>
+    <option value="linear" ${this.colorFill === "linear" ? "selected":""}>Linear-Gradient</option>
+    <option value="radial"${this.colorFill === "radial" ? "selected":""}>Radial-Gradient</option>
+    </select>
+    <div class="uniform-div" style="display: ${this.colorFill === "uniform" ? "flex":"none"}">
+    Background-Color: <input type="color" value="${this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]
+}" name="bgColor">
+    </div>
+    <di
+    <div style="display:${this.colorFill === "linear" ||this.colorFill === "radial" ? "flex":"none"};flex-direction:column;gap:1rem">
       ${
-        this.isDashed
-          ? `<label>Line Dash Width:</label><input type="number" name="lineDashWidth" value="${this.lineDashWidth}"/>
-          <label>Line Dash Spacing:</label><input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}"/>`
-          : ""
-      }  
+        this.color.map((color,i)=>
+          `<div class="color-div">
+          <div style="text-wrap:nowrap; padding:0.5rem 1rem">Index: ${i}</div>
+          <div>Stop:<input type="number" min="0" max="1" step="0.01"  value="${this.colorStop[i]}"></div>
+          <input type="color" value="${color.length > 7 ? color.slice(0,7) : color}">
+          <button></button>
+          </div>`
+        ).join("")
+      }
+      <section class="color-sec">
+      <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
+      <div style="display:${this.colorFill === "linear" ? "flex" : "none"}">Rotation <input type="number" name="colorDeg" value="${radToDeg(this.colorDeg,"deg")}">deg</div>
+      </section>
+      
+
+    </div>
+        <div style="display: flex; flex-direction: column; gap:1rem">
+    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center">
+    <h3>Outline</h3>
+    <button class="${this.outline ? "outlinet" : "outlinef"}" id="outline"></button>    
+    </div>
+    <div style="display: ${this.outline ? "flex" : "none"}; flex-direction: column; gap:1rem">
+    <div class="uniform-div">Outiline Color <input type="color" name="outlineColor" value="${this.outlineColor}"></div>
+    <div class="thick">Outline Thickness <input type="number" name="outlineThickness" value="${changeValues(this.outlineThickness)}"></div>
+    <div class="uniform-div">Outline Type <div><button class="normalb"></button><button class="dashedb"></button></div></div>
+      <div class="two-grid" style="display:${this.outlineType.length !== 0 ? "grid":"none"}">
+    <div>Width<input type="number" name="lineDashWidth" value="${this.lineDashWidth}"></div>
+    <div>Spacing<input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}"></div>
+    </div>
+    </div>
+    </div>
+    </div>
+    <div class="shape">
+    <div><button class="fill"><img src="images/Ellipse 11.svg"></button><button class="pie"><img src="images/pie.png"></button><button class="curve"><img src="images/curveEnd.png" style="transform: rotate(-45deg)"></button></div>
+    <div style="display:${this.mode === "fill" ? "none" : "grid"}" class="two-grid"><div><img style="transform: rotate(-90deg)" src="images/curveEnd.png"><input type="number" value="${radToDeg(this.arcStart,"deg")}" name="arcStart"></div><div><img src="images/curveEnd.png"><input type="number" value="${radToDeg(this.arcEnd,"deg")}" name="arcEnd"></div></div>
     </div>
 
     `;
+      super.similarPropties()
+      document.querySelector(".fill").addEventListener("click",()=>{
+        this.mode = "fill"
+        this.arcStart = 0
+        this.arcEnd = Math.PI * 2
+        this.formatProperties()
+
+      })
+      document.querySelector(".pie").addEventListener("click",()=>{
+        this.mode = "pie"
+        this.formatProperties()
+      })
+      document.querySelector(".curve").addEventListener("click",()=>{
+        this.mode = "curve"
+        this.colorFill = "none"
+                if(!this.outline) this.outline = true
+        this.formatProperties()
+
+      })
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
         "input",
@@ -1342,62 +1462,47 @@ class Ellipse extends Formats {
         1000
       );
     });
+    draw()
   }
   changeProperties(e) {
     const name = e.target.name;
-    if (this.isDashed) {
-      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    } else if (e.target.name === "angle") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (name === "x") {
-      const value = backValues(parseFloat(e.target.value)) + this.radiusX;
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (name === "y") {
-      const value = backValues(parseFloat(e.target.value)) + this.radiusY;
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (e.target.type === "number") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = backValues(value);
-      }
-    } else if (name === "outlineType") {
-      const value = e.target.value;
-      if (value === "dashed") {
-        this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-        this.isDashed = true;
-      } else {
-        this.outlineType = [];
-        this.isDashed = false;
-      }
-      this.formatProperties();
-    } else if (name === "outline") {
-      const value = e.target.value;
-      if (value === "true") {
-        this[name] = true;
-      } else {
-        this[name] = false;
-      }
-      this.formatProperties();
-    } else {
-      const value = e.target.value;
-      if (value != NaN) {
-        this[name] = value;
+    if(name === "angle"){
+      this.angle = radToDeg(e.target.value,"rad")
+    }    else if(name === "bgColor"){
+      this.color[0] = e.target.value
+    }
+    else if(name === "colorDeg" || name=== "arcStart" || name==="arcEnd"){
+      this[name] = radToDeg(e.target.value,"rad")
+    }
+    else if(name === "outlineColor"){
+      this.outlineColor = e.target.value
+    }
+    else if(e.target.type === "number"){
+      const value = backValues(parseFloat(e.target.value))
+      if(!isNaN(value) && value!== null){
+        if(name === "x") this.x = value + this.radiusX
+        else if(name === "y") this.x = value + this.radiusY
+                else if(name === 'opacity'){
+          this.opacity = Number(e.target.value)
+
+        }
+        else this[name] = value
+        console.log(this.arcStart,this.arcEnd)
       }
     }
-    draw();
+        if(this.outlineType.length !== 0) this.outlineType = [this.lineDashWidth,this.lineDashSpacing]
+    draw()
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.x = lastMouseX;
     clone.y = lastMouseY;
     return clone;
+  }
+  doubleClicked(mouse){
+          isRotatingObject = true;
+      this.isDoubleClicked = this.isDoubleClicked ? false : true;
+      return true;
   }
   whereToSnap() {
     return {
