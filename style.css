@@ -143,6 +143,14 @@ main{
   height: 100%;
   overflow-y: auto;
 }
+#propertiesTab::-webkit-scrollbar{
+  width: 5px;
+
+}
+#propertiesTab::-webkit-scrollbar-thumb {
+  background-color: var(--h3-fill);
+  border-radius: 10px;
+}
 main > section{
   position: relative;
   width: 100%;

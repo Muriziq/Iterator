@@ -1,13 +1,120 @@
-<canvas id="myCanvas" width="300" height="200" style="border:1px solid black;"></canvas>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Canvas Pen Tool Demo</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      background: #f0f0f0;
+      display: block;
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-<script>
-const canvas = document.getElementById('myCanvas');
-const ctx = canvas.getContext('2d');
+    class PenShape {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.angle = 0;
+        this.points = []; // Relative to this.x, this.y
+      }
 
-ctx.beginPath();
-// Draw only the arc — do NOT moveTo or closePath
-ctx.ellipse(150, 100, 100, 50, 0, 0, Math.PI); // half ellipse
-ctx.strokeStyle = 'blue';
-ctx.lineWidth = 3;
-ctx.stroke();
-</script>
+      addPoint(mouseX, mouseY) {
+        const px = mouseX - this.x;
+        const py = mouseY - this.y;
+        this.points.push({ x: px, y: py });
+      }
+
+      move(dx, dy) {
+        this.x += dx;
+        this.y += dy;
+      }
+
+      rotateTo(mouseX, mouseY) {
+        this.angle = Math.atan2(mouseY - this.y, mouseX - this.x);
+      }
+
+      draw(ctx) {
+        if (this.points.length < 2) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        ctx.beginPath();
+        ctx.moveTo(this.points[0].x, this.points[0].y);
+        for (let i = 1; i < this.points.length; i++) {
+          ctx.lineTo(this.points[i].x, this.points[i].y);
+        }
+
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      isPointInside(mouseX, mouseY) {
+        // Basic hitbox check
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < 50; // crude proximity check
+      }
+    }
+
+    const shape = new PenShape(300, 300);
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+
+    function drawScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      shape.draw(ctx);
+    }
+
+    canvas.addEventListener('click', (e) => {
+      if (!isDragging) {
+        shape.addPoint(e.offsetX, e.offsetY);
+        drawScene();
+      }
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (shape.isPointInside(e.offsetX, e.offsetY)) {
+        isDragging = true;
+        dragOffset.x = e.offsetX - shape.x;
+        dragOffset.y = e.offsetY - shape.y;
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        shape.x = e.offsetX - dragOffset.x;
+        shape.y = e.offsetY - dragOffset.y;
+        drawScene();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    canvas.addEventListener('dblclick', (e) => {
+      shape.rotateTo(e.offsetX, e.offsetY);
+      drawScene();
+    });
+
+    drawScene();
+  </script>
+</body>
+</html>

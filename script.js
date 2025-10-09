@@ -166,7 +166,7 @@ class LineUtils {
     }
     ctx.closePath();
   }
-  static drawSmartShape(points) {
+  static drawSmartShape(points,close=true) {
     if (points.length < 2) return;
 
     ctx.beginPath();
@@ -226,6 +226,7 @@ class LineUtils {
         }
       }
     }
+    if(close){
     const last = points[points.length - 1];
     const first = points[0];
     if (last.edgeModes === "shaped") {
@@ -242,7 +243,8 @@ class LineUtils {
     } else {
       ctx.lineTo(first.points.x, first.points.y);
     }
-    ctx.closePath();
+    ctx.closePath()
+    }
   }
 
   static drawEditArcs(points, selectedArea, selectedLineIndex) {
@@ -1608,7 +1610,6 @@ class Polygon extends Formats {
     this.outlineThickness = 10;
     this.lineDashWidth = 5;
     this.outlineType = [];
-    this.isDashed = false;
     this.lineDashSpacing = 3;
     this.selectedArea = null;
     this.isDoubleClicked = false;
@@ -1665,8 +1666,11 @@ class Polygon extends Formats {
         p.cornerRadius = this.cornerRadius;
       });
     }
+    if(this.colorFill !== "none"){
     ctx.fillStyle = this.colorType();
     ctx.fill();
+    }
+
     if (this.outline) {
       ctx.save();
       ctx.lineWidth = this.outlineThickness;
@@ -2040,195 +2044,372 @@ class Polygon extends Formats {
     }
   }
 }
-class Line {
+class Line extends Formats {
   constructor() {
+    super()
     this.points = [];
-    this.color = "#ff0000";
-    this.outlineColor = "#000000";
+    this.color = ["#ff0000","#0000ff"];
+    this.outlineColor = "#00ff00";
     this.outlineThickness = 2;
     this.outline = true;
+        this.lineDashWidth = 5;
+    this.outlineType = [];
+        this.lineDashSpacing = 3;
     this.mode = "edit";
-    this.selectedPointIndex = null;
-    this.selectedControl = null;
     this.selectedLineIndex = null;
     this.angle = 0;
     this.x;
     this.y;
-    this.shapeType = null;
+    this.selectedArea = null
+        this.colorStop = [];
+    this.colorDeg = 0;
+    this.colorFill = "uniform";
+    this.opacity = 100;
+    this.isDoubleClicked = false
+    this.close = false 
   }
   addObject() {
     if (this.points.length > 0) {
+          const xs = this.points.map((p) => p.points.x);
+    const ys = this.points.map((p) => p.points.y);
+    this.minX = Math.min(...xs);
+    this.minY = Math.min(...ys);
+    this.maxX = Math.max(...xs);
+    this.maxY = Math.max(...ys);
+const first = this.points[0].points;
+const last = this.points[this.points.length - 1].points;
+this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
       ctx.save();
-      if (this.mode !== "edit") {
-        const xs = this.points.map((p) => p.points.x);
-        const ys = this.points.map((p) => p.points.y);
-        const minX = Math.min(...xs);
-        const minY = Math.min(...ys);
-        const maxX = Math.max(...xs);
-        const maxY = Math.max(...ys);
-        const centerX = this.x + (maxX - minX) / 2;
-        const centerY = this.y + (maxY - minY) / 2;
-        ctx.translate(centerX, centerY);
+        ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
-        ctx.beginPath();
-        ctx.moveTo(
-          this.points[0].points.x - centerX,
-          this.points[0].points.y - centerY
-        );
+     ctx.beginPath();
+      LineUtils.drawSmartShape(this.points,this.close)
+          if(this.colorFill !== "none"){
+    ctx.fillStyle = this.colorType();
+    ctx.fill();
+    }
 
-        for (let i = 0; i < this.points.length; i++) {
-          if (this.points[i].edgeModes) {
-            const cp1 = this.points[i].controls[0];
-            const cp2 = this.points[i].controls[1];
-            ctx.bezierCurveTo(
-              cp1.x - centerX,
-              cp1.y - centerY,
-              cp2.x - centerX,
-              cp2.y - centerY,
-              this.points[i].points.x - centerX,
-              this.points[i].points.y - centerY
-            );
-          } else {
-            ctx.lineTo(
-              this.points[i].points.x - centerX,
-              this.points[i].points.y - centerY
-            );
-          }
-        }
-        ctx.stroke();
-        ctx.closePath();
-
-        if (this.mode === "edit") {
-          this.points.forEach((p, i) => {
-            ctx.beginPath();
-            ctx.arc(
-              p.points.x - centerX,
-              p.points.y - centerY,
-              7,
-              0,
-              Math.PI * 2
-            );
-            ctx.fillStyle =
-              i === this.selectedPointIndex ? "#0000ff" : "#0000ff88";
-            ctx.fill();
-            ctx.strokeStyle = "#000000";
-            ctx.stroke();
-          });
-
-          this.points.forEach((isCurve, i) => {
-            if (isCurve.edgeModes) {
-              isCurve.controls.forEach((cp, j) => {
-                ctx.beginPath();
-                ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
-                const isSelected =
-                  this.selectedControl &&
-                  this.selectedControl.curveIndex === i &&
-                  this.selectedControl.controlIndex === j;
-                ctx.fillStyle = isSelected ? "#00cc00" : "#00cc0088";
-                ctx.fill();
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(
-                  isCurve.points.x - centerX,
-                  isCurve.points.y - centerY
-                );
-                ctx.lineTo(cp.x - centerX, cp.y - centerY);
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-              });
-            }
-          });
-        }
-      } else {
-        ctx.beginPath();
-        ctx.moveTo(this.points[0].points.x, this.points[0].points.y);
-
-        for (let i = 0; i < this.points.length; i++) {
-          if (this.points[i].edgeModes) {
-            const cp1 = this.points[i].controls[0];
-            const cp2 = this.points[i].controls[1];
-            ctx.bezierCurveTo(
-              cp1.x,
-              cp1.y,
-              cp2.x,
-              cp2.y,
-              this.points[i].points.x,
-              this.points[i].points.y
-            );
-          } else {
-            ctx.lineTo(this.points[i].points.x, this.points[i].points.y);
-          }
-        }
-        ctx.stroke();
-        ctx.closePath();
-
-        if (this.mode === "edit") {
-          this.points.forEach((p, i) => {
-            ctx.beginPath();
-            ctx.arc(p.points.x, p.points.y, 7, 0, Math.PI * 2);
-            ctx.fillStyle =
-              i === this.selectedPointIndex ? "#0000ff" : "#0000ff88";
-            ctx.fill();
-            ctx.strokeStyle = "#000000";
-            ctx.stroke();
-          });
-
-          this.points.forEach((isCurve, i) => {
-            if (isCurve.edgeModes) {
-              isCurve.controls.forEach((cp, j) => {
-                ctx.beginPath();
-                ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
-                const isSelected =
-                  this.selectedControl &&
-                  this.selectedControl.curveIndex === i &&
-                  this.selectedControl.controlIndex === j;
-                ctx.fillStyle = isSelected ? "#00cc00" : "#00cc0088";
-                ctx.fill();
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(isCurve.points.x, isCurve.points.y);
-                ctx.lineTo(cp.x, cp.y);
-                ctx.strokeStyle = "#000000";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-              });
-            }
-          });
-        }
-      }
-
+              if (this.outline) {
+      ctx.save();
+      ctx.lineWidth = this.outlineThickness;
+      ctx.setLineDash(this.outlineType);
+      ctx.strokeStyle = this.outlineColor;
+      ctx.lineJoin = "round";
+      ctx.stroke();
       ctx.restore();
+    }
+        if (this.mode === "edit" && selectedObj === this)
+      LineUtils.drawEditArcs(
+        this.points,
+        this.selectedArea,
+        this.selectedLineIndex
+      );
+          if (selectedObj === this) {
+            ctx.beginPath();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#0000ff";
+            ctx.setLineDash([5, 3]);
+      ctx.strokeRect(
+        this.minX,
+        this.minY,
+        this.maxX - this.minX,
+        this.maxY - this.minY
+      );
+              if (this.mode === "normal") {
+          ctx.beginPath();
+          ctx.fillStyle = "#0000ff88";
+          ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
+        }
+    }
+    ctx.restore()
+    }
+
+
+
+  }
+    colorType() {
+    const colors = this.color.map((color) =>
+      applyOpacityToHex(color, this.opacity)
+    );
+    this.color = colors;
+    if (this.colorFill === "uniform") {
+      return this.color[0];
+    } else if (this.colorFill === "linear") {
+      let length = Math.sqrt(
+        (this.maxX - this.minX) ** 2 + (this.maxY - this.minY) ** 2
+      );
+
+      const endX = this.minX + length * Math.cos(this.colorDeg);
+      const endY = this.minY + length * Math.sin(this.colorDeg);
+      const grad = ctx.createLinearGradient(this.minX, this.minY, endX, endY);
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
+      }
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i])
+      );
+
+      return grad;
+    } else if (this.colorFill === "radial") {
+      const centerX = (this.minX + this.maxX) / 2;
+      const centerY = (this.minY + this.maxY) / 2;
+
+      const radius = Math.max(this.maxX - this.minX, this.maxY - this.minY) / 2;
+      const grad = ctx.createRadialGradient(
+        centerX,
+        centerY,
+        0,
+        centerX,
+        centerY,
+        radius
+      );
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
+      }
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i])
+      );
+
+      return grad;
     }
   }
   drawPen(mouse) {
+    if(this.points.length === 0 ){
+      this.x = mouse.x
+      this.y = mouse.y
+    }
     this.points.push({
-      points: { x: mouse.x, y: mouse.y },
-      edgeModes: false,
+      points: { x: mouse.x - this.x, y: mouse.y - this.y },
+      edgeModes: null,
       controls: [
-        { x: mouse.x - 20, y: mouse.y },
-        { x: mouse.x + 20, y: mouse.y },
-      ],
+        { x: mouse.x - this.x - 20, y: mouse.y  - this.y},
+        { x: mouse.x - this.x + 20, y: mouse.y - this.y },
+      ],cornerRadius:0
     });
-    console.log(this.points);
+  }
+  whatSelected(mouse){
+    const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+    const localX = dx * cos - dy * sin;
+    const localY = dx * sin + dy * cos;
+        if (
+      this.mode === "edit" &&
+      (LineUtils.getPointPositon(localX, localY, this.points) ||
+        LineUtils.getEdgeAtPosition(localX, localY, this.points))
+    ){
+           const answer =
+        LineUtils.getPointPositon(localX, localY, this.points) === false
+          ? LineUtils.getEdgeAtPosition(localX, localY, this.points)
+          : LineUtils.getPointPositon(localX, localY, this.points);
+      this.selectedArea = answer.type;
+      this.selectedLineIndex = answer.value;
+      return true; 
+    }
+    else{
+            if (
+        Math.abs(localX - this.maxX) < 10 &&
+        Math.abs(localY - this.maxY) < 10
+      ) {
+        this.selectedArea = "scale";
+
+        return true;
+      }
+            ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+     ctx.beginPath();
+      LineUtils.drawSmartShape(this.points,this.close)
+            const isInside = ctx.isPointInPath(mouse.x, mouse.y);
+      ctx.restore();
+            if (isInside) {
+        this.selectedArea = "Selected";
+      }
+      return isInside;
+
+    }
+    return false
+  }
+  formatSelected(mouse){
+
+        const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+    const localX = dx * cos - dy * sin;
+    const localY = dx * sin + dy * cos;
+    if (this.mode === "edit") {
+      const deltaX = mouse.x - lastMouseX;
+      const deltaY = mouse.y - lastMouseY;
+      const localDeltaX = deltaX * cos - deltaY * sin;
+      const localDeltaY = deltaX * sin + deltaY * cos;
+      super.lineFormat(localX, localY, localDeltaX, localDeltaY);
+    }else{
+            if (this.isDoubleClicked) {
+        this.angle =
+          Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
+
+      }
+            else if (this.selectedArea === "Selected") {
+          this.x += mouse.x - lastMouseX;
+          this.y += mouse.y - lastMouseY;
+        }
+                    else if (this.selectedArea === "scale") {
+          const lastWidth = lastMouseX - this.x;
+          const lastHeight = lastMouseY - this.y;
+          const currentWidth = mouse.x - this.x;
+          const currentHeight = mouse.y - this.y;
+          const scaleX = currentWidth / lastWidth;
+          const scaleY = currentHeight / lastHeight;
+          this.points.forEach((p) => {
+            p.points.x = (p.points.x) * scaleX;
+            p.points.y = (p.points.y ) * scaleY;
+            p.controls[0].x = (p.controls[0].x) * scaleX;
+            p.controls[0].y = (p.controls[0].y ) * scaleY;
+            p.controls[1].x =  (p.controls[1].x) * scaleX;
+            p.controls[1].y = (p.controls[1].y ) * scaleY;
+          });
+        }
+    }
+
   }
   formatProperties() {
-    propertiesBar.innerHTML = `
-    <button class="done">Done</button>
+    if(pen){
+      propertiesBar.innerHTML = `
+          <div style="display: flex;justify-content:end;align-items:end"><button class="done">Done</button></div>
+      `
+    }else{
+          propertiesBar.innerHTML = `
+       <div>
+    <h3>Coordinate</h3>
+    <div class="two-grid">
+    <div>X    <input type="number" name="x" value="${
+        changeValues(this.x + this.minX)
+    }"></div>
+    <div> Y   <input type="number" name="y" value="${
+        changeValues(this.x + this.minY)
+    }"></div>
+    <div>W    <input type="number" name="width" value="${
+        changeValues(this.maxX - this.minX)
+    }"></div>
+    <div> H  <input type="number" name="height" value="${
+        changeValues(this.maxY - this.minY)
+    }"> </div> 
+    <div>Rotation <input type="number" name="angle" value="${radToDeg(
+      this.angle,
+      "deg"
+    )}"></div>
+    <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>    </div>
+    </div>
+    ${super.similarProptiesOutput()}
+    <div class="shape">
+            <div><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
+    <div style="display:${
+          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+            ? "flex"
+            : "none"
+        }" class="thick">
+    Corner Radius <input type="number" name="cornerRadius" value="${          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "rounded" ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
+    : 0}">
+    </div>
+    <div style="display: flex;justify-content:end;align-items:end"><button class="normal">${
+      this.mode === "edit" ? "Done" : "Edit"
+    }</button></div>
+    </div>
     `;
+    }
+    if(pen){
     document.querySelector(".done").addEventListener("click", () => {
+       objects.push(this)
       pen = null;
-      const xs = this.points.map((p) => p.points.x);
-      const ys = this.points.map((p) => p.points.y);
-      const minX = Math.min(...xs);
-      const minY = Math.min(...ys);
-      this.x = minX;
-      this.y = minY;
+      this.formatProperties()
+
     });
+    }else{
+       super.similarPropties()
+        document.querySelector(".rounded-edge").addEventListener("click", () => {
+      if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].edgeModes = "rounded";
+        this.formatProperties()
+      }
+    });
+        document.querySelector(".convert").addEventListener("click", () => {
+      if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].edgeModes = "shaped";
+      }
+    });
+        document.querySelector(".normal").addEventListener("click", () => {
+      this.mode = this.mode === "normal" ? "edit" : "normal";
+      this.formatProperties();
+    });
+           propertiesBar.querySelectorAll("input").forEach((input) => {
+      input.addEventListener(
+        "input",
+        (e) => setTimeout(this.changeProperties(e)),
+        1000
+      );
+    });
+    draw()
+    }
+
+  }
+  changeProperties(e){
+       const name = e.target.name;
+        if (name === "angle") {
+      this.angle = radToDeg(e.target.value, "rad");
+    } else if (name === "bgColor") {
+      this.color[0] = e.target.value;
+    } else if (name === "colorDeg") {
+      this.colorDeg = radToDeg(e.target.value, "rad");
+    } else if (name === "outlineColor") {
+      this.outlineColor = e.target.value;
+    }  else if(e.target.type === "number"){
+                  const value = backValues(parseFloat(e.target.value));
+            if(name==="x"){
+              this.x = value - this.minX
+            }
+            else if(name === "y"){
+              this.y = value - this.minY
+            }
+            else if (name === "opacity") {
+          this.opacity = Number(e.target.value);
+        }else if(name=== "width"){
+                      const scaleX = value / (this.maxX - this.minX);
+            this.points.forEach((p) => {
+              p.points.x *= scaleX;
+              p.controls[0].x *= scaleX;
+              p.controls[1].x *= scaleX;
+            });
+        }else if(name === "height"){
+                      const scaleY = value / (this.maxY - this.minY);
+            this.points.forEach((p) => {
+              p.points.y *= scaleY;
+              p.controls[0].y *= scaleY;
+              p.controls[1].y *= scaleY;
+            });
+        }else if(name === "cornerRadius"){
+                              if (
+            this.selectedArea === "pointIndex" &&
+            this.points[this.selectedLineIndex].edgeModes === "rounded"
+          )
+            this.points[this.selectedLineIndex].cornerRadius = value;
+
+        }else this[name] = value
+    }
+            if (this.outlineType.length !== 0)
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+draw()
   }
 }
 
@@ -3214,7 +3395,6 @@ function addPolygon() {
 }
 function addLine() {
   const line = new Line();
-  objects.push(line);
   pen = line;
   draw();
 }
@@ -3618,6 +3798,9 @@ function draw() {
   //     lastMouseY = snap.y;
   //   }
   // }
+  if(pen){
+    pen.addObject()
+  }
   if (cloneObj) {
     cloneObj.addObject();
   }
