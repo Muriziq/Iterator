@@ -3,7 +3,7 @@ const ctx = canvas.getContext("2d");
 canvas.width = canvas.getBoundingClientRect().width;
 canvas.height = canvas.getBoundingClientRect().height;
 const canvass = document.querySelector(".canvas");
-const canvassDiv = canvass.querySelector("div")
+const canvassDiv = canvass.querySelector("div");
 const propertiesBar = document.getElementById("properties");
 const textBoxes = [];
 const generationArea = document.getElementById("generationArea");
@@ -54,119 +54,118 @@ fetch(
   .catch(console.error);
 
 window.addEventListener("load", () => {
-  
-  width.value =  measurement.width; 
-  height.value  = measurement.height;
-  canvasSize()
+  width.value = measurement.width;
+  height.value = measurement.height;
+  canvasSize();
 });
-class LineUtils{
+class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
-  let threshold = 10;
-  for (let i = 0; i < points.length; i++) {
-    const current = points[i];
-    const next = points[(i + 1) % points.length];
+    let threshold = 10;
+    for (let i = 0; i < points.length; i++) {
+      const current = points[i];
+      const next = points[(i + 1) % points.length];
 
-    const p1 = current.points;
-    const p2 = next.points;
+      const p1 = current.points;
+      const p2 = next.points;
 
-    if (current.edgeModes === "shaped") {
-      const cp1 = current.controls[0];
-      const cp2 = current.controls[1];
+      if (current.edgeModes === "shaped") {
+        const cp1 = current.controls[0];
+        const cp2 = current.controls[1];
 
-      const steps = 50;
-      let prev = this.computeBezierPoint(p1, cp1, cp2, p2, 0);
+        const steps = 50;
+        let prev = this.computeBezierPoint(p1, cp1, cp2, p2, 0);
 
-      for (let t = 1; t <= steps; t++) {
-        const tNorm = t / steps;
-        const curr = this.computeBezierPoint(p1, cp1, cp2, p2, tNorm);
+        for (let t = 1; t <= steps; t++) {
+          const tNorm = t / steps;
+          const curr = this.computeBezierPoint(p1, cp1, cp2, p2, tNorm);
+          const dist = this.pointLineDistance(
+            localMouseX,
+            localMouseY,
+            prev.x,
+            prev.y,
+            curr.x,
+            curr.y
+          );
+          if (dist < threshold) return { value: i, type: "lineIndex" };
+          prev = curr;
+        }
+      } else {
         const dist = this.pointLineDistance(
           localMouseX,
           localMouseY,
-          prev.x,
-          prev.y,
-          curr.x,
-          curr.y
+          p1.x,
+          p1.y,
+          p2.x,
+          p2.y
         );
-        if (dist < threshold) return { value: i, type: "lineIndex" };
-        prev = curr;
+        if (dist <= threshold) return { value: i, type: "lineIndex" };
       }
-    } else {
-      const dist = this.pointLineDistance(
-        localMouseX,
-        localMouseY,
-        p1.x,
-        p1.y,
-        p2.x,
-        p2.y
-      );
-      if (dist <= threshold) return { value: i, type: "lineIndex" };
     }
+    return false;
   }
-  return false;
-}
-static getPointPositon(localMouseX, localMouseY, points) {
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i].points;
-    const pdx = localMouseX - p.x;
-    const pdy = localMouseY - p.y;
-    if (pdx * pdx + pdy * pdy < 10 * 10) {
-      return { value: i, type: "pointIndex" };
+  static getPointPositon(localMouseX, localMouseY, points) {
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i].points;
+      const pdx = localMouseX - p.x;
+      const pdy = localMouseY - p.y;
+      if (pdx * pdx + pdy * pdy < 10 * 10) {
+        return { value: i, type: "pointIndex" };
+      }
     }
-  }
 
-  for (let i = 0; i < points.length; i++) {
-    if (points[i].edgeModes === "shaped") {
-      for (let j = 0; j < 2; j++) {
-        const cp = points[i].controls[j];
-        const cdx = localMouseX - cp.x;
-        const cdy = localMouseY - cp.y;
-        if (cdx * cdx + cdy * cdy < 10 * 10) {
-          return {
-            value: { curveIndex: i, controlIndex: j },
-            type: "curveIndex",
-          };
+    for (let i = 0; i < points.length; i++) {
+      if (points[i].edgeModes === "shaped") {
+        for (let j = 0; j < 2; j++) {
+          const cp = points[i].controls[j];
+          const cdx = localMouseX - cp.x;
+          const cdy = localMouseY - cp.y;
+          if (cdx * cdx + cdy * cdy < 10 * 10) {
+            return {
+              value: { curveIndex: i, controlIndex: j },
+              type: "curveIndex",
+            };
+          }
         }
       }
     }
+
+    return false;
   }
+  static drawRoundedShape(points, radius) {
+    if (points.length < 2) return;
+    ctx.beginPath();
+    for (let i = 0; i < points.length; i++) {
+      const prev = points[(i - 1 + points.length) % points.length].points;
+      const curr = points[i].points;
+      const next = points[(i + 1) % points.length].points;
 
-  return false;
-}
-static drawRoundedShape(points, radius) {
-  if (points.length < 2) return;
-  ctx.beginPath();
-  for (let i = 0; i < points.length; i++) {
-    const prev = points[(i - 1 + points.length) % points.length].points;
-    const curr = points[i].points;
-    const next = points[(i + 1) % points.length].points;
+      const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+      const len1 = Math.hypot(v1.x, v1.y);
+      v1.x /= len1;
+      v1.y /= len1;
+      const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+      const len2 = Math.hypot(v2.x, v2.y);
+      v2.x /= len2;
+      v2.y /= len2;
+      const p1 = {
+        x: curr.x - v1.x * Math.min(radius, len1 / 2),
+        y: curr.y - v1.y * Math.min(radius, len1 / 2),
+      };
+      const p2 = {
+        x: curr.x + v2.x * Math.min(radius, len2 / 2),
+        y: curr.y + v2.y * Math.min(radius, len2 / 2),
+      };
 
-    const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
-    const len1 = Math.hypot(v1.x, v1.y);
-    v1.x /= len1;
-    v1.y /= len1;
-    const v2 = { x: next.x - curr.x, y: next.y - curr.y };
-    const len2 = Math.hypot(v2.x, v2.y);
-    v2.x /= len2;
-    v2.y /= len2;
-    const p1 = {
-      x: curr.x - v1.x * Math.min(radius, len1 / 2),
-      y: curr.y - v1.y * Math.min(radius, len1 / 2),
-    };
-    const p2 = {
-      x: curr.x + v2.x * Math.min(radius, len2 / 2),
-      y: curr.y + v2.y * Math.min(radius, len2 / 2),
-    };
+      if (i === 0) {
+        ctx.moveTo(p1.x, p1.y);
+      } else {
+        ctx.lineTo(p1.x, p1.y);
+      }
 
-    if (i === 0) {
-      ctx.moveTo(p1.x, p1.y);
-    } else {
-      ctx.lineTo(p1.x, p1.y);
+      ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
     }
-
-    ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+    ctx.closePath();
   }
-  ctx.closePath();
-}
   static drawSmartShape(points) {
     if (points.length < 2) return;
 
@@ -180,7 +179,7 @@ static drawRoundedShape(points, radius) {
       const next = points[nextIdx].points;
       const mode = points[i].edgeModes;
       if (mode === "rounded") {
-        const radius = points[i].cornerRadius
+        const radius = points[i].cornerRadius;
         const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
         const len1 = Math.hypot(v1.x, v1.y);
         v1.x /= len1;
@@ -188,14 +187,14 @@ static drawRoundedShape(points, radius) {
         const v2 = { x: next.x - curr.x, y: next.y - curr.y };
         const len2 = Math.hypot(v2.x, v2.y);
         v2.x /= len2;
-        v2.y /= len2
+        v2.y /= len2;
         const p1 = {
           x: curr.x - v1.x * Math.min(radius, len1 / 2),
-          y: curr.y - v1.y * Math.min(radius, len1 / 2)
+          y: curr.y - v1.y * Math.min(radius, len1 / 2),
         };
         const p2 = {
           x: curr.x + v2.x * Math.min(radius, len2 / 2),
-          y: curr.y + v2.y * Math.min(radius, len2 / 2)
+          y: curr.y + v2.y * Math.min(radius, len2 / 2),
         };
 
         if (i === 0) {
@@ -212,7 +211,6 @@ static drawRoundedShape(points, radius) {
         }
 
         ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
-
       } else {
         if (i === 0) {
           ctx.moveTo(curr.x, curr.y);
@@ -233,234 +231,368 @@ static drawRoundedShape(points, radius) {
     if (last.edgeModes === "shaped") {
       const cp1 = last.controls[0];
       const cp2 = last.controls[1];
-      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, first.points.x, first.points.y);
+      ctx.bezierCurveTo(
+        cp1.x,
+        cp1.y,
+        cp2.x,
+        cp2.y,
+        first.points.x,
+        first.points.y
+      );
     } else {
       ctx.lineTo(first.points.x, first.points.y);
     }
     ctx.closePath();
   }
 
-static drawEditArcs(points,selectedArea,selectedLineIndex){
-        points.forEach((p, i) => {
-          ctx.beginPath();
-          ctx.rect(p.points.x-4,p.points.y-4,8,8)
+  static drawEditArcs(points, selectedArea, selectedLineIndex) {
+    points.forEach((p, i) => {
+      ctx.beginPath();
+      ctx.rect(p.points.x - 4, p.points.y - 4, 8, 8);
 
-          if(selectedArea === "pointIndex" && i === selectedLineIndex)ctx.fillStyle =  "#0000ff";
-          else ctx.fillStyle =  "#0000ff88";
-                    ctx.strokeStyle = "#e4e4e4"
-          ctx.fill()
-          ctx.lineWidth = 2
+      if (selectedArea === "pointIndex" && i === selectedLineIndex)
+        ctx.fillStyle = "#0000ff";
+      else ctx.fillStyle = "#0000ff88";
+      ctx.strokeStyle = "#e4e4e4";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+
+    points.forEach((isCurve, i) => {
+      if (isCurve.edgeModes === "shaped") {
+        isCurve.controls.forEach((cp, j) => {
+          ctx.beginPath();
+          ctx.moveTo(isCurve.points.x, isCurve.points.y);
+          ctx.lineTo(cp.x, cp.y);
+          ctx.strokeStyle = "#0000ff88";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.rect(cp.x - 3, cp.y - 3, 6, 6);
+          const isSelected =
+            selectedArea === "curveIndex" &&
+            selectedLineIndex.curveIndex === i &&
+            selectedLineIndex.controlIndex === j;
+          ctx.fillStyle = isSelected ? "#00ff00" : "#00ff0088";
+          ctx.fill();
           ctx.stroke();
         });
+      }
+    });
+  }
+  static getNormalPostion(localX, localY, width, height, threshold) {
+    let selectedArea = null;
+    const nearLeft = Math.abs(localX) < threshold;
+    const nearRight = Math.abs(localX - width) < threshold;
+    const nearTop = Math.abs(localY) < threshold;
+    const nearBottom = Math.abs(localY - height) < threshold;
+    if (nearLeft && nearTop) selectedArea = "TopLeft";
+    else if (nearRight && nearTop) selectedArea = "TopRight";
+    else if (nearLeft && nearBottom) selectedArea = "BottomLeft";
+    else if (nearRight && nearBottom) selectedArea = "BottomRight";
+    else if (nearLeft) selectedArea = "Left";
+    else if (nearRight) selectedArea = "Right";
+    else if (nearTop) selectedArea = "Top";
+    else if (nearBottom) selectedArea = "Bottom";
+    else if (localX > 0 && localX < width && localY > 0 && localY < height) {
+      selectedArea = "Selected";
+    }
+    return selectedArea;
+  }
+  static pointLineDistance(px, py, x1, y1, x2, y2) {
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
 
-        points.forEach((isCurve, i) => {
-          if (isCurve.edgeModes === "shaped") {
-            isCurve.controls.forEach((cp, j) => {
+    const dot = A * C + B * D;
+    const len_sq = C * C + D * D;
+    let param = -1;
+    if (len_sq !== 0) param = dot / len_sq;
 
-              ctx.beginPath();
-              ctx.moveTo(isCurve.points.x, isCurve.points.y);
-              ctx.lineTo(cp.x, cp.y);
-              ctx.strokeStyle = "#0000ff88";
-              ctx.lineWidth = 2;
-              ctx.stroke();
-                            ctx.beginPath();
-              ctx.rect(cp.x-3,cp.y-3,6,6)
-              const isSelected =
-                selectedArea === "curveIndex"  &&
-                selectedLineIndex.curveIndex === i &&
-                selectedLineIndex.controlIndex === j;
-              ctx.fillStyle = isSelected ? "#00ff00" : "#00ff0088";
-              ctx.fill();
-              ctx.stroke()
-            });
-          }
+    let xx, yy;
+
+    if (param < 0) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+
+    const dx = px - xx;
+    const dy = py - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  static computeBezierPoint(p0, p1, p2, p3, t) {
+    const x =
+      Math.pow(1 - t, 3) * p0.x +
+      3 * Math.pow(1 - t, 2) * t * p1.x +
+      3 * (1 - t) * Math.pow(t, 2) * p2.x +
+      Math.pow(t, 3) * p3.x;
+
+    const y =
+      Math.pow(1 - t, 3) * p0.y +
+      3 * Math.pow(1 - t, 2) * t * p1.y +
+      3 * (1 - t) * Math.pow(t, 2) * p2.y +
+      Math.pow(t, 3) * p3.y;
+
+    return { x, y };
+  }
+}
+class Formats {
+  similarPropties() {
+    document.querySelector(".normalb").addEventListener("click", () => {
+      this.outlineType = [];
+      this.formatProperties();
+    });
+    document.querySelector(".dashedb").addEventListener("click", () => {
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+      this.formatProperties();
+    });
+    document.getElementById("outline").addEventListener("click", () => {
+      this.outline = !this.outline;
+      this.formatProperties();
+    });
+    if (this.colorFill === "linear" || this.colorFill === "radial") {
+      document.querySelector(".addColor").addEventListener("click", () => {
+        this.color.push("#ff0000");
+        this.colorStop = [];
+        draw();
+        this.formatProperties();
+      });
+      document.querySelectorAll(".color-div").forEach((div, i) => {
+        div
+          .querySelector("input[type='number']")
+          .addEventListener("input", (e) => {
+            this.colorStop[i] = e.target.value;
+          });
+        div
+          .querySelector("input[type='color']")
+          .addEventListener("input", (e) => {
+            this.color[i] = e.target.value;
+          });
+        div.querySelector("button").addEventListener("click", (e) => {
+          this.color.splice(i, 1);
+          this.colorStop = [];
+          draw();
+          this.formatProperties();
         });
+      });
+    }
 
-}
-static getNormalPostion(localX, localY, width, height, threshold) {
-  let selectedArea = null;
-  const nearLeft = Math.abs(localX) < threshold;
-  const nearRight = Math.abs(localX - width) < threshold;
-  const nearTop = Math.abs(localY) < threshold;
-  const nearBottom = Math.abs(localY - height) < threshold;
-  if (nearLeft && nearTop) selectedArea = "TopLeft";
-  else if (nearRight && nearTop) selectedArea = "TopRight";
-  else if (nearLeft && nearBottom) selectedArea = "BottomLeft";
-  else if (nearRight && nearBottom) selectedArea = "BottomRight";
-  else if (nearLeft) selectedArea = "Left";
-  else if (nearRight) selectedArea = "Right";
-  else if (nearTop) selectedArea = "Top";
-  else if (nearBottom) selectedArea = "Bottom";
-  else if (
-    localX > 0 &&
-    localX < width  &&
-    localY > 0 &&
-    localY < height
-  ) {
-    selectedArea = "Selected";
+    document.querySelector(".color-select").addEventListener("change", (e) => {
+      this.colorFill = e.target.value;
+      this.formatProperties();
+    });
   }
-  return selectedArea;
-}
-static pointLineDistance(px, py, x1, y1, x2, y2) {
-  const A = px - x1;
-  const B = py - y1;
-  const C = x2 - x1;
-  const D = y2 - y1;
+  similarProptiesOutput(){
+    return `
+     <div>
+    <h3>Fill</h3>
+    <select class="color-select">
+    <option value="none" ${
+      this.colorFill === "none" ? "selected" : ""
+    }>None</option>
+    <option value="uniform" ${
+      this.colorFill === "uniform" ? "selected" : ""
+    }>Uniform</option>
+    <option value="linear" ${
+      this.colorFill === "linear" ? "selected" : ""
+    }>Linear-Gradient</option>
+    <option value="radial"${
+      this.colorFill === "radial" ? "selected" : ""
+    }>Radial-Gradient</option>
+    </select>
+    <div class="uniform-div" style="display: ${
+      this.colorFill === "uniform" ? "flex" : "none"
+    }">
+    Background-Color: <input type="color" value="${
+      this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]
+    }" name="bgColor">
+    </div>
+    <div
+    <div style="display:${
+      this.colorFill === "linear" || this.colorFill === "radial"
+        ? "flex"
+        : "none"
+    };flex-direction:column;gap:1rem">
+      ${this.color
+        .map(
+          (color, i) =>
+            `<div class="color-div">
+          <div style="text-wrap:nowrap; padding:0.5rem 1rem">Index: ${i}</div>
+          <div>Stop:<input type="number" min="0" max="1" step="0.01"  value="${
+            this.colorStop[i]
+          }"></div>
+          <input type="color" value="${
+            color.length > 7 ? color.slice(0, 7) : color
+          }">
+          <button></button>
+          </div>`
+        )
+        .join("")}
+      <section class="color-sec">
+      <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
+      <div style="display:${
+        this.colorFill === "linear" ? "flex" : "none"
+      }">Rotation <input type="number" name="colorDeg" value="${radToDeg(
+      this.colorDeg,
+      "deg"
+    )}">deg</div>
+      </section>
+      
 
-  const dot = A * C + B * D;
-  const len_sq = C * C + D * D;
-  let param = -1;
-  if (len_sq !== 0) param = dot / len_sq;
+    </div>
+        </div>
 
-  let xx, yy;
-
-  if (param < 0) {
-    xx = x1;
-    yy = y1;
-  } else if (param > 1) {
-    xx = x2;
-    yy = y2;
-  } else {
-    xx = x1 + param * C;
-    yy = y1 + param * D;
+            <div style="display: flex; flex-direction: column; gap:1rem">
+    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center">
+    <h3>Outline</h3>
+    <button class="${
+      this.outline ? "outlinet" : "outlinef"
+    }" id="outline"></button>    
+    </div>
+    <div style="display: ${
+      this.outline ? "flex" : "none"
+    }; flex-direction: column; gap:1rem">
+    <div class="uniform-div">Outiline Color <input type="color" name="outlineColor" value="${
+      this.outlineColor
+    }"></div>
+    <div class="thick">Outline Thickness <input type="number" name="outlineThickness" value="${changeValues(
+      this.outlineThickness
+    )}"></div>
+    <div class="uniform-div">Outline Type <div><button class="normalb"></button><button class="dashedb"></button></div></div>
+      <div class="two-grid" style="display:${
+        this.outlineType.length !== 0 ? "grid" : "none"
+      }">
+    <div>Width<input type="number" name="lineDashWidth" value="${
+      this.lineDashWidth
+    }"></div>
+    <div>Spacing<input type="number" name="lineDashSpacing" value="${
+      this.lineDashSpacing
+    }"></div>
+    </div>
+    </div>
+    </div>
+    `
   }
-
-  const dx = px - xx;
-  const dy = py - yy;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-static computeBezierPoint(p0, p1, p2, p3, t) {
-  const x =
-    Math.pow(1 - t, 3) * p0.x +
-    3 * Math.pow(1 - t, 2) * t * p1.x +
-    3 * (1 - t) * Math.pow(t, 2) * p2.x +
-    Math.pow(t, 3) * p3.x;
-
-  const y =
-    Math.pow(1 - t, 3) * p0.y +
-    3 * Math.pow(1 - t, 2) * t * p1.y +
-    3 * (1 - t) * Math.pow(t, 2) * p2.y +
-    Math.pow(t, 3) * p3.y;
-
-  return { x, y };
-}
-}
-class Formats{
-  similarPropties(){
-      document.querySelector(".normalb").addEventListener("click",()=>{this.outlineType = []; this.formatProperties()} )
-  document.querySelector(".dashedb").addEventListener("click",()=>{this.outlineType = [this.lineDashWidth,this.lineDashSpacing]; this.formatProperties()})
-  document.getElementById("outline").addEventListener("click",()=>{
-    this.outline = !this.outline
-    this.formatProperties()
-  })
-  if(this.colorFill === "linear" || this.colorFill === "radial"){
-    document.querySelector(".addColor").addEventListener("click",()=>{
-      this.color.push("#ff0000")
-      this.colorStop = []
-      draw()
-      this.formatProperties()
-
-    })
-  document.querySelectorAll(".color-div").forEach((div,i)=>{
-    div.querySelector("input[type='number']").addEventListener("input",(e)=>{
-      this.colorStop[i] = e.target.value
-
-    })
-    div.querySelector("input[type='color']").addEventListener("input",(e)=>{
-      this.color[i] = e.target.value
-
-    })
-    div.querySelector("button").addEventListener("click",(e)=>{
-      this.color.splice(i,1)
-      this.colorStop = []
-      draw()
-      this.formatProperties()
-
-    })
-  })
+  lineFormat(localMouseX, localMouseY, localDeltaX, localDeltaY) {
+    if (this.selectedArea === "lineIndex") {
+      const next = (this.selectedLineIndex + 1) % this.points.length;
+      this.points[this.selectedLineIndex].points.x += localDeltaX;
+      this.points[this.selectedLineIndex].points.y += localDeltaY;
+      this.points[next].points.x += localDeltaX;
+      this.points[next].points.y += localDeltaY;
+      this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
+      this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
+      this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
+      this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
+      this.points[next].controls[0].x += localDeltaX;
+      this.points[next].controls[0].y += localDeltaY;
+      this.points[next].controls[1].x += localDeltaX;
+      this.points[next].controls[1].y += localDeltaY;
+    } else if (this.selectedArea === "pointIndex") {
+      this.points[this.selectedLineIndex].points.x = localMouseX;
+      this.points[this.selectedLineIndex].points.y = localMouseY;
+      this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
+      this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
+      this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
+      this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
+    } else if (this.selectedArea === "curveIndex") {
+      const { curveIndex, controlIndex } = this.selectedLineIndex;
+      this.points[curveIndex].controls[controlIndex].x = localMouseX;
+      this.points[curveIndex].controls[controlIndex].y = localMouseY;
+    }
   }
-
-  document.querySelector(".color-select").addEventListener("change",(e)=>{
-    this.colorFill = e.target.value
-    this.formatProperties()
-  })
-  }
-  lineFormat(localMouseX,localMouseY,localDeltaX,localDeltaY){
+  pointDblClick(localMouseX,localMouseY){
+      if (this.selectedArea === "pointIndex") {
+        if (this.points.length > 3) {
+          this.points.splice(this.selectedPointIndex, 1);
+          return true;
+        }
+      }
       if (this.selectedArea === "lineIndex") {
         const next = (this.selectedLineIndex + 1) % this.points.length;
-        this.points[this.selectedLineIndex].points.x += localDeltaX;
-        this.points[this.selectedLineIndex].points.y += localDeltaY;
-        this.points[next].points.x += localDeltaX;
-        this.points[next].points.y += localDeltaY;
-        this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
-        this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
-        this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
-        this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
-        this.points[next].controls[0].x += localDeltaX;
-        this.points[next].controls[0].y += localDeltaY;
-        this.points[next].controls[1].x += localDeltaX;
-        this.points[next].controls[1].y += localDeltaY;
-      } else if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].points.x = localMouseX;
-        this.points[this.selectedLineIndex].points.y = localMouseY;
-        this.points[this.selectedLineIndex].controls[0].x += localDeltaX;
-        this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
-        this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
-        this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
-      } else if (this.selectedArea === "curveIndex") {
-        const { curveIndex, controlIndex } = this.selectedLineIndex;
-        this.points[curveIndex].controls[controlIndex].x = localMouseX;
-        this.points[curveIndex].controls[controlIndex].y = localMouseY;
+        if (this.points[this.selectedLineIndex].edgeModes !== true) {
+          const prev = this.points[this.selectedLineIndex];
+          const nextPoint = this.points[next];
+          const dx = nextPoint.points.x - prev.points.x;
+          const dy = nextPoint.points.y - prev.points.y;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          const ux = dx / length;
+          const uy = dy / length;
+          const handleLength = length * 0.2;
+          const control1 = {
+            x: localMouseX - ux * handleLength,
+            y: localMouseY - uy * handleLength,
+          };
+          const control2 = {
+            x: localMouseX + ux * handleLength,
+            y: localMouseY + uy * handleLength,
+          };
+          this.points.splice(next, 0, {
+            points: { x: localMouseX, y: localMouseY },
+            edgeModes: null,
+            controls: [control1, control2],
+            cornerRadius: 0,
+          });
+        }
+        return true;
       }
   }
-  rectFormat(mouse){
-          if (this.selectedArea === "Left") {
-            const newWidth = this.width + (this.x - mouse.x);
-            if (newWidth > 0) {
-              this.x = mouse.x;
-              this.width = newWidth;
-            }
-          } else if (this.selectedArea === "Right") {
-            this.width = mouse.x - this.x;
-          } else if (this.selectedArea === "Top") {
-            const newHeight = this.height + (this.y - mouse.y);
-            if (newHeight > 0) {
-              this.y = mouse.y;
-              this.height = newHeight;
-            }
-          } else if (this.selectedArea === "Bottom") {
-            this.height = mouse.y - this.y;
-          } else if (this.selectedArea === "TopLeft") {
-            const newWidth = this.width + (this.x - mouse.x);
-            if (newWidth > 0) {
-              this.x = mouse.x;
-              this.width = newWidth;
-            }
-            const newHeight = this.height + (this.y - mouse.y);
-            if (newHeight > 0) {
-              this.y = mouse.y;
-              this.height = newHeight;
-            }
-          } else if (this.selectedArea === "TopRight") {
-            this.width = mouse.x - this.x;
-            const newHeight = this.height + (this.y - mouse.y);
-            if (newHeight > 0) {
-              this.y = mouse.y;
-              this.height = newHeight;
-            }
-          } else if (this.selectedArea === "BottomLeft") {
-            const newWidth = this.width + (this.x - mouse.x);
-            if (newWidth > 0) {
-              this.x = mouse.x;
-              this.width = newWidth;
-            }
-            this.height = mouse.y - this.y;
-          } else if (this.selectedArea === "BottomRight") {
-            this.width = mouse.x - this.x;
-            this.height = mouse.y - this.y;
-          }
+  rectFormat(mouse) {
+    if (this.selectedArea === "Left") {
+      const newWidth = this.width + (this.x - mouse.x);
+      if (newWidth > 0) {
+        this.x = mouse.x;
+        this.width = newWidth;
+      }
+    } else if (this.selectedArea === "Right") {
+      this.width = mouse.x - this.x;
+    } else if (this.selectedArea === "Top") {
+      const newHeight = this.height + (this.y - mouse.y);
+      if (newHeight > 0) {
+        this.y = mouse.y;
+        this.height = newHeight;
+      }
+    } else if (this.selectedArea === "Bottom") {
+      this.height = mouse.y - this.y;
+    } else if (this.selectedArea === "TopLeft") {
+      const newWidth = this.width + (this.x - mouse.x);
+      if (newWidth > 0) {
+        this.x = mouse.x;
+        this.width = newWidth;
+      }
+      const newHeight = this.height + (this.y - mouse.y);
+      if (newHeight > 0) {
+        this.y = mouse.y;
+        this.height = newHeight;
+      }
+    } else if (this.selectedArea === "TopRight") {
+      this.width = mouse.x - this.x;
+      const newHeight = this.height + (this.y - mouse.y);
+      if (newHeight > 0) {
+        this.y = mouse.y;
+        this.height = newHeight;
+      }
+    } else if (this.selectedArea === "BottomLeft") {
+      const newWidth = this.width + (this.x - mouse.x);
+      if (newWidth > 0) {
+        this.x = mouse.x;
+        this.width = newWidth;
+      }
+      this.height = mouse.y - this.y;
+    } else if (this.selectedArea === "BottomRight") {
+      this.width = mouse.x - this.x;
+      this.height = mouse.y - this.y;
+    }
   }
-  circFormat(mouse,x,y){
+  circFormat(mouse, x, y) {
     if (this.isDoubleClicked) {
       this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
     } else {
@@ -520,7 +652,7 @@ class Formats{
 }
 class Rectangle extends Formats {
   constructor() {
-    super()
+    super();
     this.x = 100;
     this.y = 100;
     this.width = 150;
@@ -539,7 +671,7 @@ class Rectangle extends Formats {
     this.cornerRadius = 0;
     this.clipped = "none";
     this.clips = [];
-    this.opacity = 100
+    this.opacity = 100;
     this.points = [
       {
         points: { x: -this.width / 2, y: -this.height / 2 },
@@ -548,7 +680,7 @@ class Rectangle extends Formats {
           { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
           { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
         ],
-        cornerRadius: 0
+        cornerRadius: 0,
       },
       {
         points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
@@ -563,7 +695,7 @@ class Rectangle extends Formats {
             y: -this.height / 2 + this.height * 0.75,
           },
         ],
-        cornerRadius: 0
+        cornerRadius: 0,
       },
       {
         points: {
@@ -581,7 +713,7 @@ class Rectangle extends Formats {
             y: -this.height / 2 + this.height,
           },
         ],
-        cornerRadius: 0
+        cornerRadius: 0,
       },
       {
         points: { x: -this.width / 2, y: -this.height / 2 + this.height },
@@ -590,26 +722,24 @@ class Rectangle extends Formats {
           { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
           { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
         ],
-        cornerRadius: 0
+        cornerRadius: 0,
       },
     ];
     this.selectedLineIndex = null;
     this.mode = "edit";
     this.colorFill = "linear";
     this.colorDeg = 0.2;
-    this.colorStop = []
+    this.colorStop = [];
   }
   addObject() {
+    const xs = this.points.map((p) => p.points.x);
+    const ys = this.points.map((p) => p.points.y);
 
-            const xs = this.points.map((p) => p.points.x);
-        const ys = this.points.map((p) => p.points.y);
+    this.minX = Math.min(...xs);
+    this.minY = Math.min(...ys);
+    this.maxX = Math.max(...xs);
+    this.maxY = Math.max(...ys);
 
-        this.minX = Math.min(...xs);
-        this.minY = Math.min(...ys);
-        this.maxX = Math.max(...xs);
-        this.maxY = Math.max(...ys);
-        
-            
     ctx.save();
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
@@ -617,9 +747,9 @@ class Rectangle extends Formats {
     ctx.rotate(this.angle);
     ctx.beginPath();
     this.createPath();
-    if(this.colorFill !== "none"){
-    ctx.fillStyle = this.colorType();
-    ctx.fill();
+    if (this.colorFill !== "none") {
+      ctx.fillStyle = this.colorType();
+      ctx.fill();
     }
 
     if (this.roundedOrbeveled === "shaped") {
@@ -631,12 +761,15 @@ class Rectangle extends Formats {
         ctx.stroke();
         ctx.restore();
       }
-      if (this.mode === "edit" && selectedObj === this) LineUtils.drawEditArcs(this.points,this.selectedArea,this.selectedLineIndex)
+      if (this.mode === "edit" && selectedObj === this)
+        LineUtils.drawEditArcs(
+          this.points,
+          this.selectedArea,
+          this.selectedLineIndex
+        );
     }
     ctx.closePath();
-    if (
-      (this.outline && this.roundedOrbeveled !== "shaped")
-    ) {
+    if (this.outline && this.roundedOrbeveled !== "shaped") {
       ctx.beginPath();
       ctx.lineWidth = this.outlineThickness;
       ctx.strokeStyle = this.outlineColor;
@@ -675,10 +808,15 @@ class Rectangle extends Formats {
           this.height + 4
         );
       } else {
-        ctx.strokeRect(this.minX, this.minY, this.maxX - this.minX, this.maxY - this.minY);
+        ctx.strokeRect(
+          this.minX,
+          this.minY,
+          this.maxX - this.minX,
+          this.maxY - this.minY
+        );
         if (this.mode === "normal") {
           ctx.beginPath();
-          ctx.fillStyle = "#000000";
+          ctx.fillStyle = "#0000ff88";
           ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
         }
       }
@@ -699,9 +837,11 @@ class Rectangle extends Formats {
       ctx.restore();
     }
   }
-      colorType() {
-              const colors = this.color.map(color => applyOpacityToHex(color,this.opacity))
-          this.color = colors
+  colorType() {
+    const colors = this.color.map((color) =>
+      applyOpacityToHex(color, this.opacity)
+    );
+    this.color = colors;
     if (this.colorFill === "uniform") {
       return this.color[0];
     } else if (this.colorFill === "linear") {
@@ -723,14 +863,15 @@ class Rectangle extends Formats {
       const endX = minX + length * Math.cos(this.colorDeg);
       const endY = minY + length * Math.sin(this.colorDeg);
       const grad = ctx.createLinearGradient(minX, minY, endX, endY);
-      if(this.colorStop.length === 0){
-      this.color.forEach((c, i) => {
-        let equation = i / (this.color.length - 1);
-        this.colorStop.push(equation)  
-      });
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
       }
-      this.colorStop.forEach((stop,i)=>grad.addColorStop(stop, this.color[i]))
-      
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i])
+      );
 
       return grad;
     } else if (this.colorFill === "radial") {
@@ -758,33 +899,33 @@ class Rectangle extends Formats {
         centerY,
         radius
       );
-      if(this.colorStop.length === 0){
-      this.color.forEach((c, i) => {
-        let equation = i / (this.color.length - 1);
-        this.colorStop.push(equation)  
-      });
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
       }
-      this.colorStop.forEach((stop,i)=>grad.addColorStop(stop, this.color[i]))
-      
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i])
+      );
+
       return grad;
     }
   }
   createPath() {
     if (this.roundedOrbeveled === "shaped") {
-      let edgeCurve = false
-      this.points.forEach(p=>{
-        if(p.edgeModes !== null) edgeCurve = true
-      })
-      if(edgeCurve)LineUtils.drawSmartShape(this.points)
-      else{
-    LineUtils.drawRoundedShape(this.points,this.cornerRadius)
-    this.points.forEach(p => {
-      p.cornerRadius = this.cornerRadius
-    })
-      } 
-      
-    } 
-    else if (this.roundedOrbeveled === "rounded") {
+      let edgeCurve = false;
+      this.points.forEach((p) => {
+        if (p.edgeModes !== null) edgeCurve = true;
+      });
+      if (edgeCurve) LineUtils.drawSmartShape(this.points);
+      else {
+        LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+        this.points.forEach((p) => {
+          p.cornerRadius = this.cornerRadius;
+        });
+      }
+    } else if (this.roundedOrbeveled === "rounded") {
       this.drawRoundedRect(
         -this.width / 2,
         -this.height / 2,
@@ -822,7 +963,8 @@ class Rectangle extends Formats {
           LineUtils.getEdgeAtPosition(localMouseX, localMouseY, this.points))
       ) {
         const answer =
-          LineUtils.getPointPositon(localMouseX, localMouseY, this.points) === false
+          LineUtils.getPointPositon(localMouseX, localMouseY, this.points) ===
+          false
             ? LineUtils.getEdgeAtPosition(localMouseX, localMouseY, this.points)
             : LineUtils.getPointPositon(localMouseX, localMouseY, this.points);
         this.selectedArea = answer.type;
@@ -830,11 +972,12 @@ class Rectangle extends Formats {
         return true;
       } else if (this.mode === "normal") {
         if (
-          Math.abs(localMouseX - this.maxX) < 10 && Math.abs(localMouseY - this.maxY) < 10
-        ){
+          Math.abs(localMouseX - this.maxX) < 10 &&
+          Math.abs(localMouseY - this.maxY) < 10
+        ) {
           this.selectedArea = "scale";
 
-        return true;
+          return true;
         }
 
         this.createPath();
@@ -845,9 +988,9 @@ class Rectangle extends Formats {
           this.selectedArea = "Selected";
         }
         return isInside;
-      } 
+      }
       return false;
-    }  else {
+    } else {
       const localX = dx * cos - dy * sin + this.width / 2;
       const localY = dx * sin + dy * cos + this.height / 2;
 
@@ -877,7 +1020,7 @@ class Rectangle extends Formats {
       const deltaY = mouse.y - lastMouseY;
       const localDeltaX = deltaX * cos - deltaY * sin;
       const localDeltaY = deltaX * sin + deltaY * cos;
-      super.lineFormat(localMouseX,localMouseY,localDeltaX,localDeltaY)
+      super.lineFormat(localMouseX, localMouseY, localDeltaX, localDeltaY);
     } else {
       if (this.isDoubleClicked) {
         const center = {
@@ -888,7 +1031,7 @@ class Rectangle extends Formats {
           Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
       } else {
         if (this.roundedOrbeveled !== "shaped") {
-          super.rectFormat(mouse)
+          super.rectFormat(mouse);
         }
         if (this.selectedArea === "Selected") {
           this.x += mouse.x - lastMouseX;
@@ -932,88 +1075,76 @@ class Rectangle extends Formats {
     <div>
     <h3>Coordinate</h3>
     <div class="two-grid">
-    <div>X    <input type="number" name="x" value="${this.roundedOrbeveled === "shaped"?changeValues(this.x + this.minX + this.width/2)  :changeValues(
-      this.x)}"></div>
-    <div> Y   <input type="number" name="y" value="${this.roundedOrbeveled === "shaped"?changeValues(this.x + this.minY + this.height/2)  :changeValues(
-      this.y
-    )}"></div>
-    <div>W    <input type="number" name="width" value="${this.roundedOrbeveled === "shaped"? changeValues(this.maxX - this.minX) :changeValues(
-      this.width)}"></div>
-    <div> H  <input type="number" name="height" value="${this.roundedOrbeveled === "shaped"? changeValues(this.maxY - this.minY):changeValues(
-      this.height
-    )}"> </div> 
-    <div>Rotation <input type="number" name="angle" value="${
-      radToDeg(this.angle,"deg")
+    <div>X    <input type="number" name="x" value="${
+      this.roundedOrbeveled === "shaped"
+        ? changeValues(this.x + this.minX + this.width / 2)
+        : changeValues(this.x)
     }"></div>
+    <div> Y   <input type="number" name="y" value="${
+      this.roundedOrbeveled === "shaped"
+        ? changeValues(this.x + this.minY + this.height / 2)
+        : changeValues(this.y)
+    }"></div>
+    <div>W    <input type="number" name="width" value="${
+      this.roundedOrbeveled === "shaped"
+        ? changeValues(this.maxX - this.minX)
+        : changeValues(this.width)
+    }"></div>
+    <div> H  <input type="number" name="height" value="${
+      this.roundedOrbeveled === "shaped"
+        ? changeValues(this.maxY - this.minY)
+        : changeValues(this.height)
+    }"> </div> 
+    <div>Rotation <input type="number" name="angle" value="${radToDeg(
+      this.angle,
+      "deg"
+    )}"></div>
     <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
     </div>
     </div>
-    <div>
-    <h3>Fill</h3>
-    <select class="color-select">
-    <option value="none" ${this.colorFill === "none" ? "selected":""}>None</option>
-    <option value="uniform" ${this.colorFill === "uniform" ? "selected":""}>Uniform</option>
-    <option value="linear" ${this.colorFill === "linear" ? "selected":""}>Linear-Gradient</option>
-    <option value="radial"${this.colorFill === "radial" ? "selected":""}>Radial-Gradient</option>
-    </select>
-    <div class="uniform-div" style="display: ${this.colorFill === "uniform" ? "flex":"none"}">
-    Background-Color: <input type="color" value="${this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]
-}" name="bgColor">
-    </div>
-    <div
-    <div style="display:${this.colorFill === "linear" ||this.colorFill === "radial" ? "flex":"none"};flex-direction:column;gap:1rem">
-      ${
-        this.color.map((color,i)=>
-          `<div class="color-div">
-          <div style="text-wrap:nowrap; padding:0.5rem 1rem">Index: ${i}</div>
-          <div>Stop:<input type="number" min="0" max="1" step="0.01"  value="${this.colorStop[i]}"></div>
-          <input type="color" value="${color.length > 7 ? color.slice(0,7) : color}">
-          <button></button>
-          </div>`
-        ).join("")
-      }
-      <section class="color-sec">
-      <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
-      <div style="display:${this.colorFill === "linear" ? "flex" : "none"}">Rotation <input type="number" name="colorDeg" value="${radToDeg(this.colorDeg,"deg")}">deg</div>
-      </section>
-      
-
-    </div>
-        </div>
-        
-    <div style="display: flex; flex-direction: column; gap:1rem">
-    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center">
-    <h3>Outline</h3>
-    <button class="${this.outline ? "outlinet" : "outlinef"}" id="outline"></button>    
-    </div>
-    <div style="display: ${this.outline ? "flex" : "none"}; flex-direction: column; gap:1rem">
-    <div class="uniform-div">Outiline Color <input type="color" name="outlineColor" value="${this.outlineColor}"></div>
-    <div class="thick">Outline Thickness <input type="number" name="outlineThickness" value="${changeValues(this.outlineThickness)}"></div>
-    <div class="uniform-div">Outline Type <div><button class="normalb"></button><button class="dashedb"></button></div></div>
-      <div class="two-grid" style="display:${this.outlineType.length !== 0 ? "grid":"none"}">
-    <div>Width<input type="number" name="lineDashWidth" value="${this.lineDashWidth}"></div>
-    <div>Spacing<input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}"></div>
-    </div>
-    </div>
-    </div>
+  ${super.similarProptiesOutput()}
       <div class="shape">
         <div><button class="beveled"></button><button class="rounded"></button><button class="shapetool"><img src="images/Group 33.svg"></button></div>
-        <div style="display:${this.roundedOrbeveled === "shaped" ? "flex":"none"}"><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
-        <div style="display:${this.selectedArea === "pointIndex" && this.points[this.selectedLineIndex].edgeModes === "shaped" ? "none" : "flex"}" class="thick">Corner Radius <input type="number" name="cornerRadius" value="${this.selectedArea === "pointIndex" ? changeValues(this.points[this.selectedLineIndex].cornerRadius) : changeValues(this.cornerRadius)}"></div>
-        <div style="display:${this.roundedOrbeveled === "shaped" ? "flex":"none"} ;justify-content:end;align-items:end"><button class="normal">${this.mode=== "edit" ? "Done" : "Edit"}</button></div>
+        <div style="display:${
+          this.roundedOrbeveled === "shaped" ? "flex" : "none"
+        }"><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
+        <div style="display:${
+          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "shaped"
+            ? "none"
+            : "flex"
+        }" class="thick">Corner Radius <input type="number" name="cornerRadius" value="${
+      this.selectedArea === "pointIndex"
+        ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
+        : changeValues(this.cornerRadius)
+    }"></div>
+        <div style="display:${
+          this.roundedOrbeveled === "shaped" ? "flex" : "none"
+        } ;justify-content:end;align-items:end"><button class="normal">${
+      this.mode === "edit" ? "Done" : "Edit"
+    }</button></div>
       </div>
 
 
   `;
-      super.similarPropties()
-  document.querySelector(".beveled").addEventListener("click",()=>{this.roundedOrbeveled = "beveled"; this.formatProperties()})
-  document.querySelector(".rounded").addEventListener("click",()=>{this.roundedOrbeveled = "rounded"; this.formatProperties()})
-  document.querySelector(".shapetool").addEventListener("click",()=>{this.roundedOrbeveled = "shaped";this.cornerRadius = 0; this.formatProperties()})
+    super.similarPropties();
+    document.querySelector(".beveled").addEventListener("click", () => {
+      this.roundedOrbeveled = "beveled";
+      this.formatProperties();
+    });
+    document.querySelector(".rounded").addEventListener("click", () => {
+      this.roundedOrbeveled = "rounded";
+      this.formatProperties();
+    });
+    document.querySelector(".shapetool").addEventListener("click", () => {
+      this.roundedOrbeveled = "shaped";
+      this.cornerRadius = 0;
+      this.formatProperties();
+    });
 
-  
     document.querySelector(".rounded-edge").addEventListener("click", () => {
-      if(this.selectedArea === "pointIndex"){
-        this.points[this.selectedLineIndex].edgeModes = "rounded"
+      if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].edgeModes = "rounded";
       }
     });
     if (this.clips.length > 0) {
@@ -1032,13 +1163,13 @@ class Rectangle extends Formats {
       });
     }
     document.querySelector(".convert").addEventListener("click", () => {
-      if(this.selectedArea === "pointIndex"){
-        this.points[this.selectedLineIndex].edgeModes = "shaped"
+      if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].edgeModes = "shaped";
       }
     });
     document.querySelector(".normal").addEventListener("click", () => {
       this.mode = this.mode === "normal" ? "edit" : "normal";
-      this.formatProperties()
+      this.formatProperties();
     });
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
@@ -1047,69 +1178,68 @@ class Rectangle extends Formats {
         1000
       );
     });
-    
-    draw()
+
+    draw();
   }
 
   changeProperties(e) {
     const name = e.target.name;
-    if(name === "angle"){
-      this.angle = radToDeg(e.target.value,"rad")
-    }
-    else if(name === "bgColor"){
-      this.color[0] = e.target.value
-    }
-    else if(name === "colorDeg"){
-      this.colorDeg = radToDeg(e.target.value,"rad")
-    }
-    else if(name === "outlineColor"){
-      this.outlineColor = e.target.value
-    }
-    else if(e.target.type === "number"){
-      const value = backValues(parseFloat(e.target.value))
-      if(!isNaN(value) && value!== null){
-        if(name === "x"){
-          this.x = this.roundedOrbeveled === "shaped" ? value - this.minX - this.width/2 : value;
+    if (name === "angle") {
+      this.angle = radToDeg(e.target.value, "rad");
+    } else if (name === "bgColor") {
+      this.color[0] = e.target.value;
+    } else if (name === "colorDeg") {
+      this.colorDeg = radToDeg(e.target.value, "rad");
+    } else if (name === "outlineColor") {
+      this.outlineColor = e.target.value;
+    } else if (e.target.type === "number") {
+      const value = backValues(parseFloat(e.target.value));
+      if (!isNaN(value) && value !== null) {
+        if (name === "x") {
+          this.x =
+            this.roundedOrbeveled === "shaped"
+              ? value - this.minX - this.width / 2
+              : value;
+        } else if (name === "y") {
+          this.y =
+            this.roundedOrbeveled === "shaped"
+              ? value - this.minY - this.height / 2
+              : value;
+        } else if (name === "cornerRadius") {
+          if (
+            this.selectedArea === "pointIndex" &&
+            this.points[this.selectedLineIndex].edgeModes === "rounded"
+          )
+            this.points[this.selectedLineIndex].cornerRadius = value;
+          else this.cornerRadius = value;
+        } else if (name === "opacity") {
+          this.opacity = Number(e.target.value);
+        } else if (name === "width") {
+          if (this.roundedOrbeveled === "shaped") {
+            const scaleX = value / (this.maxX - this.minX);
+            this.points.forEach((p) => {
+              p.points.x *= scaleX;
+              p.controls[0].x *= scaleX;
+              p.controls[1].x *= scaleX;
+            });
+          } else this.width = value;
+        } else if (name === "height") {
+          if (this.roundedOrbeveled === "shaped") {
+            const scaleY = value / (this.maxY - this.minY);
+            this.points.forEach((p) => {
+              p.points.y *= scaleY;
+              p.controls[0].y *= scaleY;
+              p.controls[1].y *= scaleY;
+            });
+          } else this.height = value;
+        } else {
+          this[name] = value;
         }
-        else if(name === "y"){
-                   this.y = this.roundedOrbeveled === "shaped" ? value - this.minY - this.height/2 : value;
- 
-        }
-        else if(name === "cornerRadius"){
-          if(this.selectedArea === "pointIndex" && this.points[this.selectedLineIndex].edgeModes === "rounded") this.points[this.selectedLineIndex].cornerRadius = value
-          else this.cornerRadius = value
-        }
-        else if(name === 'opacity'){
-          this.opacity = Number(e.target.value)
-
-        }
-        else if(name === "width"){
-          if(this.roundedOrbeveled === "shaped"){
-            const scaleX = value / (this.maxX - this.minX)
-            this.points.forEach(p =>{
-              p.points.x *= scaleX
-              p.controls[0].x *= scaleX
-              p.controls[1].x *=scaleX
-            })
-          }else this.width = value
-        }
-        else if(name === "height"){
-          if(this.roundedOrbeveled === "shaped"){
-            const scaleY = value / (this.maxY - this.minY)
-            this.points.forEach(p =>{
-              p.points.y *= scaleY
-              p.controls[0].y *= scaleY
-              p.controls[1].y *=scaleY
-            })
-          }else this.height = value
-        }else{
-          this[name] = value
-        }
-
       }
     }
-  
-    if(this.outlineType.length !== 0) this.outlineType = [this.lineDashWidth,this.lineDashSpacing]
+
+    if (this.outlineType.length !== 0)
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     draw();
   }
   drawBeveledRect(x, y, width, height, bevel) {
@@ -1138,13 +1268,16 @@ class Rectangle extends Formats {
     ctx.closePath();
   }
   whereToSnap() {
-    if (
-      this.roundedOrbeveled === "shaped"
-    ) {
+    if (this.roundedOrbeveled === "shaped") {
       return {
         x: [this.x, this.x + this.width / 2, this.x + this.width],
         y: [this.y, this.y + this.height / 2, this.y + this.height],
-        pos: { x: this.minX + this.x + this.width / 2 , y: this.minY + this.y + this.height / 2, width: this.maxX - this.minX, height: this.maxY - this.minY },
+        pos: {
+          x: this.minX + this.x + this.width / 2,
+          y: this.minY + this.y + this.height / 2,
+          width: this.maxX - this.minX,
+          height: this.maxY - this.minY,
+        },
       };
     }
     return {
@@ -1175,40 +1308,7 @@ class Rectangle extends Formats {
     const localMouseX = dx * cos - dy * sin;
     const localMouseY = dx * sin + dy * cos;
     if (this.roundedOrbeveled === "shaped") {
-      if (this.selectedArea === "pointIndex") {
-        if (this.points.length > 3) {
-          this.points.splice(this.selectedPointIndex, 1);
-          return true;
-        }
-      }
-      if (this.selectedArea === "lineIndex") {
-        const next = (this.selectedLineIndex + 1) % this.points.length;
-        if (this.points[this.selectedLineIndex].edgeModes !== true) {
-          const prev = this.points[this.selectedLineIndex];
-          const nextPoint = this.points[next];
-          const dx = nextPoint.points.x - prev.points.x;
-          const dy = nextPoint.points.y - prev.points.y;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          const ux = dx / length;
-          const uy = dy / length;
-          const handleLength = length * 0.2;
-          const control1 = {
-            x: localMouseX - ux * handleLength,
-            y: localMouseY - uy * handleLength,
-          };
-          const control2 = {
-            x: localMouseX + ux * handleLength,
-            y: localMouseY + uy * handleLength,
-          };
-          this.points.splice(next, 0, {
-            points: { x: localMouseX, y: localMouseY },
-            edgeModes: null,
-            controls: [control1, control2],
-            cornerRadius: 0
-          });
-        }
-        return true;
-      }
+      super.pointDblClick(localMouseX,localMouseY)
     } else {
       isRotatingObject = true;
       this.isDoubleClicked = this.isDoubleClicked ? false : true;
@@ -1219,13 +1319,13 @@ class Rectangle extends Formats {
 
 class Ellipse extends Formats {
   constructor() {
-    super()
+    super();
     this.x = 100;
     this.y = 100;
     this.radiusX = 50;
     this.radiusY = 50;
     this.angle = 0;
-    this.color = ["#ff0000","#00ff00"];
+    this.color = ["#ff0000", "#00ff00"];
     this.outline = true;
     this.outlineColor = "#00ff00";
     this.outlineThickness = 10;
@@ -1235,110 +1335,110 @@ class Ellipse extends Formats {
     this.lineDashSpacing = 3;
     this.isDoubleClicked = false;
     this.selectedArea;
-    this.opacity = 100
-    this.arcStart = 0
-    this.arcEnd = 2 * Math.PI
-    this.colorFill = "uniform"
-    this.mode = "pie"
-    this.colorStop = []
-    this.colorDeg = 0
-
+    this.opacity = 100;
+    this.arcStart = 0;
+    this.arcEnd = 2 * Math.PI;
+    this.colorFill = "uniform";
+    this.mode = "pie";
+    this.colorStop = [];
+    this.colorDeg = 0;
   }
-addObject() {
-  ctx.save();
-  ctx.translate(this.x, this.y);
-  ctx.rotate(this.angle);         
+  addObject() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
 
-  ctx.beginPath();
-  if (this.mode === "pie") {
-    ctx.moveTo(0, 0);
-    ctx.ellipse(
-      0, 0,
-      this.radiusX,
-      this.radiusY,
-      0,
-      this.arcStart,
-      this.arcEnd
-    );
-
-  } else {
-    ctx.ellipse(
-      0, 0,
-      this.radiusX,
-      this.radiusY,
-      0,
-      this.arcStart,
-      this.arcEnd
-    );
-  }
-   if(this.mode !== "curve") ctx.closePath()
-if(this.colorFill !== "none")  ctx.fillStyle = this.colorType();
-  if(this.mode !== "curve" && this.colorFill !== "none")ctx.fill();
-  if (this.outline) {
-    ctx.lineWidth = this.outlineThickness;
-    ctx.strokeStyle = this.outlineColor;
-    ctx.setLineDash(this.outlineType);
-      ctx.stroke();
-  }
-  if (selectedObj === this) {
     ctx.beginPath();
-    ctx.strokeStyle = "#0000ff";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 3]);
-    ctx.strokeRect(
-      -this.radiusX ,
-      -this.radiusY,
-      this.radiusX * 2,
-      this.radiusY * 2
-    );
-    ctx.closePath();
+    if (this.mode === "pie") {
+      ctx.moveTo(0, 0);
+      ctx.ellipse(
+        0,
+        0,
+        this.radiusX,
+        this.radiusY,
+        0,
+        this.arcStart,
+        this.arcEnd
+      );
+    } else {
+      ctx.ellipse(
+        0,
+        0,
+        this.radiusX,
+        this.radiusY,
+        0,
+        this.arcStart,
+        this.arcEnd
+      );
+    }
+    if (this.mode !== "curve") ctx.closePath();
+    if (this.colorFill !== "none") ctx.fillStyle = this.colorType();
+    if (this.mode !== "curve" && this.colorFill !== "none") ctx.fill();
+    if (this.outline) {
+      ctx.lineWidth = this.outlineThickness;
+      ctx.strokeStyle = this.outlineColor;
+      ctx.setLineDash(this.outlineType);
+      ctx.stroke();
+    }
+    if (selectedObj === this) {
+      ctx.beginPath();
+      ctx.strokeStyle = "#0000ff";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 3]);
+      ctx.strokeRect(
+        -this.radiusX,
+        -this.radiusY,
+        this.radiusX * 2,
+        this.radiusY * 2
+      );
+      ctx.closePath();
+    }
+
+    ctx.restore();
   }
 
-  ctx.restore();
-}
-
-
-    colorType() {
-              const colors = this.color.map(color => applyOpacityToHex(color,this.opacity))
-          this.color = colors
+  colorType() {
+    const colors = this.color.map((color) =>
+      applyOpacityToHex(color, this.opacity)
+    );
+    this.color = colors;
     if (this.colorFill === "uniform") {
       return this.color[0];
     } else if (this.colorFill === "linear") {
-
       let length = Math.sqrt((this.radiusX * 2) ** 2 + (this.radiusY * 2) ** 2);
 
-      const endX = -this.radiusX  + length * Math.cos(this.colorDeg);
+      const endX = -this.radiusX + length * Math.cos(this.colorDeg);
       const endY = -this.radiusY + length * Math.sin(this.colorDeg);
-      const grad = ctx.createLinearGradient(-this.radiusX ,-this.radiusY, endX, endY);
-      if(this.colorStop.length === 0){
-      this.color.forEach((c, i) => {
-        let equation = i / (this.color.length - 1);
-        this.colorStop.push(equation)  
-      });
+      const grad = ctx.createLinearGradient(
+        -this.radiusX,
+        -this.radiusY,
+        endX,
+        endY
+      );
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
       }
-      this.colorStop.forEach((stop,i)=>grad.addColorStop(stop, this.color[i]))
-      
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i])
+      );
 
       return grad;
     } else if (this.colorFill === "radial") {
- 
       const radius = Math.max(this.radiusX, this.radiusY);
-      const grad = ctx.createRadialGradient(
-        0,
-        0,
-        0,
-      0,
-        0,
-        radius
-      );
-      if(this.colorStop.length === 0){
-      this.color.forEach((c, i) => {
-        let equation = i / (this.color.length - 1);
-        this.colorStop.push(equation)  
-      });
+      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
       }
-      this.colorStop.forEach((stop,i)=>grad.addColorStop(stop, this.color[i]))
-      
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i])
+      );
+
       return grad;
     }
   }
@@ -1354,13 +1454,19 @@ if(this.colorFill !== "none")  ctx.fillStyle = this.colorType();
     const localX = dx * cos - dy * sin + rectW / 2;
     const localY = dx * sin + dy * cos + rectH / 2;
 
-    this.selectedArea = LineUtils.getNormalPostion(localX,localY,rectW,rectH,10)
+    this.selectedArea = LineUtils.getNormalPostion(
+      localX,
+      localY,
+      rectW,
+      rectH,
+      10
+    );
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
     const x = this.x - this.radiusX;
     const y = this.y - this.radiusY;
-    super.circFormat(mouse,x,y)
+    super.circFormat(mouse, x, y);
   }
   formatProperties() {
     propertiesBar.innerHTML = `
@@ -1368,93 +1474,56 @@ if(this.colorFill !== "none")  ctx.fillStyle = this.colorType();
     <h3>Coordinate</h3>
         <div class="two-grid">
     <div>X    <input type="number" name="x" value="${changeValues(
-      this.x - this.radiusX)}"></div>
+      this.x - this.radiusX
+    )}"></div>
     <div> Y   <input type="number" name="y" value="${changeValues(
       this.y
     )}"></div>
     <div>W    <input type="number" name="radiusX" value="${changeValues(
-      this.radiusX)}"></div>
+      this.radiusX
+    )}"></div>
     <div> H  <input type="number" name="radiusY" value="${changeValues(
       this.radiusY
     )}"> </div> 
-    <div>Rotation <input type="number" name="angle" value="${
-      radToDeg(this.angle,"deg")
-    }"></div>
+    <div>Rotation <input type="number" name="angle" value="${radToDeg(
+      this.angle,
+      "deg"
+    )}"></div>
     <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
     </div>
     </div>
-        <div>
-    <h3>Fill</h3>
-    <select class="color-select">
-    <option value="none" ${this.colorFill === "none" ? "selected":""}>None</option>
-    <option value="uniform" ${this.colorFill === "uniform" ? "selected":""}>Uniform</option>
-    <option value="linear" ${this.colorFill === "linear" ? "selected":""}>Linear-Gradient</option>
-    <option value="radial"${this.colorFill === "radial" ? "selected":""}>Radial-Gradient</option>
-    </select>
-    <div class="uniform-div" style="display: ${this.colorFill === "uniform" ? "flex":"none"}">
-    Background-Color: <input type="color" value="${this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]
-}" name="bgColor">
-    </div>
-    <di
-    <div style="display:${this.colorFill === "linear" ||this.colorFill === "radial" ? "flex":"none"};flex-direction:column;gap:1rem">
-      ${
-        this.color.map((color,i)=>
-          `<div class="color-div">
-          <div style="text-wrap:nowrap; padding:0.5rem 1rem">Index: ${i}</div>
-          <div>Stop:<input type="number" min="0" max="1" step="0.01"  value="${this.colorStop[i]}"></div>
-          <input type="color" value="${color.length > 7 ? color.slice(0,7) : color}">
-          <button></button>
-          </div>`
-        ).join("")
-      }
-      <section class="color-sec">
-      <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
-      <div style="display:${this.colorFill === "linear" ? "flex" : "none"}">Rotation <input type="number" name="colorDeg" value="${radToDeg(this.colorDeg,"deg")}">deg</div>
-      </section>
-      
-
-    </div>
-        <div style="display: flex; flex-direction: column; gap:1rem">
-    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center">
-    <h3>Outline</h3>
-    <button class="${this.outline ? "outlinet" : "outlinef"}" id="outline"></button>    
-    </div>
-    <div style="display: ${this.outline ? "flex" : "none"}; flex-direction: column; gap:1rem">
-    <div class="uniform-div">Outiline Color <input type="color" name="outlineColor" value="${this.outlineColor}"></div>
-    <div class="thick">Outline Thickness <input type="number" name="outlineThickness" value="${changeValues(this.outlineThickness)}"></div>
-    <div class="uniform-div">Outline Type <div><button class="normalb"></button><button class="dashedb"></button></div></div>
-      <div class="two-grid" style="display:${this.outlineType.length !== 0 ? "grid":"none"}">
-    <div>Width<input type="number" name="lineDashWidth" value="${this.lineDashWidth}"></div>
-    <div>Spacing<input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}"></div>
-    </div>
-    </div>
-    </div>
-    </div>
+    ${super.similarProptiesOutput()}
     <div class="shape">
     <div><button class="fill"><img src="images/Ellipse 11.svg"></button><button class="pie"><img src="images/pie.png"></button><button class="curve"><img src="images/curveEnd.png" style="transform: rotate(-45deg)"></button></div>
-    <div style="display:${this.mode === "fill" ? "none" : "grid"}" class="two-grid"><div><img style="transform: rotate(-90deg)" src="images/curveEnd.png"><input type="number" value="${radToDeg(this.arcStart,"deg")}" name="arcStart"></div><div><img src="images/curveEnd.png"><input type="number" value="${radToDeg(this.arcEnd,"deg")}" name="arcEnd"></div></div>
+    <div style="display:${
+      this.mode === "fill" ? "none" : "grid"
+    }" class="two-grid"><div><img style="transform: rotate(-90deg)" src="images/curveEnd.png"><input type="number" value="${radToDeg(
+      this.arcStart,
+      "deg"
+    )}" name="arcStart"></div><div><img src="images/curveEnd.png"><input type="number" value="${radToDeg(
+      this.arcEnd,
+      "deg"
+    )}" name="arcEnd"></div></div>
     </div>
 
     `;
-      super.similarPropties()
-      document.querySelector(".fill").addEventListener("click",()=>{
-        this.mode = "fill"
-        this.arcStart = 0
-        this.arcEnd = Math.PI * 2
-        this.formatProperties()
-
-      })
-      document.querySelector(".pie").addEventListener("click",()=>{
-        this.mode = "pie"
-        this.formatProperties()
-      })
-      document.querySelector(".curve").addEventListener("click",()=>{
-        this.mode = "curve"
-        this.colorFill = "none"
-                if(!this.outline) this.outline = true
-        this.formatProperties()
-
-      })
+    super.similarPropties();
+    document.querySelector(".fill").addEventListener("click", () => {
+      this.mode = "fill";
+      this.arcStart = 0;
+      this.arcEnd = Math.PI * 2;
+      this.formatProperties();
+    });
+    document.querySelector(".pie").addEventListener("click", () => {
+      this.mode = "pie";
+      this.formatProperties();
+    });
+    document.querySelector(".curve").addEventListener("click", () => {
+      this.mode = "curve";
+      this.colorFill = "none";
+      if (!this.outline) this.outline = true;
+      this.formatProperties();
+    });
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
         "input",
@@ -1462,36 +1531,36 @@ if(this.colorFill !== "none")  ctx.fillStyle = this.colorType();
         1000
       );
     });
-    draw()
+    draw();
   }
   changeProperties(e) {
     const name = e.target.name;
-    if(name === "angle"){
-      this.angle = radToDeg(e.target.value,"rad")
-    }    else if(name === "bgColor"){
-      this.color[0] = e.target.value
-    }
-    else if(name === "colorDeg" || name=== "arcStart" || name==="arcEnd"){
-      this[name] = radToDeg(e.target.value,"rad")
-    }
-    else if(name === "outlineColor"){
-      this.outlineColor = e.target.value
-    }
-    else if(e.target.type === "number"){
-      const value = backValues(parseFloat(e.target.value))
-      if(!isNaN(value) && value!== null){
-        if(name === "x") this.x = value + this.radiusX
-        else if(name === "y") this.x = value + this.radiusY
-                else if(name === 'opacity'){
-          this.opacity = Number(e.target.value)
-
-        }
-        else this[name] = value
-        console.log(this.arcStart,this.arcEnd)
+    if (name === "angle") {
+      this.angle = radToDeg(e.target.value, "rad");
+    } else if (name === "bgColor") {
+      this.color[0] = e.target.value;
+    } else if (
+      name === "colorDeg" ||
+      name === "arcStart" ||
+      name === "arcEnd"
+    ) {
+      this[name] = radToDeg(e.target.value, "rad");
+    } else if (name === "outlineColor") {
+      this.outlineColor = e.target.value;
+    } else if (e.target.type === "number") {
+      const value = backValues(parseFloat(e.target.value));
+      if (!isNaN(value) && value !== null) {
+        if (name === "x") this.x = value + this.radiusX;
+        else if (name === "y") this.x = value + this.radiusY;
+        else if (name === "opacity") {
+          this.opacity = Number(e.target.value);
+        } else this[name] = value;
+        console.log(this.arcStart, this.arcEnd);
       }
     }
-        if(this.outlineType.length !== 0) this.outlineType = [this.lineDashWidth,this.lineDashSpacing]
-    draw()
+    if (this.outlineType.length !== 0)
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+    draw();
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -1499,10 +1568,10 @@ if(this.colorFill !== "none")  ctx.fillStyle = this.colorType();
     clone.y = lastMouseY;
     return clone;
   }
-  doubleClicked(mouse){
-          isRotatingObject = true;
-      this.isDoubleClicked = this.isDoubleClicked ? false : true;
-      return true;
+  doubleClicked(mouse) {
+    isRotatingObject = true;
+    this.isDoubleClicked = this.isDoubleClicked ? false : true;
+    return true;
   }
   whereToSnap() {
     return {
@@ -1524,16 +1593,16 @@ if(this.colorFill !== "none")  ctx.fillStyle = this.colorType();
     }
   }
 }
-class Polygon extends Formats{
+class Polygon extends Formats {
   constructor() {
-    super()
+    super();
     this.sides = 6;
-    this.x= 100;
+    this.x = 100;
     this.y = 100;
     this.radiusX = 50;
-    this.radiusY = 30;
+    this.radiusY = 50;
     this.angle = 0;
-    this.color = "#FFCC00";
+    this.color = ["#FFCC00", "#ff0000"];
     this.outline = false;
     this.outlineColor = "#00ff00";
     this.outlineThickness = 10;
@@ -1543,131 +1612,311 @@ class Polygon extends Formats{
     this.lineDashSpacing = 3;
     this.selectedArea = null;
     this.isDoubleClicked = false;
-    this.points = []
-    this.mode = "normal"
-    this.cornerRadius
+    this.points = [];
+    this.mode = "normal";
+    this.cornerRadius = 0;
+    this.selectedLineIndex = null;
+    this.colorStop = [];
+    this.colorDeg = 0;
+    this.colorFill = "linear";
+    this.opacity = 100;
   }
 
   addObject() {
-
+    if(this.points.length === 0){
     if (this.sides < 3) return;
-                    const xs = this.points.map((p) => p.points.x);
-        const ys = this.points.map((p) => p.points.y);
-
-         this.minX = Math.min(...xs);
-         this.minY = Math.min(...ys);
-         this.maxX = Math.max(...xs);
-         this.maxY = Math.max(...ys);
     const angleStep = (2 * Math.PI) / this.sides;
-    for (let i = 0; i <= this.sides; i++) {
+    for (let i = 0; i < this.sides; i++) {
       const angle = i * angleStep - Math.PI / 2;
-      const x = this.x * Math.cos(angle);
-      const y = this.x * Math.sin(angle);
-
-      const rotatedX = x * Math.cos(this.angle) - y * Math.sin(this.angle);
-      const rotatedY = x * Math.sin(this.angle) + y * Math.cos(this.angle);
-
-      const finalX = this.x + rotatedX;
-      const finalY = this.x + rotatedY;
-
-      this.points.push({points:{ x: finalX, y: finalY },edgeModes:false,controls:[{ x: finalX - 20, y: finalY },{ x: finalX + 20, y: finalY }]});
+      const x = this.radiusX * Math.cos(angle);
+      const y = this.radiusY * Math.sin(angle);
+      this.points.push({
+        points: { x, y },
+        edgeModes: null,
+        controls: [
+          { x: x - 20, y: y },
+          { x: x + 20, y: y },
+        ],
+        cornerRadius: 0,
+      });
+    }
     }
 
+    const xs = this.points.map((p) => p.points.x);
+    const ys = this.points.map((p) => p.points.y);
+    this.minX = Math.min(...xs);
+    this.minY = Math.min(...ys);
+    this.maxX = Math.max(...xs);
+    this.maxY = Math.max(...ys);
+    this.radiusX = (this.maxX - this.minX) / 2
+    this.radiusY = (this.maxY - this.minY) / 2
     ctx.save();
-    ctx.beginPath()
-    if(this.mode === "rounded") LineUtils.drawRoundedShape(this.points,this.cornerRadius)
-    else LineUtils.drawLineShape(this.points)
-    ctx.fillStyle = this.color
-    ctx.fill()
-          if (this.outline) {
-        ctx.save();
-        ctx.lineWidth = this.outlineThickness;
-        ctx.setLineDash(this.outlineType);
-        ctx.strokeStyle = this.outlineColor;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.restore();
-      }
-      if(selectedObj === this){
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+    ctx.beginPath();
+    let edgeCurve = false;
+    this.points.forEach((p) => {
+      if (p.edgeModes !== null) edgeCurve = true;
+    });
+    if (edgeCurve) LineUtils.drawSmartShape(this.points);
+    else {
+      LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+      this.points.forEach((p) => {
+        p.cornerRadius = this.cornerRadius;
+      });
+    }
+    ctx.fillStyle = this.colorType();
+    ctx.fill();
+    if (this.outline) {
+      ctx.save();
+      ctx.lineWidth = this.outlineThickness;
+      ctx.setLineDash(this.outlineType);
+      ctx.strokeStyle = this.outlineColor;
+      ctx.lineJoin = "round";
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (this.mode === "edit" && selectedObj === this)
+      LineUtils.drawEditArcs(
+        this.points,
+        this.selectedArea,
+        this.selectedLineIndex
+      );
 
-        ctx.strokeRect(this.minX, this.minY, this.maxX - this.minX, this.maxY - this.minY);
-      }
-    
+    if (selectedObj === this) {
+            ctx.beginPath();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#0000ff";
+            ctx.setLineDash([5, 3]);
+      ctx.strokeRect(
+        this.minX,
+        this.minY,
+        this.maxX - this.minX,
+        this.maxY - this.minY
+      );
+              if (this.mode === "normal") {
+          ctx.beginPath();
+          ctx.fillStyle = "#0000ff88";
+          ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
+        }
+    }
 
-
+    ctx.closePath()
     ctx.restore();
   }
+  colorType() {
+    const colors = this.color.map((color) =>
+      applyOpacityToHex(color, this.opacity)
+    );
+    this.color = colors;
+    if (this.colorFill === "uniform") {
+      return this.color[0];
+    } else if (this.colorFill === "linear") {
+      let length = Math.sqrt(
+        (this.maxX - this.minX) ** 2 + (this.maxY - this.minY) ** 2
+      );
 
+      const endX = this.minX + length * Math.cos(this.colorDeg);
+      const endY = this.minY + length * Math.sin(this.colorDeg);
+      const grad = ctx.createLinearGradient(this.minX, this.minY, endX, endY);
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
+      }
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i])
+      );
+
+      return grad;
+    } else if (this.colorFill === "radial") {
+      const centerX = (this.minX + this.maxX) / 2;
+      const centerY = (this.minY + this.maxY) / 2;
+
+      const radius = Math.max(this.maxX - this.minX, this.maxY - this.minY) / 2;
+      const grad = ctx.createRadialGradient(
+        centerX,
+        centerY,
+        0,
+        centerX,
+        centerY,
+        radius
+      );
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
+      }
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i])
+      );
+
+      return grad;
+    }
+  }
   whatSelected(mouse) {
-    const centerX = (this.minX + this.maxX) / 2;
-    const centerY = (this.minY + this.maxY) / 2;
-    const width = this.maxX - this.minX;
-    const height = this.maxY - this.minY;
-
-    const dx = mouse.x - centerX;
-    const dy = mouse.y - centerY;
+    const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
 
     const cos = Math.cos(-this.angle);
     const sin = Math.sin(-this.angle);
-    const localX = dx * cos - dy * sin + width / 2;
-    const localY = dx * sin + dy * cos + height / 2;
+    const localX = dx * cos - dy * sin;
+    const localY = dx * sin + dy * cos;
 
-    this.selectedArea = LineUtils.getNormalPostion(localX,localY,width,height,10)
-    return this.selectedArea !== null;
+    if (
+      this.mode === "edit" &&
+      (LineUtils.getPointPositon(localX, localY, this.points) ||
+        LineUtils.getEdgeAtPosition(localX, localY, this.points))
+    ) {
+      const answer =
+        LineUtils.getPointPositon(localX, localY, this.points) === false
+          ? LineUtils.getEdgeAtPosition(localX, localY, this.points)
+          : LineUtils.getPointPositon(localX, localY, this.points);
+      this.selectedArea = answer.type;
+      this.selectedLineIndex = answer.value;
+      return true;
+    } 
+    else {
+      if (
+        Math.abs(localX - this.maxX) < 10 &&
+        Math.abs(localY - this.maxY) < 10
+      ) {
+        this.selectedArea = "scale";
+
+        return true;
+      }
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+    ctx.beginPath();
+    let edgeCurve = false;
+    this.points.forEach((p) => {
+      if (p.edgeModes !== null) edgeCurve = true;
+    });
+    if (edgeCurve) LineUtils.drawSmartShape(this.points);
+    else {
+      LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+      this.points.forEach((p) => {
+        p.cornerRadius = this.cornerRadius;
+      });
+    }
+      const isInside = ctx.isPointInPath(mouse.x, mouse.y);
+      ctx.restore();
+
+      if (isInside) {
+        this.selectedArea = "Selected";
+      }
+      return isInside;
+    }
+    return false;
   }
 
   formatSelected(mouse) {
- 
-    
+    const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+    const localX = dx * cos - dy * sin;
+    const localY = dx * sin + dy * cos;
+    if (this.mode === "edit") {
+      const deltaX = mouse.x - lastMouseX;
+      const deltaY = mouse.y - lastMouseY;
+      const localDeltaX = deltaX * cos - deltaY * sin;
+      const localDeltaY = deltaX * sin + deltaY * cos;
+      super.lineFormat(localX, localY, localDeltaX, localDeltaY);
+    }else{
+            if (this.isDoubleClicked) {
+        this.angle =
+          Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
+
+      }
+            else if (this.selectedArea === "Selected") {
+          this.x += mouse.x - lastMouseX;
+          this.y += mouse.y - lastMouseY;
+        }
+    }
+            if (this.selectedArea === "scale") {
+          const lastWidth = lastMouseX - this.x;
+          const lastHeight = lastMouseY - this.y;
+          const currentWidth = mouse.x - this.x;
+          const currentHeight = mouse.y - this.y;
+          const scaleX = currentWidth / lastWidth;
+          const scaleY = currentHeight / lastHeight;
+          this.points.forEach((p) => {
+            p.points.x = (p.points.x) * scaleX;
+            p.points.y = (p.points.y ) * scaleY;
+            p.controls[0].x = (p.controls[0].x) * scaleX;
+            p.controls[0].y = (p.controls[0].y ) * scaleY;
+            p.controls[1].x =  (p.controls[1].x) * scaleX;
+            p.controls[1].y = (p.controls[1].y ) * scaleY;
+          });
+        }
+
   }
   formatProperties() {
     propertiesBar.innerHTML = `
-    <label>x:</label><input type="number" name="centerX" value="${changeValues(
-      this.centerX - this.radiusX
-    )}">
-    <label>y:</label><input type="number" name="centerY" value="${changeValues(
-      this.centerY - this.radiusY
-    )}">
-    <label>radiusX:</label><input type="number" name="radiusX" value="${changeValues(
-      this.radiusX
-    )}">
-    <label>radiusY:</label><input type="number" name="radiusY" value="${changeValues(
-      this.radiusY
-    )}">
-    <label>Background Color:</label> <input type="color" name="color" value="${
-      this.color
-    }">
-    <label>Rotation (inRad): </label> <input type="number" name="angle" value="${
-      this.angle
-    }">
-    <label>Sides:</label> <input type="number" name="sides" value="${
-      this.sides
-    }">
-        <hr>
-        <label>Outline True <input type="checkbox" name="outline" value="true" ${
-          this.outline ? "checked" : ""
-        }/></label>
-    <div id="outline" style="display: ${this.outline ? "flex" : "none"}">
-    <label>Outline Properties:</label><p><span><input type="radio" name="outlineType" value="solid" ${
-      this.isDashed ? "" : "checked"
-    }/>Solid</span><span><input type="radio" name="outlineType" value="dashed" ${
-      this.isDashed ? "checked" : ""
-    }/>Dashed</span></p>
-      <label>Outline Color:</label><input type="color" name="outlineColor" value="${
-        this.outlineColor
-      }">
-      <label>outlineThickness:</label><input type="number" name="outlineThickness" value="${
-        this.outlineThickness
-      }">
-      ${
-        this.isDashed
-          ? `<label>Line Dash Width:</label><input type="number" name="lineDashWidth" value="${this.lineDashWidth}"/>
-          <label>Line Dash Spacing:</label><input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}"/>`
-          : ""
-      }  
+   <div>
+    <h3>Coordinate</h3>
+    <div class="two-grid">
+    <div>X    <input type="number" name="x" value="${
+        changeValues(this.x + this.minX)
+    }"></div>
+    <div> Y   <input type="number" name="y" value="${
+        changeValues(this.x + this.minY)
+    }"></div>
+    <div>W    <input type="number" name="width" value="${
+        changeValues(this.maxX - this.minX)
+    }"></div>
+    <div> H  <input type="number" name="height" value="${
+        changeValues(this.maxY - this.minY)
+    }"> </div> 
+    <div>Rotation <input type="number" name="angle" value="${radToDeg(
+      this.angle,
+      "deg"
+    )}"></div>
+    <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
+    <div>Sides <input type="number" name="sides" value="${this.sides}"></div>
     </div>
-
+    </div>
+    ${super.similarProptiesOutput()}
+    <div class="shape">
+            <div><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
+    <div style="display:${
+          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "shaped"
+            ? "none"
+            : "flex"
+        }" class="thick">
+    Corner Radius <input type="number" name="cornerRadius" value="${
+      this.selectedArea === "pointIndex"
+        ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
+        : changeValues(this.cornerRadius)
+    }">
+    </div>
+    <div style="display: flex;justify-content:end;align-items:end"><button class="normal">${
+      this.mode === "edit" ? "Done" : "Edit"
+    }</button></div>
+    </div>
     `;
+    super.similarPropties()
+        document.querySelector(".rounded-edge").addEventListener("click", () => {
+      if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].edgeModes = "rounded";
+      }
+    });
+        document.querySelector(".convert").addEventListener("click", () => {
+      if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].edgeModes = "shaped";
+      }
+    });
+        document.querySelector(".normal").addEventListener("click", () => {
+      this.mode = this.mode === "normal" ? "edit" : "normal";
+      this.formatProperties();
+    });
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
         "input",
@@ -1675,60 +1924,60 @@ class Polygon extends Formats{
         1000
       );
     });
+    draw()
+
   }
   changeProperties(e) {
     const name = e.target.name;
-    if (this.isDashed) {
-      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    } else if (e.target.name === "angle") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (name === "sides") {
-      const value = parseInt(e.target.value);
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (name === "centerX") {
-      const value = backValues(parseFloat(e.target.value)) + this.radiusX;
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (name === "centerY") {
-      const value = backValues(parseFloat(e.target.value)) + this.radiusY;
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (e.target.type === "number") {
-      const value = backValues(parseFloat(e.target.value));
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (name === "outlineType") {
-      const value = e.target.value;
-      if (value === "dashed") {
-        this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-        this.isDashed = true;
-      } else {
-        this.outlineType = [];
-        this.isDashed = false;
-      }
-      this.formatProperties();
-    } else if (name === "outline") {
-      const value = e.target.value;
-      if (value === "true") {
-        this[name] = true;
-      } else {
-        this[name] = false;
-      }
-      this.formatProperties();
-    } else {
-      const value = e.target.value;
-      if (value != NaN) {
-        this[name] = value;
-      }
+        if (name === "angle") {
+      this.angle = radToDeg(e.target.value, "rad");
+    } else if (name === "bgColor") {
+      this.color[0] = e.target.value;
+    } else if (name === "colorDeg") {
+      this.colorDeg = radToDeg(e.target.value, "rad");
+    } else if (name === "outlineColor") {
+      this.outlineColor = e.target.value;
+    } else if(e.target.type === "number"){
+            const value = backValues(parseFloat(e.target.value));
+            if(name==="x"){
+              this.x = value - this.minX
+            }
+            else if(name === "y"){
+              this.y = value - this.minY
+            }
+            else if (name === "opacity") {
+          this.opacity = Number(e.target.value);
+        }else if(name=== "width"){
+                      const scaleX = value / (this.maxX - this.minX);
+            this.points.forEach((p) => {
+              p.points.x *= scaleX;
+              p.controls[0].x *= scaleX;
+              p.controls[1].x *= scaleX;
+            });
+        }else if(name === "height"){
+                      const scaleY = value / (this.maxY - this.minY);
+            this.points.forEach((p) => {
+              p.points.y *= scaleY;
+              p.controls[0].y *= scaleY;
+              p.controls[1].y *= scaleY;
+            });
+        }else if(name === "sides"){
+          this.sides = Number(e.target.value)
+          this.points = []
+        }else if(name === "cornerRadius"){
+                    if (
+            this.selectedArea === "pointIndex" &&
+            this.points[this.selectedLineIndex].edgeModes === "rounded"
+          )
+            this.points[this.selectedLineIndex].cornerRadius = value;
+          else this.cornerRadius = value;
+        } else this[name] = value
+
     }
+        if (this.outlineType.length !== 0)
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+
+
     draw();
   }
   showClone() {
@@ -1736,6 +1985,24 @@ class Polygon extends Formats{
     clone.centerX = lastMouseX;
     clone.centerY = lastMouseY;
     return clone;
+  }
+  doubleClicked(mouse){
+        const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+
+    const localMouseX = dx * cos - dy * sin;
+    const localMouseY = dx * sin + dy * cos;
+    if(this.mode === "edit"){
+      super.pointDblClick(localMouseX,localMouseY)
+    }
+    else{
+            isRotatingObject = true;
+      this.isDoubleClicked = this.isDoubleClicked ? false : true;
+      return true;
+    }
   }
   whereToSnap() {
     return {
@@ -2296,8 +2563,8 @@ class TextBox {
   generateText(num, iteratedBox) {
     const paragraph = document.createElement("p");
     const canvassRect = canvass.getBoundingClientRect();
-    const cropOffset = canvassDiv.getBoundingClientRect()
-    const inputRect = this.input.getBoundingClientRect()
+    const cropOffset = canvassDiv.getBoundingClientRect();
+    const inputRect = this.input.getBoundingClientRect();
 
     if (this.iterated && num < this.textArea.split("\n").length) {
       paragraph.textContent = this.textArea.split("\n")[num];
@@ -2305,43 +2572,25 @@ class TextBox {
       paragraph.textContent = this.text;
     }
 
-    const ratio = iteratedBox.width / cropOffset.width
-
+    const ratio = iteratedBox.width / cropOffset.width;
 
     paragraph.style.position = "absolute";
     paragraph.style.left = `${(inputRect.x - cropOffset.x) * ratio}px`;
-  paragraph.style.top = `${(inputRect.y - cropOffset.y) * ratio}px`;
-
+    paragraph.style.top = `${(inputRect.y - cropOffset.y) * ratio}px`;
 
     paragraph.style.fontSize =
-      parseFloat(this.input.style.fontSize) *
-        ratio +
-      "px";
+      parseFloat(this.input.style.fontSize) * ratio + "px";
     paragraph.style.color = this.input.style.color;
-    paragraph.style.width =
-      parseFloat(this.input.offsetWidth) *
-        ratio +
-      "px";
-    paragraph.style.height =
-      parseFloat(this.input.offsetHeight) *
-        ratio +
-      "px";
+    paragraph.style.width = parseFloat(this.input.offsetWidth) * ratio + "px";
+    paragraph.style.height = parseFloat(this.input.offsetHeight) * ratio + "px";
     paragraph.style.paddingLeft =
-      parseFloat(this.input.style.paddingLeft) *
-        ratio +
-      "px";
+      parseFloat(this.input.style.paddingLeft) * ratio + "px";
     paragraph.style.paddingRight =
-      parseFloat(this.input.style.paddingRight) *
-        ratio +
-      "px";
+      parseFloat(this.input.style.paddingRight) * ratio + "px";
     paragraph.style.paddingTop =
-      parseFloat(this.input.style.paddingTop) *
-        ratio +
-      "px";
+      parseFloat(this.input.style.paddingTop) * ratio + "px";
     paragraph.style.paddingBottom =
-      parseFloat(this.input.style.paddingBottom) *
-        ratio +
-      "px";
+      parseFloat(this.input.style.paddingBottom) * ratio + "px";
     paragraph.style.textAlign = this.input.style.textAlign;
     paragraph.style.fontFamily = this.input.style.fontFamily;
 
@@ -2398,9 +2647,9 @@ class TextBox {
     }
   }
 }
-class Images extends Formats{
+class Images extends Formats {
   constructor(image, width, height, originalFile) {
-    super()
+    super();
     this.x = 100;
     this.y = 100;
     this.width = 150;
@@ -2461,23 +2710,22 @@ class Images extends Formats{
     const sin = Math.sin(-this.angle);
     const localX = dx * cos - dy * sin + this.width / 2;
     const localY = dx * sin + dy * cos + this.height / 2;
-          this.selectedArea = LineUtils.getNormalPostion(
-        localX,
-        localY,
-        this.width,
-        this.height,
-        10
-      );
+    this.selectedArea = LineUtils.getNormalPostion(
+      localX,
+      localY,
+      this.width,
+      this.height,
+      10
+    );
 
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
-    super.rectFormat(mouse)
-      if (this.selectedArea === "Selected") {
-        this.x += mouse.x - lastMouseX;
-        this.y += mouse.y - lastMouseY;
-      }
-    
+    super.rectFormat(mouse);
+    if (this.selectedArea === "Selected") {
+      this.x += mouse.x - lastMouseX;
+      this.y += mouse.y - lastMouseY;
+    }
   }
   formatProperties() {
     propertiesBar.innerHTML = `
@@ -2618,7 +2866,7 @@ class Images extends Formats{
 }
 
 // document.querySelector(".saveAsPdf").addEventListener("click", saveAsPDF);
-function changeOrientation(value){
+function changeOrientation(value) {
   canvasOrientation = value;
   canvasSize();
 }
@@ -2650,7 +2898,7 @@ document.getElementById("paperSize").addEventListener("change", (e) => {
   } else if (value === "letter") {
     measurement = measurementArr[7];
   }
-  canvasSize()
+  canvasSize();
 });
 width.addEventListener("input", (e) => {
   const widthValue = backValues(e.target.value);
@@ -2782,16 +3030,18 @@ function canvasSize() {
   draw();
 }
 function applyOpacityToHex(hexColor, opacityPercent) {
-  if(hexColor.length >= 9) hexColor = hexColor.slice(0,7)
-    let alpha = Math.round(opacityPercent / 100 * 255);
-    let alphaHex = alpha.toString(16).padStart(2, '0');
-    hexColor = hexColor.replace('#', '');
-    if (hexColor.length === 3) {
-        hexColor = hexColor.split('').map(c => c + c).join('');
-    }
-    return `#${hexColor}${alphaHex}`;
+  if (hexColor.length >= 9) hexColor = hexColor.slice(0, 7);
+  let alpha = Math.round((opacityPercent / 100) * 255);
+  let alphaHex = alpha.toString(16).padStart(2, "0");
+  hexColor = hexColor.replace("#", "");
+  if (hexColor.length === 3) {
+    hexColor = hexColor
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  return `#${hexColor}${alphaHex}`;
 }
-
 
 function changeValues(x) {
   if (whatsMeasured === "px") {
@@ -2823,33 +3073,26 @@ function backValues(x) {
     return x * 3.78;
   }
 }
-function radToDeg(val,type){
-  if(type === "rad"){
-    return val * Math.PI / 180
-  }
-  else{
-    return val * 180 / Math.PI
+function radToDeg(val, type) {
+  if (type === "rad") {
+    return (val * Math.PI) / 180;
+  } else {
+    return (val * 180) / Math.PI;
   }
 }
 function fitToPage() {
   const rect = canvassDiv.getBoundingClientRect();
   const container = canvass.getBoundingClientRect();
 
-  const widthDifference =
-    rect.width - container.width + 50;
-  const heightDifference =
-    rect.height - container.height + 50;
+  const widthDifference = rect.width - container.width + 50;
+  const heightDifference = rect.height - container.height + 50;
   if (heightDifference > 0 || widthDifference > 0) {
     if (heightDifference > widthDifference) {
-      canvassDiv.style.width =
-        rect.width - heightDifference - 25 + "px";
-      canvassDiv.style.height =
-        rect.height - heightDifference - 25 + "px";
+      canvassDiv.style.width = rect.width - heightDifference - 25 + "px";
+      canvassDiv.style.height = rect.height - heightDifference - 25 + "px";
     } else {
-      canvassDiv.style.width =
-        rect.width - widthDifference - 25 + "px";
-      canvassDiv.style.height =
-        rect.height - widthDifference - 25 + "px";
+      canvassDiv.style.width = rect.width - widthDifference - 25 + "px";
+      canvassDiv.style.height = rect.height - widthDifference - 25 + "px";
     }
   }
 }
@@ -2945,9 +3188,6 @@ async function saveAsImage() {
   }
 }
 
-
-
-
 function addImage(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -3007,7 +3247,6 @@ function textMousePos(evt) {
     y: evt.y - rect.top,
   };
 }
-
 
 async function generateCard() {
   selectedObj = null;
@@ -3075,14 +3314,24 @@ async function generateCard() {
         imgObj.addObject();
       }
     }
-    const croppedCanvas = document.createElement("canvas")
-    const cty = croppedCanvas.getContext('2d');
-const rect = canvas.getBoundingClientRect();
+    const croppedCanvas = document.createElement("canvas");
+    const cty = croppedCanvas.getContext("2d");
+    const rect = canvas.getBoundingClientRect();
 
-croppedCanvas.width = canvaDefault.width
-croppedCanvas.height = canvaDefault.height
+    croppedCanvas.width = canvaDefault.width;
+    croppedCanvas.height = canvaDefault.height;
 
-cty.drawImage(canvas, canvaDefault.x - rect.x, canvaDefault.y - rect.y, canvaDefault.width, canvaDefault.height, 0, 0, canvaDefault.width, canvaDefault.height);
+    cty.drawImage(
+      canvas,
+      canvaDefault.x - rect.x,
+      canvaDefault.y - rect.y,
+      canvaDefault.width,
+      canvaDefault.height,
+      0,
+      0,
+      canvaDefault.width,
+      canvaDefault.height
+    );
     const canvasData = croppedCanvas.toDataURL();
 
     const div = document.createElement("div");
