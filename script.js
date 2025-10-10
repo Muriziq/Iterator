@@ -2238,6 +2238,24 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
     }
     return false
   }
+    doubleClicked(mouse){
+        const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+
+    const localMouseX = dx * cos - dy * sin;
+    const localMouseY = dx * sin + dy * cos;
+    if(this.mode === "edit"){
+      super.pointDblClick(localMouseX,localMouseY)
+    }
+    else{
+            isRotatingObject = true;
+      this.isDoubleClicked = this.isDoubleClicked ? false : true;
+      return true;
+    }
+  }
   formatSelected(mouse){
 
         const dx = mouse.x - this.x;
@@ -2836,13 +2854,16 @@ class Images extends Formats {
     this.width = 150;
     this.aspectRatio = height / width;
     this.height = this.width * this.aspectRatio;
-    this.image = image;
+    this.image = 0;
     this.isDoubleClicked = false;
     this.angle = 0;
     this.selectedArea;
-    this.originalFile = originalFile;
-    this.iteratedFiles = [];
+    this.originalFiles = [originalFile]
+    this.iteratedFiles = [image];
+    this.opacity = 100
+    this.maintainApect = false 
     this.clipped = "none";
+    this.imagePreview = image.src
   }
   addObject() {
     ctx.save();
@@ -2850,15 +2871,19 @@ class Images extends Formats {
     const centerY = this.y + this.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(this.angle);
+    ctx.save()
     ctx.beginPath();
+    ctx.globalAlpha= this.opacity / 100
+    
     ctx.drawImage(
-      this.image,
+      this.iteratedFiles[this.image],
       -this.width / 2,
       -this.height / 2,
       this.width,
       this.height
     );
     ctx.closePath();
+    ctx.restore()
 
     if (selectedObj === this) {
       ctx.beginPath();
@@ -2875,6 +2900,7 @@ class Images extends Formats {
     }
     ctx.restore();
   }
+
   moveClip(x, y) {
     this.x += x;
     this.y += y;
@@ -2902,82 +2928,131 @@ class Images extends Formats {
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
+          if (this.isDoubleClicked) {
+        const center = {
+          x: this.x + this.width / 2,
+          y: this.y + this.height / 2,
+        };
+        this.angle =
+          Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
+      }else{
     super.rectFormat(mouse);
     if (this.selectedArea === "Selected") {
       this.x += mouse.x - lastMouseX;
       this.y += mouse.y - lastMouseY;
     }
+      }
+
   }
   formatProperties() {
     propertiesBar.innerHTML = `
-    <button id="removeBg">Remove Background</button>
-    <button id="maintainAspect">Aspect Ratio</button>
-        <label>x:</label><input type="number" name="x" value="${changeValues(
+    <div>
+    <h3>Coordinate</h3>
+       <div class="two-grid">
+    <div>X <input type="number" name="x" value="${changeValues(
           this.x
-        )}">
-    <label>y:</label><input type="number" name="y" value="${changeValues(
+        )}"> </div>
+        <div>Y<input type="number" name="y" value="${changeValues(
       this.y
-    )}">
-    <label>width:</label><input type="number" name="width" value="${changeValues(
+    )}"></div>
+    <div>W </label><input type="number" name="width" value="${changeValues(
       this.width
-    )}">
-    <label>height:</label><input type="number" name="height" value="${changeValues(
+    )}"></div>
+    <div>H <input type="number" name="height" value="${changeValues(
       this.height
-    )}">
-    <label>Rotation (inRad):</label> <input type="number" name="angle" value="${
-      this.angle
-    }">
-    <input type="file" multiple accept=".jpg,.png,.svg" name="iteratedFiles" >
-    <button class="clip">Clip</button>
+    )}"></div>
+    <div>Opacity <input type="number" name="opacity" value="${this.opacity}"></div>
+    <div>Rotation <input type="number" name="angle" value="${
+     radToDeg( this.angle,"deg")
+    }"></div>
+    </div> 
+        <div style="display:flex;flex-direction:column; gap:1rem"><button class="imageb" id="removeBg">Remove Background</button>
+    <button class="imageb" id="maintainAspect">Aspect Ratio</button></div>
+    </div>
+    <div>
+    <h3>All Images</h3>
+        <div class="preview"><img src="${this.imagePreview}"></div>
+    <section class="iteratedsec">
+
+      ${this.originalFiles.map((file,i)=>
+        `<div ${this.imagePreview === this.iteratedFiles[i].src ? "class='selected'":""}>
+        <p>${file.name}</p>
+        <button>Change<input type="file"></button>
+        </div>`
+      ).join("")}
+    </section>
+    <button class="image-file">Add Images <input type="file" multiple accept=".jpg,.png,.svg" name="iteratedFiles" >
+</button>
+    </div>
+   
   `;
-    if (this.clipped === "none") {
-      document.querySelector(".clip").addEventListener("click", () => {
-        clipped = this;
-        canvas.style.cursor = "pointer";
-      });
-    }
+  document.querySelectorAll(".iteratedsec > div").forEach((div,i)=>{
+    div.addEventListener("click",()=>{
+      this.imagePreview = this.iteratedFiles[i].src; 
+      this.formatProperties()
+    })
+    div.querySelector("button").addEventListener("change",(e)=>{
+        const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.src = url;
+    img.onload = () => {
+    this.iteratedFiles[i] = img
+    this.originalFiles[i] = file
+  }
+   this.imagePreview = img.src
+  this.formatProperties()
+    })
+  })
 
     document.getElementById("maintainAspect").addEventListener("click", () => {
       this.height = this.aspectRatio * this.width;
       draw();
     });
-    document.getElementById("removeBg").addEventListener("click", async () => {
-      try {
-        const formData = new FormData();
-        if (!this.originalFile) {
-          alert("Original image file not available for background removal.");
-          return;
-        }
-        formData.append("image_file", this.originalFile);
-        formData.append("size", "auto");
-
-        const response = await fetch("https://api.remove.bg/v1.0/removebg", {
-          method: "POST",
-          headers: {
-            "X-Api-Key": "qYJAiV6LvvHifoPU12kRt8T5",
-          },
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.errors ? err.errors[0].title : "Unknown error");
-        }
-
-        const blob = await response.blob();
-        const imageUrl = URL.createObjectURL(blob);
-
-        const newImage = new Image();
-        newImage.onload = () => {
-          this.image = newImage;
-          draw();
-          URL.revokeObjectURL(imageUrl);
-        };
-        newImage.src = imageUrl;
-      } catch (err) {
-        errorDiv.textContent = "Error: " + err.message;
-      }
+document.getElementById("removeBg").addEventListener("click", async () => {
+  try {
+    const formData = new FormData();
+    let files = null;
+    this.iteratedFiles.forEach((file, i) => {
+      if (file.src === this.imagePreview) files = i;
     });
+    if (files === null) {
+      alert("Original image file not available for background removal.");
+      return;
+    }
+    formData.append("image_file", this.originalFiles[files]);
+    formData.append("size", "auto");
+    const response = await fetch("https://api.remove.bg/v1.0/removebg", {
+      method: "POST",
+      headers: {
+        "X-Api-Key": "qYJAiV6LvvHifoPU12kRt8T5",
+      },
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.errors ? err.errors[0].title : "Unknown error");
+    }
+
+    const blob = await response.blob();
+    const base64 = await blobToBase64(blob);
+    const newImage = new Image();
+    newImage.src = base64;
+
+    newImage.onload = () => {
+      this.iteratedFiles[files] = newImage;
+      const name = this.originalFiles[files].name;
+      this.originalFiles[files] = blob;
+      this.originalFiles[files].name = name;
+      this.imagePreview = base64;
+      this.formatProperties();
+    };
+  } catch (err) {
+    console.log(err);
+  }
+});
+
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
         "input",
@@ -2985,50 +3060,50 @@ class Images extends Formats {
         1000
       );
     });
+    draw()
   }
   changeProperties(e) {
     const name = e.target.name;
-    if (name === "iteratedFiles") {
-      this.iteratedFiles = Array.from(e.target.files);
-      console.log(this.iteratedFiles);
-    } else if (e.target.name === "angle") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (e.target.type === "number") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = backValues(value);
-      }
-    } else {
-      const value = e.target.value;
-      if (value != NaN) {
-        this[name] = value;
-      }
+        if (name === "angle") {
+      this.angle = radToDeg(e.target.value, "rad");
     }
+    else if(e.target.type === "number"){
+const value = backValues(parseFloat(e.target.value))
+if (!isNaN(value) && value !== null){
+   if (name === "opacity") {
+          this.opacity = Number(e.target.value);
+        }else{
+this[name] = value
+        }
+}
+    }
+    else if (name === "iteratedFiles") {
+      Array.from(e.target.files).forEach(file =>{
+        const url = URL.createObjectURL(file)
+          const img = new Image();
+  img.src = url;
+  img.onload = () => {
+    this.iteratedFiles.push(img)
+    this.originalFiles.push(file)
+          this.formatProperties()
+  };
+
+      } )
+
+    }  
     draw();
   }
-  async drawIteratedImage(i) {
-    const file = this.iteratedFiles[i % this.iteratedFiles.length];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    return new Promise((resolve, reject) => {
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          this.image = img; // update the image object’s image
-          this.addObject(); // draw it using the existing method
-          resolve();
-        };
-        img.onerror = reject;
-        img.src = reader.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  drawIteratedImage(i) {
+    if(this.iteratedFiles.length >= i){
+      this.image = i
+    }else{
+      this.image = 0
+    }
+  }
+  doubleClicked(mouse){
+          isRotatingObject = true;
+      this.isDoubleClicked = this.isDoubleClicked ? false : true;
+      return true;
   }
   whereToSnap() {
     return {
@@ -3045,8 +3120,16 @@ class Images extends Formats {
     }
   }
 }
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
-// document.querySelector(".saveAsPdf").addEventListener("click", saveAsPDF);
+document.querySelector(".saveAsPdf").addEventListener("click", saveAsPDF);
 function changeOrientation(value) {
   canvasOrientation = value;
   canvasSize();
@@ -3368,7 +3451,7 @@ async function saveAsImage() {
     }
   }
 }
-
+document.querySelector(".add-image input").addEventListener("change",(e)=>addImage(e))
 function addImage(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -3382,7 +3465,6 @@ function addImage(e) {
     draw();
   };
 }
-
 function addTextbox() {
   const textBox = new TextBox();
   textBox.addObject();
@@ -3463,6 +3545,7 @@ async function generateCard() {
     cellHeight / canvaDefault.height
   );
   let iterationLength = 1;
+
   if (textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
@@ -3482,18 +3565,8 @@ async function generateCard() {
   let boxCountInPage = 0;
   for (let i = 0; i < iterationLength; i++) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const obj of objects) {
-      if (!images.includes(obj)) {
-        obj.addObject();
-      }
-    }
-    for (const imgObj of images) {
-      if (imgObj.iteratedFiles && imgObj.iteratedFiles.length > i) {
-        await imgObj.drawIteratedImage(i);
-      } else {
-        imgObj.addObject();
-      }
-    }
+    images.forEach(img=>img.drawIteratedImage(i))
+    objects.forEach(obj=>obj.addObject())
     const croppedCanvas = document.createElement("canvas");
     const cty = croppedCanvas.getContext("2d");
     const rect = canvas.getBoundingClientRect();
@@ -3810,3 +3883,4 @@ function draw() {
 }
 
 draw();
+
