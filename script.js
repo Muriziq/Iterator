@@ -9,6 +9,8 @@ const textBoxes = [];
 const generationArea = document.getElementById("generationArea");
 const objects = [];
 const images = [];
+const notification = document.querySelector(".notification")
+const editclip = document.querySelector(".editclip")
 const width = document.getElementById("width");
 const height = document.getElementById("height");
 let whatsMeasured = "px";
@@ -21,6 +23,8 @@ let renderPageRow = 1;
 let renderPageColumn = 1;
 let renderPageSize = "auto";
 let pen = null;
+let multipleSelect = false 
+let multipleSelectArr = []
 const measurementArr = [
   { width: 2244, height: 3182 },
   { width: 1588, height: 2244 },
@@ -166,7 +170,7 @@ class LineUtils {
     }
     ctx.closePath();
   }
-  static drawSmartShape(points,close=true) {
+  static drawSmartShape(points, close = true) {
     if (points.length < 2) return;
 
     ctx.beginPath();
@@ -226,24 +230,24 @@ class LineUtils {
         }
       }
     }
-    if(close){
-    const last = points[points.length - 1];
-    const first = points[0];
-    if (last.edgeModes === "shaped") {
-      const cp1 = last.controls[0];
-      const cp2 = last.controls[1];
-      ctx.bezierCurveTo(
-        cp1.x,
-        cp1.y,
-        cp2.x,
-        cp2.y,
-        first.points.x,
-        first.points.y
-      );
-    } else {
-      ctx.lineTo(first.points.x, first.points.y);
-    }
-    ctx.closePath()
+    if (close) {
+      const last = points[points.length - 1];
+      const first = points[0];
+      if (last.edgeModes === "shaped") {
+        const cp1 = last.controls[0];
+        const cp2 = last.controls[1];
+        ctx.bezierCurveTo(
+          cp1.x,
+          cp1.y,
+          cp2.x,
+          cp2.y,
+          first.points.x,
+          first.points.y
+        );
+      } else {
+        ctx.lineTo(first.points.x, first.points.y);
+      }
+      ctx.closePath();
     }
   }
 
@@ -392,7 +396,7 @@ class Formats {
       this.formatProperties();
     });
   }
-  similarProptiesOutput(){
+  similarProptiesOutput() {
     return `
      <div>
     <h3>Fill</h3>
@@ -481,7 +485,7 @@ class Formats {
     </div>
     </div>
     </div>
-    `
+    `;
   }
   lineFormat(localMouseX, localMouseY, localDeltaX, localDeltaY) {
     if (this.selectedArea === "lineIndex") {
@@ -511,41 +515,41 @@ class Formats {
       this.points[curveIndex].controls[controlIndex].y = localMouseY;
     }
   }
-  pointDblClick(localMouseX,localMouseY){
-      if (this.selectedArea === "pointIndex") {
-        if (this.points.length > 3) {
-          this.points.splice(this.selectedPointIndex, 1);
-          return true;
-        }
-      }
-      if (this.selectedArea === "lineIndex") {
-        const next = (this.selectedLineIndex + 1) % this.points.length;
-        if (this.points[this.selectedLineIndex].edgeModes !== true) {
-          const prev = this.points[this.selectedLineIndex];
-          const nextPoint = this.points[next];
-          const dx = nextPoint.points.x - prev.points.x;
-          const dy = nextPoint.points.y - prev.points.y;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          const ux = dx / length;
-          const uy = dy / length;
-          const handleLength = length * 0.2;
-          const control1 = {
-            x: localMouseX - ux * handleLength,
-            y: localMouseY - uy * handleLength,
-          };
-          const control2 = {
-            x: localMouseX + ux * handleLength,
-            y: localMouseY + uy * handleLength,
-          };
-          this.points.splice(next, 0, {
-            points: { x: localMouseX, y: localMouseY },
-            edgeModes: null,
-            controls: [control1, control2],
-            cornerRadius: 0,
-          });
-        }
+  pointDblClick(localMouseX, localMouseY) {
+    if (this.selectedArea === "pointIndex") {
+      if (this.points.length > 3) {
+        this.points.splice(this.selectedPointIndex, 1);
         return true;
       }
+    }
+    if (this.selectedArea === "lineIndex") {
+      const next = (this.selectedLineIndex + 1) % this.points.length;
+      if (this.points[this.selectedLineIndex].edgeModes !== true) {
+        const prev = this.points[this.selectedLineIndex];
+        const nextPoint = this.points[next];
+        const dx = nextPoint.points.x - prev.points.x;
+        const dy = nextPoint.points.y - prev.points.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const ux = dx / length;
+        const uy = dy / length;
+        const handleLength = length * 0.2;
+        const control1 = {
+          x: localMouseX - ux * handleLength,
+          y: localMouseY - uy * handleLength,
+        };
+        const control2 = {
+          x: localMouseX + ux * handleLength,
+          y: localMouseY + uy * handleLength,
+        };
+        this.points.splice(next, 0, {
+          points: { x: localMouseX, y: localMouseY },
+          edgeModes: null,
+          controls: [control1, control2],
+          cornerRadius: 0,
+        });
+      }
+      return true;
+    }
   }
   rectFormat(mouse) {
     if (this.selectedArea === "Left") {
@@ -648,6 +652,11 @@ class Formats {
       } else if (this.selectedArea === "Selected") {
         this.x += mouse.x - lastMouseX;
         this.y += mouse.y - lastMouseY;
+                  if (this.clips.length > 0) {
+            this.clips.forEach((clip) =>
+              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY)
+            );
+          }
       }
     }
   }
@@ -797,7 +806,7 @@ class Rectangle extends Formats {
       ctx.stroke();
       ctx.closePath();
     }
-    if (selectedObj === this) {
+    if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
       ctx.lineWidth = 1;
       ctx.strokeStyle = "#0000ff";
@@ -830,12 +839,12 @@ class Rectangle extends Formats {
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate(this.angle);
-
       this.createPath();
-      ctx.clip();
+      ctx.clip()
       ctx.translate(-centerX, -centerY);
-
-      this.clips.forEach((clip) => clip.addObject());
+      this.clips.forEach((clip) => {
+        clip.addObject();
+      });
       ctx.restore();
     }
   }
@@ -1007,7 +1016,11 @@ class Rectangle extends Formats {
       return this.selectedArea !== null;
     }
   }
-
+  moveClip(x,y){
+    this.x += x
+    this.y += y
+    if(this.clips.length > 0)this.clips.forEach(clip=>clip.moveClip(x,y))
+  }
   formatSelected(mouse) {
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
@@ -1149,21 +1162,6 @@ class Rectangle extends Formats {
         this.points[this.selectedLineIndex].edgeModes = "rounded";
       }
     });
-    if (this.clips.length > 0) {
-      document.querySelector(".editclip").addEventListener("click", () => {
-        this.clipped = this.clipped === "editclip" ? "clipper" : "editclip";
-        if (this.clipped === "editclip") {
-          this.clips.forEach((clip) => objects.push(clip));
-          this.color = this.color.map((c) => c + "80");
-        } else {
-          this.clips.forEach((clip) => {
-            let index = objects.indexOf(clip);
-            objects.splice(index, 1);
-            this.color = this.color.map((c) => c.slice(0, -2));
-          });
-        }
-      });
-    }
     document.querySelector(".convert").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
         this.points[this.selectedLineIndex].edgeModes = "shaped";
@@ -1272,8 +1270,8 @@ class Rectangle extends Formats {
   whereToSnap() {
     if (this.roundedOrbeveled === "shaped") {
       return {
-        x: [this.x, this.x + this.width / 2, this.x + this.width],
-        y: [this.y, this.y + this.height / 2, this.y + this.height],
+        x: [this.minX + this.x + this.width / 2, this.minX + this.x + this.width, this.minX + this.x + (3 * this.width / 2) ],
+        y: [this.minY + this.y + this.height / 2, this.minY + this.y + this.height, this.minY + this.y + (3 * this.height / 2)],
         pos: {
           x: this.minX + this.x + this.width / 2,
           y: this.minY + this.y + this.height / 2,
@@ -1296,7 +1294,6 @@ class Rectangle extends Formats {
       this.y = value;
     }
   }
-
   doubleClicked(mouse) {
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
@@ -1310,7 +1307,7 @@ class Rectangle extends Formats {
     const localMouseX = dx * cos - dy * sin;
     const localMouseY = dx * sin + dy * cos;
     if (this.roundedOrbeveled === "shaped") {
-      super.pointDblClick(localMouseX,localMouseY)
+      super.pointDblClick(localMouseX, localMouseY);
     } else {
       isRotatingObject = true;
       this.isDoubleClicked = this.isDoubleClicked ? false : true;
@@ -1344,6 +1341,8 @@ class Ellipse extends Formats {
     this.mode = "pie";
     this.colorStop = [];
     this.colorDeg = 0;
+    this.clipped = "none"
+    this.clips = []
   }
   addObject() {
     ctx.save();
@@ -1382,7 +1381,7 @@ class Ellipse extends Formats {
       ctx.setLineDash(this.outlineType);
       ctx.stroke();
     }
-    if (selectedObj === this) {
+    if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
       ctx.strokeStyle = "#0000ff";
       ctx.lineWidth = 2;
@@ -1397,6 +1396,40 @@ class Ellipse extends Formats {
     }
 
     ctx.restore();
+    if(this.clips.length > 0 && this.clipped !== "editclip"){
+          ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+        ctx.beginPath();
+    if (this.mode === "pie") {
+      ctx.moveTo(0, 0);
+      ctx.ellipse(
+        0,
+        0,
+        this.radiusX,
+        this.radiusY,
+        0,
+        this.arcStart,
+        this.arcEnd
+      );
+    } else {
+      ctx.ellipse(
+        0,
+        0,
+        this.radiusX,
+        this.radiusY,
+        0,
+        this.arcStart,
+        this.arcEnd
+      );
+    }
+              ctx.clip()
+        ctx.translate(-this.x, -this.y);
+              this.clips.forEach((clip) => {
+        clip.addObject();
+      });
+    ctx.restore()
+    }
   }
 
   colorType() {
@@ -1464,6 +1497,11 @@ class Ellipse extends Formats {
       10
     );
     return this.selectedArea !== null;
+  }
+  moveClip(x,y){
+    this.x += x
+    this.y += y
+    if(this.clips.length > 0)this.clips.forEach(clip=>clip.moveClip(x,y))
   }
   formatSelected(mouse) {
     const x = this.x - this.radiusX;
@@ -1621,26 +1659,29 @@ class Polygon extends Formats {
     this.colorDeg = 0;
     this.colorFill = "linear";
     this.opacity = 100;
+    this.clipped = "none"
+    this.clips = []
+
   }
 
   addObject() {
-    if(this.points.length === 0){
-    if (this.sides < 3) return;
-    const angleStep = (2 * Math.PI) / this.sides;
-    for (let i = 0; i < this.sides; i++) {
-      const angle = i * angleStep - Math.PI / 2;
-      const x = this.radiusX * Math.cos(angle);
-      const y = this.radiusY * Math.sin(angle);
-      this.points.push({
-        points: { x, y },
-        edgeModes: null,
-        controls: [
-          { x: x - 20, y: y },
-          { x: x + 20, y: y },
-        ],
-        cornerRadius: 0,
-      });
-    }
+    if (this.points.length === 0) {
+      if (this.sides < 3) return;
+      const angleStep = (2 * Math.PI) / this.sides;
+      for (let i = 0; i < this.sides; i++) {
+        const angle = i * angleStep - Math.PI / 2;
+        const x = this.radiusX * Math.cos(angle);
+        const y = this.radiusY * Math.sin(angle);
+        this.points.push({
+          points: { x, y },
+          edgeModes: null,
+          controls: [
+            { x: x - 20, y: y },
+            { x: x + 20, y: y },
+          ],
+          cornerRadius: 0,
+        });
+      }
     }
 
     const xs = this.points.map((p) => p.points.x);
@@ -1649,8 +1690,8 @@ class Polygon extends Formats {
     this.minY = Math.min(...ys);
     this.maxX = Math.max(...xs);
     this.maxY = Math.max(...ys);
-    this.radiusX = (this.maxX - this.minX) / 2
-    this.radiusY = (this.maxY - this.minY) / 2
+    this.radiusX = (this.maxX - this.minX) / 2;
+    this.radiusY = (this.maxY - this.minY) / 2;
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
@@ -1666,9 +1707,9 @@ class Polygon extends Formats {
         p.cornerRadius = this.cornerRadius;
       });
     }
-    if(this.colorFill !== "none"){
-    ctx.fillStyle = this.colorType();
-    ctx.fill();
+    if (this.colorFill !== "none") {
+      ctx.fillStyle = this.colorType();
+      ctx.fill();
     }
 
     if (this.outline) {
@@ -1687,26 +1728,43 @@ class Polygon extends Formats {
         this.selectedLineIndex
       );
 
-    if (selectedObj === this) {
-            ctx.beginPath();
+    if (selectedObj === this || multipleSelectArr.includes(this)) {
+      ctx.beginPath();
       ctx.lineWidth = 1;
       ctx.strokeStyle = "#0000ff";
-            ctx.setLineDash([5, 3]);
+      ctx.setLineDash([5, 3]);
       ctx.strokeRect(
         this.minX,
         this.minY,
         this.maxX - this.minX,
         this.maxY - this.minY
       );
-              if (this.mode === "normal") {
-          ctx.beginPath();
-          ctx.fillStyle = "#0000ff88";
-          ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
-        }
+      if (this.mode === "normal") {
+        ctx.beginPath();
+        ctx.fillStyle = "#0000ff88";
+        ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
+      }
     }
 
-    ctx.closePath()
+    ctx.closePath();
     ctx.restore();
+        ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+    ctx.beginPath();
+    if (edgeCurve) LineUtils.drawSmartShape(this.points);
+    else {
+      LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+      this.points.forEach((p) => {
+        p.cornerRadius = this.cornerRadius;
+      });
+    }
+          ctx.clip()
+      ctx.translate(-this.x, -this.y);
+      this.clips.forEach((clip) => {
+        clip.addObject();
+      });
+      ctx.restore();
   }
   colorType() {
     const colors = this.color.map((color) =>
@@ -1781,8 +1839,7 @@ class Polygon extends Formats {
       this.selectedArea = answer.type;
       this.selectedLineIndex = answer.value;
       return true;
-    } 
-    else {
+    } else {
       if (
         Math.abs(localX - this.maxX) < 10 &&
         Math.abs(localY - this.maxY) < 10
@@ -1792,21 +1849,21 @@ class Polygon extends Formats {
         return true;
       }
 
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-    ctx.beginPath();
-    let edgeCurve = false;
-    this.points.forEach((p) => {
-      if (p.edgeModes !== null) edgeCurve = true;
-    });
-    if (edgeCurve) LineUtils.drawSmartShape(this.points);
-    else {
-      LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.beginPath();
+      let edgeCurve = false;
       this.points.forEach((p) => {
-        p.cornerRadius = this.cornerRadius;
+        if (p.edgeModes !== null) edgeCurve = true;
       });
-    }
+      if (edgeCurve) LineUtils.drawSmartShape(this.points);
+      else {
+        LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+        this.points.forEach((p) => {
+          p.cornerRadius = this.cornerRadius;
+        });
+      }
       const isInside = ctx.isPointInPath(mouse.x, mouse.y);
       ctx.restore();
 
@@ -1817,7 +1874,11 @@ class Polygon extends Formats {
     }
     return false;
   }
-
+  moveClip(x,y){
+    this.x += x
+    this.y += y
+    if(this.clips.length > 0)this.clips.forEach(clip=>clip.moveClip(x,y))
+  }
   formatSelected(mouse) {
     const dx = mouse.x - this.x;
     const dy = mouse.y - this.y;
@@ -1832,52 +1893,54 @@ class Polygon extends Formats {
       const localDeltaX = deltaX * cos - deltaY * sin;
       const localDeltaY = deltaX * sin + deltaY * cos;
       super.lineFormat(localX, localY, localDeltaX, localDeltaY);
-    }else{
-            if (this.isDoubleClicked) {
+    } else {
+      if (this.isDoubleClicked) {
         this.angle =
           Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
-
+      } else if (this.selectedArea === "Selected") {
+        this.x += mouse.x - lastMouseX;
+        this.y += mouse.y - lastMouseY;
+                  if (this.clips.length > 0) {
+            this.clips.forEach((clip) =>
+              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY)
+            );
+          }
       }
-            else if (this.selectedArea === "Selected") {
-          this.x += mouse.x - lastMouseX;
-          this.y += mouse.y - lastMouseY;
-        }
     }
-            if (this.selectedArea === "scale") {
-          const lastWidth = lastMouseX - this.x;
-          const lastHeight = lastMouseY - this.y;
-          const currentWidth = mouse.x - this.x;
-          const currentHeight = mouse.y - this.y;
-          const scaleX = currentWidth / lastWidth;
-          const scaleY = currentHeight / lastHeight;
-          this.points.forEach((p) => {
-            p.points.x = (p.points.x) * scaleX;
-            p.points.y = (p.points.y ) * scaleY;
-            p.controls[0].x = (p.controls[0].x) * scaleX;
-            p.controls[0].y = (p.controls[0].y ) * scaleY;
-            p.controls[1].x =  (p.controls[1].x) * scaleX;
-            p.controls[1].y = (p.controls[1].y ) * scaleY;
-          });
-        }
-
+    if (this.selectedArea === "scale") {
+      const lastWidth = lastMouseX - this.x;
+      const lastHeight = lastMouseY - this.y;
+      const currentWidth = mouse.x - this.x;
+      const currentHeight = mouse.y - this.y;
+      const scaleX = currentWidth / lastWidth;
+      const scaleY = currentHeight / lastHeight;
+      this.points.forEach((p) => {
+        p.points.x = p.points.x * scaleX;
+        p.points.y = p.points.y * scaleY;
+        p.controls[0].x = p.controls[0].x * scaleX;
+        p.controls[0].y = p.controls[0].y * scaleY;
+        p.controls[1].x = p.controls[1].x * scaleX;
+        p.controls[1].y = p.controls[1].y * scaleY;
+      });
+    }
   }
   formatProperties() {
     propertiesBar.innerHTML = `
    <div>
     <h3>Coordinate</h3>
     <div class="two-grid">
-    <div>X    <input type="number" name="x" value="${
-        changeValues(this.x + this.minX)
-    }"></div>
-    <div> Y   <input type="number" name="y" value="${
-        changeValues(this.x + this.minY)
-    }"></div>
-    <div>W    <input type="number" name="width" value="${
-        changeValues(this.maxX - this.minX)
-    }"></div>
-    <div> H  <input type="number" name="height" value="${
-        changeValues(this.maxY - this.minY)
-    }"> </div> 
+    <div>X    <input type="number" name="x" value="${changeValues(
+      this.x + this.minX
+    )}"></div>
+    <div> Y   <input type="number" name="y" value="${changeValues(
+      this.x + this.minY
+    )}"></div>
+    <div>W    <input type="number" name="width" value="${changeValues(
+      this.maxX - this.minX
+    )}"></div>
+    <div> H  <input type="number" name="height" value="${changeValues(
+      this.maxY - this.minY
+    )}"> </div> 
     <div>Rotation <input type="number" name="angle" value="${radToDeg(
       this.angle,
       "deg"
@@ -1890,11 +1953,11 @@ class Polygon extends Formats {
     <div class="shape">
             <div><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
     <div style="display:${
-          this.selectedArea === "pointIndex" &&
-          this.points[this.selectedLineIndex].edgeModes === "shaped"
-            ? "none"
-            : "flex"
-        }" class="thick">
+      this.selectedArea === "pointIndex" &&
+      this.points[this.selectedLineIndex].edgeModes === "shaped"
+        ? "none"
+        : "flex"
+    }" class="thick">
     Corner Radius <input type="number" name="cornerRadius" value="${
       this.selectedArea === "pointIndex"
         ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
@@ -1906,18 +1969,18 @@ class Polygon extends Formats {
     }</button></div>
     </div>
     `;
-    super.similarPropties()
-        document.querySelector(".rounded-edge").addEventListener("click", () => {
+    super.similarPropties();
+    document.querySelector(".rounded-edge").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
         this.points[this.selectedLineIndex].edgeModes = "rounded";
       }
     });
-        document.querySelector(".convert").addEventListener("click", () => {
+    document.querySelector(".convert").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
         this.points[this.selectedLineIndex].edgeModes = "shaped";
       }
     });
-        document.querySelector(".normal").addEventListener("click", () => {
+    document.querySelector(".normal").addEventListener("click", () => {
       this.mode = this.mode === "normal" ? "edit" : "normal";
       this.formatProperties();
     });
@@ -1928,12 +1991,11 @@ class Polygon extends Formats {
         1000
       );
     });
-    draw()
-
+    draw();
   }
   changeProperties(e) {
     const name = e.target.name;
-        if (name === "angle") {
+    if (name === "angle") {
       this.angle = radToDeg(e.target.value, "rad");
     } else if (name === "bgColor") {
       this.color[0] = e.target.value;
@@ -1941,46 +2003,42 @@ class Polygon extends Formats {
       this.colorDeg = radToDeg(e.target.value, "rad");
     } else if (name === "outlineColor") {
       this.outlineColor = e.target.value;
-    } else if(e.target.type === "number"){
-            const value = backValues(parseFloat(e.target.value));
-            if(name==="x"){
-              this.x = value - this.minX
-            }
-            else if(name === "y"){
-              this.y = value - this.minY
-            }
-            else if (name === "opacity") {
-          this.opacity = Number(e.target.value);
-        }else if(name=== "width"){
-                      const scaleX = value / (this.maxX - this.minX);
-            this.points.forEach((p) => {
-              p.points.x *= scaleX;
-              p.controls[0].x *= scaleX;
-              p.controls[1].x *= scaleX;
-            });
-        }else if(name === "height"){
-                      const scaleY = value / (this.maxY - this.minY);
-            this.points.forEach((p) => {
-              p.points.y *= scaleY;
-              p.controls[0].y *= scaleY;
-              p.controls[1].y *= scaleY;
-            });
-        }else if(name === "sides"){
-          this.sides = Number(e.target.value)
-          this.points = []
-        }else if(name === "cornerRadius"){
-                    if (
-            this.selectedArea === "pointIndex" &&
-            this.points[this.selectedLineIndex].edgeModes === "rounded"
-          )
-            this.points[this.selectedLineIndex].cornerRadius = value;
-          else this.cornerRadius = value;
-        } else this[name] = value
-
+    } else if (e.target.type === "number") {
+      const value = backValues(parseFloat(e.target.value));
+      if (name === "x") {
+        this.x = value - this.minX;
+      } else if (name === "y") {
+        this.y = value - this.minY;
+      } else if (name === "opacity") {
+        this.opacity = Number(e.target.value);
+      } else if (name === "width") {
+        const scaleX = value / (this.maxX - this.minX);
+        this.points.forEach((p) => {
+          p.points.x *= scaleX;
+          p.controls[0].x *= scaleX;
+          p.controls[1].x *= scaleX;
+        });
+      } else if (name === "height") {
+        const scaleY = value / (this.maxY - this.minY);
+        this.points.forEach((p) => {
+          p.points.y *= scaleY;
+          p.controls[0].y *= scaleY;
+          p.controls[1].y *= scaleY;
+        });
+      } else if (name === "sides") {
+        this.sides = Number(e.target.value);
+        this.points = [];
+      } else if (name === "cornerRadius") {
+        if (
+          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+        )
+          this.points[this.selectedLineIndex].cornerRadius = value;
+        else this.cornerRadius = value;
+      } else this[name] = value;
     }
-        if (this.outlineType.length !== 0)
+    if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-
 
     draw();
   }
@@ -1990,8 +2048,8 @@ class Polygon extends Formats {
     clone.centerY = lastMouseY;
     return clone;
   }
-  doubleClicked(mouse){
-        const dx = mouse.x - this.x;
+  doubleClicked(mouse) {
+    const dx = mouse.x - this.x;
     const dy = mouse.y - this.y;
 
     const cos = Math.cos(-this.angle);
@@ -1999,11 +2057,10 @@ class Polygon extends Formats {
 
     const localMouseX = dx * cos - dy * sin;
     const localMouseY = dx * sin + dy * cos;
-    if(this.mode === "edit"){
-      super.pointDblClick(localMouseX,localMouseY)
-    }
-    else{
-            isRotatingObject = true;
+    if (this.mode === "edit") {
+      super.pointDblClick(localMouseX, localMouseY);
+    } else {
+      isRotatingObject = true;
       this.isDoubleClicked = this.isDoubleClicked ? false : true;
       return true;
     }
@@ -2046,88 +2103,85 @@ class Polygon extends Formats {
 }
 class Line extends Formats {
   constructor() {
-    super()
+    super();
     this.points = [];
-    this.color = ["#ff0000","#0000ff"];
+    this.color = ["#ff0000", "#0000ff"];
     this.outlineColor = "#00ff00";
     this.outlineThickness = 2;
     this.outline = true;
-        this.lineDashWidth = 5;
+    this.lineDashWidth = 5;
     this.outlineType = [];
-        this.lineDashSpacing = 3;
+    this.lineDashSpacing = 3;
     this.mode = "edit";
     this.selectedLineIndex = null;
     this.angle = 0;
     this.x;
     this.y;
-    this.selectedArea = null
-        this.colorStop = [];
+    this.selectedArea = null;
+    this.colorStop = [];
     this.colorDeg = 0;
     this.colorFill = "uniform";
     this.opacity = 100;
-    this.isDoubleClicked = false
-    this.close = false 
+    this.isDoubleClicked = false;
+    this.close = false;
   }
   addObject() {
     if (this.points.length > 0) {
-          const xs = this.points.map((p) => p.points.x);
-    const ys = this.points.map((p) => p.points.y);
-    this.minX = Math.min(...xs);
-    this.minY = Math.min(...ys);
-    this.maxX = Math.max(...xs);
-    this.maxY = Math.max(...ys);
-const first = this.points[0].points;
-const last = this.points[this.points.length - 1].points;
-this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
+      const xs = this.points.map((p) => p.points.x);
+      const ys = this.points.map((p) => p.points.y);
+      this.minX = Math.min(...xs);
+      this.minY = Math.min(...ys);
+      this.maxX = Math.max(...xs);
+      this.maxY = Math.max(...ys);
+      const first = this.points[0].points;
+      const last = this.points[this.points.length - 1].points;
+      this.close = Math.hypot(first.x - last.x, first.y - last.y) < 3;
       ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-     ctx.beginPath();
-      LineUtils.drawSmartShape(this.points,this.close)
-          if(this.colorFill !== "none"){
-    ctx.fillStyle = this.colorType();
-    ctx.fill();
-    }
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.beginPath();
+      LineUtils.drawSmartShape(this.points, this.close);
+      if (this.colorFill !== "none") {
+        ctx.fillStyle = this.colorType();
+        ctx.fill();
+      }
 
-              if (this.outline) {
-      ctx.save();
-      ctx.lineWidth = this.outlineThickness;
-      ctx.setLineDash(this.outlineType);
-      ctx.strokeStyle = this.outlineColor;
-      ctx.lineJoin = "round";
-      ctx.stroke();
-      ctx.restore();
-    }
-        if (this.mode === "edit" && selectedObj === this)
-      LineUtils.drawEditArcs(
-        this.points,
-        this.selectedArea,
-        this.selectedLineIndex
-      );
-          if (selectedObj === this) {
-            ctx.beginPath();
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = "#0000ff";
-            ctx.setLineDash([5, 3]);
-      ctx.strokeRect(
-        this.minX,
-        this.minY,
-        this.maxX - this.minX,
-        this.maxY - this.minY
-      );
-              if (this.mode === "normal") {
+      if (this.outline) {
+        ctx.save();
+        ctx.lineWidth = this.outlineThickness;
+        ctx.setLineDash(this.outlineType);
+        ctx.strokeStyle = this.outlineColor;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (this.mode === "edit" && selectedObj === this)
+        LineUtils.drawEditArcs(
+          this.points,
+          this.selectedArea,
+          this.selectedLineIndex
+        );
+      if (selectedObj === this || multipleSelectArr.includes(this)) {
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#0000ff";
+        ctx.setLineDash([5, 3]);
+        ctx.strokeRect(
+          this.minX,
+          this.minY,
+          this.maxX - this.minX,
+          this.maxY - this.minY
+        );
+        if (this.mode === "normal") {
           ctx.beginPath();
           ctx.fillStyle = "#0000ff88";
           ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
         }
+      }
+      ctx.restore();
     }
-    ctx.restore()
-    }
-
-
-
   }
-    colorType() {
+  colorType() {
     const colors = this.color.map((color) =>
       applyOpacityToHex(color, this.opacity)
     );
@@ -2180,20 +2234,21 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
     }
   }
   drawPen(mouse) {
-    if(this.points.length === 0 ){
-      this.x = mouse.x
-      this.y = mouse.y
+    if (this.points.length === 0) {
+      this.x = mouse.x;
+      this.y = mouse.y;
     }
     this.points.push({
       points: { x: mouse.x - this.x, y: mouse.y - this.y },
       edgeModes: null,
       controls: [
-        { x: mouse.x - this.x - 20, y: mouse.y  - this.y},
+        { x: mouse.x - this.x - 20, y: mouse.y - this.y },
         { x: mouse.x - this.x + 20, y: mouse.y - this.y },
-      ],cornerRadius:0
+      ],
+      cornerRadius: 0,
     });
   }
-  whatSelected(mouse){
+  whatSelected(mouse) {
     const dx = mouse.x - this.x;
     const dy = mouse.y - this.y;
 
@@ -2201,21 +2256,20 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
     const sin = Math.sin(-this.angle);
     const localX = dx * cos - dy * sin;
     const localY = dx * sin + dy * cos;
-        if (
+    if (
       this.mode === "edit" &&
       (LineUtils.getPointPositon(localX, localY, this.points) ||
         LineUtils.getEdgeAtPosition(localX, localY, this.points))
-    ){
-           const answer =
+    ) {
+      const answer =
         LineUtils.getPointPositon(localX, localY, this.points) === false
           ? LineUtils.getEdgeAtPosition(localX, localY, this.points)
           : LineUtils.getPointPositon(localX, localY, this.points);
       this.selectedArea = answer.type;
       this.selectedLineIndex = answer.value;
-      return true; 
-    }
-    else{
-            if (
+      return true;
+    } else {
+      if (
         Math.abs(localX - this.maxX) < 10 &&
         Math.abs(localY - this.maxY) < 10
       ) {
@@ -2223,23 +2277,22 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
 
         return true;
       }
-            ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-     ctx.beginPath();
-      LineUtils.drawSmartShape(this.points,this.close)
-            const isInside = ctx.isPointInPath(mouse.x, mouse.y);
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.beginPath();
+      LineUtils.drawSmartShape(this.points, this.close);
+      const isInside = ctx.isPointInPath(mouse.x, mouse.y);
       ctx.restore();
-            if (isInside) {
+      if (isInside) {
         this.selectedArea = "Selected";
       }
       return isInside;
-
     }
-    return false
+    return false;
   }
-    doubleClicked(mouse){
-        const dx = mouse.x - this.x;
+  doubleClicked(mouse) {
+    const dx = mouse.x - this.x;
     const dy = mouse.y - this.y;
 
     const cos = Math.cos(-this.angle);
@@ -2247,18 +2300,16 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
 
     const localMouseX = dx * cos - dy * sin;
     const localMouseY = dx * sin + dy * cos;
-    if(this.mode === "edit"){
-      super.pointDblClick(localMouseX,localMouseY)
-    }
-    else{
-            isRotatingObject = true;
+    if (this.mode === "edit") {
+      super.pointDblClick(localMouseX, localMouseY);
+    } else {
+      isRotatingObject = true;
       this.isDoubleClicked = this.isDoubleClicked ? false : true;
       return true;
     }
   }
-  formatSelected(mouse){
-
-        const dx = mouse.x - this.x;
+  formatSelected(mouse) {
+    const dx = mouse.x - this.x;
     const dy = mouse.y - this.y;
 
     const cos = Math.cos(-this.angle);
@@ -2271,57 +2322,53 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
       const localDeltaX = deltaX * cos - deltaY * sin;
       const localDeltaY = deltaX * sin + deltaY * cos;
       super.lineFormat(localX, localY, localDeltaX, localDeltaY);
-    }else{
-            if (this.isDoubleClicked) {
+    } else {
+      if (this.isDoubleClicked) {
         this.angle =
           Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
-
+      } else if (this.selectedArea === "Selected") {
+        this.x += mouse.x - lastMouseX;
+        this.y += mouse.y - lastMouseY;
+      } else if (this.selectedArea === "scale") {
+        const lastWidth = lastMouseX - this.x;
+        const lastHeight = lastMouseY - this.y;
+        const currentWidth = mouse.x - this.x;
+        const currentHeight = mouse.y - this.y;
+        const scaleX = currentWidth / lastWidth;
+        const scaleY = currentHeight / lastHeight;
+        this.points.forEach((p) => {
+          p.points.x = p.points.x * scaleX;
+          p.points.y = p.points.y * scaleY;
+          p.controls[0].x = p.controls[0].x * scaleX;
+          p.controls[0].y = p.controls[0].y * scaleY;
+          p.controls[1].x = p.controls[1].x * scaleX;
+          p.controls[1].y = p.controls[1].y * scaleY;
+        });
       }
-            else if (this.selectedArea === "Selected") {
-          this.x += mouse.x - lastMouseX;
-          this.y += mouse.y - lastMouseY;
-        }
-                    else if (this.selectedArea === "scale") {
-          const lastWidth = lastMouseX - this.x;
-          const lastHeight = lastMouseY - this.y;
-          const currentWidth = mouse.x - this.x;
-          const currentHeight = mouse.y - this.y;
-          const scaleX = currentWidth / lastWidth;
-          const scaleY = currentHeight / lastHeight;
-          this.points.forEach((p) => {
-            p.points.x = (p.points.x) * scaleX;
-            p.points.y = (p.points.y ) * scaleY;
-            p.controls[0].x = (p.controls[0].x) * scaleX;
-            p.controls[0].y = (p.controls[0].y ) * scaleY;
-            p.controls[1].x =  (p.controls[1].x) * scaleX;
-            p.controls[1].y = (p.controls[1].y ) * scaleY;
-          });
-        }
     }
-
   }
   formatProperties() {
-    if(pen){
+    if (pen) {
       propertiesBar.innerHTML = `
           <div style="display: flex;justify-content:end;align-items:end"><button class="done">Done</button></div>
-      `
-    }else{
-          propertiesBar.innerHTML = `
+      `;
+    } else {
+      propertiesBar.innerHTML = `
        <div>
     <h3>Coordinate</h3>
     <div class="two-grid">
-    <div>X    <input type="number" name="x" value="${
-        changeValues(this.x + this.minX)
-    }"></div>
-    <div> Y   <input type="number" name="y" value="${
-        changeValues(this.x + this.minY)
-    }"></div>
-    <div>W    <input type="number" name="width" value="${
-        changeValues(this.maxX - this.minX)
-    }"></div>
-    <div> H  <input type="number" name="height" value="${
-        changeValues(this.maxY - this.minY)
-    }"> </div> 
+    <div>X    <input type="number" name="x" value="${changeValues(
+      this.x + this.minX
+    )}"></div>
+    <div> Y   <input type="number" name="y" value="${changeValues(
+      this.x + this.minY
+    )}"></div>
+    <div>W    <input type="number" name="width" value="${changeValues(
+      this.maxX - this.minX
+    )}"></div>
+    <div> H  <input type="number" name="height" value="${changeValues(
+      this.maxY - this.minY
+    )}"> </div> 
     <div>Rotation <input type="number" name="angle" value="${radToDeg(
       this.angle,
       "deg"
@@ -2332,14 +2379,17 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
     <div class="shape">
             <div><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
     <div style="display:${
-          this.selectedArea === "pointIndex" &&
-          this.points[this.selectedLineIndex].edgeModes === "rounded"
-            ? "flex"
-            : "none"
-        }" class="thick">
-    Corner Radius <input type="number" name="cornerRadius" value="${          this.selectedArea === "pointIndex" &&
-          this.points[this.selectedLineIndex].edgeModes === "rounded" ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
-    : 0}">
+      this.selectedArea === "pointIndex" &&
+      this.points[this.selectedLineIndex].edgeModes === "rounded"
+        ? "flex"
+        : "none"
+    }" class="thick">
+    Corner Radius <input type="number" name="cornerRadius" value="${
+      this.selectedArea === "pointIndex" &&
+      this.points[this.selectedLineIndex].edgeModes === "rounded"
+        ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
+        : 0
+    }">
     </div>
     <div style="display: flex;justify-content:end;align-items:end"><button class="normal">${
       this.mode === "edit" ? "Done" : "Edit"
@@ -2347,44 +2397,42 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
     </div>
     `;
     }
-    if(pen){
-    document.querySelector(".done").addEventListener("click", () => {
-       objects.push(this)
-      pen = null;
-      this.formatProperties()
-
-    });
-    }else{
-       super.similarPropties()
-        document.querySelector(".rounded-edge").addEventListener("click", () => {
-      if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].edgeModes = "rounded";
-        this.formatProperties()
-      }
-    });
-        document.querySelector(".convert").addEventListener("click", () => {
-      if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].edgeModes = "shaped";
-      }
-    });
-        document.querySelector(".normal").addEventListener("click", () => {
-      this.mode = this.mode === "normal" ? "edit" : "normal";
-      this.formatProperties();
-    });
-           propertiesBar.querySelectorAll("input").forEach((input) => {
-      input.addEventListener(
-        "input",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000
-      );
-    });
-    draw()
+    if (pen) {
+      document.querySelector(".done").addEventListener("click", () => {
+        objects.push(this);
+        pen = null;
+        this.formatProperties();
+      });
+    } else {
+      super.similarPropties();
+      document.querySelector(".rounded-edge").addEventListener("click", () => {
+        if (this.selectedArea === "pointIndex") {
+          this.points[this.selectedLineIndex].edgeModes = "rounded";
+          this.formatProperties();
+        }
+      });
+      document.querySelector(".convert").addEventListener("click", () => {
+        if (this.selectedArea === "pointIndex") {
+          this.points[this.selectedLineIndex].edgeModes = "shaped";
+        }
+      });
+      document.querySelector(".normal").addEventListener("click", () => {
+        this.mode = this.mode === "normal" ? "edit" : "normal";
+        this.formatProperties();
+      });
+      propertiesBar.querySelectorAll("input").forEach((input) => {
+        input.addEventListener(
+          "input",
+          (e) => setTimeout(this.changeProperties(e)),
+          1000
+        );
+      });
+      draw();
     }
-
   }
-  changeProperties(e){
-       const name = e.target.name;
-        if (name === "angle") {
+  changeProperties(e) {
+    const name = e.target.name;
+    if (name === "angle") {
       this.angle = radToDeg(e.target.value, "rad");
     } else if (name === "bgColor") {
       this.color[0] = e.target.value;
@@ -2392,42 +2440,39 @@ this.close = Math.hypot(first.x-last.x,first.y-last.y) < 3
       this.colorDeg = radToDeg(e.target.value, "rad");
     } else if (name === "outlineColor") {
       this.outlineColor = e.target.value;
-    }  else if(e.target.type === "number"){
-                  const value = backValues(parseFloat(e.target.value));
-            if(name==="x"){
-              this.x = value - this.minX
-            }
-            else if(name === "y"){
-              this.y = value - this.minY
-            }
-            else if (name === "opacity") {
-          this.opacity = Number(e.target.value);
-        }else if(name=== "width"){
-                      const scaleX = value / (this.maxX - this.minX);
-            this.points.forEach((p) => {
-              p.points.x *= scaleX;
-              p.controls[0].x *= scaleX;
-              p.controls[1].x *= scaleX;
-            });
-        }else if(name === "height"){
-                      const scaleY = value / (this.maxY - this.minY);
-            this.points.forEach((p) => {
-              p.points.y *= scaleY;
-              p.controls[0].y *= scaleY;
-              p.controls[1].y *= scaleY;
-            });
-        }else if(name === "cornerRadius"){
-                              if (
-            this.selectedArea === "pointIndex" &&
-            this.points[this.selectedLineIndex].edgeModes === "rounded"
-          )
-            this.points[this.selectedLineIndex].cornerRadius = value;
-
-        }else this[name] = value
+    } else if (e.target.type === "number") {
+      const value = backValues(parseFloat(e.target.value));
+      if (name === "x") {
+        this.x = value - this.minX;
+      } else if (name === "y") {
+        this.y = value - this.minY;
+      } else if (name === "opacity") {
+        this.opacity = Number(e.target.value);
+      } else if (name === "width") {
+        const scaleX = value / (this.maxX - this.minX);
+        this.points.forEach((p) => {
+          p.points.x *= scaleX;
+          p.controls[0].x *= scaleX;
+          p.controls[1].x *= scaleX;
+        });
+      } else if (name === "height") {
+        const scaleY = value / (this.maxY - this.minY);
+        this.points.forEach((p) => {
+          p.points.y *= scaleY;
+          p.controls[0].y *= scaleY;
+          p.controls[1].y *= scaleY;
+        });
+      } else if (name === "cornerRadius") {
+        if (
+          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+        )
+          this.points[this.selectedLineIndex].cornerRadius = value;
+      } else this[name] = value;
     }
-            if (this.outlineType.length !== 0)
+    if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-draw()
+    draw();
   }
 }
 
@@ -2586,75 +2631,104 @@ class TextBox {
   }
 
   formatProperties() {
-    const rect = this.input.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
+    const styles = window.getComputedStyle(this.input);
     propertiesBar.innerHTML = `
-          <label>x:</label><input type="number" name="x" value="${changeValues(
-            rect.left - canvasRect.left
-          )}">
-    <label>y:</label><input type="number" name="y" value="${changeValues(
-      rect.top - canvasRect.top
-    )}">
-    <label>width:</label><input type="number" name="width" value="${changeValues(
-      rect.width
-    )}">
-    <label>height:</label><input type="number" name="height" value="${changeValues(
-      rect.height
-    )}">
-    <label>Background Color:</label> <input type="color" name="color" value="${
-      this.input.style.color
-    }">
-    <label>Rotation (inRad):</label> <input type="number" name="angle" value="${
-      this.angle
-    }">
-    <label>Font Type:</label>
-      <div class="autocomplete-container">
-    <input type="text" id="fontInput" placeholder="Search Google Fonts..." autocomplete="off" />
-    <div id="dropdown" class="dropdown"></div>
+    <div>
+    <h3>Coordinate</h3>
+    <div class="two-grid">
+    <div>X<input type="number" name="left" value="${changeValues(
+      parseFloat(styles.left)
+    )}"></div>
+          <div>Y <input type="number" name="top" value="${changeValues(
+            parseFloat(styles.top)
+          )}"></div><div>W<input type="number" name="width" value="${changeValues(
+      parseFloat(styles.width)
+    )}"></div><div>H<input type="number" name="height" value="${changeValues(
+      parseFloat(styles.height)
+    )}"></div>
+    <div>Rotation<input type="number" name="angle" value="${radToDeg(
+      this.angle,
+      "deg"
+    )}"></div>
     </div>
     </div>
-    <label>Font Size:</label><input type="number" name="fontSize" value="${changeValues(
-      parseFloat(this.input.style.fontSize)
-    )}">
-    <label>Text Allign:</label>
+    <div>
+    <h3>Properties</h3>
+    <div style="display:flex;flex-direction:column;gap:1rem">
+    <div class="shape"><div><button class="bold"></button><button class="italic"></button><button class="underline"></button></div></div>
+    <div class="two-grid" style="text-wrap: nowrap;">
+          <div>Color  <input type="color" name="color" value="${rgbToHex(
+            styles.color
+          )}"></div>  
+   <div>Font Size <input type="number" name="fontSize" value="${changeValues(
+     parseFloat(styles.fontSize)
+   )}"></div> 
+    <div style="grid-column: span 2">Font Name      <div class="autocomplete-container">
+    <input type="text" id="fontInput" placeholder="${
+      styles.fontFamily
+    }" autocomplete="on" />
+    <div id="dropdown" class="dropdown"></div></div>
+    </div>
+    </div>
+    </div>
     <select class="allign">
-      <option value="left" selected>Left</option>
-      <option value="right">Right</option>
-      <option value="center">Center</option>
+      <option value="left" selected>Align Left</option>
+      <option value="right">Align Right</option>
+      <option value="center">Align Center</option>
     </select>
-    <label>Shadow: <input type="checkbox" name="shadow" value="true" ${
-      this.shadow ? "checked" : ""
-    }></label>
-    <label>Iterate: <input type="checkbox" name="iterated" value="true" ${
-      this.iterated ? "checked" : ""
-    }></label>
-      `;
-    this.shadowX = 2;
-    this.shadowY = 2;
-    this.shadowColor = "#000000";
-    this.shadowBlur = 3;
-    if (this.shadow) {
-      propertiesBar.innerHTML += `
-      <label>ShadowX:</label><input type="number" name="shadowX" value="${changeValues(
-        this.shadowX
-      )}" >
-      <label>ShadowY:</label><input type="number" name="shadowY" value="${changeValues(
+    </div>
+    </div>
+    <div>
+    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center"><h3>Shadow</h3><button class="${
+      this.shadow ? "outlinet" : "outlinef"
+    }" id="shadow" ></button>    </div>
+    <div style="display:${this.shadow ? "grid" : "none"}"class="two-grid">
+    <div>X<input type="number" name="shadowX" value="${changeValues(
+      this.shadowX
+    )}" ></div>
+      <div>Y<input type="number" name="shadowY" value="${changeValues(
         this.shadowY
-      )}" >
-      <label>Shadow Color:</label><input type="color" name="shadowColor" value="${
+      )}" ></div>
+      <div>Color <input type="color" name="shadowColor" value="${
         this.shadowColor
-      }" >
-      <label>Shadow Blur:</label><input type="number" name="shadowBlur" value="${changeValues(
+      }" ></div>
+      <div>Blur <input type="number" name="shadowBlur" value="${changeValues(
         this.shadowBlur
-      )}" >
+      )}" ></div>
+    </div>
+    </div>
+    <div>
+    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center"><h3>Iterate</h3>    <button class="${
+      this.iterated ? "outlinet" : "outlinef"
+    }" id="iterate" ></button>    </div>
+<textarea style="display:${
+      this.iterated ? "block" : "none"
+    }" name="textarea" class="text">${this.textArea}</textarea>
+    </div>
       `;
-    }
-    if (this.iterated) {
-      propertiesBar.innerHTML += `
-      <textarea name="textarea">${this.textArea}</textarea>
-      `;
-    }
-
+    document.querySelector(".bold").addEventListener("click", () => {
+      this.input.style.fontWeight =
+        styles.fontWeight === "700" ? "normal" : "700";
+    });
+    document.querySelector(".italic").addEventListener("click", () => {
+      this.input.style.fontStyle =
+        styles.fontStyle === "italic" ? "normal" : "italic";
+    });
+    document.querySelector(".underline").addEventListener("click", () => {
+      this.input.style.textDecoration =
+        styles.textDecoration === "underline" ? "none" : "underline";
+    });
+    document.getElementById("shadow").addEventListener("click", () => {
+      this.shadow = !this.shadow;
+      if (this.shadow) {
+        this.input.style.textShadow = `${this.shadowX}px ${this.shadowY}px ${this.shadowBlur}px  ${this.shadowColor}`;
+      }
+      this.formatProperties();
+    });
+    document.getElementById("iterate").addEventListener("click", () => {
+      this.iterated = !this.iterated;
+      this.formatProperties();
+    });
     const input = document.getElementById("fontInput");
     const dropdown = document.getElementById("dropdown");
     input.addEventListener("focus", () => {
@@ -2722,46 +2796,35 @@ class TextBox {
   }
   changeProperties(e) {
     const name = e.target.name;
-    if (e.target.type === "checkbox") {
-      this[name] = e.target.checked;
-      this.formatProperties();
-    } else if (
-      name === "shadowX" ||
-      name === "shadowY" ||
-      name === "shadowBlur" ||
-      name === "shadowColor"
-    ) {
-      const value = e.target.value;
-      if (value != NaN) {
-        this[name] = value;
+    if (name === "angle") {
+      this.input.style.transform = `rotate(${e.target.value}deg)`;
+    } else if (name === "color") {
+      this.input.style.color = e.target.value;
+    } else if (name === "shadowColor") {
+      this.shadowColor = e.target.value;
+    } else if (e.target.type === "number") {
+      const value = backValues(e.target.value);
+      if (!isNaN(value)) {
+        const shade = name.slice(0, 6);
+        console.log(shade);
+        if (shade === "shadow") {
+          this[name] = value;
+        } else {
+          this.input.style[name] = value + "px";
+        }
       }
     } else if (name === "textarea") {
       const value = e.target.value;
-      if (value != NaN) {
+      if (!isNaN(value)) {
         this.textArea = value;
       }
-    } else if (e.target.type === "number") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this.input.style[name] = backValues(value) + "px";
-      }
-    } else {
-      const value = e.target.value;
-      if (value != NaN) {
-        this.input.style[name] = value;
-      }
     }
-    if (this.shadow) {
-      this.input.style.textShadow = `${backValues(this.shadowX)}px ${backValues(
-        this.shadowY
-      )}px ${backValues(this.shadowBlur)}px ${this.shadowColor}`;
-    } else {
-      this.input.style.textShadow = "none";
-    }
+    if (this.shadow)
+      this.input.style.textShadow = `${this.shadowX}px ${this.shadowY}px ${this.shadowBlur}px ${this.shadowColor}`;
+    else this.input.style.boxShadow = "none";
   }
   generateText(num, iteratedBox) {
     const paragraph = document.createElement("p");
-    const canvassRect = canvass.getBoundingClientRect();
     const cropOffset = canvassDiv.getBoundingClientRect();
     const inputRect = this.input.getBoundingClientRect();
 
@@ -2858,12 +2921,12 @@ class Images extends Formats {
     this.isDoubleClicked = false;
     this.angle = 0;
     this.selectedArea;
-    this.originalFiles = [originalFile]
+    this.originalFiles = [originalFile];
     this.iteratedFiles = [image];
-    this.opacity = 100
-    this.maintainApect = false 
+    this.opacity = 100;
+    this.maintainApect = false;
     this.clipped = "none";
-    this.imagePreview = image.src
+    this.imagePreview = image.src;
   }
   addObject() {
     ctx.save();
@@ -2871,10 +2934,10 @@ class Images extends Formats {
     const centerY = this.y + this.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(this.angle);
-    ctx.save()
+    ctx.save();
     ctx.beginPath();
-    ctx.globalAlpha= this.opacity / 100
-    
+    ctx.globalAlpha = this.opacity / 100;
+
     ctx.drawImage(
       this.iteratedFiles[this.image],
       -this.width / 2,
@@ -2883,9 +2946,9 @@ class Images extends Formats {
       this.height
     );
     ctx.closePath();
-    ctx.restore()
+    ctx.restore();
 
-    if (selectedObj === this) {
+    if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
       ctx.lineWidth = 1;
       ctx.strokeStyle = "#0000ff";
@@ -2928,43 +2991,43 @@ class Images extends Formats {
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
-          if (this.isDoubleClicked) {
-        const center = {
-          x: this.x + this.width / 2,
-          y: this.y + this.height / 2,
-        };
-        this.angle =
-          Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
-      }else{
-    super.rectFormat(mouse);
-    if (this.selectedArea === "Selected") {
-      this.x += mouse.x - lastMouseX;
-      this.y += mouse.y - lastMouseY;
-    }
+    if (this.isDoubleClicked) {
+      const center = {
+        x: this.x + this.width / 2,
+        y: this.y + this.height / 2,
+      };
+      this.angle =
+        Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
+    } else {
+      super.rectFormat(mouse);
+      if (this.selectedArea === "Selected") {
+        this.x += mouse.x - lastMouseX;
+        this.y += mouse.y - lastMouseY;
       }
-
+    }
   }
   formatProperties() {
     propertiesBar.innerHTML = `
     <div>
     <h3>Coordinate</h3>
        <div class="two-grid">
-    <div>X <input type="number" name="x" value="${changeValues(
-          this.x
-        )}"> </div>
+    <div>X <input type="number" name="x" value="${changeValues(this.x)}"> </div>
         <div>Y<input type="number" name="y" value="${changeValues(
-      this.y
-    )}"></div>
+          this.y
+        )}"></div>
     <div>W </label><input type="number" name="width" value="${changeValues(
       this.width
     )}"></div>
     <div>H <input type="number" name="height" value="${changeValues(
       this.height
     )}"></div>
-    <div>Opacity <input type="number" name="opacity" value="${this.opacity}"></div>
-    <div>Rotation <input type="number" name="angle" value="${
-     radToDeg( this.angle,"deg")
+    <div>Opacity <input type="number" name="opacity" value="${
+      this.opacity
     }"></div>
+    <div>Rotation <input type="number" name="angle" value="${radToDeg(
+      this.angle,
+      "deg"
+    )}"></div>
     </div> 
         <div style="display:flex;flex-direction:column; gap:1rem"><button class="imageb" id="removeBg">Remove Background</button>
     <button class="imageb" id="maintainAspect">Aspect Ratio</button></div>
@@ -2974,84 +3037,91 @@ class Images extends Formats {
         <div class="preview"><img src="${this.imagePreview}"></div>
     <section class="iteratedsec">
 
-      ${this.originalFiles.map((file,i)=>
-        `<div ${this.imagePreview === this.iteratedFiles[i].src ? "class='selected'":""}>
+      ${this.originalFiles
+        .map(
+          (file, i) =>
+            `<div ${
+              this.imagePreview === this.iteratedFiles[i].src
+                ? "class='selected'"
+                : ""
+            }>
         <p>${file.name}</p>
         <button>Change<input type="file"></button>
         </div>`
-      ).join("")}
+        )
+        .join("")}
     </section>
     <button class="image-file">Add Images <input type="file" multiple accept=".jpg,.png,.svg" name="iteratedFiles" >
 </button>
     </div>
    
   `;
-  document.querySelectorAll(".iteratedsec > div").forEach((div,i)=>{
-    div.addEventListener("click",()=>{
-      this.imagePreview = this.iteratedFiles[i].src; 
-      this.formatProperties()
-    })
-    div.querySelector("button").addEventListener("change",(e)=>{
+    document.querySelectorAll(".iteratedsec > div").forEach((div, i) => {
+      div.addEventListener("click", () => {
+        this.imagePreview = this.iteratedFiles[i].src;
+        this.formatProperties();
+      });
+      div.querySelector("button").addEventListener("change", (e) => {
         const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.src = url;
-    img.onload = () => {
-    this.iteratedFiles[i] = img
-    this.originalFiles[i] = file
-  }
-   this.imagePreview = img.src
-  this.formatProperties()
-    })
-  })
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+          this.iteratedFiles[i] = img;
+          this.originalFiles[i] = file;
+        };
+        this.imagePreview = img.src;
+        this.formatProperties();
+      });
+    });
 
     document.getElementById("maintainAspect").addEventListener("click", () => {
       this.height = this.aspectRatio * this.width;
       draw();
     });
-document.getElementById("removeBg").addEventListener("click", async () => {
-  try {
-    const formData = new FormData();
-    let files = null;
-    this.iteratedFiles.forEach((file, i) => {
-      if (file.src === this.imagePreview) files = i;
-    });
-    if (files === null) {
-      alert("Original image file not available for background removal.");
-      return;
-    }
-    formData.append("image_file", this.originalFiles[files]);
-    formData.append("size", "auto");
-    const response = await fetch("https://api.remove.bg/v1.0/removebg", {
-      method: "POST",
-      headers: {
-        "X-Api-Key": "qYJAiV6LvvHifoPU12kRt8T5",
-      },
-      body: formData,
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.errors ? err.errors[0].title : "Unknown error");
-    }
+    document.getElementById("removeBg").addEventListener("click", async () => {
+      try {
+        const formData = new FormData();
+        let files = null;
+        this.iteratedFiles.forEach((file, i) => {
+          if (file.src === this.imagePreview) files = i;
+        });
+        if (files === null) {
+          alert("Original image file not available for background removal.");
+          return;
+        }
+        formData.append("image_file", this.originalFiles[files]);
+        formData.append("size", "auto");
+        const response = await fetch("https://api.remove.bg/v1.0/removebg", {
+          method: "POST",
+          headers: {
+            "X-Api-Key": "qYJAiV6LvvHifoPU12kRt8T5",
+          },
+          body: formData,
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.errors ? err.errors[0].title : "Unknown error");
+        }
 
-    const blob = await response.blob();
-    const base64 = await blobToBase64(blob);
-    const newImage = new Image();
-    newImage.src = base64;
+        const blob = await response.blob();
+        const base64 = await blobToBase64(blob);
+        const newImage = new Image();
+        newImage.src = base64;
 
-    newImage.onload = () => {
-      this.iteratedFiles[files] = newImage;
-      const name = this.originalFiles[files].name;
-      this.originalFiles[files] = blob;
-      this.originalFiles[files].name = name;
-      this.imagePreview = base64;
-      this.formatProperties();
-    };
-  } catch (err) {
-    console.log(err);
-  }
-});
+        newImage.onload = () => {
+          this.iteratedFiles[files] = newImage;
+          const name = this.originalFiles[files].name;
+          this.originalFiles[files] = blob;
+          this.originalFiles[files].name = name;
+          this.imagePreview = base64;
+          this.formatProperties();
+        };
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
     propertiesBar.querySelectorAll("input").forEach((input) => {
       input.addEventListener(
@@ -3060,50 +3130,46 @@ document.getElementById("removeBg").addEventListener("click", async () => {
         1000
       );
     });
-    draw()
+    draw();
   }
   changeProperties(e) {
     const name = e.target.name;
-        if (name === "angle") {
+    if (name === "angle") {
       this.angle = radToDeg(e.target.value, "rad");
-    }
-    else if(e.target.type === "number"){
-const value = backValues(parseFloat(e.target.value))
-if (!isNaN(value) && value !== null){
-   if (name === "opacity") {
+    } else if (e.target.type === "number") {
+      const value = backValues(parseFloat(e.target.value));
+      if (!isNaN(value) && value !== null) {
+        if (name === "opacity") {
           this.opacity = Number(e.target.value);
-        }else{
-this[name] = value
+        } else {
+          this[name] = value;
         }
-}
+      }
+    } else if (name === "iteratedFiles") {
+      Array.from(e.target.files).forEach((file) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+          this.iteratedFiles.push(img);
+          this.originalFiles.push(file);
+          this.formatProperties();
+        };
+      });
     }
-    else if (name === "iteratedFiles") {
-      Array.from(e.target.files).forEach(file =>{
-        const url = URL.createObjectURL(file)
-          const img = new Image();
-  img.src = url;
-  img.onload = () => {
-    this.iteratedFiles.push(img)
-    this.originalFiles.push(file)
-          this.formatProperties()
-  };
-
-      } )
-
-    }  
     draw();
   }
   drawIteratedImage(i) {
-    if(this.iteratedFiles.length >= i){
-      this.image = i
-    }else{
-      this.image = 0
+    if (this.iteratedFiles.length >= i) {
+      this.image = i;
+    } else {
+      this.image = 0;
     }
   }
-  doubleClicked(mouse){
-          isRotatingObject = true;
-      this.isDoubleClicked = this.isDoubleClicked ? false : true;
-      return true;
+  doubleClicked(mouse) {
+    isRotatingObject = true;
+    this.isDoubleClicked = this.isDoubleClicked ? false : true;
+    return true;
   }
   whereToSnap() {
     return {
@@ -3127,6 +3193,21 @@ function blobToBase64(blob) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+function rgbToHex(rgb) {
+  const result = rgb.match(/\d+/g);
+  if (!result) return rgb;
+
+  return (
+    "#" +
+    result
+      .slice(0, 3)
+      .map((x) => {
+        const hex = parseInt(x).toString(16);
+        return hex.padStart(2, "0");
+      })
+      .join("")
+  );
 }
 
 document.querySelector(".saveAsPdf").addEventListener("click", saveAsPDF);
@@ -3322,6 +3403,12 @@ function changeValues(x) {
     return x / 3.78;
   }
 }
+function multipleSelection(){
+  multipleSelect = !multipleSelect
+  multipleSelectArr = []
+  selectedObj = null
+  selectedText = null
+}
 function backValues(x) {
   if (whatsMeasured === "px") {
     return x;
@@ -3336,6 +3423,43 @@ function backValues(x) {
   } else if (whatsMeasured === "mm") {
     return x * 3.78;
   }
+}
+let previousClip = null
+let previousOpacity
+let clippedObject = null;
+editclip.addEventListener("click",()=>{
+  if(clippedObject === null) return
+   if(clippedObject.clipped !== "editclip"){
+        clippedObject = clippedObject
+    previousClip = clippedObject.clipped
+    clippedObject.clipped = "editclip"
+    clippedObject.clips.forEach(clip => objects.push(clip))
+    editclip.textContent = "Done"
+    if(clippedObject.opacity > 80){
+      previousOpacity = clippedObject.opacity
+      clippedObject.opacity = 80
+    }
+    console.log(clippedObject)
+  }   
+else{
+    clippedObject.clipped = previousClip
+    clippedObject.opacity = previousOpacity
+    clippedObject.clips.forEach(clip=>{
+                  let index = objects.indexOf(clip);
+            objects.splice(index, 1);
+    })
+    editclip.textContent = "Edit Clip"
+    selectedObj = clippedObject
+    clippedObject = null
+    previousClip = null
+  }
+
+  
+})
+function notify(name){
+  notification.textContent = name
+  notification.style.display = "block"
+  setTimeout(()=>notification.style.display = "none",1500)
 }
 function radToDeg(val, type) {
   if (type === "rad") {
@@ -3451,7 +3575,20 @@ async function saveAsImage() {
     }
   }
 }
-document.querySelector(".add-image input").addEventListener("change",(e)=>addImage(e))
+document.querySelector(".snip").addEventListener("click", () => {
+  if (clipped === null) {
+    if (selectedObj && selectedObj.clipped === "none") {
+      clipped = selectedObj;
+      canvas.style.cursor = "pointer"
+    }
+  } else{
+    clipped = null;
+      canvas.style.cursor = "default"
+  } 
+});
+document
+  .querySelector(".add-image input")
+  .addEventListener("change", (e) => addImage(e));
 function addImage(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -3490,6 +3627,38 @@ function addEllipse() {
   objects.push(ellipse);
   draw();
 }
+function align(arg){
+  const last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap()
+  const others = multipleSelectArr.slice(0,-1)
+  let value
+  switch (arg) {
+    case "left":
+      value = last.x[0]
+      break
+    case "centerX":
+      value =last.x[1]
+      break
+    case "right":
+      value = last.x[2]
+      break
+    case "top":
+      value = last.y[0]
+      break
+    case "centerY":
+      value = last.y[1]
+      break
+    case "bottom":
+      value = last.y[2]
+      break
+  }
+  others.forEach(other=>{
+    if(arg === "left" || arg==="centerX" || arg==="right"){
+      other.changeLocation(value,"x")
+    }else other.changeLocation(value,"y")
+  })
+  draw()
+}
+
 
 function getMousePos(canvas, evt) {
   const rect = canvas.getBoundingClientRect();
@@ -3565,8 +3734,8 @@ async function generateCard() {
   let boxCountInPage = 0;
   for (let i = 0; i < iterationLength; i++) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    images.forEach(img=>img.drawIteratedImage(i))
-    objects.forEach(obj=>obj.addObject())
+    images.forEach((img) => img.drawIteratedImage(i));
+    objects.forEach((obj) => obj.addObject());
     const croppedCanvas = document.createElement("canvas");
     const cty = croppedCanvas.getContext("2d");
     const rect = canvas.getBoundingClientRect();
@@ -3647,7 +3816,6 @@ async function generateCard() {
 canvas.addEventListener("mousedown", (event) => {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
 
-  selectedObj = null;
   isDraggingObject = false;
   if (pen !== null) {
     pen.drawPen(pos);
@@ -3655,13 +3823,8 @@ canvas.addEventListener("mousedown", (event) => {
     selectedObj.formatProperties();
   } else if (clipped !== null) {
     for (let i = objects.length - 1; i >= 0; i--) {
-      if (objects[i].whatSelected(pos)) {
-        objects[i].clips.push(clipped);
+      if (objects[i].whatSelected(pos) && objects[i] !== clipped) {
         clipped.clipped = "clipped";
-        objects[i].clipped = "clipper";
-        let index = objects.indexOf(clipped);
-        objects.splice(index, 1);
-
         const objectsCoordinate = objects[i].whereToSnap().pos;
         const clippedCoordinate = clipped.whereToSnap().pos;
         if (
@@ -3679,21 +3842,56 @@ canvas.addEventListener("mousedown", (event) => {
             "y"
           );
         }
-        alert("clipped");
+        objects[i].clips.push(clipped);
+        let index = objects.indexOf(clipped);
+
+        selectedObj = objects[i];
+        objects.splice(index, 1);
+        clipped = null
+        break
       }
     }
-    if (clipped === null) alert("Pls select an object");
-    else {
-      canvas.style.cursor = "default";
-      clipped = null;
-    }
+    if(clipped === null){
+
+  notify("Clipped")
+  canvas.style.cursor = "default"
+    } 
+    else notify("Select An Object")
   } else if (cloneObj) {
     let cloned = cloneObj.showClone();
     objects.push(cloned);
+  } else if(clippedObject !== null && previousClip !== null){
+              editclip.style.display = "block"
+    for(let i = clippedObject.clips.length -1; i >=0;i++){
+
+      if(clippedObject.clips[i].whatSelected(pos)){
+        selectedObj = clippedObject.clips[i]
+        isDraggingObject = true
+                isRotatingObject = false;
+        selectedText = null;
+        selectedObj.isDoubleClicked = false;
+        selectedObj.formatProperties()
+        break
+      }
+    }
+  }else if(multipleSelect){
+    objects.forEach(obj =>{
+      if(obj.whatSelected(pos)){
+        if(!measurementArr.includes(obj)){
+multipleSelectArr.push(obj)
+        }
+
+      }
+    })
+    
   } else {
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].whatSelected(pos)) {
         selectedObj = objects[i];
+        if(selectedObj.clips && selectedObj.clips.length > 0){
+          editclip.style.display = "block"
+          clippedObject = selectedObj
+        }else editclip.style.display = "none"
         isRotatingObject = false;
         selectedText = null;
         selectedObj.isDoubleClicked = false;
@@ -3871,8 +4069,8 @@ function draw() {
   //     lastMouseY = snap.y;
   //   }
   // }
-  if(pen){
-    pen.addObject()
+  if (pen) {
+    pen.addObject();
   }
   if (cloneObj) {
     cloneObj.addObject();
@@ -3883,4 +4081,3 @@ function draw() {
 }
 
 draw();
-

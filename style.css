@@ -8,6 +8,8 @@
   --border-bottom: 2px solid #616161;
   --close-button: #929292;
   --input-color: #f8f8f8;
+  --aligin-sec: #1f1f1f;
+  --button-hover: #616161
 }
 *{
   margin: 0;
@@ -161,20 +163,62 @@ main > section{
   left: 50%;
   transform: translateX(-50%);
   position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 95%;
+  z-index: 3;
+
+}
+.notification{
+  padding: 1rem 2.5rem ;
+  position: absolute;
+  transform: translate(-50%);
+  left: 50%;
+  background-color: var(--button-hover);
+  color: var(--input-color);
+  animation: notify ease-in-out 0.5s forwards;
+  transition: all 0.5s;
+  border-radius: 0.2rem;
+  display: none;
+}
+.upsec .editclip{
+  position: absolute;
+  width: 100%;
+  height: auto;
+  bottom: -40px;
+  left: 0;
+  padding: 0.5rem;
+  color: var(--input-color);
+  display: none;
+}
+@keyframes notify {
+  0%{
+      transform: translate(-50%);
+  }
+  100%{
+      transform: translate(-50%,50px);
+  }
 }
 #propertiesTab > div:first-child{
+  border-bottom: var(--border-bottom) ;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+#propertiesTab > div:first-child > div{
   display: flex;
   flex-direction: row;
   padding: 1rem;
   justify-content: space-between;
-  border-bottom: var(--border-bottom) ;
+
   align-items: center;
 }
-#propertiesTab > div:first-child h3{
+#propertiesTab > div:first-child  >div h3{
   color: var(--h3-fill);
   font-size: 1.1rem;
 }
-#propertiesTab > div:first-child button{
+#propertiesTab > div:first-child > div button{
   width: 30px;
   height: 5px;
   border: none;
@@ -202,6 +246,7 @@ main > section{
 .two-grid > div{
   display: flex;
   flex-direction: row;
+  align-items: center;
 }
 .two-grid input,.color-div input[type="number"],.color-sec input,.thick input{
     outline: none;
@@ -455,6 +500,89 @@ main > section{
   font-size: 0.6rem;
   position: relative;
 }
+.autocomplete-container{
+  position: relative;
+
+}
+.autocomplete-container input::placeholder{
+  color: var(--input-color);
+}
+.dropdown{
+  position: absolute;
+  top: 20px;
+  height: 100px;
+  overflow-y: scroll;
+  background-color: var(--input-img) ;
+  padding: 1rem 0;
+}
+.dropdown::-webkit-scrollbar,.text::-webkit-scrollbar{
+  width: 4px;
+}
+.dropdown::-webkit-scrollbar-thumb,.text::-webkit-scrollbar-thumb{
+    background-color: var(--h3-fill);
+  border-radius: 5px;
+}
+.dropdown > div{
+  padding: 0.5rem;
+  border-bottom: var(--border-bottom);
+}
+.text{
+  height: 300px;
+  border-radius: 0.5rem;
+  border: var(--border-bottom);
+  background-color: var(--icon-img);
+  color: var(--input-color);
+  padding: 1rem;
+  resize: none;
+}
+.properties-align{
+  display: flex;
+  flex-direction: row;
+  gap: 1.3rem;
+  background-color: var(--aligin-sec);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  width: auto;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.properties-align::before{
+  position: absolute;
+  width: 3px;
+  height: 100%;
+  background-color: var(--bg-color) ;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+  content: "";
+}
+.properties-align img{
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+.properties-align > div,.upsec > div{
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+.upsec > div{
+  background-color: var(--aligin-sec);
+  padding: 0.5rem;
+  border-radius: 0.2rem;
+
+}
+.properties-align button,.upsec button{
+  height: 28px;
+  width: 30px;
+  border: none;
+  background-color: var(--icon-img);
+  border-radius: 0.2rem;
+  padding: 0.3rem;
+}
+
 footer{
   background-color: var(--side-color);
   padding: 1rem;

@@ -52,15 +52,19 @@
 
       <aside class="leftSidebar">
         <button><img src="images/Vector 160.svg" alt=""></button>
+        <button onclick="multipleSelection()"></button>
         <button onclick="addRectangle()"><img src="images/Rectangle 86.svg" alt=""></button>
         <button onclick="addEllipse()"><img src="images/Ellipse 11.svg" alt=""></button>
         <button onclick="addLine()"><img src="images/Group 8.svg" alt=""></button>
         <button onclick="addPolygon()"><img  src="images/Polygon 1.svg" alt=""></button>
         <button class="add-image"><input type="file" ><img src="images/Group 35.svg" alt=""></button>
+        <button onclick="addTextbox()"><img src="images/Vector 155.svg" alt=""></button>
       </aside>
       <section>
+        <div class="notification"></div>
         <section class="upsec">
-
+          <div><button></button><button></button></div>
+          <div style="position: relative;"><button class="snip"></button><button></button><button class="editclip">Edit Clip</button></div>
         </section>
         <div class="canvas">
           <div></div>
@@ -71,8 +75,22 @@
 
       <aside id="propertiesTab">
         <div>
+          <div>
         <h3>Properties</h3>
         <button style="display: none;"></button>
+          </div>
+<section class="properties-align">
+  <div>
+    <button onclick="align('left')"><img src="images/Group 1.svg" alt=""></button>
+    <button onclick="align('centerX')"><img src="images/Group 2.svg" alt=""></button>
+    <button onclick="align('right')"><img src="images/Group 3.svg" alt=""></button>
+  </div>
+  <div>
+    <button onclick="align('top')"><img src="images/Group 4.svg" alt=""></button>
+    <button onclick="align('centerY')"><img src="images/Group 5.svg" alt=""></button>
+    <button onclick="align('bottom')"><img src="images/Group 6.svg" alt=""></button>
+  </div>
+</section>
         </div>
 
         <section id="properties">

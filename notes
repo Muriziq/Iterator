@@ -79,6 +79,24 @@
       reader.readAsDataURL(file);
     });
   }
+.addEventListener("click",() =>{
+ console.log("life")
+
+})
 
 
-
+    if (this.clips.length > 0) {
+      document.querySelector(".editclip").addEventListener("click", () => {
+        this.clipped = this.clipped === "editclip" ? "clipper" : "editclip";
+        if (this.clipped === "editclip") {
+          this.clips.forEach((clip) => objects.push(clip));
+          this.color = this.color.map((c) => c + "80");
+        } else {
+          this.clips.forEach((clip) => {
+            let index = objects.indexOf(clip);
+            objects.splice(index, 1);
+            this.color = this.color.map((c) => c.slice(0, -2));
+          });
+        }
+      });
+    }
