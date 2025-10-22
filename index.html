@@ -7,6 +7,7 @@
   </head>
   <body>
     <header>
+      <section>
            <div class="first-header">
             Size: <div>
               <div>
@@ -27,7 +28,7 @@
             <button onclick="changeOrientation('potrait')"></button>
             <button onclick="changeOrientation('landscape')"></button>
           </div>
-          <div>
+          <div class="third-header">
             <select name="measurement" id="measurement">
               <option value="px" selected>Pixels</option>
               <option value="pt">Points</option>
@@ -46,7 +47,23 @@
               <option value="business-card">Business Card</option>
               <option value="letter" selected>Letter</option>
             </select>
+            <select name="zoom" id="zoom">
+              <option value="50%">50%</option>
+              <option value="70%">70%</option>
+              <option value="90%">90%</option>
+              <option value="fit">Fit</option>
+              <option value="120%">120%</option>
+              <option value="150%">150%</option>
+            </select>
+            <button class="zoomin"></button>
+            <button class="zoomout"></button>
           </div>
+      </section>
+      <div>
+                <button class="generateButton">
+          Generate Button
+        </button>
+      </div>
     </header>
     <main>
 
@@ -61,10 +78,43 @@
         <button onclick="addTextbox()"><img src="images/Vector 155.svg" alt=""></button>
       </aside>
       <section>
+        <div class="generate">
+          <div>
+            <h3>RENDER</h3>
+            <button onclick="cancelGenerate()"><img src="images/Vector (2).svg" alt=""></button>
+          </div>
+          <div class="generate1">
+        <select name="renderPage" id="renderPage">
+          <option value="auto">Per Page</option>
+          <option value="custom">Custom</option>
+          <option value="a0">A0</option>
+          <option value="a1">A1</option>
+          <option value="a2">A2</option>
+          <option value="a3">A3</option>
+          <option value="a4">A4</option>
+          <option value="a5">A5</option>
+          <option value="legal">Legal</option>
+          <option value="letter">Letter</option>
+        </select>
+
+        <div>
+            <div>Width<input type="number" name="renderWidth" id="renderWidth"></div>
+            <div>Height<input type="number" name="renderHeight" id="renderHeight"></div>
+          
+        </div>
+                <div class="perRow">
+          No Per:
+          <div>Row<input type="number" name="noPerRow" id="noPerRow"></div>
+          <div>Col<input type="number" name="noPerColumn" id="noPerColumn"></div>
+          
+        </div>
+          </div>
+          <button onclick="generateCard()">Done</button>
+        </div>
         <div class="notification"></div>
         <section class="upsec">
-          <div><button></button><button></button></div>
-          <div style="position: relative;"><button class="snip"></button><button></button><button class="editclip">Edit Clip</button></div>
+          <div><button onclick="undo()"><img src="images/Vector.svg" alt=""></button><button onclick="redo()"><img src="images/Vector.svg" style="transform: scaleX(-1);" alt=""></button></div>
+          <div style="position: relative;"><button class="snip"></button><button onclick="group()"></button><button class="editclip">Edit Clip</button></div>
         </section>
         <div class="canvas">
           <div></div>
@@ -91,6 +141,10 @@
     <button onclick="align('bottom')"><img src="images/Group 6.svg" alt=""></button>
   </div>
 </section>
+<section class="flip" style="gap: 0.5rem;">
+  <button onclick="flip('x')"></button>
+  <button onclick="flip('y')"></button>
+</section>
         </div>
 
         <section id="properties">
@@ -98,29 +152,13 @@
         </section>
       </aside>
     </main>
-    <footer class="generate">
+    <footer>
             <div class="buttonSide">
-        <button class="generateButton" onclick="generateCard()">
-          Generate Button
-        </button>
+
         <button class="saveAsPdf">Save As Pdf</button>
         <button class="saveAsImage">Save As Image</button>
-        <select name="renderPage" id="renderPage">
-          <option value="auto">Per Page</option>
-          <option value="a0">A0</option>
-          <option value="a1">A1</option>
-          <option value="a2">A2</option>
-          <option value="a3">A3</option>
-          <option value="a4">A4</option>
-          <option value="a5">A5</option>
-          <option value="a6">Legal</option>
-          <option value="letter">Letter</option>
-        </select>
-        <div class="perRow" style="display: none;">
-          No Per Row: 
-          <input type="number" name="noPerRow" id="noPerRow">
-          <input type="number" name="noPerColumn" id="noPerColumn">
-        </div>
+
+
       </div>
       <article id="generationArea"></article>
 

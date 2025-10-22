@@ -22,12 +22,26 @@ body{
 }
 header{
   background-color: var(--side-color);
-  padding: 1rem;
+  padding: 0.5rem 2rem;
   display: flex;
   flex-direction: row;
-  align-items: center;
-  gap: 1.5rem;
 
+  align-items: center;
+  justify-content: space-between;
+
+}
+header > section{
+  display: flex;
+  flex-direction: row;
+    gap: 1.5rem;
+    align-items: center;
+}
+header > div button{
+  padding: 1rem 1.3rem;
+  border: none;
+  border-radius: 0.2rem;
+  color: var(--h3-fill);
+  background-color: var(--icon-img);
 }
 .first-header{
   display: flex;
@@ -42,7 +56,7 @@ header{
   flex-direction: column;
   gap: 0.3rem;
 }
-.first-header > div div,.two-grid > div,.thick{
+.first-header > div div,.two-grid > div,.thick,.generate1 > div div{
   font-size: 0.7rem;
   background-color: var(--input-img);
   width: auto;
@@ -91,9 +105,16 @@ header{
   background-color: var(--input-color) ;
 
 }
+
 .second-header button:first-child::before{
   width: 27px;
   height: 32px;
+}
+.third-header{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
 }
 .second-header button:last-child::before{
   width: 32px;
@@ -113,6 +134,7 @@ main{
   display: flex;
   flex-direction: row;
   height: 90vh;
+  overflow: hidden;
 }
 .leftSidebar{
   background-color: var(--side-color);
@@ -121,7 +143,7 @@ main{
   flex-direction: column;
   gap: 1rem;
 }
-.leftSidebar > button{
+.leftSidebar > button,.zoomin,.zoomout{
   width: 40px;
   height: 40px;
   border-radius: 0.3rem;
@@ -130,7 +152,7 @@ main{
   border: none;
 }
 
-.leftSidebar > button img{
+.leftSidebar > button img,.zoomin img,.zoomout img{
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -144,6 +166,7 @@ main{
   background-color: var(--side-color);
   height: 100%;
   overflow-y: auto;
+  z-index: 3;
 }
 #propertiesTab::-webkit-scrollbar{
   width: 5px;
@@ -243,12 +266,12 @@ main > section{
   font-size: 0.95rem;
   color: var(--h3-fill);
 }
-.two-grid > div{
+.two-grid > div,.generate1 > div div{
   display: flex;
   flex-direction: row;
   align-items: center;
 }
-.two-grid input,.color-div input[type="number"],.color-sec input,.thick input{
+.two-grid input,.generate1 > div input,.color-div input[type="number"],.color-sec input,.thick input{
     outline: none;
   background-color: transparent;
   border: none;
@@ -364,6 +387,10 @@ main > section{
   width: 100%;
   height: 100%;
   position: relative;
+  transform-origin: 0 0;
+  transition: all 0.3s;
+  z-index: 1;
+
 }
 .canvas > div{
   position: absolute;
@@ -535,7 +562,19 @@ main > section{
   padding: 1rem;
   resize: none;
 }
-.properties-align{
+#propertiesTab #properties .selected{
+  background-color: var(--button-hover);
+}
+#propertiesTab button{
+  transition: all 0.5s;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.properties-align,.flip{
   display: flex;
   flex-direction: row;
   gap: 1.3rem;
@@ -574,7 +613,7 @@ main > section{
   border-radius: 0.2rem;
 
 }
-.properties-align button,.upsec button{
+.properties-align button,.upsec button,.flip button{
   height: 28px;
   width: 30px;
   border: none;
@@ -582,7 +621,86 @@ main > section{
   border-radius: 0.2rem;
   padding: 0.3rem;
 }
+.generate{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content:flex-end;
+  align-items: end;
+  background-color: var(--icon-img);
+  padding: 1rem;
+  border-radius: 0.3rem;
+  z-index: 3;
+  display: none;
+}
+.generate > div:first-child{
+  width: 100%;
+  display: flex;
+  flex-direction:row ;
+  align-items: center;
+  justify-content: end;
+  color: var(--h3-fill);
+  border-bottom: var(--border-bottom);
+  padding-bottom: 1rem;
+  gap: 40%;
 
+}
+.generate h3{
+  font-size: 1.3rem;
+}
+.generate > button{
+  padding: 0.7rem 2.5rem;
+  border: none;
+  width: auto;
+  background-color: var(--input-img);
+  color: var(--input-color);
+  font-weight: 700;
+  border-radius: 0.3rem;
+}
+.generate > div:first-child button{
+  background-color: transparent;
+  border: none;
+  height: 15px;
+  width: 15px;
+}
+.generate1 select{
+  padding: 0.5rem ;
+  border: none;
+  outline: none;
+  font-size: 0.7rem;
+  font-weight: bold;
+  background-color: var(--input-img);
+  color: var(--h3-fill);
+}
+.generate1{
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 0;
+}
+.generate1 > div{
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  text-wrap: nowrap;
+  align-items:center ;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--h3-fill);
+}
+.generate1 > div div input{
+  width: 50px;
+}
+
+.generate img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 footer{
   background-color: var(--side-color);
   padding: 1rem;

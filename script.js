@@ -5,10 +5,10 @@ canvas.height = canvas.getBoundingClientRect().height;
 const canvass = document.querySelector(".canvas");
 const canvassDiv = canvass.querySelector("div");
 const propertiesBar = document.getElementById("properties");
-const textBoxes = [];
+let textBoxes = [];
 const generationArea = document.getElementById("generationArea");
-const objects = [];
-const images = [];
+let objects = [];
+let images = [];
 const notification = document.querySelector(".notification")
 const editclip = document.querySelector(".editclip")
 const width = document.getElementById("width");
@@ -25,6 +25,12 @@ let renderPageSize = "auto";
 let pen = null;
 let multipleSelect = false 
 let multipleSelectArr = []
+let undoObject = []
+let redoObject = []
+let renderWidth;
+let renderHeight;
+let noPerRow = 1
+let noPerColumn = 1
 const measurementArr = [
   { width: 2244, height: 3182 },
   { width: 1588, height: 2244 },
@@ -48,6 +54,14 @@ let textLastMouseY = 0;
 let isDraggingText = false;
 let clipped = null;
 let allFonts = [];
+  let scale = 1;
+  let panX = 0;
+  let panY = 0;
+  let isPanning = false;
+  let startX, startY;
+  const zoomSelect = document.getElementById("zoom")
+const zoomin = document.querySelector(".zoomin")
+const zoomout = document.querySelector(".zoomout")
 fetch(
   "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8"
 )
@@ -351,6 +365,10 @@ class LineUtils {
   }
 }
 class Formats {
+  constructor(){
+    this.scaleX = 1
+    this.scaleY = 1
+  }
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
       this.outlineType = [];
@@ -678,11 +696,11 @@ class Rectangle extends Formats {
     this.outlineType = [];
     this.isDoubleClicked = false;
     this.angle = 0;
-    this.roundedOrbeveled = "shaped";
+    this.roundedOrbeveled = "beveled";
     this.cornerRadius = 0;
     this.clipped = "none";
     this.clips = [];
-    this.opacity = 100;
+
     this.points = [
       {
         points: { x: -this.width / 2, y: -this.height / 2 },
@@ -736,9 +754,10 @@ class Rectangle extends Formats {
         cornerRadius: 0,
       },
     ];
+        this.opacity = 100;
     this.selectedLineIndex = null;
     this.mode = "edit";
-    this.colorFill = "linear";
+    this.colorFill = "uniform";
     this.colorDeg = 0.2;
     this.colorStop = [];
   }
@@ -752,10 +771,12 @@ class Rectangle extends Formats {
     this.maxY = Math.max(...ys);
 
     ctx.save();
+
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(this.angle);
+        ctx.scale(this.scaleX,this.scaleY)
     ctx.beginPath();
     this.createPath();
     if (this.colorFill !== "none") {
@@ -1080,9 +1101,15 @@ class Rectangle extends Formats {
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    clone.x = lastMouseX - this.width / 2;
-    clone.y = lastMouseY - this.height / 2;
-    return clone;
+    clone.points = this.points.map(p => ({
+  points: { x: p.points.x, y: p.points.y },
+  edgeModes: p.edgeModes,
+  controls: p.controls.map(c => ({ x: c.x, y: c.y })),
+  cornerRadius: p.cornerRadius
+}));
+
+clone.clips = this.clips.map(c => c.showClone()); 
+return clone
   }
 
   formatProperties() {
@@ -1119,10 +1146,11 @@ class Rectangle extends Formats {
     </div>
   ${super.similarProptiesOutput()}
       <div class="shape">
-        <div><button class="beveled"></button><button class="rounded"></button><button class="shapetool"><img src="images/Group 33.svg"></button></div>
+        <div><button class="beveled ${this.roundedOrbeveled === "beveled" ? "selected" : " "}"><img src="images/Vector 169.svg"></button><button class="rounded ${this.roundedOrbeveled === "rounded" ? "selected" : " "}"><img src="images/Rectangle 128.svg"></button><button class="shapetool ${this.roundedOrbeveled === "shaped" ? "selected" : " "}"><img src="images/Group 33.svg"></button></div>
         <div style="display:${
           this.roundedOrbeveled === "shaped" ? "flex" : "none"
-        }"><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
+        }"><button class="convert ${          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "shaped" ? "selected" : " "}"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
         <div style="display:${
           this.selectedArea === "pointIndex" &&
           this.points[this.selectedLineIndex].edgeModes === "shaped"
@@ -1159,12 +1187,14 @@ class Rectangle extends Formats {
 
     document.querySelector(".rounded-edge").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].edgeModes = "rounded";
+        this.points[this.selectedLineIndex].edgeModes =this.points[this.selectedLineIndex].edgeModes === "rounded" ? null : "rounded";
+              this.formatProperties();
       }
     });
     document.querySelector(".convert").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].edgeModes = "shaped";
+        this.points[this.selectedLineIndex].edgeModes =this.points[this.selectedLineIndex].edgeModes === "shaped" ? null : "shaped";
+              this.formatProperties();
       }
     });
     document.querySelector(".normal").addEventListener("click", () => {
@@ -1348,7 +1378,7 @@ class Ellipse extends Formats {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-
+        ctx.scale(this.scaleX,this.scaleY)
     ctx.beginPath();
     if (this.mode === "pie") {
       ctx.moveTo(0, 0);
@@ -1595,7 +1625,6 @@ class Ellipse extends Formats {
         else if (name === "opacity") {
           this.opacity = Number(e.target.value);
         } else this[name] = value;
-        console.log(this.arcStart, this.arcEnd);
       }
     }
     if (this.outlineType.length !== 0)
@@ -1604,8 +1633,7 @@ class Ellipse extends Formats {
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    clone.x = lastMouseX;
-    clone.y = lastMouseY;
+    clone.clips = this.clips.map(c => c.showClone()); 
     return clone;
   }
   doubleClicked(mouse) {
@@ -1695,6 +1723,7 @@ class Polygon extends Formats {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
+            ctx.scale(this.scaleX,this.scaleY)
     ctx.beginPath();
     let edgeCurve = false;
     this.points.forEach((p) => {
@@ -1879,6 +1908,7 @@ class Polygon extends Formats {
     this.y += y
     if(this.clips.length > 0)this.clips.forEach(clip=>clip.moveClip(x,y))
   }
+
   formatSelected(mouse) {
     const dx = mouse.x - this.x;
     const dy = mouse.y - this.y;
@@ -2044,8 +2074,14 @@ class Polygon extends Formats {
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    clone.centerX = lastMouseX;
-    clone.centerY = lastMouseY;
+      clone.points = this.points.map(p => ({
+  points: { x: p.points.x, y: p.points.y },
+  edgeModes: p.edgeModes,
+  controls: p.controls.map(c => ({ x: c.x, y: c.y })),
+  cornerRadius: p.cornerRadius
+}));
+
+clone.clips = this.clips.map(c => c.showClone()); 
     return clone;
   }
   doubleClicked(mouse) {
@@ -2124,6 +2160,8 @@ class Line extends Formats {
     this.opacity = 100;
     this.isDoubleClicked = false;
     this.close = false;
+        this.clipped = "none";
+    this.clips = [];
   }
   addObject() {
     if (this.points.length > 0) {
@@ -2179,6 +2217,19 @@ class Line extends Formats {
         }
       }
       ctx.restore();
+      if(this.clips.length > 0 && this.clipped !== "editclip"){
+              ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.beginPath();
+      LineUtils.drawSmartShape(this.points, this.close);
+            ctx.clip()
+                  ctx.translate(-this.x, -this.y);
+                        this.clips.forEach((clip) => {
+        clip.addObject();
+      });
+      ctx.restore();
+                }
     }
   }
   colorType() {
@@ -2307,6 +2358,18 @@ class Line extends Formats {
       this.isDoubleClicked = this.isDoubleClicked ? false : true;
       return true;
     }
+  }
+  showClone(){
+        let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    clone.points = this.points.map(p => ({
+  points: { x: p.points.x, y: p.points.y },
+  edgeModes: p.edgeModes,
+  controls: p.controls.map(c => ({ x: c.x, y: c.y })),
+  cornerRadius: p.cornerRadius
+}));
+
+clone.clips = this.clips.map(c => c.showClone()); 
+return clone
   }
   formatSelected(mouse) {
     const dx = mouse.x - this.x;
@@ -2815,9 +2878,7 @@ class TextBox {
       }
     } else if (name === "textarea") {
       const value = e.target.value;
-      if (!isNaN(value)) {
         this.textArea = value;
-      }
     }
     if (this.shadow)
       this.input.style.textShadow = `${this.shadowX}px ${this.shadowY}px ${this.shadowBlur}px ${this.shadowColor}`;
@@ -2934,6 +2995,7 @@ class Images extends Formats {
     const centerY = this.y + this.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(this.angle);
+            ctx.scale(this.scaleX,this.scaleY)
     ctx.save();
     ctx.beginPath();
     ctx.globalAlpha = this.opacity / 100;
@@ -3005,6 +3067,16 @@ class Images extends Formats {
         this.y += mouse.y - lastMouseY;
       }
     }
+  }
+  showClone(){
+     const clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+       clone.originalFiles = [...this.originalFiles];
+       clone.iteratedFiles = this.iteratedFiles.map(img => {
+    const newImg = new Image();
+    newImg.src = img.src;
+    return newImg;
+  });
+  return clone;
   }
   formatProperties() {
     propertiesBar.innerHTML = `
@@ -3186,6 +3258,81 @@ class Images extends Formats {
     }
   }
 }
+class Group{
+  constructor(list){
+    this.list = list
+    this.isDoubleClicked = false
+    this.rotationAngle = 0
+  }
+  addObject(){
+    this.minX = Math.min(...this.list.map(l=>l.whereToSnap().x[0]))
+    this.maxX = Math.max(...this.list.map(l =>l.whereToSnap().x[2]))
+    this.minY = Math.min(...this.list.map(l=>l.whereToSnap().y[0]))
+    this.maxY = Math.max(...this.list.map(l=>l.whereToSnap().y[2]))
+    this.x = (this.minX + this.maxX) / 2;
+this.y = (this.minY + this.maxY) / 2; 
+ctx.save();
+ctx.translate(this.x, this.y);
+ctx.rotate(this.rotationAngle);
+
+ctx.lineWidth = 1;
+ctx.strokeStyle = "#0000ff";
+ctx.setLineDash([5, 3]);
+
+ctx.strokeRect(
+  this.minX - this.x,
+  this.minY - this.y,
+  this.maxX - this.minX,
+  this.maxY - this.minY
+);
+
+this.list.forEach(obj => {
+  const snap = obj.whereToSnap();
+  ctx.save();
+  ctx.translate(-this.x,-this.y);
+  obj.addObject();
+  ctx.restore();
+});
+
+ctx.restore();
+
+  }
+whatSelected(mouse) {
+  const dx = mouse.x - this.x;
+  const dy = mouse.y - this.y;
+  const angle = -this.rotationAngle;
+  const localX = dx * Math.cos(angle) - dy * Math.sin(angle);
+  const localY = dx * Math.sin(angle) + dy * Math.cos(angle);
+  if (
+    localX >= this.minX - this.x &&
+    localX <= this.maxX - this.x &&
+    localY >= this.minY - this.y &&
+    localY <= this.maxY - this.y
+  ) {
+    return true;
+    console.log("true")
+  }
+  return false;
+}
+
+  formatSelected(mouse){
+    if(this.isDoubleClicked){
+  this.rotationAngle =
+        Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
+    }else{
+    this.list.forEach(l => l.moveClip(mouse.x-lastMouseX,mouse.y-lastMouseY))
+
+    }
+  }
+  doubleClicked(mouse){
+        isRotatingObject = true;
+    this.isDoubleClicked = this.isDoubleClicked ? false : true;
+    return true;
+  }
+  formatProperties(){
+    console.log("yah")
+  }
+}
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -3194,6 +3341,27 @@ function blobToBase64(blob) {
     reader.readAsDataURL(blob);
   });
 }
+function cloneObject(object){
+  return object.map(obj => obj.showClone());
+}
+function undo() {
+  if (undoObject.length > 1) {
+    redoObject.push(undoObject.pop());
+    objects = cloneObject(undoObject[undoObject.length - 1]);
+    draw();
+
+  }
+}
+
+function redo() {
+  if (redoObject.length > 0) {
+    const redoState = redoObject.pop();
+    undoObject.push(redoState);
+    objects = cloneObject(redoState);
+    draw();
+  }
+}
+
 function rgbToHex(rgb) {
   const result = rgb.match(/\d+/g);
   if (!result) return rgb;
@@ -3259,34 +3427,94 @@ height.addEventListener("input", (e) => {
 });
 document.getElementById("renderPage").addEventListener("change", (e) => {
   renderPageResolution = e.target.value;
-  document.querySelector(".perRow").style.display = "block";
-  if (e.target.value === "a0") {
-    renderPageSize = measurementArr[9];
-  } else if (e.target.value === "a1") {
+  switch(renderPageResolution){
+    case "a0":
+          renderPageSize = measurementArr[9];
+          break
+    case "a1":
     renderPageSize = measurementArr[0];
-  } else if (e.target.value === "a2") {
+    break
+    case "a2":
     renderPageSize = measurementArr[1];
-  } else if (e.target.value === "a3") {
-    renderPageSize = measurementArr[2];
-  } else if (e.target.value === "a4") {
-    renderPageSize = measurementArr[3];
-  } else if (e.target.value === "a5") {
-    renderPageSize = measurementArr[4];
-  } else if (e.target.value === "legal") {
-    renderPageSize = measurementArr[10];
-  } else if (e.target.value === "auto") {
-    renderPageSize = "";
-    document.querySelector(".perRow").style.display = "none";
-  } else if (e.target.value === "letter") {
+    break
+    case "a3":
+          renderPageSize = measurementArr[2];
+          break
+    case "a4":
+   renderPageSize = measurementArr[3];
+   break
+    case "a5":
+   renderPageSize = measurementArr[4];
+   break
+   case "legal":
+        renderPageSize = measurementArr[10];
+        break
+    case "auto":
+      renderPageSize = ""
+
+      break
+    case "letter":
     renderPageSize = measurementArr[7];
+    break
+    case "custom":
+      renderPageSize = {width:renderWidth,height:renderHeight}
+      renderPageResolution = "custom"
+      break
   }
+  const rows = document.getElementById("noPerRow")
+  const columns = document.getElementById("noPerColumn")
+  if(renderPageSize !== ""){
+    rows.readOnly = false
+    columns.readOnly = false
+    const height = document.getElementById("renderHeight")
+    const width = document.getElementById("renderWidth")
+  width.value = renderPageSize.width
+  height.value = renderPageSize.height
+  if(renderPageResolution === "custom"){
+    height.readOnly = false
+    width.readOnly = false
+  }else{
+       height.readOnly = true
+    width.readOnly = true 
+  }
+  }else{
+       rows.readOnly = true
+    columns.readOnly = true
+    rows.value = 1
+    columns.value = 1 
+  }
+
+
 });
+
+function flip(value){
+  if(selectedObj){
+    if(value === "x"){
+      selectedObj.scaleX *= -1
+    }
+    else selectedObj.scaleY *= -1
+  }
+  draw()
+}
+document.querySelector(".generateButton").addEventListener("click",()=>{
+  document.querySelector(".generate").style.display = "flex"
+})
+function cancelGenerate(){
+    document.querySelector(".generate").style.display = "none"
+}
 document.getElementById("noPerRow").addEventListener("input", (e) => {
   renderPageRow = e.target.value;
 });
 document.getElementById("noPerColumn").addEventListener("input", (e) => {
   renderPageColumn = e.target.value;
 });
+document.getElementById("renderHeight").addEventListener("input",(e)=>{
+  renderPageSize.height= e.target.value
+})
+document.getElementById("renderWidth").addEventListener("input",(e)=>{
+  renderPageSize.width = e.target.value
+})
+
 let duplicateClicked = false;
 // document.getElementById("duplicate").addEventListener("click", () => {
 //   duplicateClicked = !duplicateClicked;
@@ -3389,19 +3617,21 @@ function applyOpacityToHex(hexColor, opacityPercent) {
 }
 
 function changeValues(x) {
+  let value = null
   if (whatsMeasured === "px") {
-    return x;
+    value = x;
   } else if (whatsMeasured === "pt") {
-    return x / 1.333;
+    value = x / 1.333;
   } else if (whatsMeasured === "in") {
-    return x / 96;
+    value = x / 96;
   } else if (whatsMeasured === "m") {
-    return x / 3780;
+    value = x / 3780;
   } else if (whatsMeasured === "cm") {
-    return x / 37.8;
+    value = x / 37.8;
   } else if (whatsMeasured === "mm") {
-    return x / 3.78;
+    value = x / 3.78;
   }
+  return value.toFixed(2)
 }
 function multipleSelection(){
   multipleSelect = !multipleSelect
@@ -3484,6 +3714,17 @@ function fitToPage() {
     }
   }
 }
+function updateZoom(){
+      canvass.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+}
+zoomin.addEventListener("click",()=>{
+  scale += 0.1 
+  updateZoom()
+})
+zoomout.addEventListener("click",()=>{
+    scale -= 0.1 
+  updateZoom()
+})
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");
 
@@ -3658,7 +3899,18 @@ function align(arg){
   })
   draw()
 }
-
+function group(){
+  if(multipleSelectArr.length > 0){
+    const newGroup = new Group(multipleSelectArr)
+    multipleSelectArr.forEach(arr =>{
+      const index = objects.indexOf(arr)
+      objects.splice(index,1)
+    })
+    multipleSelectArr = []
+    multipleSelect = false
+    objects.push(newGroup)
+  }
+}
 
 function getMousePos(canvas, evt) {
   const rect = canvas.getBoundingClientRect();
@@ -3678,7 +3930,6 @@ function textMousePos(evt) {
     y: evt.y - rect.top,
   };
 }
-
 async function generateCard() {
   selectedObj = null;
   selectedText = null;
@@ -3732,7 +3983,9 @@ async function generateCard() {
   iterationLength = Math.max(iterationLength, maxImageIterLength);
 
   let boxCountInPage = 0;
+      let scaleFactor = 2
   for (let i = 0; i < iterationLength; i++) {
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     images.forEach((img) => img.drawIteratedImage(i));
     objects.forEach((obj) => obj.addObject());
@@ -3740,9 +3993,9 @@ async function generateCard() {
     const cty = croppedCanvas.getContext("2d");
     const rect = canvas.getBoundingClientRect();
 
-    croppedCanvas.width = canvaDefault.width;
-    croppedCanvas.height = canvaDefault.height;
-
+    croppedCanvas.width = canvaDefault.width * scaleFactor;
+    croppedCanvas.height = canvaDefault.height * scaleFactor;
+    cty.scale(scaleFactor,scaleFactor)
     cty.drawImage(
       canvas,
       canvaDefault.x - rect.x,
@@ -3811,7 +4064,13 @@ async function generateCard() {
       boxCountInPage++;
     }
   }
+  document.querySelector(".generate").style.display = "none"
 }
+
+
+
+
+
 
 canvas.addEventListener("mousedown", (event) => {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
@@ -3860,6 +4119,8 @@ canvas.addEventListener("mousedown", (event) => {
   } else if (cloneObj) {
     let cloned = cloneObj.showClone();
     objects.push(cloned);
+          undoObject.push(cloneObject(objects));
+  redoObject.length = 0
   } else if(clippedObject !== null && previousClip !== null){
               editclip.style.display = "block"
     for(let i = clippedObject.clips.length -1; i >=0;i++){
@@ -3907,6 +4168,9 @@ multipleSelectArr.push(obj)
   draw();
 });
 canvass.addEventListener("mousedown", (event) => {
+      isPanning = true;
+    startX = event.clientX - panX;
+    startY = event.clientY - panY;
   const textPos = textMousePos(event);
   if (cloneText) {
     const cloned = cloneText.showClone();
@@ -3963,14 +4227,22 @@ canvass.addEventListener("dblclick", (event) => {
   }
 });
 canvas.addEventListener("mouseup", () => {
+  if(isDraggingObject || isRotatingObject){
+          undoObject.push(cloneObject(objects));
+  redoObject.length = 0
+  }
   isDraggingObject = false;
+  isDraggingText = false
 });
 canvass.addEventListener("mouseup", () => {
   isDraggingText = false;
   isDraggingObject = false;
+  isPanning = false
 });
 
 canvas.addEventListener("mousemove", (event) => {
+
+
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
   if (cloneObj) {
     cloneObj.formatSelected(pos);
@@ -3983,6 +4255,12 @@ canvas.addEventListener("mousemove", (event) => {
   draw();
 });
 canvass.addEventListener("mousemove", (event) => {
+        if (isPanning && !isDraggingText && !isDraggingObject&& !isRotatingObject
+        ){
+    panX = event.clientX - startX;
+    panY = event.clientY - startY;
+    updateZoom()
+      }
   const textPos = textMousePos({ x: event.clientX, y: event.clientY });
 
   if (cloneText) {
@@ -4003,6 +4281,7 @@ canvass.addEventListener("mousemove", (event) => {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   // let snap = { x: null, y: null };
   // const objectsSnapped = [...objects, ...textBoxes];
   // let selection = null;
@@ -4075,9 +4354,11 @@ function draw() {
   if (cloneObj) {
     cloneObj.addObject();
   }
+  if(objects.length > 0){
+
   objects.forEach((obj) => {
     obj.addObject();
-  });
+  });}
 }
 
 draw();

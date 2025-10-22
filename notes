@@ -1,102 +1,45 @@
-    if (this.isDashed) {
-      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    } else if (e.target.name === "angle") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (name === "x") {
-      const value = backValues(parseFloat(e.target.value)) + this.radiusX;
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (name === "y") {
-      const value = backValues(parseFloat(e.target.value)) + this.radiusY;
-      if (value != NaN) {
-        this[name] = value;
-      }
-    } else if (e.target.type === "number") {
-      const value = parseFloat(e.target.value);
-      if (value != NaN) {
-        this[name] = backValues(value);
-      }
-    } else if (name === "outlineType") {
-      const value = e.target.value;
-      if (value === "dashed") {
-        this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-        this.isDashed = true;
-      } else {
-        this.outlineType = [];
-        this.isDashed = false;
-      }
-      this.formatProperties();
-    } else if (name === "outline") {
-      const value = e.target.value;
-      if (value === "true") {
-        this[name] = true;
-      } else {
-        this[name] = false;
-      }
-      this.formatProperties();
+function canvasSize() {
+  const canvassRect = canvass.getBoundingClientRect();
+  const screenLimit = {
+    width: canvassRect.width - 50,
+    height: canvassRect.height - 50,
+  };
+
+  // Update display fields
+  width.value = changeValues(measurement.width);
+  height.value = changeValues(measurement.height);
+
+  let newWidth, newHeight;
+
+  const isPortrait = canvasOrientation === "potrait";
+
+  if (isPortrait) {
+    if (measurement.height > measurement.width) {
+      newWidth = (measurement.width / measurement.height) * screenLimit.height;
+      newHeight = screenLimit.height;
     } else {
-      const value = e.target.value;
-      if (value != NaN) {
-        this[name] = value;
-      }
+      newWidth = screenLimit.width;
+      newHeight = (measurement.height / measurement.width) * screenLimit.width;
     }
-    draw();
-
-
-    <button class="clip">Clip</button>
-
-        if (this.clipped === "none") {
-      document.querySelector(".clip").addEventListener("click", () => {
-        clipped = this;
-        canvas.style.cursor = "pointer";
-      });
+  } else {
+    if (measurement.height > measurement.width) {
+      newHeight = (measurement.width / measurement.height) * screenLimit.width;
+      newWidth = screenLimit.width;
+    } else {
+      newWidth = (measurement.height / measurement.width) * screenLimit.height;
+      newHeight = screenLimit.height;
     }
-
-
-
-      async drawIteratedImage(i) {
-    const file = this.iteratedFiles[i % this.iteratedFiles.length];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    return new Promise((resolve, reject) => {
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          this.image = img; // update the image object’s image
-          this.addObject(); // draw it using the existing method
-          resolve();
-        };
-        img.onerror = reject;
-        img.src = reader.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
   }
-.addEventListener("click",() =>{
- console.log("life")
 
-})
+  // Only scale down if needed
+  if (newWidth > measurement.width || newHeight > measurement.height) {
+    newWidth = measurement.width;
+    newHeight = measurement.height;
+  }
 
+  canvassDiv.style.width = `${newWidth}px`;
+  canvassDiv.style.height = `${newHeight}px`;
 
-    if (this.clips.length > 0) {
-      document.querySelector(".editclip").addEventListener("click", () => {
-        this.clipped = this.clipped === "editclip" ? "clipper" : "editclip";
-        if (this.clipped === "editclip") {
-          this.clips.forEach((clip) => objects.push(clip));
-          this.color = this.color.map((c) => c + "80");
-        } else {
-          this.clips.forEach((clip) => {
-            let index = objects.indexOf(clip);
-            objects.splice(index, 1);
-            this.color = this.color.map((c) => c.slice(0, -2));
-          });
-        }
-      });
-    }
+  fitToPage();  // Optional: only needed if further fitting is still desired
+  draw();       // Your drawing logic
+}
