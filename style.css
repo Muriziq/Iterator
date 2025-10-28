@@ -131,16 +131,19 @@ header select{
 }
 
 main{
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 50px 1fr 300px;
+  max-width: 100vw;
   height: 90vh;
   overflow: hidden;
 }
+
 .leftSidebar{
   background-color: var(--side-color);
-  padding: 2rem 0.5rem;
+  padding: 2rem 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 1rem;
 }
 .leftSidebar > button,.zoomin,.zoomout{
@@ -162,17 +165,16 @@ main{
   background-color: var(--side-color);
 }
 #propertiesTab{
-  width: 400px;
   background-color: var(--side-color);
   height: 100%;
   overflow-y: auto;
   z-index: 3;
 }
-#propertiesTab::-webkit-scrollbar{
+#propertiesTab::-webkit-scrollbar,.canva::-webkit-scrollbar{
   width: 5px;
 
 }
-#propertiesTab::-webkit-scrollbar-thumb {
+#propertiesTab::-webkit-scrollbar-thumb,.canva::-webkit-scrollbar-thumb {
   background-color: var(--h3-fill);
   border-radius: 10px;
 }
@@ -180,6 +182,7 @@ main > section{
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 .upsec{
   top: 30px;
@@ -387,11 +390,12 @@ main > section{
   width: 100%;
   height: 100%;
   position: relative;
-  transform-origin: 0 0;
   transition: all 0.3s;
+  transform-origin: 0 0;
   z-index: 1;
-
 }
+
+
 .canvas > div{
   position: absolute;
   left: 50%;
@@ -544,6 +548,7 @@ main > section{
 }
 .dropdown::-webkit-scrollbar,.text::-webkit-scrollbar{
   width: 4px;
+
 }
 .dropdown::-webkit-scrollbar-thumb,.text::-webkit-scrollbar-thumb{
     background-color: var(--h3-fill);

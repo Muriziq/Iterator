@@ -14,7 +14,6 @@ const editclip = document.querySelector(".editclip")
 const width = document.getElementById("width");
 const height = document.getElementById("height");
 let whatsMeasured = "px";
-let canvasOrientation = "potrait";
 let measurement = { width: 817, height: 1055 };
 let renderPageResolution = "auto";
 let cloneObj = null;
@@ -47,6 +46,7 @@ let isDraggingObject = false;
 let isRotatingObject = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
+let scale = 1
 let selectedObj = null;
 let selectedText = null;
 let textLastMouseX = 0;
@@ -54,11 +54,10 @@ let textLastMouseY = 0;
 let isDraggingText = false;
 let clipped = null;
 let allFonts = [];
-  let scale = 1;
-  let panX = 0;
-  let panY = 0;
   let isPanning = false;
   let startX, startY;
+  let panX = 0
+  let panY = 0
   const zoomSelect = document.getElementById("zoom")
 const zoomin = document.querySelector(".zoomin")
 const zoomout = document.querySelector(".zoomout")
@@ -3380,7 +3379,11 @@ function rgbToHex(rgb) {
 
 document.querySelector(".saveAsPdf").addEventListener("click", saveAsPDF);
 function changeOrientation(value) {
-  canvasOrientation = value;
+  if(value === "potrait" && measurement.width > measurement.height){
+          [measurement.width,measurement.height] = [measurement.height,measurement.width]
+  }else if(value === "landscape" && measurement.height > measurement.width){
+    [measurement.width,measurement.height] = [measurement.height,measurement.width]
+  }
   canvasSize();
 }
 
@@ -3571,35 +3574,25 @@ let duplicateClicked = false;
 // });
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
-  const canvassRect = canvass.getBoundingClientRect();
-  width.value = changeValues(measurement.width);
+  const canvassRect = canvas.getBoundingClientRect();
+  canvass.style.backgroundColor = "blue"
+    width.value = changeValues(measurement.width);
   height.value = changeValues(measurement.height);
-  const rect = {
-    width: canvassRect.width - 50,
-    height: canvassRect.height - 50,
-  };
-  if (canvasOrientation === "potrait") {
-    if (measurement.height > measurement.width) {
-      const newWidth = (measurement.width / measurement.height) * rect.height;
-      canvassDiv.style.width = newWidth + "px";
-      canvassDiv.style.height = rect.height + "px";
-    } else {
-      const newHeight = (measurement.height / measurement.width) * rect.width;
-      canvassDiv.style.width = rect.width + "px";
-      canvassDiv.style.height = newHeight + "px";
-    }
-  } else {
-    if (measurement.height > measurement.width) {
-      const newHeight = (measurement.width / measurement.height) * rect.width;
-      canvassDiv.style.width = rect.width + "px";
-      canvassDiv.style.height = newHeight + "px";
-    } else {
-      const newWidth = (measurement.height / measurement.width) * rect.height;
-      canvassDiv.style.width = newWidth + "px";
-      canvassDiv.style.height = rect.height + "px";
-    }
+  canvassDiv.style.width = measurement.width + "px"
+  canvassDiv.style.height = measurement.height + "px"
+  let scaleRatio = Math.max(measurement.width /(canvassRect.width - 30), measurement.height /(canvassRect.height - 30))
+  if(scaleRatio > 1){
+    let newWidth = canvassRect.width * scaleRatio
+    let newHeight = canvassRect.height * scaleRatio
+    canvas.style.width = canvass.style.width = `${newWidth}px`
+    canvas.style.height = canvass.style.height = `${newHeight}px`
+    canvas.width = newWidth
+    canvas.height = newHeight
+  scale = 1 /scaleRatio
+  updateZoom()
+console.log(scaleRatio)
   }
-  fitToPage();
+
   draw();
 }
 function applyOpacityToHex(hexColor, opacityPercent) {
@@ -3617,21 +3610,19 @@ function applyOpacityToHex(hexColor, opacityPercent) {
 }
 
 function changeValues(x) {
-  let value = null
   if (whatsMeasured === "px") {
-    value = x;
+    return x;
   } else if (whatsMeasured === "pt") {
-    value = x / 1.333;
+    return x / 1.333;
   } else if (whatsMeasured === "in") {
-    value = x / 96;
+    return x / 96;
   } else if (whatsMeasured === "m") {
-    value = x / 3780;
+    return x / 3780;
   } else if (whatsMeasured === "cm") {
-    value = x / 37.8;
+    return x / 37.8;
   } else if (whatsMeasured === "mm") {
-    value = x / 3.78;
+    return x / 3.78;
   }
-  return value.toFixed(2)
 }
 function multipleSelection(){
   multipleSelect = !multipleSelect
@@ -3696,22 +3687,6 @@ function radToDeg(val, type) {
     return (val * Math.PI) / 180;
   } else {
     return (val * 180) / Math.PI;
-  }
-}
-function fitToPage() {
-  const rect = canvassDiv.getBoundingClientRect();
-  const container = canvass.getBoundingClientRect();
-
-  const widthDifference = rect.width - container.width + 50;
-  const heightDifference = rect.height - container.height + 50;
-  if (heightDifference > 0 || widthDifference > 0) {
-    if (heightDifference > widthDifference) {
-      canvassDiv.style.width = rect.width - heightDifference - 25 + "px";
-      canvassDiv.style.height = rect.height - heightDifference - 25 + "px";
-    } else {
-      canvassDiv.style.width = rect.width - widthDifference - 25 + "px";
-      canvassDiv.style.height = rect.height - widthDifference - 25 + "px";
-    }
   }
 }
 function updateZoom(){
@@ -4168,9 +4143,7 @@ multipleSelectArr.push(obj)
   draw();
 });
 canvass.addEventListener("mousedown", (event) => {
-      isPanning = true;
-    startX = event.clientX - panX;
-    startY = event.clientY - panY;
+
   const textPos = textMousePos(event);
   if (cloneText) {
     const cloned = cloneText.showClone();
@@ -4203,6 +4176,12 @@ canvass.addEventListener("mousedown", (event) => {
   textLastMouseX = textPos.x;
   textLastMouseY = textPos.y;
   draw();
+  if(!isDraggingObject && !isDraggingText){
+        isPanning = true;
+    startX = event.clientX - panX;
+    startY = event.clientY - panY;
+  }
+
 });
 
 canvas.addEventListener("dblclick", (event) => {
@@ -4226,6 +4205,7 @@ canvass.addEventListener("dblclick", (event) => {
     }
   }
 });
+window.addEventListener("mouseup",()=>isPanning = false)
 canvas.addEventListener("mouseup", () => {
   if(isDraggingObject || isRotatingObject){
           undoObject.push(cloneObject(objects));
@@ -4242,7 +4222,6 @@ canvass.addEventListener("mouseup", () => {
 
 canvas.addEventListener("mousemove", (event) => {
 
-
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
   if (cloneObj) {
     cloneObj.formatSelected(pos);
@@ -4257,8 +4236,14 @@ canvas.addEventListener("mousemove", (event) => {
 canvass.addEventListener("mousemove", (event) => {
         if (isPanning && !isDraggingText && !isDraggingObject&& !isRotatingObject
         ){
-    panX = event.clientX - startX;
-    panY = event.clientY - startY;
+              panX = event.clientX - startX
+    panY = event.clientY - startY
+          panX = panX > 0 ? 0 : panX
+          panY = panY > 0 ? 0 : panY
+          const canvaRect = document.querySelector(".canva").getBoundingClientRect()
+          const canvassRect = canvass.getBoundingClientRect()
+          panX = panX < canvaRect.width - canvassRect.width ? canvaRect.width - canvassRect.width : panX
+          panY = panY < canvaRect.height - canvassRect.height? canvaRect.height - canvassRect.height: panY
     updateZoom()
       }
   const textPos = textMousePos({ x: event.clientX, y: event.clientY });

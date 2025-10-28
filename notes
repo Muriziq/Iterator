@@ -1,45 +1,48 @@
 function canvasSize() {
   const canvassRect = canvass.getBoundingClientRect();
-  const screenLimit = {
+  width.value = changeValues(measurement.width);
+  height.value = changeValues(measurement.height);
+  const rect = {
     width: canvassRect.width - 50,
     height: canvassRect.height - 50,
   };
-
-  // Update display fields
-  width.value = changeValues(measurement.width);
-  height.value = changeValues(measurement.height);
-
-  let newWidth, newHeight;
-
-  const isPortrait = canvasOrientation === "potrait";
-
-  if (isPortrait) {
+  if (canvasOrientation === "potrait") {
     if (measurement.height > measurement.width) {
-      newWidth = (measurement.width / measurement.height) * screenLimit.height;
-      newHeight = screenLimit.height;
+      const newWidth = (measurement.width / measurement.height) * rect.height;
+      canvassDiv.style.width = newWidth + "px";
+      canvassDiv.style.height = rect.height + "px";
     } else {
-      newWidth = screenLimit.width;
-      newHeight = (measurement.height / measurement.width) * screenLimit.width;
+      const newHeight = (measurement.height / measurement.width) * rect.width;
+      canvassDiv.style.width = rect.width + "px";
+      canvassDiv.style.height = newHeight + "px";
     }
   } else {
     if (measurement.height > measurement.width) {
-      newHeight = (measurement.width / measurement.height) * screenLimit.width;
-      newWidth = screenLimit.width;
+      const newHeight = (measurement.width / measurement.height) * rect.width;
+      canvassDiv.style.width = rect.width + "px";
+      canvassDiv.style.height = newHeight + "px";
     } else {
-      newWidth = (measurement.height / measurement.width) * screenLimit.height;
-      newHeight = screenLimit.height;
+      const newWidth = (measurement.height / measurement.width) * rect.height;
+      canvassDiv.style.width = newWidth + "px";
+      canvassDiv.style.height = rect.height + "px";
     }
   }
+  fitToPage();
+  draw();
+}
+function fitToPage() {
+  const rect = canvassDiv.getBoundingClientRect();
+  const container = canvass.getBoundingClientRect();
 
-  // Only scale down if needed
-  if (newWidth > measurement.width || newHeight > measurement.height) {
-    newWidth = measurement.width;
-    newHeight = measurement.height;
+  const widthDifference = rect.width - container.width + 50;
+  const heightDifference = rect.height - container.height + 50;
+  if (heightDifference > 0 || widthDifference > 0) {
+    if (heightDifference > widthDifference) {
+      canvassDiv.style.width = rect.width - heightDifference - 25 + "px";
+      canvassDiv.style.height = rect.height - heightDifference - 25 + "px";
+    } else {
+      canvassDiv.style.width = rect.width - widthDifference - 25 + "px";
+      canvassDiv.style.height = rect.height - widthDifference - 25 + "px";
+    }
   }
-
-  canvassDiv.style.width = `${newWidth}px`;
-  canvassDiv.style.height = `${newHeight}px`;
-
-  fitToPage();  // Optional: only needed if further fitting is still desired
-  draw();       // Your drawing logic
 }
