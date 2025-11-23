@@ -30,6 +30,9 @@ let renderWidth;
 let renderHeight;
 let noPerRow = 1
 let noPerColumn = 1
+let isDrawing = null
+let drawingCoordinate = {start:{x:0,y:0},end:{x:0,y:0}}
+let drawingStart = false
 const measurementArr = [
   { width: 2244, height: 3182 },
   { width: 1588, height: 2244 },
@@ -58,9 +61,6 @@ let allFonts = [];
   let startX, startY;
   let panX = 0
   let panY = 0
-  const zoomSelect = document.getElementById("zoom")
-const zoomin = document.querySelector(".zoomin")
-const zoomout = document.querySelector(".zoomout")
 fetch(
   "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8"
 )
@@ -679,12 +679,12 @@ class Formats {
   }
 }
 class Rectangle extends Formats {
-  constructor() {
+  constructor(x,y,width,height) {
     super();
-    this.x = 100;
-    this.y = 100;
-    this.width = 150;
-    this.height = 100;
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
     this.color = ["#ff0000", "#0000ff"];
     this.outline = false;
     this.outlineColor = "#00ff00";
@@ -1180,6 +1180,59 @@ return clone
     });
     document.querySelector(".shapetool").addEventListener("click", () => {
       this.roundedOrbeveled = "shaped";
+          this.points = [
+      {
+        points: { x: -this.width / 2, y: -this.height / 2 },
+        edgeModes: null,
+        controls: [
+          { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
+          { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
+        ],
+        cornerRadius: 0,
+      },
+      {
+        points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
+        edgeModes: null,
+        controls: [
+          {
+            x: -this.width / 2 + this.width,
+            y: -this.height / 2 + this.height * 0.25,
+          },
+          {
+            x: -this.width / 2 + this.width,
+            y: -this.height / 2 + this.height * 0.75,
+          },
+        ],
+        cornerRadius: 0,
+      },
+      {
+        points: {
+          x: -this.width / 2 + this.width,
+          y: -this.height / 2 + this.height,
+        },
+        edgeModes: null,
+        controls: [
+          {
+            x: -this.width / 2 + this.width * 0.75,
+            y: -this.height / 2 + this.height,
+          },
+          {
+            x: -this.width / 2 + this.width * 0.25,
+            y: -this.height / 2 + this.height,
+          },
+        ],
+        cornerRadius: 0,
+      },
+      {
+        points: { x: -this.width / 2, y: -this.height / 2 + this.height },
+        edgeModes: null,
+        controls: [
+          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
+          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
+        ],
+        cornerRadius: 0,
+      },
+    ];
       this.cornerRadius = 0;
       this.formatProperties();
     });
@@ -1318,8 +1371,18 @@ return clone
 
   changeLocation(value, type) {
     if (type === "x") {
+            this.clips.forEach((clip)=>{
+              const lastLocation = clip.whereToSnap().pos.x -this.x + value
+        clip.changeLocation(lastLocation,"x")
+      })
       this.x = value;
+
     } else {
+                  this.clips.forEach((clip)=>{
+                    const lastLocation = clip.whereToSnap().pos.y -this.y  + value
+        clip.changeLocation(lastLocation,"y")
+      })
+
       this.y = value;
     }
   }
@@ -1346,15 +1409,15 @@ return clone
 }
 
 class Ellipse extends Formats {
-  constructor() {
+  constructor(x,y,radiusX,radiusY) {
     super();
-    this.x = 100;
-    this.y = 100;
-    this.radiusX = 50;
-    this.radiusY = 50;
+    this.x = x;
+    this.y = y;
+    this.radiusX = radiusX;
+    this.radiusY = radiusY;
     this.angle = 0;
     this.color = ["#ff0000", "#00ff00"];
-    this.outline = true;
+    this.outline = false;
     this.outlineColor = "#00ff00";
     this.outlineThickness = 10;
     this.lineDashWidth = 5;
@@ -1367,7 +1430,7 @@ class Ellipse extends Formats {
     this.arcStart = 0;
     this.arcEnd = 2 * Math.PI;
     this.colorFill = "uniform";
-    this.mode = "pie";
+    this.mode = "fill";
     this.colorStop = [];
     this.colorDeg = 0;
     this.clipped = "none"
@@ -1661,13 +1724,13 @@ class Ellipse extends Formats {
   }
 }
 class Polygon extends Formats {
-  constructor() {
+  constructor(x,y,radiusX,radiusY) {
     super();
     this.sides = 6;
-    this.x = 100;
-    this.y = 100;
-    this.radiusX = 50;
-    this.radiusY = 50;
+    this.x = x;
+    this.y = y;
+    this.radiusX = radiusX;
+    this.radiusY = radiusY;
     this.angle = 0;
     this.color = ["#FFCC00", "#ff0000"];
     this.outline = false;
@@ -1684,7 +1747,7 @@ class Polygon extends Formats {
     this.selectedLineIndex = null;
     this.colorStop = [];
     this.colorDeg = 0;
-    this.colorFill = "linear";
+    this.colorFill = "uniform";
     this.opacity = 100;
     this.clipped = "none"
     this.clips = []
@@ -2556,24 +2619,7 @@ class TextBox {
   addObject() {
     this.input.value = this.text;
     this.input.readOnly = true;
-    this.input.style.resize = "none";
     this.input.className = "textarea";
-    this.input.style.position = "absolute";
-    this.input.style.left = "100px";
-    this.input.style.top = "100px";
-    this.input.style.width = "150px";
-    this.input.style.height = "30px";
-    this.input.style.color = "#03624c";
-    this.input.style.fontSize = "15px";
-    this.input.style.paddingTop = "10px";
-    this.input.style.paddingBottom = "10px";
-    this.input.style.paddingLeft = "10px";
-    this.input.style.paddingRight = "10px";
-    this.input.style.outline = "none";
-    this.input.style.backgroundColor = "transparent";
-    this.input.style.border = "none";
-    this.input.style.textAlign = "left";
-    this.input.style.fontFamily = "san-serif";
     this.input.addEventListener("input", (e) => {
       this.text = e.target.value;
     });
@@ -2602,95 +2648,96 @@ class TextBox {
       mouse.y < rect.y + rect.height
     ) {
       this.selectedArea = "Selected";
-      this.input.style.border = "2px dotted #0000ff";
-      this.input.style.resize = "both";
+
     } else {
       this.selectedArea = null;
+
+    }
+    if(this.selectedArea!== null){
+            this.input.style.border = "2px dotted #0000ff";
+      this.input.style.resize = "both";
+    }else{
       this.input.style.border = "none";
     }
+    console.log(this.selectedArea)
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
     const rect = this.input.getBoundingClientRect();
     const canvassRect = canvass.getBoundingClientRect();
     const textPos = textMousePos(mouse);
+    const style = window.getComputedStyle(this.input)
 
     if (this.isDoubleClicked) {
       this.input.readOnly = false;
     } else {
       this.input.readOnly = true;
       if (this.selectedArea === "Left") {
-        const newWidth = rect.width + rect.x - mouse.x;
-        if (newWidth > 0 && rect.x > canvassRect.x) {
+        const newWidth = parseFloat(style.width) + ( parseFloat(style.left) - textPos.x);
+        if (newWidth > 0) {
           this.input.style.left = textPos.x + "px";
           this.input.style.width = newWidth + "px";
+          
         }
       } else if (this.selectedArea === "Right") {
-        if (canvassRect.right > rect.right) {
-          this.input.style.width = mouse.x - rect.x + "px";
+        if (parseFloat(style.width) > 0) {
+          this.input.style.width = `${textPos.x - parseFloat(style.left)}px`;
         }
       } else if (this.selectedArea === "Top") {
-        const newHeight = rect.height + rect.y - mouse.y;
-        if (newHeight > 0 && rect.top > canvassRect.top) {
+        const newHeight = parseFloat(style.height) + parseFloat(style.top) - textPos.y;
+        if (newHeight > 0 ) {
           this.input.style.top = textPos.y + "px";
           this.input.style.height = newHeight + "px";
         }
       } else if (this.selectedArea === "Bottom") {
-        if (rect.bottom < canvassRect.bottom) {
-          this.input.style.height = mouse.y - rect.y + "px";
+        if (parseFloat(style.height) > 0) {
+          this.input.style.height = textPos.y - parseFloat(style.top) + "px";
         }
       } else if (this.selectedArea === "TopLeft") {
-        const newHeight = rect.height + rect.y - mouse.y;
-        if (newHeight > 0 && rect.top > canvassRect.top) {
+        const newHeight = parseFloat(style.height) + parseFloat(style.top) - textPos.y;
+        if (newHeight > 0 ) {
           this.input.style.top = textPos.y + "px";
           this.input.style.height = newHeight + "px";
         }
-        const newWidth = rect.width + rect.x - mouse.x;
-        if (newWidth > 0 && rect.x > canvassRect.x) {
+                const newWidth = parseFloat(style.width) + ( parseFloat(style.left) - textPos.x);
+        if (newWidth > 0) {
           this.input.style.left = textPos.x + "px";
           this.input.style.width = newWidth + "px";
+          
         }
       } else if (this.selectedArea === "TopRight") {
-        const newHeight = rect.height + rect.y - mouse.y;
-        if (newHeight > 0 && rect.top > canvassRect.top) {
+        const newHeight = parseFloat(style.height) + parseFloat(style.top) - textPos.y;
+        if (newHeight > 0 ) {
           this.input.style.top = textPos.y + "px";
           this.input.style.height = newHeight + "px";
         }
-        if (canvassRect.right > rect.right) {
-          this.input.style.width = mouse.x - rect.x + "px";
+                if (parseFloat(style.width) > 0) {
+          this.input.style.width = `${textPos.x - parseFloat(style.left)}px`;
         }
       } else if (this.selectedArea === "BottomLeft") {
-        if (rect.bottom < canvassRect.bottom) {
-          this.input.style.height = mouse.y - rect.y + "px";
+                if (parseFloat(style.height) > 0) {
+          this.input.style.height = textPos.y - parseFloat(style.top) + "px";
         }
-        const newWidth = rect.width + rect.x - mouse.x;
-        if (newWidth > 0 && rect.x > canvassRect.x) {
+        const newWidth = parseFloat(style.width) + ( parseFloat(style.left) - textPos.x);
+        if (newWidth > 0) {
           this.input.style.left = textPos.x + "px";
           this.input.style.width = newWidth + "px";
+          
         }
       } else if (this.selectedArea === "BottomRight") {
-        if (rect.bottom < canvassRect.bottom) {
-          this.input.style.height = mouse.y - rect.y + "px";
+                if (parseFloat(style.height) > 0) {
+          this.input.style.height = textPos.y - parseFloat(style.top) + "px";
         }
-        if (canvassRect.right > rect.right) {
-          this.input.style.width = mouse.x - rect.x + "px";
+        if (parseFloat(style.width) > 0) {
+          this.input.style.width = `${textPos.x - parseFloat(style.left)}px`;
         }
       } else if (this.selectedArea === "Selected") {
-        if (textPos.x < rect.width / 2) {
-          textPos.x = rect.width / 2;
-        } else if (textPos.x > canvassRect.width - rect.width / 2) {
-          textPos.x = canvassRect.width - rect.width / 2;
-        }
-        if (textPos.y < rect.height / 2) {
-          textPos.y = rect.height / 2;
-        } else if (textPos.y > canvassRect.height - rect.height / 2) {
-          textPos.y = canvassRect.height - rect.height / 2;
-        }
         this.input.style.left = textPos.x - rect.width / 2 + "px";
         this.input.style.top = textPos.y - rect.height / 2 + "px";
       }
     }
   }
+
 
   formatProperties() {
     const styles = window.getComputedStyle(this.input);
@@ -2956,16 +3003,9 @@ class TextBox {
     const rect = this.input.getBoundingClientRect();
     const canvasRect = canvas.getBoundingClientRect();
     if (type === "x") {
-      const newValue =
-        (value + canvasRect.left) / (canvas.width / canvasRect.width);
-      this.input.style.left =
-        newValue - canvass.getBoundingClientRect().left + "px";
+      this.input.style.left = value + "px"
     } else {
-      const newValue =
-        (value + canvasRect.top) / (canvas.height / canvasRect.height);
-
-      this.input.style.top =
-        newValue - canvass.getBoundingClientRect().top + "px";
+      this.input.style.top = value + "px"
     }
   }
 }
@@ -3489,7 +3529,36 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
 
 
 });
-
+document.getElementById("zoom").addEventListener("click",()=>{
+  propertiesBar.innerHTML = `
+  <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
+  <button class="zoomin"><img src="images/Group 46.svg"></button>
+  <button class="zoomout"><img src="images/Group 47.svg"></button>
+  </div>
+  <button class="imageb" id="toPage" style="margin-left:1rem;">To Page</button>
+  `
+  document.getElementById("toPage").addEventListener("click",()=>{
+  scale = 1 /scaleRatio
+    panX = 0
+    panY = 0
+      updateZoom()
+  })
+  let interval
+  document.querySelector(".zoomin").addEventListener("mousedown",()=>{
+    interval = setInterval(()=>{
+    scale += 0.01
+     updateZoom()      
+    },100)
+  })
+  document.querySelector(".zoomin").addEventListener("mouseup",()=>clearInterval(interval))
+  document.querySelector(".zoomout").addEventListener("mousedown",()=>{
+    interval = setInterval(()=>{
+    scale -= 0.01
+     updateZoom()      
+    },100)
+  })
+  document.querySelector(".zoomout").addEventListener("mouseup",()=>clearInterval(interval))
+})
 function flip(value){
   if(selectedObj){
     if(value === "x"){
@@ -3519,24 +3588,26 @@ document.getElementById("renderWidth").addEventListener("input",(e)=>{
 })
 
 let duplicateClicked = false;
-// document.getElementById("duplicate").addEventListener("click", () => {
-//   duplicateClicked = !duplicateClicked;
-//   if (duplicateClicked) {
-//     if (selectedObj) {
-//       cloneObj = selectedObj.showClone();
-//     } else if (selectedText) {
-//       cloneText = selectedText.showClone();
-//     } else {
-//       alert("No Selected Object");
-//     }
-//   } else {
-//     if (cloneText) {
-//       cloneText.input.remove();
-//     }
-//     cloneObj = null;
-//     cloneText = null;
-//   }
-// });
+document.getElementById("duplicate").addEventListener("click", () => {
+  duplicateClicked = !duplicateClicked;
+  if (duplicateClicked) {
+    if (selectedObj) {
+      cloneObj = selectedObj.showClone();
+      cloneObj.changeLocation(lastMouseX,"x")
+      cloneObj.changeLocation(lastMouseY,"y")
+    } else if (selectedText) {
+      cloneText = selectedText.showClone();
+    } else {
+      notify("Please Select An Object")
+    }
+  } else {
+    if (cloneText) {
+      cloneText.input.remove();
+    }
+    cloneObj = null;
+    cloneText = null;
+  }
+});
 // document.getElementById("pageTop").addEventListener("click", () => {
 //   if (selectedObj) {
 //     let index = objects.indexOf(selectedObj);
@@ -3557,30 +3628,30 @@ let duplicateClicked = false;
 //     }
 //   }
 // });
-// document.getElementById("deleter").addEventListener("click", () => {
-//   if (selectedObj) {
-//     let index = objects.indexOf(selectedObj);
-//     objects.splice(index, 1);
-//     selectedObj = null;
-//     propertiesBar.innerHTML = "";
-//     draw();
-//   } else if (selectedText) {
-//     let index = objects.indexOf(selectedText);
-//     selectedText.input.remove();
-//     textBoxes.splice(index, 1);
-//     selectedText = null;
-//     propertiesBar.innerHTML = "";
-//   }
-// });
+document.getElementById("delete").addEventListener("click", () => {
+  if (selectedObj) {
+    let index = objects.indexOf(selectedObj);
+    objects.splice(index, 1);
+    selectedObj = null;
+    propertiesBar.innerHTML = "";
+    draw();
+  } else if (selectedText) {
+    let index = objects.indexOf(selectedText);
+    selectedText.input.remove();
+    textBoxes.splice(index, 1);
+    selectedText = null;
+    propertiesBar.innerHTML = "";
+  }
+});
+let scaleRatio
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
   const canvassRect = canvas.getBoundingClientRect();
-  canvass.style.backgroundColor = "blue"
     width.value = changeValues(measurement.width);
   height.value = changeValues(measurement.height);
   canvassDiv.style.width = measurement.width + "px"
   canvassDiv.style.height = measurement.height + "px"
-  let scaleRatio = Math.max(measurement.width /(canvassRect.width - 30), measurement.height /(canvassRect.height - 30))
+  scaleRatio = Math.max(measurement.width /(canvassRect.width - 30), measurement.height /(canvassRect.height - 30))
   if(scaleRatio > 1){
     let newWidth = canvassRect.width * scaleRatio
     let newHeight = canvassRect.height * scaleRatio
@@ -3590,7 +3661,6 @@ function canvasSize() {
     canvas.height = newHeight
   scale = 1 /scaleRatio
   updateZoom()
-console.log(scaleRatio)
   }
 
   draw();
@@ -3610,18 +3680,36 @@ function applyOpacityToHex(hexColor, opacityPercent) {
 }
 
 function changeValues(x) {
+  let value = 0
   if (whatsMeasured === "px") {
-    return x;
+    value = x;
   } else if (whatsMeasured === "pt") {
-    return x / 1.333;
+    value = (x / 1.333);
   } else if (whatsMeasured === "in") {
-    return x / 96;
+    value = (x / 96);
   } else if (whatsMeasured === "m") {
-    return x / 3780;
+    value = x / 3780;
   } else if (whatsMeasured === "cm") {
-    return x / 37.8;
+    value = x / 37.8;
   } else if (whatsMeasured === "mm") {
-    return x / 3.78;
+    value = x / 3.78;
+  }
+  if(isNaN(value)) value = 0
+  return parseFloat(parseFloat(value).toFixed(2))
+}
+function drawingObject(){
+  const start = drawingCoordinate.start
+  if(drawingCoordinate.end.x - start.x < 1)drawingCoordinate.end.x = start.x + 1 
+  if(drawingCoordinate.end.y - start.y < 1) drawingCoordinate.end.y = start.y + 1 
+  const end = drawingCoordinate.end
+  switch (isDrawing){
+    case "rect":
+      return new Rectangle(start.x,start.y,end.x-start.x,end.y - start.y)
+    case "ellipse":
+      return new Ellipse(start.x +(end.x-start.x) / 2,start.y+(end.y-start.y) / 2,(end.x-start.x) / 2,(end.y-start.y) / 2)
+    case "polygon":
+            return new Polygon(start.x +(end.x-start.x) / 2,start.y+(end.y-start.y) / 2,(end.x-start.x) / 2,(end.y-start.y) / 2)
+
   }
 }
 function multipleSelection(){
@@ -3690,16 +3778,19 @@ function radToDeg(val, type) {
   }
 }
 function updateZoom(){
+          panX = panX > 0 ? 0 : panX
+          panY = panY > 0 ? 0 : panY
+          const canvaRect = document.querySelector(".canva").getBoundingClientRect()
+          const canvassRect = canvass.getBoundingClientRect()
+          panX = panX < canvaRect.width - canvassRect.width ? canvaRect.width - canvassRect.width : panX
+          panY = panY < canvaRect.height - canvassRect.height? canvaRect.height - canvassRect.height: panY
+    scale = scale < canvaRect.width / parseFloat(canvass.style.width) ? canvaRect.width /  parseFloat(canvass.style.width): scale
       canvass.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
 }
-zoomin.addEventListener("click",()=>{
-  scale += 0.1 
-  updateZoom()
-})
-zoomout.addEventListener("click",()=>{
-    scale -= 0.1 
-  updateZoom()
-})
+function moveTool(){
+  isDrawing = null
+}
+
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");
 
@@ -3819,14 +3910,10 @@ function addImage(e) {
   };
 }
 function addTextbox() {
-  const textBox = new TextBox();
-  textBox.addObject();
-  textBoxes.push(textBox);
+  isDrawing = "text"
 }
 function addPolygon() {
-  const polygon = new Polygon();
-  objects.push(polygon);
-  draw();
+  isDrawing = "polygon"
 }
 function addLine() {
   const line = new Line();
@@ -3834,14 +3921,10 @@ function addLine() {
   draw();
 }
 function addRectangle() {
-  const rect = new Rectangle();
-  objects.push(rect);
-  draw();
+ isDrawing = "rect"
 }
 function addEllipse() {
-  const ellipse = new Ellipse();
-  objects.push(ellipse);
-  draw();
+ isDrawing = "ellipse"
 }
 function align(arg){
   const last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap()
@@ -3898,13 +3981,37 @@ function getMousePos(canvas, evt) {
   };
 }
 
+
+
 function textMousePos(evt) {
-  const rect = canvass.getBoundingClientRect();
-  return {
-    x: evt.x - rect.left,
-    y: evt.y - rect.top,
-  };
+    const rect = canvass.getBoundingClientRect();
+    const style = getComputedStyle(canvass);
+
+    const transform = style.transform;
+    let scaleX = 1, scaleY = 1, translateX = 0, translateY = 0;
+
+    if (transform && transform !== 'none') {
+        const values = transform.match(/matrix\((.*)\)/);
+
+        if (values) {
+            const nums = values[1].split(',').map(Number);
+            scaleX = nums[0];
+            scaleY = nums[3];
+            translateX = nums[4]; 
+            translateY = nums[5]; 
+        }
+    }
+    const px = evt.clientX - rect.left;
+    const py = evt.clientY - rect.top;
+    const x = (px - translateX) / scaleX;
+    const y = (py - translateY) / scaleY;
+
+    return { x, y };
 }
+
+
+
+
 async function generateCard() {
   selectedObj = null;
   selectedText = null;
@@ -4051,7 +4158,12 @@ canvas.addEventListener("mousedown", (event) => {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
 
   isDraggingObject = false;
-  if (pen !== null) {
+  if(isDrawing !== null && isDrawing !== "text"){
+    drawingStart = true
+drawingCoordinate.start = {x:pos.x,y:pos.y}
+drawingCoordinate.end =  {x:pos.x,y:pos.y}
+  }
+  else if (pen !== null) {
     pen.drawPen(pos);
     selectedObj = pen;
     selectedObj.formatProperties();
@@ -4143,9 +4255,15 @@ multipleSelectArr.push(obj)
   draw();
 });
 canvass.addEventListener("mousedown", (event) => {
-
   const textPos = textMousePos(event);
-  if (cloneText) {
+  if(isDrawing === "text"){
+    const textbox = new TextBox()
+    textbox.addObject()
+    textbox.changeLocation(textPos.x,"x")
+    textbox.changeLocation(textPos.y,"y")
+    textBoxes.push(textbox)
+  }
+  else if (cloneText) {
     const cloned = cloneText.showClone();
     cloned.input.style.left = `${
       textPos.x - cloneText.input.getBoundingClientRect().width / 2
@@ -4207,6 +4325,11 @@ canvass.addEventListener("dblclick", (event) => {
 });
 window.addEventListener("mouseup",()=>isPanning = false)
 canvas.addEventListener("mouseup", () => {
+  if(drawingStart){
+    drawingStart = false
+    objects.push(drawingObject())
+
+  }
   if(isDraggingObject || isRotatingObject){
           undoObject.push(cloneObject(objects));
   redoObject.length = 0
@@ -4223,7 +4346,10 @@ canvass.addEventListener("mouseup", () => {
 canvas.addEventListener("mousemove", (event) => {
 
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
-  if (cloneObj) {
+  if(drawingStart){
+    drawingCoordinate.end = {x:pos.x,y:pos.y}
+  }
+  else if (cloneObj) {
     cloneObj.formatSelected(pos);
   } else if ((isDraggingObject || isRotatingObject) && selectedObj) {
     selectedObj.formatSelected(pos);
@@ -4234,21 +4360,16 @@ canvas.addEventListener("mousemove", (event) => {
   draw();
 });
 canvass.addEventListener("mousemove", (event) => {
-        if (isPanning && !isDraggingText && !isDraggingObject&& !isRotatingObject
+
+  const textPos = textMousePos(event);
+  if (isPanning && !isDraggingText && !isDraggingObject&& !isRotatingObject
         ){
               panX = event.clientX - startX
     panY = event.clientY - startY
-          panX = panX > 0 ? 0 : panX
-          panY = panY > 0 ? 0 : panY
-          const canvaRect = document.querySelector(".canva").getBoundingClientRect()
-          const canvassRect = canvass.getBoundingClientRect()
-          panX = panX < canvaRect.width - canvassRect.width ? canvaRect.width - canvassRect.width : panX
-          panY = panY < canvaRect.height - canvassRect.height? canvaRect.height - canvassRect.height: panY
+  
     updateZoom()
       }
-  const textPos = textMousePos({ x: event.clientX, y: event.clientY });
-
-  if (cloneText) {
+  else if (cloneText) {
     cloneText.input.style.left = `${
       textPos.x - cloneText.input.getBoundingClientRect().width / 2
     }px`;
@@ -4256,7 +4377,7 @@ canvass.addEventListener("mousemove", (event) => {
       textPos.y - cloneText.input.getBoundingClientRect().height / 2
     }px`;
   } else if (isDraggingText && selectedText) {
-    selectedText.formatSelected({ x: event.clientX, y: event.clientY });
+    selectedText.formatSelected(event);
     selectedText.formatProperties();
   }
   textLastMouseX = textPos.x;
@@ -4265,74 +4386,9 @@ canvass.addEventListener("mousemove", (event) => {
 });
 
 function draw() {
+  try{
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // let snap = { x: null, y: null };
-  // const objectsSnapped = [...objects, ...textBoxes];
-  // let selection = null;
-  // if (selectedObj || selectedText) {
-  //   for (let i = 0; i < objectsSnapped.length; i++) {
-  //     if (
-  //       objectsSnapped[i] !== selectedObj &&
-  //       objectsSnapped[i] !== selectedText
-  //     ) {
-  //       selection = selectedObj != null ? selectedObj : selectedText;
-  //       let select =
-  //         selectedObj !== null
-  //           ? selectedObj.whereToSnap().pos
-  //           : selectedText.whereToSnap().pos;
-  //       let snapX = objectsSnapped[i].whereToSnap().x;
-  //       let snapY = objectsSnapped[i].whereToSnap().y;
-  //       let pos = objectsSnapped[i].whereToSnap().pos;
-  //       for (let j = 0; j < snapX.length; j++) {
-  //         if (
-  //           Math.abs(select.x - snapX[j]) < 10 &&
-  //           (Math.abs(pos.y + pos.height - select.y) < 50 ||
-  //             Math.abs(pos.y - select.y) < 20 ||
-  //             Math.abs(pos.y - select.y - select.height) < 20)
-  //         ) {
-  //           snap.x = snapX[j];
-  //           break;
-  //         }
-  //       }
-  //       for (let j = 0; j < snapY.length; j++) {
-  //         if (
-  //           Math.abs(select.y - snapY[j]) < 10 &&
-  //           (Math.abs(pos.x + pos.width - select.x) < 50 ||
-  //             Math.abs(pos.x - select.x) < 10 ||
-  //             Math.abs(pos.x - select.x - select.width) < 10)
-  //         ) {
-  //           snap.y = snapY[j];
-  //           break;
-  //         }
-  //       }
-  //     }
-  //   }
-  //   if (snap.x != null) {
-  //     ctx.strokeStyle = "blue";
-  //     ctx.lineWidth = 2;
-  //     ctx.setLineDash([5, 5]);
-  //     ctx.beginPath();
-  //     ctx.moveTo(snap.x, 0);
-  //     ctx.lineTo(snap.x, canvas.height);
-  //     ctx.stroke();
-  //     ctx.setLineDash([]);
-  //     selection.changeLocation(snap.x, "x");
-  //     lastMouseX = snap.x;
-  //   }
-  //   if (snap.y != null) {
-  //     ctx.strokeStyle = "blue";
-  //     ctx.lineWidth = 2;
-  //     ctx.setLineDash([5, 5]);
-  //     ctx.beginPath();
-  //     ctx.moveTo(0, snap.y);
-  //     ctx.lineTo(canvas.width, snap.y);
-  //     ctx.stroke();
-  //     ctx.setLineDash([]);
-  //     selection.changeLocation(snap.y, "y");
-  //     lastMouseY = snap.y;
-  //   }
-  // }
   if (pen) {
     pen.addObject();
   }
@@ -4344,6 +4400,13 @@ function draw() {
   objects.forEach((obj) => {
     obj.addObject();
   });}
+    if(drawingStart){
+        drawingObject().addObject()
+  }
+  }catch(err){
+    console.log(err)
+  }
+
 }
 
 draw();
