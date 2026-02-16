@@ -206,3 +206,115 @@ function textMousePos(evt) {
       }
     }
   }
+
+
+
+  const sectionCenterX = canvassDiv.offsetLeft + measurement.width/2;
+const sectionCenterY = canvassDiv.offsetTop + measurement.height/2;
+
+panX =  sectionCenterX * scale - canvaRect.width/2  ;
+panY =   sectionCenterY * scale - canvaRect.height/2 ;
+
+
+
+
+
+function updateZoom(){
+          panX = panX > 0 ? 0 : panX
+          panY = panY > 0 ? 0 : panY
+          const canvaRect = document.querySelector(".canva").getBoundingClientRect()
+          const canvassRect = canvass.getBoundingClientRect()
+          panX = panX < canvaRect.width - canvassRect.width ? canvaRect.width - canvassRect.width : panX
+          panY = panY < canvaRect.height - canvassRect.height? canvaRect.height - canvassRect.height: panY
+          if(scale < 1/scaleRatio ){
+          const newCoordinate = {width:canvaRect.width * 1/scale,height:canvaRect.height * 1/scale}
+              canvass.style.width = canvas.style.width = `${newCoordinate.width}px`
+              canvass.style.height = canvas.style.height = `${newCoordinate.height}px`
+              canvas.width = newCoordinate.width
+              canvas.height = newCoordinate.height
+
+          }
+
+      canvass.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      draw()
+      console.log("chnaged",panX,canvaRect.width - canvassRect.width)
+}
+document.getElementById("toPage").addEventListener("click", () => {
+  const viewportRect = document.querySelector(".canva").getBoundingClientRect();
+  const canvasRect   = canvass.getBoundingClientRect();        // canvas container
+  const frameRect    = canvassDiv.getBoundingClientRect();      // your frame
+
+  // sizes
+  const frameW = frameRect.width;
+  const frameH = frameRect.height;
+
+  const vpW = viewportRect.width;
+  const vpH = viewportRect.height;
+
+  // 1) SCALE
+  scale=  1/scaleRatio
+
+  // 2) frame position relative to canvas
+  const relX = frameRect.left - canvasRect.left;
+  const relY = frameRect.top  - canvasRect.top;
+
+  // 3) PAN (correct formulas + correct variables)
+  panX = (vpW / 2 - relX * scale - (frameW * scale) / 2) / 4;
+  panY = (vpH / 2 - relY * scale - (frameH * scale) / 2) /4;
+
+  updateZoom(false)
+});
+
+
+
+
+
+
+
+
+  showDropdown(fonts) {
+    dropdown.innerHTML = "";
+    if (fonts.length === 0) {
+      dropdown.style.display = "none";
+      return;
+    }
+    fonts.forEach((font) => {
+      const option = document.createElement("div");
+      option.textContent = font;
+      option.style.fontFamily = `'${font}', sans-serif`;
+      option.addEventListener("click", () => {
+        document.getElementById("fontInput").value = font;
+        dropdown.innerHTML = "";
+        dropdown.style.display = "none";
+        this.loadFont(font);
+      });
+      dropdown.appendChild(option);
+    });
+    dropdown.style.display = "block";
+  }
+
+
+  <div class="editable" contenteditable="true">Hand Writing</div>
+
+<style>
+.editable {
+  position: absolute;
+  color: #fff000;
+  font-size: 50px;
+  padding: 1rem;
+  outline: none;
+  background: transparent;
+  border: 2px dotted blue;
+  font-family: sans-serif;
+  line-height: 1; /* perfect alignment */
+  white-space: pre-wrap;
+}
+</style>
+
+
+          if (
+            this.selectedArea === "pointIndex" &&
+            this.points[this.selectedLineIndex].edgeModes === "rounded"
+          )
+            this.points[this.selectedLineIndex].cornerRadius = value;
+          else this.cornerRadius = value;

@@ -26,11 +26,14 @@ let multipleSelect = false
 let multipleSelectArr = []
 let undoObject = []
 let redoObject = []
+let undoText = []
+let redoText = []
 let renderWidth;
 let renderHeight;
 let noPerRow = 1
 let noPerColumn = 1
 let isDrawing = null
+let duplicateClicked = false;
 let drawingCoordinate = {start:{x:0,y:0},end:{x:0,y:0}}
 let drawingStart = false
 const measurementArr = [
@@ -56,7 +59,15 @@ let textLastMouseX = 0;
 let textLastMouseY = 0;
 let isDraggingText = false;
 let clipped = null;
-let allFonts = [];
+let allFonts = [  "serif",
+  "sans-serif",
+  "monospace",
+  "cursive",
+  "fantasy",
+  "system-ui",
+  "emoji",
+  "math",
+  "fangsong"];
   let isPanning = false;
   let startX, startY;
   let panX = 0
@@ -66,7 +77,8 @@ fetch(
 )
   .then((res) => res.json())
   .then((data) => {
-    allFonts = data.items.map((item) => item.family);
+    const newFonts = data.items.map((item) => item.family);
+    allFonts.push(...newFonts)
   })
   .catch(console.error);
 
@@ -526,6 +538,22 @@ class Formats {
       this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
       this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
       this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
+
+      for(let i=0; i<this.points.length;i++){
+        if (i === this.selectedLineIndex) continue;
+        const nextPoint = this.points[i].points
+        let ifGet = false
+        if(Math.abs(nextPoint.x-this.points[this.selectedLineIndex].points.x) < 10){
+          this.points[this.selectedLineIndex].points.x = nextPoint.x
+          ifGet = true
+        }
+        if(Math.abs(nextPoint.y-this.points[this.selectedLineIndex].points.y) < 10){
+          this.points[this.selectedLineIndex].points.y = nextPoint.y
+          ifGet = true
+        }
+        if(ifGet) break
+
+      }
     } else if (this.selectedArea === "curveIndex") {
       const { curveIndex, controlIndex } = this.selectedLineIndex;
       this.points[curveIndex].controls[controlIndex].x = localMouseX;
@@ -1169,6 +1197,16 @@ return clone
 
 
   `;
+  if(this.roundedOrbeveled === "shaped"){
+  let ifRounded = false
+    this.points.forEach(p=>{
+      if(p.edgeModes !== null) ifRounded = true
+    })
+    if(ifRounded && this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes !== "rounded"){
+      document.querySelector(".thick input").readOnly = true
+          }else document.querySelector(".thick input").readOnly = false
+  }
     super.similarPropties();
     document.querySelector(".beveled").addEventListener("click", () => {
       this.roundedOrbeveled = "beveled";
@@ -1234,6 +1272,8 @@ return clone
       },
     ];
       this.cornerRadius = 0;
+      this.scaleX = 1 ; this.scaleY = 1;
+      document.querySelector(".thick input").readOnly = true
       this.formatProperties();
     });
 
@@ -1253,14 +1293,20 @@ return clone
       this.mode = this.mode === "normal" ? "edit" : "normal";
       this.formatProperties();
     });
-    propertiesBar.querySelectorAll("input").forEach((input) => {
+    propertiesBar.querySelectorAll("input[type='text'],input[type='number']").forEach((input) => {
       input.addEventListener(
         "input",
         (e) => setTimeout(this.changeProperties(e)),
         1000
       );
     });
-
+    propertiesBar.querySelectorAll("input[type='color']").forEach(input=>{
+            input.addEventListener(
+        "change",
+        (e) => setTimeout(this.changeProperties(e)),
+        1000
+      );
+    })
     draw();
   }
 
@@ -1323,6 +1369,8 @@ return clone
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     draw();
+    undoObject.push(cloneObject(objects))
+    undoText.push("object")
   }
   drawBeveledRect(x, y, width, height, bevel) {
     ctx.beginPath();
@@ -1386,6 +1434,7 @@ return clone
       this.y = value;
     }
   }
+
   doubleClicked(mouse) {
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
@@ -1656,13 +1705,20 @@ class Ellipse extends Formats {
       if (!this.outline) this.outline = true;
       this.formatProperties();
     });
-    propertiesBar.querySelectorAll("input").forEach((input) => {
+    propertiesBar.querySelectorAll("input[type='text'],input[type='number']").forEach((input) => {
       input.addEventListener(
         "input",
         (e) => setTimeout(this.changeProperties(e)),
         1000
       );
     });
+    propertiesBar.querySelectorAll("input[type='color']").forEach(input=>{
+            input.addEventListener(
+        "change",
+        (e) => setTimeout(this.changeProperties(e)),
+        1000
+      );
+    })
     draw();
   }
   changeProperties(e) {
@@ -1692,6 +1748,8 @@ class Ellipse extends Formats {
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     draw();
+        undoObject.push(cloneObject(objects))
+    undoText.push("object")
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -2076,13 +2134,20 @@ class Polygon extends Formats {
       this.mode = this.mode === "normal" ? "edit" : "normal";
       this.formatProperties();
     });
-    propertiesBar.querySelectorAll("input").forEach((input) => {
+    propertiesBar.querySelectorAll("input[type='text'],input[type='number']").forEach((input) => {
       input.addEventListener(
         "input",
         (e) => setTimeout(this.changeProperties(e)),
         1000
       );
     });
+    propertiesBar.querySelectorAll("input[type='color']").forEach(input=>{
+            input.addEventListener(
+        "change",
+        (e) => setTimeout(this.changeProperties(e)),
+        1000
+      );
+    })
     draw();
   }
   changeProperties(e) {
@@ -2131,7 +2196,8 @@ class Polygon extends Formats {
     }
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-
+        undoObject.push(cloneObject(objects))
+    undoText.push("object")
     draw();
   }
   showClone() {
@@ -2545,13 +2611,20 @@ return clone
         this.mode = this.mode === "normal" ? "edit" : "normal";
         this.formatProperties();
       });
-      propertiesBar.querySelectorAll("input").forEach((input) => {
-        input.addEventListener(
-          "input",
-          (e) => setTimeout(this.changeProperties(e)),
-          1000
-        );
-      });
+    propertiesBar.querySelectorAll("input[type='text'],input[type='number']").forEach((input) => {
+      input.addEventListener(
+        "input",
+        (e) => setTimeout(this.changeProperties(e)),
+        1000
+      );
+    });
+    propertiesBar.querySelectorAll("input[type='color']").forEach(input=>{
+            input.addEventListener(
+        "change",
+        (e) => setTimeout(this.changeProperties(e)),
+        1000
+      );
+    })
       draw();
     }
   }
@@ -2598,6 +2671,8 @@ return clone
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     draw();
+        undoObject.push(cloneObject(objects))
+    undoText.push("object")
   }
 }
 
@@ -2622,6 +2697,10 @@ class TextBox {
     this.input.className = "textarea";
     this.input.addEventListener("input", (e) => {
       this.text = e.target.value;
+          this.input.style.height = "auto";
+    this.input.style.width = "auto";
+    this.input.style.height = this.input.scrollHeight + "px";
+    this.input.style.width = this.input.scrollWidth + "px";
     });
     canvass.append(this.input);
   }
@@ -2659,7 +2738,6 @@ class TextBox {
     }else{
       this.input.style.border = "none";
     }
-    console.log(this.selectedArea)
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
@@ -2741,6 +2819,7 @@ class TextBox {
 
   formatProperties() {
     const styles = window.getComputedStyle(this.input);
+    const font = styles.fontFamily.replace(/['"]/g, "")
     propertiesBar.innerHTML = `
     <div>
     <h3>Coordinate</h3>
@@ -2772,12 +2851,17 @@ class TextBox {
    <div>Font Size <input type="number" name="fontSize" value="${changeValues(
      parseFloat(styles.fontSize)
    )}"></div> 
-    <div style="grid-column: span 2">Font Name      <div class="autocomplete-container">
-    <input type="text" id="fontInput" placeholder="${
-      styles.fontFamily
-    }" autocomplete="on" />
-    <div id="dropdown" class="dropdown"></div></div>
+
+     
+
+
     </div>
+    <div style="display:flex;flex-direction:row;gap:0.5rem;flex-wrap: nowrap;">
+<div class="autocomplete-container">
+        Font Name  
+    <input type="text" id="fontInput"  value="${font}" autocomplete="on" />
+    <div id="dropdown" class="dropdown"></div></div>
+    <button class="font-import"><img src="images/Group 48.svg"><input type="file" accept=".ttf,.otf,.woff,.woff2"></button>
     </div>
     </div>
     <select class="allign">
@@ -2815,6 +2899,34 @@ class TextBox {
     }" name="textarea" class="text">${this.textArea}</textarea>
     </div>
       `;
+
+      document.querySelector(".font-import input").addEventListener("change",async (event)=>{
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+    reader.onload = async function(e) {
+    const fontData = e.target.result;
+    const fontName = `${file.name.substring(0, file.name.lastIndexOf('.'))}`;
+
+    try {
+      if(!(allFonts.includes(fontName))){
+      const font = new FontFace(fontName, `url(${fontData})`);
+      await font.load();
+      document.fonts.add(font);
+      this.input.style.fontFamily = fontName;
+      allFonts.push(fontName)
+      notify("Font loaded successfully!");
+      }
+
+    } catch (err) {
+      notify("Invalid font or failed to load!");
+      console.error(err);
+    }
+    console.log(fontName)
+  };
+
+
+      })
     document.querySelector(".bold").addEventListener("click", () => {
       this.input.style.fontWeight =
         styles.fontWeight === "700" ? "normal" : "700";
@@ -2873,6 +2985,7 @@ class TextBox {
       );
     });
   }
+
   showDropdown(fonts) {
     dropdown.innerHTML = "";
     if (fonts.length === 0) {
@@ -3456,6 +3569,14 @@ document.getElementById("paperSize").addEventListener("change", (e) => {
   }
   canvasSize();
 });
+document.querySelectorAll(".leftSidebar button").forEach(button =>{
+  button.addEventListener("click",()=>{
+    button.classList.add("active")
+    document.querySelectorAll(".leftSidebar button").forEach(butt=>{
+      if(butt !== button) butt.classList.remove("active")
+    })
+  })
+})
 width.addEventListener("input", (e) => {
   const widthValue = backValues(e.target.value);
   const heightValue = backValues(height.value);
@@ -3535,19 +3656,14 @@ document.getElementById("zoom").addEventListener("click",()=>{
   <button class="zoomin"><img src="images/Group 46.svg"></button>
   <button class="zoomout"><img src="images/Group 47.svg"></button>
   </div>
-  <button class="imageb" id="toPage" style="margin-left:1rem;">To Page</button>
   `
-  document.getElementById("toPage").addEventListener("click",()=>{
-  scale = 1 /scaleRatio
-    panX = 0
-    panY = 0
-      updateZoom()
-  })
+
+
   let interval
   document.querySelector(".zoomin").addEventListener("mousedown",()=>{
     interval = setInterval(()=>{
     scale += 0.01
-     updateZoom()      
+    updateZoom()     
     },100)
   })
   document.querySelector(".zoomin").addEventListener("mouseup",()=>clearInterval(interval))
@@ -3570,6 +3686,13 @@ function flip(value){
 }
 document.querySelector(".generateButton").addEventListener("click",()=>{
   document.querySelector(".generate").style.display = "flex"
+  const canvasDiv = canvassDiv.getBoundingClientRect()
+  document.getElementById("renderWidth").value = canvasDiv.width
+  document.getElementById("renderHeight").value = canvasDiv.height
+  document.getElementById("renderPage").value = "auto"
+  document.getElementById("noPerRow").value = 1
+  document.getElementById("noPerColumn").value = 1
+
 })
 function cancelGenerate(){
     document.querySelector(".generate").style.display = "none"
@@ -3587,9 +3710,9 @@ document.getElementById("renderWidth").addEventListener("input",(e)=>{
   renderPageSize.width = e.target.value
 })
 
-let duplicateClicked = false;
+
 document.getElementById("duplicate").addEventListener("click", () => {
-  duplicateClicked = !duplicateClicked;
+  duplicateClicked = true;
   if (duplicateClicked) {
     if (selectedObj) {
       cloneObj = selectedObj.showClone();
@@ -3599,6 +3722,9 @@ document.getElementById("duplicate").addEventListener("click", () => {
       cloneText = selectedText.showClone();
     } else {
       notify("Please Select An Object")
+      duplicateClicked = false
+      document.getElementById("moveTool").classList.add("active")
+      document.getElementById("duplicate").classList.remove("active")
     }
   } else {
     if (cloneText) {
@@ -3644,6 +3770,8 @@ document.getElementById("delete").addEventListener("click", () => {
   }
 });
 let scaleRatio
+let newWidth
+let newHeight
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
   const canvassRect = canvas.getBoundingClientRect();
@@ -3653,8 +3781,8 @@ function canvasSize() {
   canvassDiv.style.height = measurement.height + "px"
   scaleRatio = Math.max(measurement.width /(canvassRect.width - 30), measurement.height /(canvassRect.height - 30))
   if(scaleRatio > 1){
-    let newWidth = canvassRect.width * scaleRatio
-    let newHeight = canvassRect.height * scaleRatio
+    newWidth = canvassRect.width * scaleRatio
+    newHeight = canvassRect.height * scaleRatio
     canvas.style.width = canvass.style.width = `${newWidth}px`
     canvas.style.height = canvass.style.height = `${newHeight}px`
     canvas.width = newWidth
@@ -3680,6 +3808,8 @@ function applyOpacityToHex(hexColor, opacityPercent) {
 }
 
 function changeValues(x) {
+  x = parseFloat(x);
+  if (isNaN(x)) return 0;
   let value = 0
   if (whatsMeasured === "px") {
     value = x;
@@ -3694,7 +3824,6 @@ function changeValues(x) {
   } else if (whatsMeasured === "mm") {
     value = x / 3.78;
   }
-  if(isNaN(value)) value = 0
   return parseFloat(parseFloat(value).toFixed(2))
 }
 function drawingObject(){
@@ -3712,8 +3841,21 @@ function drawingObject(){
 
   }
 }
+function moveTool(){
+  isDrawing = null
+    canvas.style.cursor = "default"
+    multipleSelect = false
+  multipleSelectArr = []
+  selectedObj = null
+  selectedText = null
+  duplicateClicked = false
+
+}
+
 function multipleSelection(){
-  multipleSelect = !multipleSelect
+   isDrawing = null
+    canvas.style.cursor = "default"
+  multipleSelect = true
   multipleSelectArr = []
   selectedObj = null
   selectedText = null
@@ -3771,25 +3913,37 @@ function notify(name){
   setTimeout(()=>notification.style.display = "none",1500)
 }
 function radToDeg(val, type) {
+  
   if (type === "rad") {
-    return (val * Math.PI) / 180;
+    return parseFloat(((val * Math.PI) / 180).toFixed(2));
   } else {
-    return (val * 180) / Math.PI;
+    return parseFloat(((val * 180) / Math.PI).toFixed(2));
   }
 }
-function updateZoom(){
+function updateZoom(exception = true){
+            const canvaRect = document.querySelector(".canva").getBoundingClientRect()
+          const canvassRect = canvass.getBoundingClientRect()
+    if(exception){
           panX = panX > 0 ? 0 : panX
           panY = panY > 0 ? 0 : panY
-          const canvaRect = document.querySelector(".canva").getBoundingClientRect()
-          const canvassRect = canvass.getBoundingClientRect()
+
           panX = panX < canvaRect.width - canvassRect.width ? canvaRect.width - canvassRect.width : panX
           panY = panY < canvaRect.height - canvassRect.height? canvaRect.height - canvassRect.height: panY
-    scale = scale < canvaRect.width / parseFloat(canvass.style.width) ? canvaRect.width /  parseFloat(canvass.style.width): scale
+
+    }
+          if(scale < 1/scaleRatio ){
+          const newCoordinate = {width:canvaRect.width * 1/scale,height:canvaRect.height * 1/scale}
+              canvass.style.width = canvas.style.width = `${newCoordinate.width}px`
+              canvass.style.height = canvas.style.height = `${newCoordinate.height}px`
+              canvas.width = newCoordinate.width
+              canvas.height = newCoordinate.height
+
+          }
+
       canvass.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      draw()
 }
-function moveTool(){
-  isDrawing = null
-}
+
 
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");
@@ -3897,6 +4051,7 @@ document
   .querySelector(".add-image input")
   .addEventListener("change", (e) => addImage(e));
 function addImage(e) {
+  canvas.style.cursor = "crosshair"
   const file = e.target.files[0];
   if (!file) return;
   const url = URL.createObjectURL(file);
@@ -3910,24 +4065,30 @@ function addImage(e) {
   };
 }
 function addTextbox() {
+    canvas.style.cursor = "inherit"
   isDrawing = "text"
 }
 function addPolygon() {
+    canvas.style.cursor = "crosshair"
   isDrawing = "polygon"
 }
 function addLine() {
+    canvas.style.cursor = "crosshair"
   const line = new Line();
   pen = line;
   draw();
 }
 function addRectangle() {
+    canvas.style.cursor = "crosshair"
  isDrawing = "rect"
 }
 function addEllipse() {
+    canvas.style.cursor = "crosshair"
  isDrawing = "ellipse"
 }
 function align(arg){
-  const last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap()
+  if(multipleSelectArr.length > 1){
+ const last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap()
   const others = multipleSelectArr.slice(0,-1)
   let value
   switch (arg) {
@@ -3951,14 +4112,33 @@ function align(arg){
       break
   }
   others.forEach(other=>{
-    if(arg === "left" || arg==="centerX" || arg==="right"){
-      other.changeLocation(value,"x")
-    }else other.changeLocation(value,"y")
+    const otherSnap = other.whereToSnap().pos
+    switch (arg){
+      case "left":
+        other.changeLocation(value,"x")
+        break
+      case "centerX":
+        other.changeLocation(value - (otherSnap.width /2),"x")
+        break
+      case "right":
+        other.changeLocation(value-otherSnap.width,"x")
+        break
+      case "top":
+        other.changeLocation(value,"y")
+        break
+      case "centerY":
+        other.changeLocation(value - (otherSnap.height /2),"y")
+        break
+      case "bottom":
+        other.changeLocation(value - otherSnap.height,"y")
+    }
   })
   draw()
+  }
+ 
 }
 function group(){
-  if(multipleSelectArr.length > 0){
+  if(multipleSelectArr.length > 1){
     const newGroup = new Group(multipleSelectArr)
     multipleSelectArr.forEach(arr =>{
       const index = objects.indexOf(arr)
@@ -4246,6 +4426,8 @@ multipleSelectArr.push(obj)
         selectedObj.formatProperties();
         isDraggingObject = true;
         break;
+      }else{
+        selectedObj = null
       }
     }
   }
@@ -4259,8 +4441,8 @@ canvass.addEventListener("mousedown", (event) => {
   if(isDrawing === "text"){
     const textbox = new TextBox()
     textbox.addObject()
-    textbox.changeLocation(textPos.x,"x")
-    textbox.changeLocation(textPos.y,"y")
+    textbox.changeLocation(textPos.x ,"x")
+    textbox.changeLocation(textPos.y - (parseFloat(window.getComputedStyle(textbox.input).height) / 2),"y")
     textBoxes.push(textbox)
   }
   else if (cloneText) {
@@ -4286,6 +4468,7 @@ canvass.addEventListener("mousedown", (event) => {
         break;
       }
     }
+
   }
 
   if (selectedText) {
@@ -4363,7 +4546,7 @@ canvass.addEventListener("mousemove", (event) => {
 
   const textPos = textMousePos(event);
   if (isPanning && !isDraggingText && !isDraggingObject&& !isRotatingObject
-        ){
+        && pen === null && isDrawing === null){
               panX = event.clientX - startX
     panY = event.clientY - startY
   

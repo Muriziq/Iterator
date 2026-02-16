@@ -3,138 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Draggable & Resizable Textarea Demo</title>
+<title>Dynamic Font Import with Validation</title>
 <style>
-  body {
-    background: #f0f0f0;
-    height: 100vh;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .container {
-    position: relative;
-    width: 90vw;
-    height: 80vh;
-    background: white;
-    border: 2px solid #ccc;
-    overflow: hidden;
-  }
-
-  .textarea-wrapper {
-    position: absolute;
-    top: 50px;
-    left: 50px;
-    width: 200px;
-    height: 120px;
-    border: 1px solid #888;
-    box-shadow: 0 0 4px rgba(0,0,0,0.2);
-    resize: none;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .textarea-header {
-    height: 20px;
-    background: #3498db;
-    color: white;
-    font-size: 12px;
-    cursor: move;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-  }
-
-  textarea {
-    flex: 1;
-    width: 100%;
-    resize: none;
-    border: none;
-    outline: none;
-    padding: 4px;
-    box-sizing: border-box;
-  }
-
-  .resizer {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    right: 0;
-    bottom: 0;
-    cursor: se-resize;
-    background: #3498db;
+  #text {
+    font-size: 32px;
+    margin-top: 20px;
   }
 </style>
 </head>
 <body>
-  <div class="container" id="container">
-    <div class="textarea-wrapper" id="textareaBox">
-      <div class="textarea-header">Drag Me</div>
-      <textarea placeholder="Type here..."></textarea>
-      <div class="resizer"></div>
-    </div>
-  </div>
 
-  <script>
-    const box = document.getElementById('textareaBox');
-    const header = box.querySelector('.textarea-header');
-    const resizer = box.querySelector('.resizer');
-    const container = document.getElementById('container');
+<h2>Upload a font file to use it on this text:</h2>
+<input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2">
+<p id="text">This text will change to the uploaded font!</p>
 
-    // === Dragging ===
-    let isDragging = false, startX, startY, startLeft, startTop;
+<script>
+const fontInput = document.getElementById('fontInput');
+const textElement = document.getElementById('text');
 
-    header.addEventListener('mousedown', e => {
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      const rect = box.getBoundingClientRect();
-      startLeft = rect.left - container.getBoundingClientRect().left;
-      startTop = rect.top - container.getBoundingClientRect().top;
-      document.body.style.userSelect = 'none';
-    });
+fontInput.addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-    window.addEventListener('mousemove', e => {
-      if (!isDragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      box.style.left = Math.max(0, Math.min(container.clientWidth - box.offsetWidth, startLeft + dx)) + 'px';
-      box.style.top = Math.max(0, Math.min(container.clientHeight - box.offsetHeight, startTop + dy)) + 'px';
-    });
+  const reader = new FileReader();
 
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-      document.body.style.userSelect = '';
-    });
+  reader.onload = async function(e) {
+    const fontData = e.target.result;
+    const fontName = 'UploadedFont';
 
-    // === Resizing ===
-    let isResizing = false, startW, startH;
+    try {
+      const font = new FontFace(fontName, `url(${fontData})`);
+      await font.load();
+      document.fonts.add(font);
+      textElement.style.fontFamily = fontName;
+      alert("Font loaded successfully!");
+    } catch (err) {
+      alert("Invalid font or failed to load!");
+      console.error(err);
+    }
+  };
 
-    resizer.addEventListener('mousedown', e => {
-      e.stopPropagation();
-      isResizing = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      startW = box.offsetWidth;
-      startH = box.offsetHeight;
-      document.body.style.userSelect = 'none';
-    });
+  reader.readAsDataURL(file);
+});
+</script>
 
-    window.addEventListener('mousemove', e => {
-      if (!isResizing) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      box.style.width = Math.max(100, startW + dx) + 'px';
-      box.style.height = Math.max(60, startH + dy) + 'px';
-    });
-
-    window.addEventListener('mouseup', () => {
-      isResizing = false;
-      document.body.style.userSelect = '';
-    });
-  </script>
 </body>
 </html>
