@@ -1,51 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dynamic Font Import with Validation</title>
-<style>
-  #text {
-    font-size: 32px;
-    margin-top: 20px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    div{
+      width: 800px;
+      height: 800px;
+    }
+    canvas{
+      height: 100%;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
-
-<h2>Upload a font file to use it on this text:</h2>
-<input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2">
-<p id="text">This text will change to the uploaded font!</p>
-
-<script>
-const fontInput = document.getElementById('fontInput');
-const textElement = document.getElementById('text');
-
-fontInput.addEventListener('change', async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = async function(e) {
-    const fontData = e.target.result;
-    const fontName = 'UploadedFont';
-
-    try {
-      const font = new FontFace(fontName, `url(${fontData})`);
-      await font.load();
-      document.fonts.add(font);
-      textElement.style.fontFamily = fontName;
-      alert("Font loaded successfully!");
-    } catch (err) {
-      alert("Invalid font or failed to load!");
-      console.error(err);
-    }
-  };
-
-  reader.readAsDataURL(file);
-});
-</script>
+  <div>
+  <canvas></canvas>
+  </div>
 
 </body>
 </html>

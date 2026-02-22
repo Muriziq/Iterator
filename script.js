@@ -51,8 +51,6 @@ let lastMouseX = 0;
 let lastMouseY = 0;
 let scale = 1;
 let selectedObj = null;
-let textLastMouseX = 0;
-let textLastMouseY = 0;
 let clipped = null;
 let defaultFonts =[  "serif",
   "sans-serif",
@@ -67,7 +65,10 @@ let allFonts = [
 ...defaultFonts
 ];
 let isPanning = false;
-let startX, startY;
+let panStartX = 0;
+let panStartY = 0;
+let panOriginX = 0;
+let panOriginY = 0;
 let panX = 0;
 let panY = 0;
 fetch(
@@ -3126,18 +3127,32 @@ formatProperties() {
       </section>
     </section>
     <section>
-    
+          <div style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
+        <h3>Iterarate</h3>
+        <button class="${this.iterated ? "outlinet" : "outlinef"}" id="iterateToggle"></button>
+      </div>
+<textarea style="display:${
+      this.iterated ? "block" : "none"
+    }" name="textarea" class="text">${this.textArea}</textarea>
     </section>
   `;
 
 
 super.similarPropties()
   // Bind inputs
-  propertiesBar.querySelectorAll("input, textarea, select, button#shadowToggle").forEach((el) => {
+  propertiesBar.querySelectorAll("input, textarea, select, button#shadowToggle,button#iterateToggle").forEach((el) => {
     // Shadow toggle button
     if (el.id === "shadowToggle") {
       el.addEventListener("click", () => {
         this.shadow = !this.shadow;
+        this.formatProperties();
+        draw();
+      });
+      return;
+    }
+    if (el.id === "iterateToggle") {
+      el.addEventListener("click", () => {
+        this.iterated= !this.iterated;
         this.formatProperties();
         draw();
       });
@@ -3171,7 +3186,9 @@ changeProperties(e) {
 
   if (name === "fontSize") this.fontSize = Math.max(1, Number(e.target.value) || 1);
   if (name === "lineHeight") this.lineHeight = Math.max(1, Number(e.target.value) || 1);
-
+if (name === "textarea") {
+        this.textArea = e.target.value;
+    }
   if (name === "fontFamily"){
 this.fontFamily = e.target.value;
 if(!(defaultFonts.includes(this.fontFamily))){
@@ -3214,6 +3231,10 @@ if(!(defaultFonts.includes(this.fontFamily))){
 
   doubleClicked(mouse) {
     this.doubleClicked = true;
+  }
+  drawIteratedImage(i){
+    const texts = this.textArea.split("\n")
+    if(this.iterated && i < texts.length) this.text = texts[i]
   }
 }
 
@@ -3755,11 +3776,15 @@ document.getElementById("zoom").addEventListener("click", () => {
   propertiesBar.innerHTML = `
   <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
   <button class="zoomin"><img src="images/Group 46.svg"></button>
+  <button class="zoomTo"><img src="images/Group 46.svg"></button>
   <button class="zoomout"><img src="images/Group 47.svg"></button>
   </div>
   `;
 
   let interval;
+  document.querySelector(".zoomTo").addEventListener("click",()=>{
+    isDrawing = "zoom"
+  })
   document.querySelector(".zoomin").addEventListener("mousedown", () => {
     interval = setInterval(() => {
       scale += 0.01;
@@ -4171,8 +4196,7 @@ function addImage(e) {
 function addTextbox() {
   canvas.style.cursor = "inherit";
   isDrawing = "text";
-  const text = new TextBox(500, 500);
-  objects.push(text);
+
 }
 function addPolygon() {
   canvas.style.cursor = "crosshair";
@@ -4254,6 +4278,76 @@ function group() {
     objects.push(newGroup);
   }
 }
+function zoomToDrawnRect(padding = 40) {
+  const viewport = document.querySelector(".canva").getBoundingClientRect();
+
+  // 1) normalize rectangle in CANVAS px
+  const x1 = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
+  const y1 = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
+  const x2 = Math.max(drawingCoordinate.start.x, drawingCoordinate.end.x);
+  const y2 = Math.max(drawingCoordinate.start.y, drawingCoordinate.end.y);
+
+  const w = x2 - x1;
+  const h = y2 - y1;
+  if (w < 2 || h < 2) return;
+
+  // 2) canvas px -> client px (screen)
+  const c1 = reverseMousePos(canvas, { x: x1, y: y1 });
+  const c2 = reverseMousePos(canvas, { x: x2, y: y2 });
+
+  // 3) client px -> viewport-local px
+  const s1x = c1.x - viewport.left;
+  const s1y = c1.y - viewport.top;
+  const s2x = c2.x - viewport.left;
+  const s2y = c2.y - viewport.top;
+
+  // 4) viewport-local px -> WORLD coords (undo current transform)
+  const wx1 = (s1x - panX) / scale;
+  const wy1 = (s1y - panY) / scale;
+  const wx2 = (s2x - panX) / scale;
+  const wy2 = (s2y - panY) / scale;
+
+  zoomToWorldRect(
+    {
+      x: Math.min(wx1, wx2),
+      y: Math.min(wy1, wy2),
+      width: Math.abs(wx2 - wx1),
+      height: Math.abs(wy2 - wy1),
+    },
+    padding
+  );
+}
+function zoomToWorldRect(rect, padding = 40) {
+  const viewportEl = document.querySelector(".canva");
+  const viewport = viewportEl.getBoundingClientRect();
+
+  // protect against bad rects
+  if (!rect || rect.width <= 0 || rect.height <= 0) return;
+
+  // scale so rect fits inside viewport (minus padding)
+  const targetScale = Math.min(
+    (viewport.width - padding) / rect.width,
+    (viewport.height - padding) / rect.height
+  );
+
+  scale = targetScale;
+
+  // center of the rect in WORLD coords
+  const cx = rect.x + rect.width / 2;
+  const cy = rect.y + rect.height / 2;
+
+  // center of viewport in SCREEN coords (inside viewport)
+  const screenCx = viewport.width / 2;
+  const screenCy = viewport.height / 2;
+
+  // With transform-origin 0 0:
+  // screen = world * scale + pan
+  // => pan = screen - world*scale
+  panX = screenCx - cx * scale;
+  panY = screenCy - cy * scale;
+
+  updateZoom(true); // applies transform + draw + clamp
+}
 
 function getMousePos(canvas, evt) {
   const rect = canvas.getBoundingClientRect();
@@ -4265,54 +4359,37 @@ function getMousePos(canvas, evt) {
     y: (evt.y - rect.top) * scaleY,
   };
 }
+function reverseMousePos(canvas, pt) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
 
-function textMousePos(evt) {
-  const rect = canvass.getBoundingClientRect();
-  const style = getComputedStyle(canvass);
-
-  const transform = style.transform;
-  let scaleX = 1,
-    scaleY = 1,
-    translateX = 0,
-    translateY = 0;
-
-  if (transform && transform !== "none") {
-    const values = transform.match(/matrix\((.*)\)/);
-
-    if (values) {
-      const nums = values[1].split(",").map(Number);
-      scaleX = nums[0];
-      scaleY = nums[3];
-      translateX = nums[4];
-      translateY = nums[5];
-    }
-  }
-  const px = evt.clientX - rect.left;
-  const py = evt.clientY - rect.top;
-  const x = (px - translateX) / scaleX;
-  const y = (py - translateY) / scaleY;
-
-  return { x, y };
+  return {
+    x: rect.left + (pt.x / scaleX),
+    y: rect.top  + (pt.y / scaleY),
+  };
 }
-
 async function generateCard() {
   selectedObj = null;
   generationArea.innerHTML = "";
-  const canvaDefault = canvassDiv.getBoundingClientRect();
+
   const boxesPerPage = renderPageColumn * renderPageRow;
 
   const createNewPage = () => {
     const page = document.createElement("section");
     generationArea.append(page);
+
     page.style.width = "100%";
     page.style.backgroundColor = "#00FF00";
     page.style.display = "grid";
     page.style.gridTemplateRows = `repeat(${renderPageColumn}, 1fr)`;
     page.style.gridTemplateColumns = `repeat(${renderPageRow}, 1fr)`;
     page.style.placeItems = "center";
+
     const width = page.getBoundingClientRect().width;
     const height = (width * renderPageSize.height) / renderPageSize.width;
     page.style.height = `${height}px`;
+
     return page;
   };
 
@@ -4324,54 +4401,71 @@ async function generateCard() {
   const cellWidth = containerWidth / renderPageRow;
   const cellHeight = containerHeight / renderPageColumn;
 
-  const scale = Math.min(
-    cellWidth / canvaDefault.width,
-    cellHeight / canvaDefault.height,
-  );
+  // scale for preview grid placement (DOM sizing)
+  const paperRect0 = canvassDiv.getBoundingClientRect();
+  const scale = Math.min(cellWidth / paperRect0.width, cellHeight / paperRect0.height);
+
   let iterationLength = 1;
 
   if (textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...textBoxes.map((tb) => tb.textArea.split("\n").length),
+      ...textBoxes.map((tb) => tb.textArea.split("\n").length)
     );
   }
+
   const maxImageIterLength = Math.max(
     1,
     ...images.map((imgObj) =>
       imgObj.iteratedFiles && imgObj.iteratedFiles.length > 0
         ? imgObj.iteratedFiles.length
-        : 1,
-    ),
+        : 1
+    )
   );
+
   iterationLength = Math.max(iterationLength, maxImageIterLength);
 
   let boxCountInPage = 0;
-  let scaleFactor = 2;
+
+  // Increase output resolution. You can change this to 1, 2, 3...
+  const scaleFactor = 2;
+
   for (let i = 0; i < iterationLength; i++) {
+    // 1) draw current iteration onto main canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     images.forEach((img) => img.drawIteratedImage(i));
+    textBoxes.forEach((textBox) => textBox.drawIteratedImage(i));
     objects.forEach((obj) => obj.addObject());
+
+    // 2) compute crop region (paper div) in CANVAS pixel coords
+    const canvasRect = canvas.getBoundingClientRect();
+    const paperRect = canvassDiv.getBoundingClientRect();
+
+    const sx = canvas.width / canvasRect.width;
+    const sy = canvas.height / canvasRect.height;
+
+    const cropX = (paperRect.left - canvasRect.left) * sx;
+    const cropY = (paperRect.top - canvasRect.top) * sy;
+    const cropW = paperRect.width * sx;
+    const cropH = paperRect.height * sy;
+
+    // 3) copy cropped area to an offscreen canvas
     const croppedCanvas = document.createElement("canvas");
     const cty = croppedCanvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
 
-    croppedCanvas.width = canvaDefault.width * scaleFactor;
-    croppedCanvas.height = canvaDefault.height * scaleFactor;
-    cty.scale(scaleFactor, scaleFactor);
+    croppedCanvas.width = cropW * scaleFactor;
+    croppedCanvas.height = cropH * scaleFactor;
+
+    cty.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
     cty.drawImage(
       canvas,
-      canvaDefault.x - rect.x,
-      canvaDefault.y - rect.y,
-      canvaDefault.width,
-      canvaDefault.height,
-      0,
-      0,
-      canvaDefault.width,
-      canvaDefault.height,
+      cropX, cropY, cropW, cropH,   // source (canvas pixels)
+      0, 0, cropW, cropH            // dest (before scaleFactor transform)
     );
+
     const canvasData = croppedCanvas.toDataURL();
 
+    // 4) create preview element
     const div = document.createElement("div");
     const img = document.createElement("img");
     img.src = canvasData;
@@ -4381,6 +4475,7 @@ async function generateCard() {
     div.style.display = "flex";
     div.style.alignItems = "center";
     div.style.justifyContent = "center";
+
     if (renderPageResolution === "auto") {
       div.style.width = "100%";
       img.style.width = "100%";
@@ -4388,26 +4483,18 @@ async function generateCard() {
       img.style.objectFit = "cover";
       div.append(img);
       generationArea.append(div);
-      div.style.height = `${
-        (div.getBoundingClientRect().width * canvaDefault.height) /
-        canvaDefault.width
-      }px`;
-      textBoxes.forEach((textbox) => {
-        div.append(
-          textbox.generateText(i, {
-            width: div.getBoundingClientRect().width,
-            height: div.getBoundingClientRect().height,
-          }),
-        );
-      });
+
+      const w = div.getBoundingClientRect().width;
+      div.style.height = `${(w * paperRect.height) / paperRect.width}px`;
     } else {
       if (boxCountInPage >= boxesPerPage) {
         currentPage = createNewPage();
         boxCountInPage = 0;
       }
 
-      div.style.width = `${canvaDefault.width * scale}px`;
-      div.style.height = `${canvaDefault.height * scale}px`;
+      div.style.width = `${paperRect0.width * scale}px`;
+      div.style.height = `${paperRect0.height * scale}px`;
+
       img.style.width = "100%";
       img.style.height = "100%";
       img.style.objectFit = "contain";
@@ -4415,18 +4502,10 @@ async function generateCard() {
       div.append(img);
       currentPage.append(div);
 
-      textBoxes.forEach((textbox) => {
-        div.append(
-          textbox.generateText(i, {
-            width: div.getBoundingClientRect().width,
-            height: div.getBoundingClientRect().height,
-          }),
-        );
-      });
-
       boxCountInPage++;
     }
   }
+
   document.querySelector(".generate").style.display = "none";
 }
 
@@ -4434,10 +4513,17 @@ canvas.addEventListener("mousedown", (event) => {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
 
   isDraggingObject = false;
-  if (isDrawing !== null && isDrawing !== "text") {
+  if (isDrawing !== null) {
+    if(isDrawing === "text"){
+  const text = new TextBox(pos.x,pos.y);
+  objects.push(text);
+  textBoxes.push(text)
+    }else{
     drawingStart = true;
     drawingCoordinate.start = { x: pos.x, y: pos.y };
     drawingCoordinate.end = { x: pos.x, y: pos.y };
+
+    }
   } else if (pen !== null) {
     pen.drawPen(pos);
     selectedObj = pen;
@@ -4516,7 +4602,15 @@ canvas.addEventListener("mousedown", (event) => {
         break;
       } else {
         selectedObj = null;
+        
       }
+    }
+    if(selectedObj === null){
+      isPanning = true
+        panStartX = event.clientX;
+  panStartY = event.clientY;
+  panOriginX = panX;
+  panOriginY = panY;
     }
   }
 
@@ -4535,12 +4629,27 @@ canvas.addEventListener("dblclick", (event) => {
     }
   }
 });
+window.addEventListener("mousemove", (e) => {
+  if (!isPanning) return;
 
+  const dx = e.clientX - panStartX;
+  const dy = e.clientY - panStartY;
+
+  panX = panOriginX + dx;
+  panY = panOriginY + dy;
+
+  updateZoom(true);
+});
 window.addEventListener("mouseup", () => (isPanning = false));
 canvas.addEventListener("mouseup", () => {
   if (drawingStart) {
     drawingStart = false;
+    if(isDrawing === "zoom"){
+      zoomToDrawnRect()
+    }else{
     objects.push(drawingObject());
+    }
+
   }
   // if (isDraggingObject || isRotatingObject) {
   //   undoObject.push(cloneObject(objects));
@@ -4564,6 +4673,7 @@ canvas.addEventListener("mousemove", (event) => {
   draw();
 });
 
+
 function draw() {
   try {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -4579,7 +4689,22 @@ function draw() {
       });
     }
     if (drawingStart) {
+if (isDrawing === "zoom") {
+  const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
+  const y = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
+  const w = Math.abs(drawingCoordinate.end.x - drawingCoordinate.start.x);
+  const h = Math.abs(drawingCoordinate.end.y - drawingCoordinate.start.y);
+
+  ctx.save();
+  ctx.globalAlpha = 0.25;
+  ctx.fillRect(x, y, w, h);
+  ctx.globalAlpha = 1;
+  ctx.strokeRect(x, y, w, h);
+  ctx.restore();
+}else{
       drawingObject().addObject();
+    }
+
     }
   } catch (err) {
     console.log(err);
