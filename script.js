@@ -9,33 +9,30 @@ let textBoxes = [];
 const generationArea = document.getElementById("generationArea");
 let objects = [];
 let images = [];
-const notification = document.querySelector(".notification")
-const editclip = document.querySelector(".editclip")
+const notification = document.querySelector(".notification");
+const editclip = document.querySelector(".editclip");
 const width = document.getElementById("width");
 const height = document.getElementById("height");
 let whatsMeasured = "px";
 let measurement = { width: 817, height: 1055 };
 let renderPageResolution = "auto";
 let cloneObj = null;
-let cloneText = null;
 let renderPageRow = 1;
 let renderPageColumn = 1;
 let renderPageSize = "auto";
 let pen = null;
-let multipleSelect = false 
-let multipleSelectArr = []
-let undoObject = []
-let redoObject = []
-let undoText = []
-let redoText = []
+let multipleSelect = false;
+let multipleSelectArr = [];
+let undoObject = [];
+let redoObject = [];
 let renderWidth;
 let renderHeight;
-let noPerRow = 1
-let noPerColumn = 1
-let isDrawing = null
+let noPerRow = 1;
+let noPerColumn = 1;
+let isDrawing = null;
 let duplicateClicked = false;
-let drawingCoordinate = {start:{x:0,y:0},end:{x:0,y:0}}
-let drawingStart = false
+let drawingCoordinate = { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } };
+let drawingStart = false;
 const measurementArr = [
   { width: 2244, height: 3182 },
   { width: 1588, height: 2244 },
@@ -52,14 +49,12 @@ let isDraggingObject = false;
 let isRotatingObject = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
-let scale = 1
+let scale = 1;
 let selectedObj = null;
-let selectedText = null;
 let textLastMouseX = 0;
 let textLastMouseY = 0;
-let isDraggingText = false;
 let clipped = null;
-let allFonts = [  "serif",
+let defaultFonts =[  "serif",
   "sans-serif",
   "monospace",
   "cursive",
@@ -67,18 +62,21 @@ let allFonts = [  "serif",
   "system-ui",
   "emoji",
   "math",
-  "fangsong"];
-  let isPanning = false;
-  let startX, startY;
-  let panX = 0
-  let panY = 0
+  "fangsong",]
+let allFonts = [
+...defaultFonts
+];
+let isPanning = false;
+let startX, startY;
+let panX = 0;
+let panY = 0;
 fetch(
-  "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8"
+  "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8",
 )
   .then((res) => res.json())
   .then((data) => {
     const newFonts = data.items.map((item) => item.family);
-    allFonts.push(...newFonts)
+    allFonts.push(...newFonts);
   })
   .catch(console.error);
 
@@ -113,7 +111,7 @@ class LineUtils {
             prev.x,
             prev.y,
             curr.x,
-            curr.y
+            curr.y,
           );
           if (dist < threshold) return { value: i, type: "lineIndex" };
           prev = curr;
@@ -125,7 +123,7 @@ class LineUtils {
           p1.x,
           p1.y,
           p2.x,
-          p2.y
+          p2.y,
         );
         if (dist <= threshold) return { value: i, type: "lineIndex" };
       }
@@ -267,7 +265,7 @@ class LineUtils {
           cp2.x,
           cp2.y,
           first.points.x,
-          first.points.y
+          first.points.y,
         );
       } else {
         ctx.lineTo(first.points.x, first.points.y);
@@ -376,9 +374,9 @@ class LineUtils {
   }
 }
 class Formats {
-  constructor(){
-    this.scaleX = 1
-    this.scaleY = 1
+  constructor() {
+    this.scaleX = 1;
+    this.scaleY = 1;
   }
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
@@ -425,97 +423,107 @@ class Formats {
       this.formatProperties();
     });
   }
-  similarProptiesOutput() {
-    return `
-     <div>
-    <h3>Fill</h3>
-    <select class="color-select">
-    <option value="none" ${
-      this.colorFill === "none" ? "selected" : ""
-    }>None</option>
-    <option value="uniform" ${
-      this.colorFill === "uniform" ? "selected" : ""
-    }>Uniform</option>
-    <option value="linear" ${
-      this.colorFill === "linear" ? "selected" : ""
-    }>Linear-Gradient</option>
-    <option value="radial"${
-      this.colorFill === "radial" ? "selected" : ""
-    }>Radial-Gradient</option>
-    </select>
-    <div class="uniform-div" style="display: ${
-      this.colorFill === "uniform" ? "flex" : "none"
-    }">
-    Background-Color: <input type="color" value="${
-      this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]
-    }" name="bgColor">
-    </div>
-    <div
-    <div style="display:${
-      this.colorFill === "linear" || this.colorFill === "radial"
-        ? "flex"
-        : "none"
-    };flex-direction:column;gap:1rem">
-      ${this.color
-        .map(
-          (color, i) =>
-            `<div class="color-div">
-          <div style="text-wrap:nowrap; padding:0.5rem 1rem">Index: ${i}</div>
-          <div>Stop:<input type="number" min="0" max="1" step="0.01"  value="${
-            this.colorStop[i]
-          }"></div>
-          <input type="color" value="${
-            color.length > 7 ? color.slice(0, 7) : color
-          }">
-          <button></button>
-          </div>`
-        )
-        .join("")}
-      <section class="color-sec">
-      <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
-      <div style="display:${
-        this.colorFill === "linear" ? "flex" : "none"
-      }">Rotation <input type="number" name="colorDeg" value="${radToDeg(
-      this.colorDeg,
-      "deg"
-    )}">deg</div>
-      </section>
-      
+similarProptiesOutput() {
+  return `
+    <section class="fill-section">
+      <h3>Fill</h3>
 
-    </div>
+      <select class="color-select">
+        <option value="none" ${this.colorFill === "none" ? "selected" : ""}>None</option>
+        <option value="uniform" ${this.colorFill === "uniform" ? "selected" : ""}>Uniform</option>
+        <option value="linear" ${this.colorFill === "linear" ? "selected" : ""}>Linear-Gradient</option>
+        <option value="radial" ${this.colorFill === "radial" ? "selected" : ""}>Radial-Gradient</option>
+      </select>
+
+      <label class="uniform-div" style="display:${this.colorFill === "uniform" ? "flex" : "none"}">
+        <span>Background-Color:</span>
+        <input
+          type="color"
+          name="bgColor"
+          value="${this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]}"
+        >
+      </label>
+
+      <section
+        class="gradient-section"
+        style="display:${this.colorFill === "linear" || this.colorFill === "radial" ? "flex" : "none"};flex-direction:column;gap:1rem"
+      >
+        ${this.color
+          .map(
+            (color, i) => `
+              <div class="color-div">
+                <div style="text-wrap:nowrap; padding:0.5rem 1rem">Index: ${i}</div>
+
+                <label>
+                  Stop:
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="${this.colorStop[i]}"
+                  >
+                </label>
+
+                <input type="color" value="${color.length > 7 ? color.slice(0, 7) : color}">
+                <button></button>
+              </div>
+            `
+          )
+          .join("")}
+
+        <section class="color-sec">
+          <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
+
+          <label style="display:${this.colorFill === "linear" ? "flex" : "none"}">
+            Rotation
+            <input type="number" name="colorDeg" value="${radToDeg(this.colorDeg, "deg")}">deg
+          </label>
+        </section>
+      </section>
+    </section>
+
+    <section class="outline-section" style="display:flex; flex-direction:column; gap:1rem">
+      <header style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
+        <h3>Outline</h3>
+        <button class="${this.outline ? "outlinet" : "outlinef"}" id="outline"></button>
+      </header>
+
+      <section style="display:${this.outline ? "flex" : "none"}; flex-direction:column; gap:1rem">
+        <label class="uniform-div">
+          <span>Outiline Color</span>
+          <input type="color" name="outlineColor" value="${this.outlineColor}">
+        </label>
+
+        <label class="thick">
+          <span>Outline Thickness</span>
+          <input type="number" name="outlineThickness" value="${changeValues(this.outlineThickness)}">
+        </label>
+
+        <div class="uniform-div">
+          Outline Type
+          <div>
+            <button class="normalb"></button>
+            <button class="dashedb"></button>
+          </div>
         </div>
 
-            <div style="display: flex; flex-direction: column; gap:1rem">
-    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center">
-    <h3>Outline</h3>
-    <button class="${
-      this.outline ? "outlinet" : "outlinef"
-    }" id="outline"></button>    
-    </div>
-    <div style="display: ${
-      this.outline ? "flex" : "none"
-    }; flex-direction: column; gap:1rem">
-    <div class="uniform-div">Outiline Color <input type="color" name="outlineColor" value="${
-      this.outlineColor
-    }"></div>
-    <div class="thick">Outline Thickness <input type="number" name="outlineThickness" value="${changeValues(
-      this.outlineThickness
-    )}"></div>
-    <div class="uniform-div">Outline Type <div><button class="normalb"></button><button class="dashedb"></button></div></div>
-      <div class="two-grid" style="display:${
-        this.outlineType.length !== 0 ? "grid" : "none"
-      }">
-    <div>Width<input type="number" name="lineDashWidth" value="${
-      this.lineDashWidth
-    }"></div>
-    <div>Spacing<input type="number" name="lineDashSpacing" value="${
-      this.lineDashSpacing
-    }"></div>
-    </div>
-    </div>
-    </div>
-    `;
-  }
+        <div class="two-grid" style="display:${this.outlineType.length !== 0 ? "grid" : "none"}">
+          <label class="field">
+            <span class="field-label">Width</span>
+            <input type="number" name="lineDashWidth" value="${this.lineDashWidth}">
+          </label>
+
+          <label class="field">
+            <span class="field-label">Spacing</span>
+            <input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}">
+          </label>
+        </div>
+      </section>
+    </section>
+  `;
+}
+
   lineFormat(localMouseX, localMouseY, localDeltaX, localDeltaY) {
     if (this.selectedArea === "lineIndex") {
       const next = (this.selectedLineIndex + 1) % this.points.length;
@@ -539,20 +547,21 @@ class Formats {
       this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
       this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
 
-      for(let i=0; i<this.points.length;i++){
+      for (let i = 0; i < this.points.length; i++) {
         if (i === this.selectedLineIndex) continue;
-        const nextPoint = this.points[i].points
-        let ifGet = false
-        if(Math.abs(nextPoint.x-this.points[this.selectedLineIndex].points.x) < 10){
-          this.points[this.selectedLineIndex].points.x = nextPoint.x
-          ifGet = true
+        const nextPoint = this.points[i].points;
+        if (
+          Math.abs(nextPoint.x - this.points[this.selectedLineIndex].points.x) <
+          10
+        ) {
+          this.points[this.selectedLineIndex].points.x = nextPoint.x;
         }
-        if(Math.abs(nextPoint.y-this.points[this.selectedLineIndex].points.y) < 10){
-          this.points[this.selectedLineIndex].points.y = nextPoint.y
-          ifGet = true
+        if (
+          Math.abs(nextPoint.y - this.points[this.selectedLineIndex].points.y) <
+          10
+        ) {
+          this.points[this.selectedLineIndex].points.y = nextPoint.y;
         }
-        if(ifGet) break
-
       }
     } else if (this.selectedArea === "curveIndex") {
       const { curveIndex, controlIndex } = this.selectedLineIndex;
@@ -563,7 +572,7 @@ class Formats {
   pointDblClick(localMouseX, localMouseY) {
     if (this.selectedArea === "pointIndex") {
       if (this.points.length > 3) {
-        this.points.splice(this.selectedPointIndex, 1);
+        this.points.splice(this.selectedLineIndex, 1);
         return true;
       }
     }
@@ -697,17 +706,17 @@ class Formats {
       } else if (this.selectedArea === "Selected") {
         this.x += mouse.x - lastMouseX;
         this.y += mouse.y - lastMouseY;
-                  if (this.clips.length > 0) {
-            this.clips.forEach((clip) =>
-              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY)
-            );
-          }
+        if (this.clips.length > 0) {
+          this.clips.forEach((clip) =>
+            clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
+          );
+        }
       }
     }
   }
 }
 class Rectangle extends Formats {
-  constructor(x,y,width,height) {
+  constructor(x, y, width, height) {
     super();
     this.x = x;
     this.y = y;
@@ -781,7 +790,7 @@ class Rectangle extends Formats {
         cornerRadius: 0,
       },
     ];
-        this.opacity = 100;
+    this.opacity = 100;
     this.selectedLineIndex = null;
     this.mode = "edit";
     this.colorFill = "uniform";
@@ -803,7 +812,7 @@ class Rectangle extends Formats {
     const centerY = this.y + this.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(this.angle);
-        ctx.scale(this.scaleX,this.scaleY)
+    ctx.scale(this.scaleX, this.scaleY);
     ctx.beginPath();
     this.createPath();
     if (this.colorFill !== "none") {
@@ -824,7 +833,7 @@ class Rectangle extends Formats {
         LineUtils.drawEditArcs(
           this.points,
           this.selectedArea,
-          this.selectedLineIndex
+          this.selectedLineIndex,
         );
     }
     ctx.closePath();
@@ -839,7 +848,7 @@ class Rectangle extends Formats {
           -this.height / 2 - this.outlineThickness / 2,
           this.width + this.outlineThickness,
           this.height + this.outlineThickness,
-          this.cornerRadius
+          this.cornerRadius,
         );
       } else if (this.roundedOrbeveled === "beveled") {
         this.drawBeveledRect(
@@ -847,7 +856,7 @@ class Rectangle extends Formats {
           -this.height / 2 - this.outlineThickness / 2,
           this.width + this.outlineThickness,
           this.height + this.outlineThickness,
-          this.cornerRadius
+          this.cornerRadius,
         );
       }
 
@@ -864,14 +873,14 @@ class Rectangle extends Formats {
           -this.width / 2 - 2,
           -this.height / 2 - 2,
           this.width + 4,
-          this.height + 4
+          this.height + 4,
         );
       } else {
         ctx.strokeRect(
           this.minX,
           this.minY,
           this.maxX - this.minX,
-          this.maxY - this.minY
+          this.maxY - this.minY,
         );
         if (this.mode === "normal") {
           ctx.beginPath();
@@ -888,7 +897,7 @@ class Rectangle extends Formats {
       ctx.translate(centerX, centerY);
       ctx.rotate(this.angle);
       this.createPath();
-      ctx.clip()
+      ctx.clip();
       ctx.translate(-centerX, -centerY);
       this.clips.forEach((clip) => {
         clip.addObject();
@@ -898,7 +907,7 @@ class Rectangle extends Formats {
   }
   colorType() {
     const colors = this.color.map((color) =>
-      applyOpacityToHex(color, this.opacity)
+      applyOpacityToHex(color, this.opacity),
     );
     this.color = colors;
     if (this.colorFill === "uniform") {
@@ -929,7 +938,7 @@ class Rectangle extends Formats {
         });
       }
       this.colorStop.forEach((stop, i) =>
-        grad.addColorStop(stop, this.color[i])
+        grad.addColorStop(stop, this.color[i]),
       );
 
       return grad;
@@ -956,7 +965,7 @@ class Rectangle extends Formats {
         0,
         centerX,
         centerY,
-        radius
+        radius,
       );
       if (this.colorStop.length === 0) {
         this.color.forEach((c, i) => {
@@ -965,7 +974,7 @@ class Rectangle extends Formats {
         });
       }
       this.colorStop.forEach((stop, i) =>
-        grad.addColorStop(stop, this.color[i])
+        grad.addColorStop(stop, this.color[i]),
       );
 
       return grad;
@@ -990,7 +999,7 @@ class Rectangle extends Formats {
         -this.height / 2,
         this.width,
         this.height,
-        this.cornerRadius
+        this.cornerRadius,
       );
     } else if (this.roundedOrbeveled === "beveled") {
       this.drawBeveledRect(
@@ -998,7 +1007,7 @@ class Rectangle extends Formats {
         -this.height / 2,
         this.width,
         this.height,
-        this.cornerRadius
+        this.cornerRadius,
       );
     }
   }
@@ -1058,16 +1067,17 @@ class Rectangle extends Formats {
         localY,
         this.width,
         this.height,
-        10
+        10,
       );
 
       return this.selectedArea !== null;
     }
   }
-  moveClip(x,y){
-    this.x += x
-    this.y += y
-    if(this.clips.length > 0)this.clips.forEach(clip=>clip.moveClip(x,y))
+  moveClip(x, y) {
+    this.x += x;
+    this.y += y;
+    if (this.clips.length > 0)
+      this.clips.forEach((clip) => clip.moveClip(x, y));
   }
   formatSelected(mouse) {
     const centerX = this.x + this.width / 2;
@@ -1101,7 +1111,7 @@ class Rectangle extends Formats {
           this.y += mouse.y - lastMouseY;
           if (this.clips.length > 0) {
             this.clips.forEach((clip) =>
-              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY)
+              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
             );
           }
         }
@@ -1128,85 +1138,136 @@ class Rectangle extends Formats {
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    clone.points = this.points.map(p => ({
-  points: { x: p.points.x, y: p.points.y },
-  edgeModes: p.edgeModes,
-  controls: p.controls.map(c => ({ x: c.x, y: c.y })),
-  cornerRadius: p.cornerRadius
-}));
+    clone.points = this.points.map((p) => ({
+      points: { x: p.points.x, y: p.points.y },
+      edgeModes: p.edgeModes,
+      controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
+      cornerRadius: p.cornerRadius,
+    }));
 
-clone.clips = this.clips.map(c => c.showClone()); 
-return clone
+    clone.clips = this.clips.map((c) => c.showClone());
+    return clone;
   }
 
   formatProperties() {
-    propertiesBar.innerHTML = `
-    <div>
+propertiesBar.innerHTML = `
+  <section class="coord-section">
     <h3>Coordinate</h3>
-    <div class="two-grid">
-    <div>X    <input type="number" name="x" value="${
-      this.roundedOrbeveled === "shaped"
-        ? changeValues(this.x + this.minX + this.width / 2)
-        : changeValues(this.x)
-    }"></div>
-    <div> Y   <input type="number" name="y" value="${
-      this.roundedOrbeveled === "shaped"
-        ? changeValues(this.x + this.minY + this.height / 2)
-        : changeValues(this.y)
-    }"></div>
-    <div>W    <input type="number" name="width" value="${
-      this.roundedOrbeveled === "shaped"
-        ? changeValues(this.maxX - this.minX)
-        : changeValues(this.width)
-    }"></div>
-    <div> H  <input type="number" name="height" value="${
-      this.roundedOrbeveled === "shaped"
-        ? changeValues(this.maxY - this.minY)
-        : changeValues(this.height)
-    }"> </div> 
-    <div>Rotation <input type="number" name="angle" value="${radToDeg(
-      this.angle,
-      "deg"
-    )}"></div>
-    <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
+
+    <div class="two-grid coord-grid">
+      <label class="field">
+        <span class="field-label">X</span>
+        <input type="number" name="x" value="${
+          this.roundedOrbeveled === "shaped"
+            ? changeValues(this.x + this.minX + this.width / 2)
+            : changeValues(this.x)
+        }">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Y</span>
+        <input type="number" name="y" value="${
+          this.roundedOrbeveveled === "shaped"
+            ? changeValues(this.x + this.minY + this.height / 2)
+            : changeValues(this.y)
+        }">
+      </label>
+
+      <label class="field">
+        <span class="field-label">W</span>
+        <input type="number" name="width" value="${
+          this.roundedOrbeveled === "shaped"
+            ? changeValues(this.maxX - this.minX)
+            : changeValues(this.width)
+        }">
+      </label>
+
+      <label class="field">
+        <span class="field-label">H</span>
+        <input type="number" name="height" value="${
+          this.roundedOrbeveled === "shaped"
+            ? changeValues(this.maxY - this.minY)
+            : changeValues(this.height)
+        }">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Rotation</span>
+        <input type="number" name="angle" value="${radToDeg(this.angle, "deg")}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Opacity</span>
+        <input type="number" name="opacity" min="0" max="100" value="100">
+      </label>
     </div>
-    </div>
+  </section>
+
   ${super.similarProptiesOutput()}
-      <div class="shape">
-        <div><button class="beveled ${this.roundedOrbeveled === "beveled" ? "selected" : " "}"><img src="images/Vector 169.svg"></button><button class="rounded ${this.roundedOrbeveled === "rounded" ? "selected" : " "}"><img src="images/Rectangle 128.svg"></button><button class="shapetool ${this.roundedOrbeveled === "shaped" ? "selected" : " "}"><img src="images/Group 33.svg"></button></div>
-        <div style="display:${
-          this.roundedOrbeveled === "shaped" ? "flex" : "none"
-        }"><button class="convert ${          this.selectedArea === "pointIndex" &&
-          this.points[this.selectedLineIndex].edgeModes === "shaped" ? "selected" : " "}"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
-        <div style="display:${
-          this.selectedArea === "pointIndex" &&
-          this.points[this.selectedLineIndex].edgeModes === "shaped"
-            ? "none"
-            : "flex"
-        }" class="thick">Corner Radius <input type="number" name="cornerRadius" value="${
-      this.selectedArea === "pointIndex"
-        ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
-        : changeValues(this.cornerRadius)
-    }"></div>
-        <div style="display:${
-          this.roundedOrbeveled === "shaped" ? "flex" : "none"
-        } ;justify-content:end;align-items:end"><button class="normal">${
-      this.mode === "edit" ? "Done" : "Edit"
-    }</button></div>
-      </div>
 
+  <section class="shape">
+    <div class="shape-row">
+      <button class="beveled ${this.roundedOrbeveled === "beveled" ? "selected" : ""}">
+        <img src="images/Vector 169.svg" alt="Beveled">
+      </button>
+      <button class="rounded ${this.roundedOrbeveled === "rounded" ? "selected" : ""}">
+        <img src="images/Rectangle 128.svg" alt="Rounded">
+      </button>
+      <button class="shapetool ${this.roundedOrbeveled === "shaped" ? "selected" : ""}">
+        <img src="images/Group 33.svg" alt="Shape tool">
+      </button>
+    </div>
 
-  `;
-  if(this.roundedOrbeveled === "shaped"){
-  let ifRounded = false
-    this.points.forEach(p=>{
-      if(p.edgeModes !== null) ifRounded = true
-    })
-    if(ifRounded && this.selectedArea === "pointIndex" &&
-          this.points[this.selectedLineIndex].edgeModes !== "rounded"){
-      document.querySelector(".thick input").readOnly = true
-          }else document.querySelector(".thick input").readOnly = false
-  }
+    <div class="shape-row" style="display:${this.roundedOrbeveled === "shaped" ? "flex" : "none"}">
+      <button class="convert ${
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "shaped"
+          ? "selected"
+          : ""
+      }">
+        <img src="images/Group 34.svg" alt="Convert">
+      </button>
+      <button class="rounded-edge">
+        <img src="images/Group 32.svg" alt="Rounded edge">
+      </button>
+    </div>
+
+    <label
+      class="thick"
+      style="display:${
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "shaped"
+          ? "none"
+          : "flex"
+      }"
+    >
+      <span class="field-label">Corner Radius</span>
+      <input type="number" name="cornerRadius" value="${
+        this.selectedArea === "pointIndex"
+          ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
+          : changeValues(this.cornerRadius)
+      }">
+    </label>
+
+    <div class="shape-row shape-actions" style="display:${this.roundedOrbeveled === "shaped" ? "flex" : "none"};justify-content:end;align-items:end">
+      <button class="normal">${this.mode === "edit" ? "Done" : "Edit"}</button>
+    </div>
+  </section>
+`;
+
+    if (this.roundedOrbeveled === "shaped") {
+      let ifRounded = false;
+      this.points.forEach((p) => {
+        if (p.edgeModes !== null) ifRounded = true;
+      });
+      if (
+        ifRounded &&
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes !== "rounded"
+      ) {
+        document.querySelector(".thick input").readOnly = true;
+      } else document.querySelector(".thick input").readOnly = false;
+    }
     super.similarPropties();
     document.querySelector(".beveled").addEventListener("click", () => {
       this.roundedOrbeveled = "beveled";
@@ -1218,160 +1279,207 @@ return clone
     });
     document.querySelector(".shapetool").addEventListener("click", () => {
       this.roundedOrbeveled = "shaped";
-          this.points = [
-      {
-        points: { x: -this.width / 2, y: -this.height / 2 },
-        edgeModes: null,
-        controls: [
-          { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
-          { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
-        ],
-        cornerRadius: 0,
-      },
-      {
-        points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
-        edgeModes: null,
-        controls: [
-          {
-            x: -this.width / 2 + this.width,
-            y: -this.height / 2 + this.height * 0.25,
-          },
-          {
-            x: -this.width / 2 + this.width,
-            y: -this.height / 2 + this.height * 0.75,
-          },
-        ],
-        cornerRadius: 0,
-      },
-      {
-        points: {
-          x: -this.width / 2 + this.width,
-          y: -this.height / 2 + this.height,
+      this.points = [
+        {
+          points: { x: -this.width / 2, y: -this.height / 2 },
+          edgeModes: null,
+          controls: [
+            { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
+            { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
+          ],
+          cornerRadius: 0,
         },
-        edgeModes: null,
-        controls: [
-          {
-            x: -this.width / 2 + this.width * 0.75,
+        {
+          points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
+          edgeModes: null,
+          controls: [
+            {
+              x: -this.width / 2 + this.width,
+              y: -this.height / 2 + this.height * 0.25,
+            },
+            {
+              x: -this.width / 2 + this.width,
+              y: -this.height / 2 + this.height * 0.75,
+            },
+          ],
+          cornerRadius: 0,
+        },
+        {
+          points: {
+            x: -this.width / 2 + this.width,
             y: -this.height / 2 + this.height,
           },
-          {
-            x: -this.width / 2 + this.width * 0.25,
-            y: -this.height / 2 + this.height,
-          },
-        ],
-        cornerRadius: 0,
-      },
-      {
-        points: { x: -this.width / 2, y: -this.height / 2 + this.height },
-        edgeModes: null,
-        controls: [
-          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
-          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
-        ],
-        cornerRadius: 0,
-      },
-    ];
+          edgeModes: null,
+          controls: [
+            {
+              x: -this.width / 2 + this.width * 0.75,
+              y: -this.height / 2 + this.height,
+            },
+            {
+              x: -this.width / 2 + this.width * 0.25,
+              y: -this.height / 2 + this.height,
+            },
+          ],
+          cornerRadius: 0,
+        },
+        {
+          points: { x: -this.width / 2, y: -this.height / 2 + this.height },
+          edgeModes: null,
+          controls: [
+            { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
+            { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
+          ],
+          cornerRadius: 0,
+        },
+      ];
       this.cornerRadius = 0;
-      this.scaleX = 1 ; this.scaleY = 1;
-      document.querySelector(".thick input").readOnly = true
+      this.scaleX = 1;
+      this.scaleY = 1;
+      document.querySelector(".thick input").readOnly = true;
       this.formatProperties();
     });
 
     document.querySelector(".rounded-edge").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].edgeModes =this.points[this.selectedLineIndex].edgeModes === "rounded" ? null : "rounded";
-              this.formatProperties();
+        this.points[this.selectedLineIndex].edgeModes =
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+            ? null
+            : "rounded";
+        this.formatProperties();
       }
     });
     document.querySelector(".convert").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].edgeModes =this.points[this.selectedLineIndex].edgeModes === "shaped" ? null : "shaped";
-              this.formatProperties();
+        this.points[this.selectedLineIndex].edgeModes =
+          this.points[this.selectedLineIndex].edgeModes === "shaped"
+            ? null
+            : "shaped";
+        this.formatProperties();
       }
     });
     document.querySelector(".normal").addEventListener("click", () => {
       this.mode = this.mode === "normal" ? "edit" : "normal";
       this.formatProperties();
     });
-    propertiesBar.querySelectorAll("input[type='text'],input[type='number']").forEach((input) => {
+    propertiesBar
+      .querySelectorAll("input[type='text'],input[type='number']")
+      .forEach((input) => {
+        input.addEventListener(
+          "input",
+          (e) => setTimeout(this.changeProperties(e)),
+          1000,
+        );
+      });
+    propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
       input.addEventListener(
-        "input",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000
-      );
-    });
-    propertiesBar.querySelectorAll("input[type='color']").forEach(input=>{
-            input.addEventListener(
         "change",
         (e) => setTimeout(this.changeProperties(e)),
-        1000
+        1000,
       );
-    })
+    });
     draw();
   }
 
-  changeProperties(e) {
-    const name = e.target.name;
-    if (name === "angle") {
-      this.angle = radToDeg(e.target.value, "rad");
-    } else if (name === "bgColor") {
-      this.color[0] = e.target.value;
-    } else if (name === "colorDeg") {
-      this.colorDeg = radToDeg(e.target.value, "rad");
-    } else if (name === "outlineColor") {
-      this.outlineColor = e.target.value;
-    } else if (e.target.type === "number") {
-      const value = backValues(parseFloat(e.target.value));
-      if (!isNaN(value) && value !== null) {
-        if (name === "x") {
-          this.x =
-            this.roundedOrbeveled === "shaped"
-              ? value - this.minX - this.width / 2
-              : value;
-        } else if (name === "y") {
-          this.y =
-            this.roundedOrbeveled === "shaped"
-              ? value - this.minY - this.height / 2
-              : value;
-        } else if (name === "cornerRadius") {
-          if (
-            this.selectedArea === "pointIndex" &&
-            this.points[this.selectedLineIndex].edgeModes === "rounded"
-          )
-            this.points[this.selectedLineIndex].cornerRadius = value;
-          else this.cornerRadius = value;
-        } else if (name === "opacity") {
-          this.opacity = Number(e.target.value);
-        } else if (name === "width") {
-          if (this.roundedOrbeveled === "shaped") {
-            const scaleX = value / (this.maxX - this.minX);
-            this.points.forEach((p) => {
-              p.points.x *= scaleX;
-              p.controls[0].x *= scaleX;
-              p.controls[1].x *= scaleX;
-            });
-          } else this.width = value;
-        } else if (name === "height") {
-          if (this.roundedOrbeveled === "shaped") {
-            const scaleY = value / (this.maxY - this.minY);
-            this.points.forEach((p) => {
-              p.points.y *= scaleY;
-              p.controls[0].y *= scaleY;
-              p.controls[1].y *= scaleY;
-            });
-          } else this.height = value;
-        } else {
-          this[name] = value;
-        }
+changeProperties(e) {
+  const name = e.target.name;
+
+  if (name === "angle") {
+    this.angle = radToDeg(Number(e.target.value) || 0, "rad");
+  }
+
+  if (name === "bgColor") {
+    this.color[0] = e.target.value;
+  }
+
+  if (name === "colorDeg") {
+    this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
+  }
+
+  if (name === "outlineColor") {
+    this.outlineColor = e.target.value;
+  }
+
+  if (e.target.type === "number") {
+    const value = backValues(Number(e.target.value) || 0);
+if (name === "outlineThickness") this.outlineThickness = value;
+
+    if (name === "x") {
+      this.x =
+        this.roundedOrbeveled === "shaped"
+          ? value - this.minX - this.width / 2
+          : value;
+    }
+
+    if (name === "y") {
+      this.y =
+        this.roundedOrbeveled === "shaped"
+          ? value - this.minY - this.height / 2
+          : value;
+    }
+
+    if (name === "cornerRadius") {
+      if (
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "rounded"
+      ) {
+        this.points[this.selectedLineIndex].cornerRadius = value;
+      } else {
+        this.cornerRadius = value;
       }
     }
 
-    if (this.outlineType.length !== 0)
-      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    draw();
-    undoObject.push(cloneObject(objects))
-    undoText.push("object")
+    if (name === "opacity") {
+      this.opacity = Number(e.target.value) || 0;
+    }
+
+    if (name === "width") {
+      if (this.roundedOrbeveled === "shaped") {
+        const base = this.maxX - this.minX || 1;
+        const scaleX = value / base;
+
+        this.points.forEach((p) => {
+          p.points.x *= scaleX;
+          p.controls[0].x *= scaleX;
+          p.controls[1].x *= scaleX;
+        });
+      } else {
+        this.width = value;
+      }
+    }
+
+    if (name === "height") {
+      if (this.roundedOrbeveled === "shaped") {
+        const base = this.maxY - this.minY || 1;
+        const scaleY = value / base;
+
+        this.points.forEach((p) => {
+          p.points.y *= scaleY;
+          p.controls[0].y *= scaleY;
+          p.controls[1].y *= scaleY;
+        });
+      } else {
+        this.height = value;
+      }
+    }
+
+    if (name === "lineDashWidth") {
+      this.lineDashWidth = value;
+    }
+
+    if (name === "lineDashSpacing") {
+      this.lineDashSpacing = value;
+    }
   }
+
+  if (this.outlineType.length !== 0) {
+    this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+  }
+
+  draw();
+  undoObject.push(cloneObject(objects));
+
+}
+
   drawBeveledRect(x, y, width, height, bevel) {
     ctx.beginPath();
     ctx.moveTo(x + bevel, y);
@@ -1400,8 +1508,16 @@ return clone
   whereToSnap() {
     if (this.roundedOrbeveled === "shaped") {
       return {
-        x: [this.minX + this.x + this.width / 2, this.minX + this.x + this.width, this.minX + this.x + (3 * this.width / 2) ],
-        y: [this.minY + this.y + this.height / 2, this.minY + this.y + this.height, this.minY + this.y + (3 * this.height / 2)],
+        x: [
+          this.minX + this.x + this.width / 2,
+          this.minX + this.x + this.width,
+          this.minX + this.x + (3 * this.width) / 2,
+        ],
+        y: [
+          this.minY + this.y + this.height / 2,
+          this.minY + this.y + this.height,
+          this.minY + this.y + (3 * this.height) / 2,
+        ],
         pos: {
           x: this.minX + this.x + this.width / 2,
           y: this.minY + this.y + this.height / 2,
@@ -1419,17 +1535,16 @@ return clone
 
   changeLocation(value, type) {
     if (type === "x") {
-            this.clips.forEach((clip)=>{
-              const lastLocation = clip.whereToSnap().pos.x -this.x + value
-        clip.changeLocation(lastLocation,"x")
-      })
+      this.clips.forEach((clip) => {
+        const lastLocation = clip.whereToSnap().pos.x - this.x + value;
+        clip.changeLocation(lastLocation, "x");
+      });
       this.x = value;
-
     } else {
-                  this.clips.forEach((clip)=>{
-                    const lastLocation = clip.whereToSnap().pos.y -this.y  + value
-        clip.changeLocation(lastLocation,"y")
-      })
+      this.clips.forEach((clip) => {
+        const lastLocation = clip.whereToSnap().pos.y - this.y + value;
+        clip.changeLocation(lastLocation, "y");
+      });
 
       this.y = value;
     }
@@ -1458,7 +1573,7 @@ return clone
 }
 
 class Ellipse extends Formats {
-  constructor(x,y,radiusX,radiusY) {
+  constructor(x, y, radiusX, radiusY) {
     super();
     this.x = x;
     this.y = y;
@@ -1482,14 +1597,14 @@ class Ellipse extends Formats {
     this.mode = "fill";
     this.colorStop = [];
     this.colorDeg = 0;
-    this.clipped = "none"
-    this.clips = []
+    this.clipped = "none";
+    this.clips = [];
   }
   addObject() {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-        ctx.scale(this.scaleX,this.scaleY)
+    ctx.scale(this.scaleX, this.scaleY);
     ctx.beginPath();
     if (this.mode === "pie") {
       ctx.moveTo(0, 0);
@@ -1500,7 +1615,7 @@ class Ellipse extends Formats {
         this.radiusY,
         0,
         this.arcStart,
-        this.arcEnd
+        this.arcEnd,
       );
     } else {
       ctx.ellipse(
@@ -1510,7 +1625,7 @@ class Ellipse extends Formats {
         this.radiusY,
         0,
         this.arcStart,
-        this.arcEnd
+        this.arcEnd,
       );
     }
     if (this.mode !== "curve") ctx.closePath();
@@ -1531,51 +1646,51 @@ class Ellipse extends Formats {
         -this.radiusX,
         -this.radiusY,
         this.radiusX * 2,
-        this.radiusY * 2
+        this.radiusY * 2,
       );
       ctx.closePath();
     }
 
     ctx.restore();
-    if(this.clips.length > 0 && this.clipped !== "editclip"){
-          ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-        ctx.beginPath();
-    if (this.mode === "pie") {
-      ctx.moveTo(0, 0);
-      ctx.ellipse(
-        0,
-        0,
-        this.radiusX,
-        this.radiusY,
-        0,
-        this.arcStart,
-        this.arcEnd
-      );
-    } else {
-      ctx.ellipse(
-        0,
-        0,
-        this.radiusX,
-        this.radiusY,
-        0,
-        this.arcStart,
-        this.arcEnd
-      );
-    }
-              ctx.clip()
-        ctx.translate(-this.x, -this.y);
-              this.clips.forEach((clip) => {
+    if (this.clips.length > 0 && this.clipped !== "editclip") {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.beginPath();
+      if (this.mode === "pie") {
+        ctx.moveTo(0, 0);
+        ctx.ellipse(
+          0,
+          0,
+          this.radiusX,
+          this.radiusY,
+          0,
+          this.arcStart,
+          this.arcEnd,
+        );
+      } else {
+        ctx.ellipse(
+          0,
+          0,
+          this.radiusX,
+          this.radiusY,
+          0,
+          this.arcStart,
+          this.arcEnd,
+        );
+      }
+      ctx.clip();
+      ctx.translate(-this.x, -this.y);
+      this.clips.forEach((clip) => {
         clip.addObject();
       });
-    ctx.restore()
+      ctx.restore();
     }
   }
 
   colorType() {
     const colors = this.color.map((color) =>
-      applyOpacityToHex(color, this.opacity)
+      applyOpacityToHex(color, this.opacity),
     );
     this.color = colors;
     if (this.colorFill === "uniform") {
@@ -1589,7 +1704,7 @@ class Ellipse extends Formats {
         -this.radiusX,
         -this.radiusY,
         endX,
-        endY
+        endY,
       );
       if (this.colorStop.length === 0) {
         this.color.forEach((c, i) => {
@@ -1598,7 +1713,7 @@ class Ellipse extends Formats {
         });
       }
       this.colorStop.forEach((stop, i) =>
-        grad.addColorStop(stop, this.color[i])
+        grad.addColorStop(stop, this.color[i]),
       );
 
       return grad;
@@ -1612,7 +1727,7 @@ class Ellipse extends Formats {
         });
       }
       this.colorStop.forEach((stop, i) =>
-        grad.addColorStop(stop, this.color[i])
+        grad.addColorStop(stop, this.color[i]),
       );
 
       return grad;
@@ -1635,14 +1750,15 @@ class Ellipse extends Formats {
       localY,
       rectW,
       rectH,
-      10
+      10,
     );
     return this.selectedArea !== null;
   }
-  moveClip(x,y){
-    this.x += x
-    this.y += y
-    if(this.clips.length > 0)this.clips.forEach(clip=>clip.moveClip(x,y))
+  moveClip(x, y) {
+    this.x += x;
+    this.y += y;
+    if (this.clips.length > 0)
+      this.clips.forEach((clip) => clip.moveClip(x, y));
   }
   formatSelected(mouse) {
     const x = this.x - this.radiusX;
@@ -1655,20 +1771,20 @@ class Ellipse extends Formats {
     <h3>Coordinate</h3>
         <div class="two-grid">
     <div>X    <input type="number" name="x" value="${changeValues(
-      this.x - this.radiusX
+      this.x - this.radiusX,
     )}"></div>
     <div> Y   <input type="number" name="y" value="${changeValues(
-      this.y
+      this.y,
     )}"></div>
     <div>W    <input type="number" name="radiusX" value="${changeValues(
-      this.radiusX
+      this.radiusX,
     )}"></div>
     <div> H  <input type="number" name="radiusY" value="${changeValues(
-      this.radiusY
+      this.radiusY,
     )}"> </div> 
     <div>Rotation <input type="number" name="angle" value="${radToDeg(
       this.angle,
-      "deg"
+      "deg",
     )}"></div>
     <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
     </div>
@@ -1680,10 +1796,10 @@ class Ellipse extends Formats {
       this.mode === "fill" ? "none" : "grid"
     }" class="two-grid"><div><img style="transform: rotate(-90deg)" src="images/curveEnd.png"><input type="number" value="${radToDeg(
       this.arcStart,
-      "deg"
+      "deg",
     )}" name="arcStart"></div><div><img src="images/curveEnd.png"><input type="number" value="${radToDeg(
       this.arcEnd,
-      "deg"
+      "deg",
     )}" name="arcEnd"></div></div>
     </div>
 
@@ -1705,20 +1821,22 @@ class Ellipse extends Formats {
       if (!this.outline) this.outline = true;
       this.formatProperties();
     });
-    propertiesBar.querySelectorAll("input[type='text'],input[type='number']").forEach((input) => {
+    propertiesBar
+      .querySelectorAll("input[type='text'],input[type='number']")
+      .forEach((input) => {
+        input.addEventListener(
+          "input",
+          (e) => setTimeout(this.changeProperties(e)),
+          1000,
+        );
+      });
+    propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
       input.addEventListener(
-        "input",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000
-      );
-    });
-    propertiesBar.querySelectorAll("input[type='color']").forEach(input=>{
-            input.addEventListener(
         "change",
         (e) => setTimeout(this.changeProperties(e)),
-        1000
+        1000,
       );
-    })
+    });
     draw();
   }
   changeProperties(e) {
@@ -1748,12 +1866,12 @@ class Ellipse extends Formats {
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     draw();
-        undoObject.push(cloneObject(objects))
-    undoText.push("object")
+    undoObject.push(cloneObject(objects));
+    undoText.push("object");
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    clone.clips = this.clips.map(c => c.showClone()); 
+    clone.clips = this.clips.map((c) => c.showClone());
     return clone;
   }
   doubleClicked(mouse) {
@@ -1782,7 +1900,7 @@ class Ellipse extends Formats {
   }
 }
 class Polygon extends Formats {
-  constructor(x,y,radiusX,radiusY) {
+  constructor(x, y, radiusX, radiusY) {
     super();
     this.sides = 6;
     this.x = x;
@@ -1807,9 +1925,8 @@ class Polygon extends Formats {
     this.colorDeg = 0;
     this.colorFill = "uniform";
     this.opacity = 100;
-    this.clipped = "none"
-    this.clips = []
-
+    this.clipped = "none";
+    this.clips = [];
   }
 
   addObject() {
@@ -1843,7 +1960,7 @@ class Polygon extends Formats {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-            ctx.scale(this.scaleX,this.scaleY)
+    ctx.scale(this.scaleX, this.scaleY);
     ctx.beginPath();
     let edgeCurve = false;
     this.points.forEach((p) => {
@@ -1874,7 +1991,7 @@ class Polygon extends Formats {
       LineUtils.drawEditArcs(
         this.points,
         this.selectedArea,
-        this.selectedLineIndex
+        this.selectedLineIndex,
       );
 
     if (selectedObj === this || multipleSelectArr.includes(this)) {
@@ -1886,7 +2003,7 @@ class Polygon extends Formats {
         this.minX,
         this.minY,
         this.maxX - this.minX,
-        this.maxY - this.minY
+        this.maxY - this.minY,
       );
       if (this.mode === "normal") {
         ctx.beginPath();
@@ -1897,7 +2014,7 @@ class Polygon extends Formats {
 
     ctx.closePath();
     ctx.restore();
-        ctx.save();
+    ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
     ctx.beginPath();
@@ -1908,23 +2025,23 @@ class Polygon extends Formats {
         p.cornerRadius = this.cornerRadius;
       });
     }
-          ctx.clip()
-      ctx.translate(-this.x, -this.y);
-      this.clips.forEach((clip) => {
-        clip.addObject();
-      });
-      ctx.restore();
+    ctx.clip();
+    ctx.translate(-this.x, -this.y);
+    this.clips.forEach((clip) => {
+      clip.addObject();
+    });
+    ctx.restore();
   }
   colorType() {
     const colors = this.color.map((color) =>
-      applyOpacityToHex(color, this.opacity)
+      applyOpacityToHex(color, this.opacity),
     );
     this.color = colors;
     if (this.colorFill === "uniform") {
       return this.color[0];
     } else if (this.colorFill === "linear") {
       let length = Math.sqrt(
-        (this.maxX - this.minX) ** 2 + (this.maxY - this.minY) ** 2
+        (this.maxX - this.minX) ** 2 + (this.maxY - this.minY) ** 2,
       );
 
       const endX = this.minX + length * Math.cos(this.colorDeg);
@@ -1937,7 +2054,7 @@ class Polygon extends Formats {
         });
       }
       this.colorStop.forEach((stop, i) =>
-        grad.addColorStop(stop, this.color[i])
+        grad.addColorStop(stop, this.color[i]),
       );
 
       return grad;
@@ -1952,7 +2069,7 @@ class Polygon extends Formats {
         0,
         centerX,
         centerY,
-        radius
+        radius,
       );
       if (this.colorStop.length === 0) {
         this.color.forEach((c, i) => {
@@ -1961,7 +2078,7 @@ class Polygon extends Formats {
         });
       }
       this.colorStop.forEach((stop, i) =>
-        grad.addColorStop(stop, this.color[i])
+        grad.addColorStop(stop, this.color[i]),
       );
 
       return grad;
@@ -2023,10 +2140,11 @@ class Polygon extends Formats {
     }
     return false;
   }
-  moveClip(x,y){
-    this.x += x
-    this.y += y
-    if(this.clips.length > 0)this.clips.forEach(clip=>clip.moveClip(x,y))
+  moveClip(x, y) {
+    this.x += x;
+    this.y += y;
+    if (this.clips.length > 0)
+      this.clips.forEach((clip) => clip.moveClip(x, y));
   }
 
   formatSelected(mouse) {
@@ -2050,11 +2168,11 @@ class Polygon extends Formats {
       } else if (this.selectedArea === "Selected") {
         this.x += mouse.x - lastMouseX;
         this.y += mouse.y - lastMouseY;
-                  if (this.clips.length > 0) {
-            this.clips.forEach((clip) =>
-              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY)
-            );
-          }
+        if (this.clips.length > 0) {
+          this.clips.forEach((clip) =>
+            clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
+          );
+        }
       }
     }
     if (this.selectedArea === "scale") {
@@ -2080,20 +2198,20 @@ class Polygon extends Formats {
     <h3>Coordinate</h3>
     <div class="two-grid">
     <div>X    <input type="number" name="x" value="${changeValues(
-      this.x + this.minX
+      this.x + this.minX,
     )}"></div>
     <div> Y   <input type="number" name="y" value="${changeValues(
-      this.x + this.minY
+      this.x + this.minY,
     )}"></div>
     <div>W    <input type="number" name="width" value="${changeValues(
-      this.maxX - this.minX
+      this.maxX - this.minX,
     )}"></div>
     <div> H  <input type="number" name="height" value="${changeValues(
-      this.maxY - this.minY
+      this.maxY - this.minY,
     )}"> </div> 
     <div>Rotation <input type="number" name="angle" value="${radToDeg(
       this.angle,
-      "deg"
+      "deg",
     )}"></div>
     <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
     <div>Sides <input type="number" name="sides" value="${this.sides}"></div>
@@ -2134,20 +2252,22 @@ class Polygon extends Formats {
       this.mode = this.mode === "normal" ? "edit" : "normal";
       this.formatProperties();
     });
-    propertiesBar.querySelectorAll("input[type='text'],input[type='number']").forEach((input) => {
+    propertiesBar
+      .querySelectorAll("input[type='text'],input[type='number']")
+      .forEach((input) => {
+        input.addEventListener(
+          "input",
+          (e) => setTimeout(this.changeProperties(e)),
+          1000,
+        );
+      });
+    propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
       input.addEventListener(
-        "input",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000
-      );
-    });
-    propertiesBar.querySelectorAll("input[type='color']").forEach(input=>{
-            input.addEventListener(
         "change",
         (e) => setTimeout(this.changeProperties(e)),
-        1000
+        1000,
       );
-    })
+    });
     draw();
   }
   changeProperties(e) {
@@ -2196,20 +2316,20 @@ class Polygon extends Formats {
     }
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-        undoObject.push(cloneObject(objects))
-    undoText.push("object")
+    undoObject.push(cloneObject(objects));
+    undoText.push("object");
     draw();
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-      clone.points = this.points.map(p => ({
-  points: { x: p.points.x, y: p.points.y },
-  edgeModes: p.edgeModes,
-  controls: p.controls.map(c => ({ x: c.x, y: c.y })),
-  cornerRadius: p.cornerRadius
-}));
+    clone.points = this.points.map((p) => ({
+      points: { x: p.points.x, y: p.points.y },
+      edgeModes: p.edgeModes,
+      controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
+      cornerRadius: p.cornerRadius,
+    }));
 
-clone.clips = this.clips.map(c => c.showClone()); 
+    clone.clips = this.clips.map((c) => c.showClone());
     return clone;
   }
   doubleClicked(mouse) {
@@ -2288,7 +2408,7 @@ class Line extends Formats {
     this.opacity = 100;
     this.isDoubleClicked = false;
     this.close = false;
-        this.clipped = "none";
+    this.clipped = "none";
     this.clips = [];
   }
   addObject() {
@@ -2325,7 +2445,7 @@ class Line extends Formats {
         LineUtils.drawEditArcs(
           this.points,
           this.selectedArea,
-          this.selectedLineIndex
+          this.selectedLineIndex,
         );
       if (selectedObj === this || multipleSelectArr.includes(this)) {
         ctx.beginPath();
@@ -2336,7 +2456,7 @@ class Line extends Formats {
           this.minX,
           this.minY,
           this.maxX - this.minX,
-          this.maxY - this.minY
+          this.maxY - this.minY,
         );
         if (this.mode === "normal") {
           ctx.beginPath();
@@ -2345,31 +2465,31 @@ class Line extends Formats {
         }
       }
       ctx.restore();
-      if(this.clips.length > 0 && this.clipped !== "editclip"){
-              ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.rotate(this.angle);
-      ctx.beginPath();
-      LineUtils.drawSmartShape(this.points, this.close);
-            ctx.clip()
-                  ctx.translate(-this.x, -this.y);
-                        this.clips.forEach((clip) => {
-        clip.addObject();
-      });
-      ctx.restore();
-                }
+      if (this.clips.length > 0 && this.clipped !== "editclip") {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.beginPath();
+        LineUtils.drawSmartShape(this.points, this.close);
+        ctx.clip();
+        ctx.translate(-this.x, -this.y);
+        this.clips.forEach((clip) => {
+          clip.addObject();
+        });
+        ctx.restore();
+      }
     }
   }
   colorType() {
     const colors = this.color.map((color) =>
-      applyOpacityToHex(color, this.opacity)
+      applyOpacityToHex(color, this.opacity),
     );
     this.color = colors;
     if (this.colorFill === "uniform") {
       return this.color[0];
     } else if (this.colorFill === "linear") {
       let length = Math.sqrt(
-        (this.maxX - this.minX) ** 2 + (this.maxY - this.minY) ** 2
+        (this.maxX - this.minX) ** 2 + (this.maxY - this.minY) ** 2,
       );
 
       const endX = this.minX + length * Math.cos(this.colorDeg);
@@ -2382,7 +2502,7 @@ class Line extends Formats {
         });
       }
       this.colorStop.forEach((stop, i) =>
-        grad.addColorStop(stop, this.color[i])
+        grad.addColorStop(stop, this.color[i]),
       );
 
       return grad;
@@ -2397,7 +2517,7 @@ class Line extends Formats {
         0,
         centerX,
         centerY,
-        radius
+        radius,
       );
       if (this.colorStop.length === 0) {
         this.color.forEach((c, i) => {
@@ -2406,7 +2526,7 @@ class Line extends Formats {
         });
       }
       this.colorStop.forEach((stop, i) =>
-        grad.addColorStop(stop, this.color[i])
+        grad.addColorStop(stop, this.color[i]),
       );
 
       return grad;
@@ -2487,17 +2607,17 @@ class Line extends Formats {
       return true;
     }
   }
-  showClone(){
-        let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    clone.points = this.points.map(p => ({
-  points: { x: p.points.x, y: p.points.y },
-  edgeModes: p.edgeModes,
-  controls: p.controls.map(c => ({ x: c.x, y: c.y })),
-  cornerRadius: p.cornerRadius
-}));
+  showClone() {
+    let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    clone.points = this.points.map((p) => ({
+      points: { x: p.points.x, y: p.points.y },
+      edgeModes: p.edgeModes,
+      controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
+      cornerRadius: p.cornerRadius,
+    }));
 
-clone.clips = this.clips.map(c => c.showClone()); 
-return clone
+    clone.clips = this.clips.map((c) => c.showClone());
+    return clone;
   }
   formatSelected(mouse) {
     const dx = mouse.x - this.x;
@@ -2549,20 +2669,20 @@ return clone
     <h3>Coordinate</h3>
     <div class="two-grid">
     <div>X    <input type="number" name="x" value="${changeValues(
-      this.x + this.minX
+      this.x + this.minX,
     )}"></div>
     <div> Y   <input type="number" name="y" value="${changeValues(
-      this.x + this.minY
+      this.x + this.minY,
     )}"></div>
     <div>W    <input type="number" name="width" value="${changeValues(
-      this.maxX - this.minX
+      this.maxX - this.minX,
     )}"></div>
     <div> H  <input type="number" name="height" value="${changeValues(
-      this.maxY - this.minY
+      this.maxY - this.minY,
     )}"> </div> 
     <div>Rotation <input type="number" name="angle" value="${radToDeg(
       this.angle,
-      "deg"
+      "deg",
     )}"></div>
     <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>    </div>
     </div>
@@ -2611,20 +2731,22 @@ return clone
         this.mode = this.mode === "normal" ? "edit" : "normal";
         this.formatProperties();
       });
-    propertiesBar.querySelectorAll("input[type='text'],input[type='number']").forEach((input) => {
-      input.addEventListener(
-        "input",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000
-      );
-    });
-    propertiesBar.querySelectorAll("input[type='color']").forEach(input=>{
-            input.addEventListener(
-        "change",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000
-      );
-    })
+      propertiesBar
+        .querySelectorAll("input[type='text'],input[type='number']")
+        .forEach((input) => {
+          input.addEventListener(
+            "input",
+            (e) => setTimeout(this.changeProperties(e)),
+            1000,
+          );
+        });
+      propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
+        input.addEventListener(
+          "change",
+          (e) => setTimeout(this.changeProperties(e)),
+          1000,
+        );
+      });
       draw();
     }
   }
@@ -2671,457 +2793,430 @@ return clone
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     draw();
-        undoObject.push(cloneObject(objects))
-    undoText.push("object")
+    undoObject.push(cloneObject(objects));
+    undoText.push("object");
   }
 }
 
-class TextBox {
-  constructor() {
-    this.input = document.createElement("textarea");
+class TextBox extends Formats{
+  constructor(x, y) {
+    super()
     this.text = "Add Textbox";
+    this.fontSize = 30;
+    this.fontFamily = "Arial";
+    this.color = ["#FFCC00", "#ff0000"];
+    this.x = x;
+    this.y = y;
+    this.fontStyle = "bold";
     this.angle = 0;
-    this.isDoubleClicked = false;
+    this.width = 0;
+    this.height = 0;
     this.selectedArea;
-    this.textArea = "";
-    this.iterated = false;
+    this.outline = false;
+    this.outlineColor = "#ff0000";
+    this.outlineThickness = 5;
+    this.textAllign = "left";
+    this.lineDashWidth = 5;
+    this.outlineType = [];
+    this.lineDashSpacing = 3;
+    this.colorStop = [];
+    this.colorDeg = 0;
+    this.colorFill = "uniform";
+    this.opacity = 100;
+    this.clipped = "none";
+    this.clips = [];
     this.shadow = false;
-    this.shadowX = 2;
-    this.shadowY = 2;
-    this.shadowColor = "#000000";
-    this.shadowBlur = 3;
+    this.shadowStyle = { color: "#000000", blur: 10, offsetX: 5, offsetY: 5 };
+    this.isDoubleClicked = false;
+    this.lineHeight = 30;
+        this.textArea = "";
+    this.iterated = false;
   }
-  addObject() {
-    this.input.value = this.text;
-    this.input.readOnly = true;
-    this.input.className = "textarea";
-    this.input.addEventListener("input", (e) => {
-      this.text = e.target.value;
-          this.input.style.height = "auto";
-    this.input.style.width = "auto";
-    this.input.style.height = this.input.scrollHeight + "px";
-    this.input.style.width = this.input.scrollWidth + "px";
-    });
-    canvass.append(this.input);
+addObject() {
+  ctx.save();
+
+  const lines = this.text.split("\n");
+
+  ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
+  ctx.textAlign = this.textAllign;
+  ctx.textBaseline = "alphabetic";
+
+  let maxWidth = 0;
+  let textHeight = 0;
+
+  lines.forEach((line) => {
+    const metrics = ctx.measureText(line);
+    maxWidth = Math.max(maxWidth, metrics.width);
+    textHeight =
+      metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+  });
+
+  this.width = maxWidth;
+  this.height = textHeight + (lines.length - 1) * this.lineHeight;
+
+  const centerX = this.x + this.width / 2;
+  const centerY = this.y + this.height / 2;
+
+  ctx.translate(centerX, centerY);
+  ctx.rotate(this.angle);
+  ctx.scale(this.scaleX, this.scaleY);
+
+  if (this.shadow) {
+    ctx.shadowColor = this.shadowStyle.color;
+    ctx.shadowBlur = this.shadowStyle.blur;
+    ctx.shadowOffsetX = this.shadowStyle.offsetX;
+    ctx.shadowOffsetY = this.shadowStyle.offsetY;
+  }
+
+  const startY = -this.height / 2 + textHeight;
+
+  // ✅ FIX: Correct X position based on alignment
+  let drawX = -this.width / 2; // left default
+  if (this.textAllign === "center") drawX = 0;
+  if (this.textAllign === "right") drawX = this.width / 2;
+
+  lines.forEach((line, index) => {
+    const y = startY + index * this.lineHeight;
+
+    if (this.outline) {
+      ctx.beginPath();
+      ctx.lineWidth = this.outlineThickness;
+      ctx.strokeStyle = this.outlineColor;
+      ctx.setLineDash(this.outlineType);
+      ctx.strokeText(line, drawX, y);
+      ctx.closePath();
+    }
+
+    if (this.colorFill !== "none") {
+      ctx.fillStyle = this.colorType();
+      ctx.fillText(line, drawX, y);
+    }
+  });
+
+  if (selectedObj === this || multipleSelectArr.includes(this)) {
+    ctx.beginPath();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#0000ff";
+    ctx.setLineDash([5, 3]);
+    ctx.strokeRect(
+      -this.width / 2 - 2,
+      -this.height / 2 - 2,
+      this.width + 4,
+      this.height + 4
+    );
+    ctx.closePath();
+  }
+
+  ctx.restore();
+}
+
+
+  colorType() {
+    const colors = this.color.map((color) =>
+      applyOpacityToHex(color, this.opacity),
+    );
+    this.color = colors;
+    if (this.colorFill === "uniform") {
+      return this.color[0];
+    } else if (this.colorFill === "linear") {
+      let minX = -this.width / 2;
+      let minY = -this.height / 2;
+      let maxX = -this.width / 2 + this.width;
+      let maxY = -this.height / 2 + this.height;
+
+      let length = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2);
+
+      const endX = minX + length * Math.cos(this.colorDeg);
+      const endY = minY + length * Math.sin(this.colorDeg);
+      const grad = ctx.createLinearGradient(minX, minY, endX, endY);
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
+      }
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i]),
+      );
+
+      return grad;
+    } else if (this.colorFill === "radial") {
+      let minX = -this.width / 2;
+      let minY = -this.height / 2;
+      let maxX = -this.width / 2 + this.width;
+      let maxY = -this.height / 2 + this.height;
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      const radius = Math.max(maxX - minX, maxY - minY) / 2;
+      const grad = ctx.createRadialGradient(
+        centerX,
+        centerY,
+        0,
+        centerX,
+        centerY,
+        radius,
+      );
+      if (this.colorStop.length === 0) {
+        this.color.forEach((c, i) => {
+          let equation = i / (this.color.length - 1);
+          this.colorStop.push(equation);
+        });
+      }
+      this.colorStop.forEach((stop, i) =>
+        grad.addColorStop(stop, this.color[i]),
+      );
+
+      return grad;
+    }
   }
   whatSelected(mouse) {
-    const rect = this.input.getBoundingClientRect();
-    const edgeThreshold = 10;
-    const nearLeft = Math.abs(mouse.x - rect.x) < edgeThreshold;
-    const nearRight = Math.abs(mouse.x - (rect.x + rect.width)) < edgeThreshold;
-    const nearTop = Math.abs(mouse.y - rect.y) < edgeThreshold;
-    const nearBottom =
-      Math.abs(mouse.y - (rect.y + rect.height)) < edgeThreshold;
-    if (nearLeft && nearTop) this.selectedArea = "TopLeft";
-    else if (nearRight && nearTop) this.selectedArea = "TopRight";
-    else if (nearLeft && nearBottom) this.selectedArea = "BottomLeft";
-    else if (nearRight && nearBottom) this.selectedArea = "BottomRight";
-    else if (nearLeft) this.selectedArea = "Left";
-    else if (nearRight) this.selectedArea = "Right";
-    else if (nearTop) this.selectedArea = "Top";
-    else if (nearBottom) this.selectedArea = "Bottom";
-    else if (
-      mouse.x > rect.x &&
-      mouse.x < rect.x + rect.width &&
-      mouse.y > rect.y &&
-      mouse.y < rect.y + rect.height
+    const threshold = 10;
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
+
+    const dx = mouse.x - centerX;
+    const dy = mouse.y - centerY;
+
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+    const localX = dx * cos - dy * sin + this.width / 2;
+    const localY = dx * sin + dy * cos + this.height / 2;
+    if (
+      localX > 0 &&
+      localX < this.width &&
+      localY > 0 &&
+      localY < this.height
     ) {
       this.selectedArea = "Selected";
+    } else this.selectedArea = null;
 
-    } else {
-      this.selectedArea = null;
-
-    }
-    if(this.selectedArea!== null){
-            this.input.style.border = "2px dotted #0000ff";
-      this.input.style.resize = "both";
-    }else{
-      this.input.style.border = "none";
-    }
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
-    const rect = this.input.getBoundingClientRect();
-    const canvassRect = canvass.getBoundingClientRect();
-    const textPos = textMousePos(mouse);
-    const style = window.getComputedStyle(this.input)
-
+    console.log(this.selectedArea);
     if (this.isDoubleClicked) {
-      this.input.readOnly = false;
+      const center = {
+        x: this.x + this.width / 2,
+        y: this.y + this.height / 2,
+      };
+      this.angle =
+        Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
     } else {
-      this.input.readOnly = true;
-      if (this.selectedArea === "Left") {
-        const newWidth = parseFloat(style.width) + ( parseFloat(style.left) - textPos.x);
-        if (newWidth > 0) {
-          this.input.style.left = textPos.x + "px";
-          this.input.style.width = newWidth + "px";
-          
-        }
-      } else if (this.selectedArea === "Right") {
-        if (parseFloat(style.width) > 0) {
-          this.input.style.width = `${textPos.x - parseFloat(style.left)}px`;
-        }
-      } else if (this.selectedArea === "Top") {
-        const newHeight = parseFloat(style.height) + parseFloat(style.top) - textPos.y;
-        if (newHeight > 0 ) {
-          this.input.style.top = textPos.y + "px";
-          this.input.style.height = newHeight + "px";
-        }
-      } else if (this.selectedArea === "Bottom") {
-        if (parseFloat(style.height) > 0) {
-          this.input.style.height = textPos.y - parseFloat(style.top) + "px";
-        }
-      } else if (this.selectedArea === "TopLeft") {
-        const newHeight = parseFloat(style.height) + parseFloat(style.top) - textPos.y;
-        if (newHeight > 0 ) {
-          this.input.style.top = textPos.y + "px";
-          this.input.style.height = newHeight + "px";
-        }
-                const newWidth = parseFloat(style.width) + ( parseFloat(style.left) - textPos.x);
-        if (newWidth > 0) {
-          this.input.style.left = textPos.x + "px";
-          this.input.style.width = newWidth + "px";
-          
-        }
-      } else if (this.selectedArea === "TopRight") {
-        const newHeight = parseFloat(style.height) + parseFloat(style.top) - textPos.y;
-        if (newHeight > 0 ) {
-          this.input.style.top = textPos.y + "px";
-          this.input.style.height = newHeight + "px";
-        }
-                if (parseFloat(style.width) > 0) {
-          this.input.style.width = `${textPos.x - parseFloat(style.left)}px`;
-        }
-      } else if (this.selectedArea === "BottomLeft") {
-                if (parseFloat(style.height) > 0) {
-          this.input.style.height = textPos.y - parseFloat(style.top) + "px";
-        }
-        const newWidth = parseFloat(style.width) + ( parseFloat(style.left) - textPos.x);
-        if (newWidth > 0) {
-          this.input.style.left = textPos.x + "px";
-          this.input.style.width = newWidth + "px";
-          
-        }
-      } else if (this.selectedArea === "BottomRight") {
-                if (parseFloat(style.height) > 0) {
-          this.input.style.height = textPos.y - parseFloat(style.top) + "px";
-        }
-        if (parseFloat(style.width) > 0) {
-          this.input.style.width = `${textPos.x - parseFloat(style.left)}px`;
-        }
-      } else if (this.selectedArea === "Selected") {
-        this.input.style.left = textPos.x - rect.width / 2 + "px";
-        this.input.style.top = textPos.y - rect.height / 2 + "px";
-      }
+      this.x += mouse.x - lastMouseX;
+      this.y += mouse.y - lastMouseY;
     }
   }
+formatProperties() {
+  propertiesBar.innerHTML = `
+    <section class="coord-section">
+      <h3>Coordinate</h3>
+
+      <div class="two-grid coord-grid">
+        <label class="field">
+          <span class="field-label">X</span>
+          <input type="number" name="x" value="${changeValues(this.x)}">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Y</span>
+          <input type="number" name="y" value="${changeValues(this.y)}">
+        </label>
+
+        <label class="field">
+          <span class="field-label">W</span>
+          <input type="number" name="width" value="${changeValues(this.width)}">
+        </label>
+
+        <label class="field">
+          <span class="field-label">H</span>
+          <input type="number" name="height" value="${changeValues(this.height)}">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Rotation</span>
+          <input type="number" name="angle" value="${radToDeg(this.angle, "deg")}">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Opacity</span>
+          <input type="number" name="opacity" min="0" max="100" value="${changeValues(this.opacity)}">
+        </label>
+      </div>
+    </section>
+
+    <section class="text-section">
+      <h3>Text Content</h3>
+      <textarea style="height:100px" class="text" name="text">${this.text}</textarea>
+    </section>
+
+    <section class="text-style-section" style="display:flex; flex-direction:column; gap:1rem">
+      <h3>Text Style</h3>
+
+      <div class="two-grid">
+        <label class="field">
+          <span class="field-label">Font Size</span>
+          <input type="number" name="fontSize" value="${changeValues(this.fontSize)}">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Line Height</span>
+          <input type="number" name="lineHeight" value="${changeValues(this.lineHeight)}">
+        </label>
+      </div>
+
+      <label class="uniform-div">
+        <span>Font Family</span>
+        <input type="text" list="fonts" name="fontFamily" value="${this.fontFamily}">
+        <datalist id="fonts" >
+        ${allFonts.map(font=>`<option value="${font}"></option>`).join("")}
+        </datalist>
+      </label>
+
+      <label class="uniform-div">
+        <span>Font Style</span>
+        <select name="fontStyle">
+          <option value="normal" ${this.fontStyle === "normal" ? "selected" : ""}>Normal</option>
+          <option value="bold" ${this.fontStyle === "bold" ? "selected" : ""}>Bold</option>
+          <option value="italic" ${this.fontStyle === "italic" ? "selected" : ""}>Italic</option>
+          <option value="bold italic" ${this.fontStyle === "bold italic" ? "selected" : ""}>Bold Italic</option>
+        </select>
+      </label>
+
+      <label class="uniform-div">
+        <span>Text Align</span>
+        <select name="textAllign">
+          <option value="left" ${this.textAllign === "left" ? "selected" : ""}>Left</option>
+          <option value="center" ${this.textAllign === "center" ? "selected" : ""}>Center</option>
+          <option value="right" ${this.textAllign === "right" ? "selected" : ""}>Right</option>
+        </select>
+      </label>
+    </section>
+
+    ${super.similarProptiesOutput()}
+
+    <section class="shadow-section" style="display:flex; flex-direction:column; gap:1rem">
+      <div style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
+        <h3>Shadow</h3>
+        <button class="${this.shadow ? "outlinet" : "outlinef"}" id="shadowToggle"></button>
+      </div>
+
+      <section style="display:${this.shadow ? "flex" : "none"}; flex-direction:column; gap:1rem">
+        <label class="uniform-div">
+          <span>Shadow Color</span>
+          <input type="color" name="shadowColor" value="${this.shadowStyle.color}">
+        </label>
+
+        <div class="two-grid">
+          <label class="field">
+            <span class="field-label">Blur</span>
+            <input type="number" name="shadowBlur" value="${changeValues(this.shadowStyle.blur)}">
+          </label>
+
+          <label class="field">
+            <span class="field-label">Offset X</span>
+            <input type="number" name="shadowOffsetX" value="${changeValues(this.shadowStyle.offsetX)}">
+          </label>
+
+          <label class="field">
+            <span class="field-label">Offset Y</span>
+            <input type="number" name="shadowOffsetY" value="${changeValues(this.shadowStyle.offsetY)}">
+          </label>
+        </div>
+      </section>
+    </section>
+    <section>
+    
+    </section>
+  `;
 
 
-  formatProperties() {
-    const styles = window.getComputedStyle(this.input);
-    const font = styles.fontFamily.replace(/['"]/g, "")
-    propertiesBar.innerHTML = `
-    <div>
-    <h3>Coordinate</h3>
-    <div class="two-grid">
-    <div>X<input type="number" name="left" value="${changeValues(
-      parseFloat(styles.left)
-    )}"></div>
-          <div>Y <input type="number" name="top" value="${changeValues(
-            parseFloat(styles.top)
-          )}"></div><div>W<input type="number" name="width" value="${changeValues(
-      parseFloat(styles.width)
-    )}"></div><div>H<input type="number" name="height" value="${changeValues(
-      parseFloat(styles.height)
-    )}"></div>
-    <div>Rotation<input type="number" name="angle" value="${radToDeg(
-      this.angle,
-      "deg"
-    )}"></div>
-    </div>
-    </div>
-    <div>
-    <h3>Properties</h3>
-    <div style="display:flex;flex-direction:column;gap:1rem">
-    <div class="shape"><div><button class="bold"></button><button class="italic"></button><button class="underline"></button></div></div>
-    <div class="two-grid" style="text-wrap: nowrap;">
-          <div>Color  <input type="color" name="color" value="${rgbToHex(
-            styles.color
-          )}"></div>  
-   <div>Font Size <input type="number" name="fontSize" value="${changeValues(
-     parseFloat(styles.fontSize)
-   )}"></div> 
-
-     
-
-
-    </div>
-    <div style="display:flex;flex-direction:row;gap:0.5rem;flex-wrap: nowrap;">
-<div class="autocomplete-container">
-        Font Name  
-    <input type="text" id="fontInput"  value="${font}" autocomplete="on" />
-    <div id="dropdown" class="dropdown"></div></div>
-    <button class="font-import"><img src="images/Group 48.svg"><input type="file" accept=".ttf,.otf,.woff,.woff2"></button>
-    </div>
-    </div>
-    <select class="allign">
-      <option value="left" selected>Align Left</option>
-      <option value="right">Align Right</option>
-      <option value="center">Align Center</option>
-    </select>
-    </div>
-    </div>
-    <div>
-    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center"><h3>Shadow</h3><button class="${
-      this.shadow ? "outlinet" : "outlinef"
-    }" id="shadow" ></button>    </div>
-    <div style="display:${this.shadow ? "grid" : "none"}"class="two-grid">
-    <div>X<input type="number" name="shadowX" value="${changeValues(
-      this.shadowX
-    )}" ></div>
-      <div>Y<input type="number" name="shadowY" value="${changeValues(
-        this.shadowY
-      )}" ></div>
-      <div>Color <input type="color" name="shadowColor" value="${
-        this.shadowColor
-      }" ></div>
-      <div>Blur <input type="number" name="shadowBlur" value="${changeValues(
-        this.shadowBlur
-      )}" ></div>
-    </div>
-    </div>
-    <div>
-    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center"><h3>Iterate</h3>    <button class="${
-      this.iterated ? "outlinet" : "outlinef"
-    }" id="iterate" ></button>    </div>
-<textarea style="display:${
-      this.iterated ? "block" : "none"
-    }" name="textarea" class="text">${this.textArea}</textarea>
-    </div>
-      `;
-
-      document.querySelector(".font-import input").addEventListener("change",async (event)=>{
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-    reader.onload = async function(e) {
-    const fontData = e.target.result;
-    const fontName = `${file.name.substring(0, file.name.lastIndexOf('.'))}`;
-
-    try {
-      if(!(allFonts.includes(fontName))){
-      const font = new FontFace(fontName, `url(${fontData})`);
-      await font.load();
-      document.fonts.add(font);
-      this.input.style.fontFamily = fontName;
-      allFonts.push(fontName)
-      notify("Font loaded successfully!");
-      }
-
-    } catch (err) {
-      notify("Invalid font or failed to load!");
-      console.error(err);
-    }
-    console.log(fontName)
-  };
-
-
-      })
-    document.querySelector(".bold").addEventListener("click", () => {
-      this.input.style.fontWeight =
-        styles.fontWeight === "700" ? "normal" : "700";
-    });
-    document.querySelector(".italic").addEventListener("click", () => {
-      this.input.style.fontStyle =
-        styles.fontStyle === "italic" ? "normal" : "italic";
-    });
-    document.querySelector(".underline").addEventListener("click", () => {
-      this.input.style.textDecoration =
-        styles.textDecoration === "underline" ? "none" : "underline";
-    });
-    document.getElementById("shadow").addEventListener("click", () => {
-      this.shadow = !this.shadow;
-      if (this.shadow) {
-        this.input.style.textShadow = `${this.shadowX}px ${this.shadowY}px ${this.shadowBlur}px  ${this.shadowColor}`;
-      }
-      this.formatProperties();
-    });
-    document.getElementById("iterate").addEventListener("click", () => {
-      this.iterated = !this.iterated;
-      this.formatProperties();
-    });
-    const input = document.getElementById("fontInput");
-    const dropdown = document.getElementById("dropdown");
-    input.addEventListener("focus", () => {
-      if (!input.value.trim()) {
-        this.showDropdown(allFonts);
-      }
-    });
-    input.addEventListener("input", () => {
-      const value = input.value.toLowerCase().trim();
-      if (value === "") {
-        this.showDropdown(allFonts);
-      } else {
-        const matches = allFonts
-          .filter((font) => font.toLowerCase().includes(value))
-          .slice(0, 10);
-        this.showDropdown(matches);
-      }
-    });
-    document.addEventListener("click", (e) => {
-      if (!e.target.closest(".autocomplete-container")) {
-        dropdown.style.display = "none";
-      }
-    });
-
-    document.querySelector(".allign").addEventListener("change", (e) => {
-      this.input.style.textAlign = e.target.value;
-    });
-    propertiesBar.querySelectorAll("input, textarea").forEach((input) => {
-      input.addEventListener(
-        "input",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000
-      );
-    });
-  }
-
-  showDropdown(fonts) {
-    dropdown.innerHTML = "";
-    if (fonts.length === 0) {
-      dropdown.style.display = "none";
+super.similarPropties()
+  // Bind inputs
+  propertiesBar.querySelectorAll("input, textarea, select, button#shadowToggle").forEach((el) => {
+    // Shadow toggle button
+    if (el.id === "shadowToggle") {
+      el.addEventListener("click", () => {
+        this.shadow = !this.shadow;
+        this.formatProperties();
+        draw();
+      });
       return;
     }
-    fonts.forEach((font) => {
-      const option = document.createElement("div");
-      option.textContent = font;
-      option.style.fontFamily = `'${font}', sans-serif`;
-      option.addEventListener("click", () => {
-        document.getElementById("fontInput").value = font;
-        dropdown.innerHTML = "";
-        dropdown.style.display = "none";
-        this.loadFont(font);
-      });
-      dropdown.appendChild(option);
+
+    // Normal inputs/selects
+    el.addEventListener("input", (e) => {
+      this.changeProperties(e);
     });
-    dropdown.style.display = "block";
-  }
-  loadFont(font) {
+  });
+draw()
+  // Optional: outline toggle is inside similarProptiesOutput(), keep existing handler if you have one.
+}
+
+changeProperties(e) {
+  const name = e.target.name;
+
+  if (name === "text") this.text = e.target.value;
+
+  if (name === "x") this.x = Number(e.target.value) || 0;
+  if (name === "y") this.y = Number(e.target.value) || 0;
+
+  // Width/Height: if you want them editable, you can scale text box;
+  // for now we set the values directly (matches your existing props panel pattern).
+  if (name === "width") this.width = backValues(Number(e.target.value) || 0);
+  if (name === "height") this.height = backValues(Number(e.target.value) || 0);
+
+  if (name === "angle") this.angle = degToRad(Number(e.target.value) || 0);
+  if (name === "opacity") this.opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+
+  if (name === "fontSize") this.fontSize = Math.max(1, Number(e.target.value) || 1);
+  if (name === "lineHeight") this.lineHeight = Math.max(1, Number(e.target.value) || 1);
+
+  if (name === "fontFamily"){
+this.fontFamily = e.target.value;
+if(!(defaultFonts.includes(this.fontFamily))){
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(
+    link.href = `https://fonts.googleapis.com/css2?family=${this.fontFamily.replace(
       / /g,
       "+"
     )}&display=swap`;
     document.head.appendChild(link);
-    this.input.style.fontFamily = `'${font}', sans-serif`;
-  }
-  changeProperties(e) {
-    const name = e.target.name;
-    if (name === "angle") {
-      this.input.style.transform = `rotate(${e.target.value}deg)`;
-    } else if (name === "color") {
-      this.input.style.color = e.target.value;
-    } else if (name === "shadowColor") {
-      this.shadowColor = e.target.value;
-    } else if (e.target.type === "number") {
-      const value = backValues(e.target.value);
-      if (!isNaN(value)) {
-        const shade = name.slice(0, 6);
-        console.log(shade);
-        if (shade === "shadow") {
-          this[name] = value;
-        } else {
-          this.input.style[name] = value + "px";
-        }
-      }
-    } else if (name === "textarea") {
-      const value = e.target.value;
-        this.textArea = value;
-    }
-    if (this.shadow)
-      this.input.style.textShadow = `${this.shadowX}px ${this.shadowY}px ${this.shadowBlur}px ${this.shadowColor}`;
-    else this.input.style.boxShadow = "none";
-  }
-  generateText(num, iteratedBox) {
-    const paragraph = document.createElement("p");
-    const cropOffset = canvassDiv.getBoundingClientRect();
-    const inputRect = this.input.getBoundingClientRect();
-
-    if (this.iterated && num < this.textArea.split("\n").length) {
-      paragraph.textContent = this.textArea.split("\n")[num];
-    } else {
-      paragraph.textContent = this.text;
+    defaultFonts.push(this.fontFamily)
+}
+  } 
+  if (name === "outlineThickness") this.outlineThickness = backValues(Number(e.target.value) || 0)
+        if (name === "lineDashWidth") {
+      this.lineDashWidth =  backValues(Number(e.target.value) || 0);
     }
 
-    const ratio = iteratedBox.width / cropOffset.width;
-
-    paragraph.style.position = "absolute";
-    paragraph.style.left = `${(inputRect.x - cropOffset.x) * ratio}px`;
-    paragraph.style.top = `${(inputRect.y - cropOffset.y) * ratio}px`;
-
-    paragraph.style.fontSize =
-      parseFloat(this.input.style.fontSize) * ratio + "px";
-    paragraph.style.color = this.input.style.color;
-    paragraph.style.width = parseFloat(this.input.offsetWidth) * ratio + "px";
-    paragraph.style.height = parseFloat(this.input.offsetHeight) * ratio + "px";
-    paragraph.style.paddingLeft =
-      parseFloat(this.input.style.paddingLeft) * ratio + "px";
-    paragraph.style.paddingRight =
-      parseFloat(this.input.style.paddingRight) * ratio + "px";
-    paragraph.style.paddingTop =
-      parseFloat(this.input.style.paddingTop) * ratio + "px";
-    paragraph.style.paddingBottom =
-      parseFloat(this.input.style.paddingBottom) * ratio + "px";
-    paragraph.style.textAlign = this.input.style.textAlign;
-    paragraph.style.fontFamily = this.input.style.fontFamily;
-
-    return paragraph;
-  }
-  showClone() {
-    const cloneInput = this.input.cloneNode(true);
-    cloneInput.style.left = textLastMouseX + "px";
-    cloneInput.style.top = textLastMouseY + "px";
-    const newTextBox = new TextBox();
-    newTextBox.input = cloneInput;
-    newTextBox.text = this.text;
-    newTextBox.angle = this.angle;
-    newTextBox.isDoubleClicked = this.isDoubleClicked;
-    newTextBox.iterated = this.iterated;
-    newTextBox.textArea = this.textArea;
-    newTextBox.shadow = this.shadow;
-    newTextBox.shadowX = this.shadowX;
-    newTextBox.shadowY = this.shadowY;
-    newTextBox.shadowColor = this.shadowColor;
-    newTextBox.shadowBlur = this.shadowBlur;
-    canvass.appendChild(cloneInput);
-
-    return newTextBox;
-  }
-  whereToSnap() {
-    const rect = this.input.getBoundingClientRect();
-    const xY = getMousePos(canvas, { x: rect.x, y: rect.y });
-    return {
-      x: [xY.x, xY.x + rect.width / 2, xY.x + rect.width],
-      y: [xY.y, xY.y + rect.height / 2, xY.y + rect.height],
-      pos: { x: xY.x, y: xY.y, width: rect.width, height: rect.height },
-    };
-  }
-  RectProperties() {
-    const rect = this.input.getBoundingClientRect();
-    const xY = getMousePos(canvas, { x: rect.x, y: rect.y });
-    return { x: xY.x, y: xY.y, width: rect.width, height: rect.height };
-  }
-  changeLocation(value, type) {
-    const rect = this.input.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-    if (type === "x") {
-      this.input.style.left = value + "px"
-    } else {
-      this.input.style.top = value + "px"
+    if (name === "lineDashSpacing") {
+      this.lineDashSpacing =  backValues(Number(e.target.value) || 0);
     }
+  
+
+  if (this.outlineType.length !== 0) {
+    this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+  }
+  if (name === "fontStyle") this.fontStyle = e.target.value;
+  if (name === "textAllign") this.textAllign = e.target.value;
+  if (name === "outlineColor") {
+    this.outlineColor = e.target.value;
+  }
+  // Shadow fields
+  if (name === "shadowColor") this.shadowStyle.color = e.target.value;
+  if (name === "shadowBlur") this.shadowStyle.blur = Number(e.target.value) || 0;
+  if (name === "shadowOffsetX") this.shadowStyle.offsetX = Number(e.target.value) || 0;
+  if (name === "shadowOffsetY") this.shadowStyle.offsetY = Number(e.target.value) || 0;
+
+  draw();
+}
+
+  doubleClicked(mouse) {
+    this.doubleClicked = true;
   }
 }
+
 class Images extends Formats {
   constructor(image, width, height, originalFile) {
     super();
@@ -3147,7 +3242,7 @@ class Images extends Formats {
     const centerY = this.y + this.height / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate(this.angle);
-            ctx.scale(this.scaleX,this.scaleY)
+    ctx.scale(this.scaleX, this.scaleY);
     ctx.save();
     ctx.beginPath();
     ctx.globalAlpha = this.opacity / 100;
@@ -3157,7 +3252,7 @@ class Images extends Formats {
       -this.width / 2,
       -this.height / 2,
       this.width,
-      this.height
+      this.height,
     );
     ctx.closePath();
     ctx.restore();
@@ -3171,7 +3266,7 @@ class Images extends Formats {
         -this.width / 2 - 2,
         -this.height / 2 - 2,
         this.width + 4,
-        this.height + 4
+        this.height + 4,
       );
       ctx.closePath();
     }
@@ -3199,7 +3294,7 @@ class Images extends Formats {
       localY,
       this.width,
       this.height,
-      10
+      10,
     );
 
     return this.selectedArea !== null;
@@ -3220,15 +3315,18 @@ class Images extends Formats {
       }
     }
   }
-  showClone(){
-     const clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-       clone.originalFiles = [...this.originalFiles];
-       clone.iteratedFiles = this.iteratedFiles.map(img => {
-    const newImg = new Image();
-    newImg.src = img.src;
-    return newImg;
-  });
-  return clone;
+  showClone() {
+    const clone = Object.assign(
+      Object.create(Object.getPrototypeOf(this)),
+      this,
+    );
+    clone.originalFiles = [...this.originalFiles];
+    clone.iteratedFiles = this.iteratedFiles.map((img) => {
+      const newImg = new Image();
+      newImg.src = img.src;
+      return newImg;
+    });
+    return clone;
   }
   formatProperties() {
     propertiesBar.innerHTML = `
@@ -3237,20 +3335,20 @@ class Images extends Formats {
        <div class="two-grid">
     <div>X <input type="number" name="x" value="${changeValues(this.x)}"> </div>
         <div>Y<input type="number" name="y" value="${changeValues(
-          this.y
+          this.y,
         )}"></div>
     <div>W </label><input type="number" name="width" value="${changeValues(
-      this.width
+      this.width,
     )}"></div>
     <div>H <input type="number" name="height" value="${changeValues(
-      this.height
+      this.height,
     )}"></div>
     <div>Opacity <input type="number" name="opacity" value="${
       this.opacity
     }"></div>
     <div>Rotation <input type="number" name="angle" value="${radToDeg(
       this.angle,
-      "deg"
+      "deg",
     )}"></div>
     </div> 
         <div style="display:flex;flex-direction:column; gap:1rem"><button class="imageb" id="removeBg">Remove Background</button>
@@ -3271,7 +3369,7 @@ class Images extends Formats {
             }>
         <p>${file.name}</p>
         <button>Change<input type="file"></button>
-        </div>`
+        </div>`,
         )
         .join("")}
     </section>
@@ -3280,6 +3378,7 @@ class Images extends Formats {
     </div>
    
   `;
+     super.similarPropties();
     document.querySelectorAll(".iteratedsec > div").forEach((div, i) => {
       div.addEventListener("click", () => {
         this.imagePreview = this.iteratedFiles[i].src;
@@ -3351,7 +3450,7 @@ class Images extends Formats {
       input.addEventListener(
         "input",
         (e) => setTimeout(this.changeProperties(e)),
-        1000
+        1000,
       );
     });
     draw();
@@ -3410,79 +3509,79 @@ class Images extends Formats {
     }
   }
 }
-class Group{
-  constructor(list){
-    this.list = list
-    this.isDoubleClicked = false
-    this.rotationAngle = 0
+class Group {
+  constructor(list) {
+    this.list = list;
+    this.isDoubleClicked = false;
+    this.rotationAngle = 0;
   }
-  addObject(){
-    this.minX = Math.min(...this.list.map(l=>l.whereToSnap().x[0]))
-    this.maxX = Math.max(...this.list.map(l =>l.whereToSnap().x[2]))
-    this.minY = Math.min(...this.list.map(l=>l.whereToSnap().y[0]))
-    this.maxY = Math.max(...this.list.map(l=>l.whereToSnap().y[2]))
+  addObject() {
+    this.minX = Math.min(...this.list.map((l) => l.whereToSnap().x[0]));
+    this.maxX = Math.max(...this.list.map((l) => l.whereToSnap().x[2]));
+    this.minY = Math.min(...this.list.map((l) => l.whereToSnap().y[0]));
+    this.maxY = Math.max(...this.list.map((l) => l.whereToSnap().y[2]));
     this.x = (this.minX + this.maxX) / 2;
-this.y = (this.minY + this.maxY) / 2; 
-ctx.save();
-ctx.translate(this.x, this.y);
-ctx.rotate(this.rotationAngle);
+    this.y = (this.minY + this.maxY) / 2;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotationAngle);
 
-ctx.lineWidth = 1;
-ctx.strokeStyle = "#0000ff";
-ctx.setLineDash([5, 3]);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#0000ff";
+    ctx.setLineDash([5, 3]);
 
-ctx.strokeRect(
-  this.minX - this.x,
-  this.minY - this.y,
-  this.maxX - this.minX,
-  this.maxY - this.minY
-);
+    ctx.strokeRect(
+      this.minX - this.x,
+      this.minY - this.y,
+      this.maxX - this.minX,
+      this.maxY - this.minY,
+    );
 
-this.list.forEach(obj => {
-  const snap = obj.whereToSnap();
-  ctx.save();
-  ctx.translate(-this.x,-this.y);
-  obj.addObject();
-  ctx.restore();
-});
+    this.list.forEach((obj) => {
+      const snap = obj.whereToSnap();
+      ctx.save();
+      ctx.translate(-this.x, -this.y);
+      obj.addObject();
+      ctx.restore();
+    });
 
-ctx.restore();
-
+    ctx.restore();
   }
-whatSelected(mouse) {
-  const dx = mouse.x - this.x;
-  const dy = mouse.y - this.y;
-  const angle = -this.rotationAngle;
-  const localX = dx * Math.cos(angle) - dy * Math.sin(angle);
-  const localY = dx * Math.sin(angle) + dy * Math.cos(angle);
-  if (
-    localX >= this.minX - this.x &&
-    localX <= this.maxX - this.x &&
-    localY >= this.minY - this.y &&
-    localY <= this.maxY - this.y
-  ) {
-    return true;
-    console.log("true")
+  whatSelected(mouse) {
+    const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+    const angle = -this.rotationAngle;
+    const localX = dx * Math.cos(angle) - dy * Math.sin(angle);
+    const localY = dx * Math.sin(angle) + dy * Math.cos(angle);
+    if (
+      localX >= this.minX - this.x &&
+      localX <= this.maxX - this.x &&
+      localY >= this.minY - this.y &&
+      localY <= this.maxY - this.y
+    ) {
+      return true;
+      console.log("true");
+    }
+    return false;
   }
-  return false;
-}
 
-  formatSelected(mouse){
-    if(this.isDoubleClicked){
-  this.rotationAngle =
+  formatSelected(mouse) {
+    if (this.isDoubleClicked) {
+      this.rotationAngle =
         Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
-    }else{
-    this.list.forEach(l => l.moveClip(mouse.x-lastMouseX,mouse.y-lastMouseY))
-
+    } else {
+      this.list.forEach((l) =>
+        l.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
+      );
     }
   }
-  doubleClicked(mouse){
-        isRotatingObject = true;
+  doubleClicked(mouse) {
+    isRotatingObject = true;
     this.isDoubleClicked = this.isDoubleClicked ? false : true;
     return true;
   }
-  formatProperties(){
-    console.log("yah")
+  formatProperties() {
+    console.log("yah");
   }
 }
 function blobToBase64(blob) {
@@ -3493,15 +3592,14 @@ function blobToBase64(blob) {
     reader.readAsDataURL(blob);
   });
 }
-function cloneObject(object){
-  return object.map(obj => obj.showClone());
+function cloneObject(object) {
+  return object.map((obj) => obj.showClone());
 }
 function undo() {
   if (undoObject.length > 1) {
     redoObject.push(undoObject.pop());
     objects = cloneObject(undoObject[undoObject.length - 1]);
     draw();
-
   }
 }
 
@@ -3532,10 +3630,16 @@ function rgbToHex(rgb) {
 
 document.querySelector(".saveAsPdf").addEventListener("click", saveAsPDF);
 function changeOrientation(value) {
-  if(value === "potrait" && measurement.width > measurement.height){
-          [measurement.width,measurement.height] = [measurement.height,measurement.width]
-  }else if(value === "landscape" && measurement.height > measurement.width){
-    [measurement.width,measurement.height] = [measurement.height,measurement.width]
+  if (value === "potrait" && measurement.width > measurement.height) {
+    [measurement.width, measurement.height] = [
+      measurement.height,
+      measurement.width,
+    ];
+  } else if (value === "landscape" && measurement.height > measurement.width) {
+    [measurement.width, measurement.height] = [
+      measurement.height,
+      measurement.width,
+    ];
   }
   canvasSize();
 }
@@ -3546,7 +3650,6 @@ document.getElementById("measurement").addEventListener("change", (e) => {
   height.value = changeValues(canvassDiv.getBoundingClientRect().height);
   draw();
   if (selectedObj) selectedObj.formatProperties();
-  if (selectedText) selectedText.formatProperties();
 });
 document.getElementById("paperSize").addEventListener("change", (e) => {
   const value = e.target.value;
@@ -3569,14 +3672,14 @@ document.getElementById("paperSize").addEventListener("change", (e) => {
   }
   canvasSize();
 });
-document.querySelectorAll(".leftSidebar button").forEach(button =>{
-  button.addEventListener("click",()=>{
-    button.classList.add("active")
-    document.querySelectorAll(".leftSidebar button").forEach(butt=>{
-      if(butt !== button) butt.classList.remove("active")
-    })
-  })
-})
+document.querySelectorAll(".leftSidebar button").forEach((button) => {
+  button.addEventListener("click", () => {
+    button.classList.add("active");
+    document.querySelectorAll(".leftSidebar button").forEach((butt) => {
+      if (butt !== button) butt.classList.remove("active");
+    });
+  });
+});
 width.addEventListener("input", (e) => {
   const widthValue = backValues(e.target.value);
   const heightValue = backValues(height.value);
@@ -3591,111 +3694,110 @@ height.addEventListener("input", (e) => {
 });
 document.getElementById("renderPage").addEventListener("change", (e) => {
   renderPageResolution = e.target.value;
-  switch(renderPageResolution){
+  switch (renderPageResolution) {
     case "a0":
-          renderPageSize = measurementArr[9];
-          break
+      renderPageSize = measurementArr[9];
+      break;
     case "a1":
-    renderPageSize = measurementArr[0];
-    break
+      renderPageSize = measurementArr[0];
+      break;
     case "a2":
-    renderPageSize = measurementArr[1];
-    break
+      renderPageSize = measurementArr[1];
+      break;
     case "a3":
-          renderPageSize = measurementArr[2];
-          break
+      renderPageSize = measurementArr[2];
+      break;
     case "a4":
-   renderPageSize = measurementArr[3];
-   break
+      renderPageSize = measurementArr[3];
+      break;
     case "a5":
-   renderPageSize = measurementArr[4];
-   break
-   case "legal":
-        renderPageSize = measurementArr[10];
-        break
+      renderPageSize = measurementArr[4];
+      break;
+    case "legal":
+      renderPageSize = measurementArr[10];
+      break;
     case "auto":
-      renderPageSize = ""
+      renderPageSize = "";
 
-      break
+      break;
     case "letter":
-    renderPageSize = measurementArr[7];
-    break
+      renderPageSize = measurementArr[7];
+      break;
     case "custom":
-      renderPageSize = {width:renderWidth,height:renderHeight}
-      renderPageResolution = "custom"
-      break
+      renderPageSize = { width: renderWidth, height: renderHeight };
+      renderPageResolution = "custom";
+      break;
   }
-  const rows = document.getElementById("noPerRow")
-  const columns = document.getElementById("noPerColumn")
-  if(renderPageSize !== ""){
-    rows.readOnly = false
-    columns.readOnly = false
-    const height = document.getElementById("renderHeight")
-    const width = document.getElementById("renderWidth")
-  width.value = renderPageSize.width
-  height.value = renderPageSize.height
-  if(renderPageResolution === "custom"){
-    height.readOnly = false
-    width.readOnly = false
-  }else{
-       height.readOnly = true
-    width.readOnly = true 
+  const rows = document.getElementById("noPerRow");
+  const columns = document.getElementById("noPerColumn");
+  if (renderPageSize !== "") {
+    rows.readOnly = false;
+    columns.readOnly = false;
+    const height = document.getElementById("renderHeight");
+    const width = document.getElementById("renderWidth");
+    width.value = renderPageSize.width;
+    height.value = renderPageSize.height;
+    if (renderPageResolution === "custom") {
+      height.readOnly = false;
+      width.readOnly = false;
+    } else {
+      height.readOnly = true;
+      width.readOnly = true;
+    }
+  } else {
+    rows.readOnly = true;
+    columns.readOnly = true;
+    rows.value = 1;
+    columns.value = 1;
   }
-  }else{
-       rows.readOnly = true
-    columns.readOnly = true
-    rows.value = 1
-    columns.value = 1 
-  }
-
-
 });
-document.getElementById("zoom").addEventListener("click",()=>{
+document.getElementById("zoom").addEventListener("click", () => {
   propertiesBar.innerHTML = `
   <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
   <button class="zoomin"><img src="images/Group 46.svg"></button>
   <button class="zoomout"><img src="images/Group 47.svg"></button>
   </div>
-  `
+  `;
 
-
-  let interval
-  document.querySelector(".zoomin").addEventListener("mousedown",()=>{
-    interval = setInterval(()=>{
-    scale += 0.01
-    updateZoom()     
-    },100)
-  })
-  document.querySelector(".zoomin").addEventListener("mouseup",()=>clearInterval(interval))
-  document.querySelector(".zoomout").addEventListener("mousedown",()=>{
-    interval = setInterval(()=>{
-    scale -= 0.01
-     updateZoom()      
-    },100)
-  })
-  document.querySelector(".zoomout").addEventListener("mouseup",()=>clearInterval(interval))
-})
-function flip(value){
-  if(selectedObj){
-    if(value === "x"){
-      selectedObj.scaleX *= -1
-    }
-    else selectedObj.scaleY *= -1
+  let interval;
+  document.querySelector(".zoomin").addEventListener("mousedown", () => {
+    interval = setInterval(() => {
+      scale += 0.01;
+      updateZoom();
+    }, 100);
+  });
+  document
+    .querySelector(".zoomin")
+    .addEventListener("mouseup", () => clearInterval(interval));
+  document.querySelector(".zoomout").addEventListener("mousedown", () => {
+    interval = setInterval(() => {
+      scale -= 0.01;
+      updateZoom();
+    }, 100);
+  });
+  document
+    .querySelector(".zoomout")
+    .addEventListener("mouseup", () => clearInterval(interval));
+});
+function flip(value) {
+  if (selectedObj) {
+    if (value === "x") {
+      selectedObj.scaleX *= -1;
+    } else selectedObj.scaleY *= -1;
   }
-  draw()
+  draw();
 }
-document.querySelector(".generateButton").addEventListener("click",()=>{
-  document.querySelector(".generate").style.display = "flex"
-  const canvasDiv = canvassDiv.getBoundingClientRect()
-  document.getElementById("renderWidth").value = canvasDiv.width
-  document.getElementById("renderHeight").value = canvasDiv.height
-  document.getElementById("renderPage").value = "auto"
-  document.getElementById("noPerRow").value = 1
-  document.getElementById("noPerColumn").value = 1
-
-})
-function cancelGenerate(){
-    document.querySelector(".generate").style.display = "none"
+document.querySelector(".generateButton").addEventListener("click", () => {
+  document.querySelector(".generate").style.display = "flex";
+  const canvasDiv = canvassDiv.getBoundingClientRect();
+  document.getElementById("renderWidth").value = canvasDiv.width;
+  document.getElementById("renderHeight").value = canvasDiv.height;
+  document.getElementById("renderPage").value = "auto";
+  document.getElementById("noPerRow").value = 1;
+  document.getElementById("noPerColumn").value = 1;
+});
+function cancelGenerate() {
+  document.querySelector(".generate").style.display = "none";
 }
 document.getElementById("noPerRow").addEventListener("input", (e) => {
   renderPageRow = e.target.value;
@@ -3703,33 +3805,27 @@ document.getElementById("noPerRow").addEventListener("input", (e) => {
 document.getElementById("noPerColumn").addEventListener("input", (e) => {
   renderPageColumn = e.target.value;
 });
-document.getElementById("renderHeight").addEventListener("input",(e)=>{
-  renderPageSize.height= e.target.value
-})
-document.getElementById("renderWidth").addEventListener("input",(e)=>{
-  renderPageSize.width = e.target.value
-})
-
+document.getElementById("renderHeight").addEventListener("input", (e) => {
+  renderPageSize.height = e.target.value;
+});
+document.getElementById("renderWidth").addEventListener("input", (e) => {
+  renderPageSize.width = e.target.value;
+});
 
 document.getElementById("duplicate").addEventListener("click", () => {
   duplicateClicked = true;
   if (duplicateClicked) {
     if (selectedObj) {
       cloneObj = selectedObj.showClone();
-      cloneObj.changeLocation(lastMouseX,"x")
-      cloneObj.changeLocation(lastMouseY,"y")
-    } else if (selectedText) {
-      cloneText = selectedText.showClone();
+      cloneObj.changeLocation(lastMouseX, "x");
+      cloneObj.changeLocation(lastMouseY, "y");
     } else {
-      notify("Please Select An Object")
-      duplicateClicked = false
-      document.getElementById("moveTool").classList.add("active")
-      document.getElementById("duplicate").classList.remove("active")
+      notify("Please Select An Object");
+      duplicateClicked = false;
+      document.getElementById("moveTool").classList.add("active");
+      document.getElementById("duplicate").classList.remove("active");
     }
   } else {
-    if (cloneText) {
-      cloneText.input.remove();
-    }
     cloneObj = null;
     cloneText = null;
   }
@@ -3761,34 +3857,31 @@ document.getElementById("delete").addEventListener("click", () => {
     selectedObj = null;
     propertiesBar.innerHTML = "";
     draw();
-  } else if (selectedText) {
-    let index = objects.indexOf(selectedText);
-    selectedText.input.remove();
-    textBoxes.splice(index, 1);
-    selectedText = null;
-    propertiesBar.innerHTML = "";
   }
 });
-let scaleRatio
-let newWidth
-let newHeight
+let scaleRatio;
+let newWidth;
+let newHeight;
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
   const canvassRect = canvas.getBoundingClientRect();
-    width.value = changeValues(measurement.width);
+  width.value = changeValues(measurement.width);
   height.value = changeValues(measurement.height);
-  canvassDiv.style.width = measurement.width + "px"
-  canvassDiv.style.height = measurement.height + "px"
-  scaleRatio = Math.max(measurement.width /(canvassRect.width - 30), measurement.height /(canvassRect.height - 30))
-  if(scaleRatio > 1){
-    newWidth = canvassRect.width * scaleRatio
-    newHeight = canvassRect.height * scaleRatio
-    canvas.style.width = canvass.style.width = `${newWidth}px`
-    canvas.style.height = canvass.style.height = `${newHeight}px`
-    canvas.width = newWidth
-    canvas.height = newHeight
-  scale = 1 /scaleRatio
-  updateZoom()
+  canvassDiv.style.width = measurement.width + "px";
+  canvassDiv.style.height = measurement.height + "px";
+  scaleRatio = Math.max(
+    measurement.width / (canvassRect.width - 30),
+    measurement.height / (canvassRect.height - 30),
+  );
+  if (scaleRatio > 1) {
+    newWidth = canvassRect.width * scaleRatio;
+    newHeight = canvassRect.height * scaleRatio;
+    canvas.style.width = canvass.style.width = `${newWidth}px`;
+    canvas.style.height = canvass.style.height = `${newHeight}px`;
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+    scale = 1 / scaleRatio;
+    updateZoom();
   }
 
   draw();
@@ -3810,13 +3903,13 @@ function applyOpacityToHex(hexColor, opacityPercent) {
 function changeValues(x) {
   x = parseFloat(x);
   if (isNaN(x)) return 0;
-  let value = 0
+  let value = 0;
   if (whatsMeasured === "px") {
     value = x;
   } else if (whatsMeasured === "pt") {
-    value = (x / 1.333);
+    value = x / 1.333;
   } else if (whatsMeasured === "in") {
-    value = (x / 96);
+    value = x / 96;
   } else if (whatsMeasured === "m") {
     value = x / 3780;
   } else if (whatsMeasured === "cm") {
@@ -3824,41 +3917,50 @@ function changeValues(x) {
   } else if (whatsMeasured === "mm") {
     value = x / 3.78;
   }
-  return parseFloat(parseFloat(value).toFixed(2))
+  return parseFloat(parseFloat(value).toFixed(2));
 }
-function drawingObject(){
-  const start = drawingCoordinate.start
-  if(drawingCoordinate.end.x - start.x < 1)drawingCoordinate.end.x = start.x + 1 
-  if(drawingCoordinate.end.y - start.y < 1) drawingCoordinate.end.y = start.y + 1 
-  const end = drawingCoordinate.end
-  switch (isDrawing){
+function drawingObject() {
+  const start = drawingCoordinate.start;
+  if (drawingCoordinate.end.x - start.x < 1)
+    drawingCoordinate.end.x = start.x + 1;
+  if (drawingCoordinate.end.y - start.y < 1)
+    drawingCoordinate.end.y = start.y + 1;
+  const end = drawingCoordinate.end;
+  switch (isDrawing) {
     case "rect":
-      return new Rectangle(start.x,start.y,end.x-start.x,end.y - start.y)
+      return new Rectangle(start.x, start.y, end.x - start.x, end.y - start.y);
     case "ellipse":
-      return new Ellipse(start.x +(end.x-start.x) / 2,start.y+(end.y-start.y) / 2,(end.x-start.x) / 2,(end.y-start.y) / 2)
+      return new Ellipse(
+        start.x + (end.x - start.x) / 2,
+        start.y + (end.y - start.y) / 2,
+        (end.x - start.x) / 2,
+        (end.y - start.y) / 2,
+      );
     case "polygon":
-            return new Polygon(start.x +(end.x-start.x) / 2,start.y+(end.y-start.y) / 2,(end.x-start.x) / 2,(end.y-start.y) / 2)
-
+      return new Polygon(
+        start.x + (end.x - start.x) / 2,
+        start.y + (end.y - start.y) / 2,
+        (end.x - start.x) / 2,
+        (end.y - start.y) / 2,
+      );
   }
 }
-function moveTool(){
-  isDrawing = null
-    canvas.style.cursor = "default"
-    multipleSelect = false
-  multipleSelectArr = []
-  selectedObj = null
-  selectedText = null
-  duplicateClicked = false
+function moveTool() {
+  isDrawing = null;
+  canvas.style.cursor = "default";
+  multipleSelect = false;
+  multipleSelectArr = [];
+  selectedObj = null;
 
+  duplicateClicked = false;
 }
 
-function multipleSelection(){
-   isDrawing = null
-    canvas.style.cursor = "default"
-  multipleSelect = true
-  multipleSelectArr = []
-  selectedObj = null
-  selectedText = null
+function multipleSelection() {
+  isDrawing = null;
+  canvas.style.cursor = "default";
+  multipleSelect = true;
+  multipleSelectArr = [];
+  selectedObj = null;
 }
 function backValues(x) {
   if (whatsMeasured === "px") {
@@ -3875,75 +3977,77 @@ function backValues(x) {
     return x * 3.78;
   }
 }
-let previousClip = null
-let previousOpacity
+let previousClip = null;
+let previousOpacity;
 let clippedObject = null;
-editclip.addEventListener("click",()=>{
-  if(clippedObject === null) return
-   if(clippedObject.clipped !== "editclip"){
-        clippedObject = clippedObject
-    previousClip = clippedObject.clipped
-    clippedObject.clipped = "editclip"
-    clippedObject.clips.forEach(clip => objects.push(clip))
-    editclip.textContent = "Done"
-    if(clippedObject.opacity > 80){
-      previousOpacity = clippedObject.opacity
-      clippedObject.opacity = 80
+editclip.addEventListener("click", () => {
+  if (clippedObject === null) return;
+  if (clippedObject.clipped !== "editclip") {
+    clippedObject = clippedObject;
+    previousClip = clippedObject.clipped;
+    clippedObject.clipped = "editclip";
+    clippedObject.clips.forEach((clip) => objects.push(clip));
+    editclip.textContent = "Done";
+    if (clippedObject.opacity > 80) {
+      previousOpacity = clippedObject.opacity;
+      clippedObject.opacity = 80;
     }
-    console.log(clippedObject)
-  }   
-else{
-    clippedObject.clipped = previousClip
-    clippedObject.opacity = previousOpacity
-    clippedObject.clips.forEach(clip=>{
-                  let index = objects.indexOf(clip);
-            objects.splice(index, 1);
-    })
-    editclip.textContent = "Edit Clip"
-    selectedObj = clippedObject
-    clippedObject = null
-    previousClip = null
+    console.log(clippedObject);
+  } else {
+    clippedObject.clipped = previousClip;
+    clippedObject.opacity = previousOpacity;
+    clippedObject.clips.forEach((clip) => {
+      let index = objects.indexOf(clip);
+      objects.splice(index, 1);
+    });
+    editclip.textContent = "Edit Clip";
+    selectedObj = clippedObject;
+    clippedObject = null;
+    previousClip = null;
   }
-
-  
-})
-function notify(name){
-  notification.textContent = name
-  notification.style.display = "block"
-  setTimeout(()=>notification.style.display = "none",1500)
+});
+function notify(name) {
+  notification.textContent = name;
+  notification.style.display = "block";
+  setTimeout(() => (notification.style.display = "none"), 1500);
 }
 function radToDeg(val, type) {
-  
   if (type === "rad") {
     return parseFloat(((val * Math.PI) / 180).toFixed(2));
   } else {
     return parseFloat(((val * 180) / Math.PI).toFixed(2));
   }
 }
-function updateZoom(exception = true){
-            const canvaRect = document.querySelector(".canva").getBoundingClientRect()
-          const canvassRect = canvass.getBoundingClientRect()
-    if(exception){
-          panX = panX > 0 ? 0 : panX
-          panY = panY > 0 ? 0 : panY
+function updateZoom(exception = true) {
+  const canvaRect = document.querySelector(".canva").getBoundingClientRect();
+  const canvassRect = canvass.getBoundingClientRect();
+  if (exception) {
+    panX = panX > 0 ? 0 : panX;
+    panY = panY > 0 ? 0 : panY;
 
-          panX = panX < canvaRect.width - canvassRect.width ? canvaRect.width - canvassRect.width : panX
-          panY = panY < canvaRect.height - canvassRect.height? canvaRect.height - canvassRect.height: panY
+    panX =
+      panX < canvaRect.width - canvassRect.width
+        ? canvaRect.width - canvassRect.width
+        : panX;
+    panY =
+      panY < canvaRect.height - canvassRect.height
+        ? canvaRect.height - canvassRect.height
+        : panY;
+  }
+  if (scale < 1 / scaleRatio) {
+    const newCoordinate = {
+      width: (canvaRect.width * 1) / scale,
+      height: (canvaRect.height * 1) / scale,
+    };
+    canvass.style.width = canvas.style.width = `${newCoordinate.width}px`;
+    canvass.style.height = canvas.style.height = `${newCoordinate.height}px`;
+    canvas.width = newCoordinate.width;
+    canvas.height = newCoordinate.height;
+  }
 
-    }
-          if(scale < 1/scaleRatio ){
-          const newCoordinate = {width:canvaRect.width * 1/scale,height:canvaRect.height * 1/scale}
-              canvass.style.width = canvas.style.width = `${newCoordinate.width}px`
-              canvass.style.height = canvas.style.height = `${newCoordinate.height}px`
-              canvas.width = newCoordinate.width
-              canvas.height = newCoordinate.height
-
-          }
-
-      canvass.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-      draw()
+  canvass.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  draw();
 }
-
 
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");
@@ -4040,18 +4144,18 @@ document.querySelector(".snip").addEventListener("click", () => {
   if (clipped === null) {
     if (selectedObj && selectedObj.clipped === "none") {
       clipped = selectedObj;
-      canvas.style.cursor = "pointer"
+      canvas.style.cursor = "pointer";
     }
-  } else{
+  } else {
     clipped = null;
-      canvas.style.cursor = "default"
-  } 
+    canvas.style.cursor = "default";
+  }
 });
 document
   .querySelector(".add-image input")
   .addEventListener("change", (e) => addImage(e));
 function addImage(e) {
-  canvas.style.cursor = "crosshair"
+  canvas.style.cursor = "crosshair";
   const file = e.target.files[0];
   if (!file) return;
   const url = URL.createObjectURL(file);
@@ -4065,88 +4169,89 @@ function addImage(e) {
   };
 }
 function addTextbox() {
-    canvas.style.cursor = "inherit"
-  isDrawing = "text"
+  canvas.style.cursor = "inherit";
+  isDrawing = "text";
+  const text = new TextBox(500, 500);
+  objects.push(text);
 }
 function addPolygon() {
-    canvas.style.cursor = "crosshair"
-  isDrawing = "polygon"
+  canvas.style.cursor = "crosshair";
+  isDrawing = "polygon";
 }
 function addLine() {
-    canvas.style.cursor = "crosshair"
+  canvas.style.cursor = "crosshair";
   const line = new Line();
   pen = line;
   draw();
 }
 function addRectangle() {
-    canvas.style.cursor = "crosshair"
- isDrawing = "rect"
+  canvas.style.cursor = "crosshair";
+  isDrawing = "rect";
 }
 function addEllipse() {
-    canvas.style.cursor = "crosshair"
- isDrawing = "ellipse"
+  canvas.style.cursor = "crosshair";
+  isDrawing = "ellipse";
 }
-function align(arg){
-  if(multipleSelectArr.length > 1){
- const last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap()
-  const others = multipleSelectArr.slice(0,-1)
-  let value
-  switch (arg) {
-    case "left":
-      value = last.x[0]
-      break
-    case "centerX":
-      value =last.x[1]
-      break
-    case "right":
-      value = last.x[2]
-      break
-    case "top":
-      value = last.y[0]
-      break
-    case "centerY":
-      value = last.y[1]
-      break
-    case "bottom":
-      value = last.y[2]
-      break
-  }
-  others.forEach(other=>{
-    const otherSnap = other.whereToSnap().pos
-    switch (arg){
+function align(arg) {
+  if (multipleSelectArr.length > 1) {
+    const last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap();
+    const others = multipleSelectArr.slice(0, -1);
+    let value;
+    switch (arg) {
       case "left":
-        other.changeLocation(value,"x")
-        break
+        value = last.x[0];
+        break;
       case "centerX":
-        other.changeLocation(value - (otherSnap.width /2),"x")
-        break
+        value = last.x[1];
+        break;
       case "right":
-        other.changeLocation(value-otherSnap.width,"x")
-        break
+        value = last.x[2];
+        break;
       case "top":
-        other.changeLocation(value,"y")
-        break
+        value = last.y[0];
+        break;
       case "centerY":
-        other.changeLocation(value - (otherSnap.height /2),"y")
-        break
+        value = last.y[1];
+        break;
       case "bottom":
-        other.changeLocation(value - otherSnap.height,"y")
+        value = last.y[2];
+        break;
     }
-  })
-  draw()
+    others.forEach((other) => {
+      const otherSnap = other.whereToSnap().pos;
+      switch (arg) {
+        case "left":
+          other.changeLocation(value, "x");
+          break;
+        case "centerX":
+          other.changeLocation(value - otherSnap.width / 2, "x");
+          break;
+        case "right":
+          other.changeLocation(value - otherSnap.width, "x");
+          break;
+        case "top":
+          other.changeLocation(value, "y");
+          break;
+        case "centerY":
+          other.changeLocation(value - otherSnap.height / 2, "y");
+          break;
+        case "bottom":
+          other.changeLocation(value - otherSnap.height, "y");
+      }
+    });
+    draw();
   }
- 
 }
-function group(){
-  if(multipleSelectArr.length > 1){
-    const newGroup = new Group(multipleSelectArr)
-    multipleSelectArr.forEach(arr =>{
-      const index = objects.indexOf(arr)
-      objects.splice(index,1)
-    })
-    multipleSelectArr = []
-    multipleSelect = false
-    objects.push(newGroup)
+function group() {
+  if (multipleSelectArr.length > 1) {
+    const newGroup = new Group(multipleSelectArr);
+    multipleSelectArr.forEach((arr) => {
+      const index = objects.indexOf(arr);
+      objects.splice(index, 1);
+    });
+    multipleSelectArr = [];
+    multipleSelect = false;
+    objects.push(newGroup);
   }
 }
 
@@ -4161,40 +4266,37 @@ function getMousePos(canvas, evt) {
   };
 }
 
-
-
 function textMousePos(evt) {
-    const rect = canvass.getBoundingClientRect();
-    const style = getComputedStyle(canvass);
+  const rect = canvass.getBoundingClientRect();
+  const style = getComputedStyle(canvass);
 
-    const transform = style.transform;
-    let scaleX = 1, scaleY = 1, translateX = 0, translateY = 0;
+  const transform = style.transform;
+  let scaleX = 1,
+    scaleY = 1,
+    translateX = 0,
+    translateY = 0;
 
-    if (transform && transform !== 'none') {
-        const values = transform.match(/matrix\((.*)\)/);
+  if (transform && transform !== "none") {
+    const values = transform.match(/matrix\((.*)\)/);
 
-        if (values) {
-            const nums = values[1].split(',').map(Number);
-            scaleX = nums[0];
-            scaleY = nums[3];
-            translateX = nums[4]; 
-            translateY = nums[5]; 
-        }
+    if (values) {
+      const nums = values[1].split(",").map(Number);
+      scaleX = nums[0];
+      scaleY = nums[3];
+      translateX = nums[4];
+      translateY = nums[5];
     }
-    const px = evt.clientX - rect.left;
-    const py = evt.clientY - rect.top;
-    const x = (px - translateX) / scaleX;
-    const y = (py - translateY) / scaleY;
+  }
+  const px = evt.clientX - rect.left;
+  const py = evt.clientY - rect.top;
+  const x = (px - translateX) / scaleX;
+  const y = (py - translateY) / scaleY;
 
-    return { x, y };
+  return { x, y };
 }
-
-
-
 
 async function generateCard() {
   selectedObj = null;
-  selectedText = null;
   generationArea.innerHTML = "";
   const canvaDefault = canvassDiv.getBoundingClientRect();
   const boxesPerPage = renderPageColumn * renderPageRow;
@@ -4224,14 +4326,14 @@ async function generateCard() {
 
   const scale = Math.min(
     cellWidth / canvaDefault.width,
-    cellHeight / canvaDefault.height
+    cellHeight / canvaDefault.height,
   );
   let iterationLength = 1;
 
   if (textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...textBoxes.map((tb) => tb.textArea.split("\n").length)
+      ...textBoxes.map((tb) => tb.textArea.split("\n").length),
     );
   }
   const maxImageIterLength = Math.max(
@@ -4239,15 +4341,14 @@ async function generateCard() {
     ...images.map((imgObj) =>
       imgObj.iteratedFiles && imgObj.iteratedFiles.length > 0
         ? imgObj.iteratedFiles.length
-        : 1
-    )
+        : 1,
+    ),
   );
   iterationLength = Math.max(iterationLength, maxImageIterLength);
 
   let boxCountInPage = 0;
-      let scaleFactor = 2
+  let scaleFactor = 2;
   for (let i = 0; i < iterationLength; i++) {
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     images.forEach((img) => img.drawIteratedImage(i));
     objects.forEach((obj) => obj.addObject());
@@ -4257,7 +4358,7 @@ async function generateCard() {
 
     croppedCanvas.width = canvaDefault.width * scaleFactor;
     croppedCanvas.height = canvaDefault.height * scaleFactor;
-    cty.scale(scaleFactor,scaleFactor)
+    cty.scale(scaleFactor, scaleFactor);
     cty.drawImage(
       canvas,
       canvaDefault.x - rect.x,
@@ -4267,7 +4368,7 @@ async function generateCard() {
       0,
       0,
       canvaDefault.width,
-      canvaDefault.height
+      canvaDefault.height,
     );
     const canvasData = croppedCanvas.toDataURL();
 
@@ -4296,7 +4397,7 @@ async function generateCard() {
           textbox.generateText(i, {
             width: div.getBoundingClientRect().width,
             height: div.getBoundingClientRect().height,
-          })
+          }),
         );
       });
     } else {
@@ -4319,31 +4420,25 @@ async function generateCard() {
           textbox.generateText(i, {
             width: div.getBoundingClientRect().width,
             height: div.getBoundingClientRect().height,
-          })
+          }),
         );
       });
 
       boxCountInPage++;
     }
   }
-  document.querySelector(".generate").style.display = "none"
+  document.querySelector(".generate").style.display = "none";
 }
-
-
-
-
-
 
 canvas.addEventListener("mousedown", (event) => {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
 
   isDraggingObject = false;
-  if(isDrawing !== null && isDrawing !== "text"){
-    drawingStart = true
-drawingCoordinate.start = {x:pos.x,y:pos.y}
-drawingCoordinate.end =  {x:pos.x,y:pos.y}
-  }
-  else if (pen !== null) {
+  if (isDrawing !== null && isDrawing !== "text") {
+    drawingStart = true;
+    drawingCoordinate.start = { x: pos.x, y: pos.y };
+    drawingCoordinate.end = { x: pos.x, y: pos.y };
+  } else if (pen !== null) {
     pen.drawPen(pos);
     selectedObj = pen;
     selectedObj.formatProperties();
@@ -4360,12 +4455,12 @@ drawingCoordinate.end =  {x:pos.x,y:pos.y}
           clipped.changeLocation(
             objectsCoordinate.x +
               (objectsCoordinate.width - clippedCoordinate.width) / 2,
-            "x"
+            "x",
           );
           clipped.changeLocation(
             objectsCoordinate.y +
               (objectsCoordinate.height - clippedCoordinate.height) / 2,
-            "y"
+            "y",
           );
         }
         objects[i].clips.push(clipped);
@@ -4373,61 +4468,54 @@ drawingCoordinate.end =  {x:pos.x,y:pos.y}
 
         selectedObj = objects[i];
         objects.splice(index, 1);
-        clipped = null
-        break
+        clipped = null;
+        break;
       }
     }
-    if(clipped === null){
-
-  notify("Clipped")
-  canvas.style.cursor = "default"
-    } 
-    else notify("Select An Object")
+    if (clipped === null) {
+      notify("Clipped");
+      canvas.style.cursor = "default";
+    } else notify("Select An Object");
   } else if (cloneObj) {
     let cloned = cloneObj.showClone();
     objects.push(cloned);
-          undoObject.push(cloneObject(objects));
-  redoObject.length = 0
-  } else if(clippedObject !== null && previousClip !== null){
-              editclip.style.display = "block"
-    for(let i = clippedObject.clips.length -1; i >=0;i++){
-
-      if(clippedObject.clips[i].whatSelected(pos)){
-        selectedObj = clippedObject.clips[i]
-        isDraggingObject = true
-                isRotatingObject = false;
-        selectedText = null;
+    undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
+  } else if (clippedObject !== null && previousClip !== null) {
+    editclip.style.display = "block";
+    for (let i = clippedObject.clips.length - 1; i >= 0; i++) {
+      if (clippedObject.clips[i].whatSelected(pos)) {
+        selectedObj = clippedObject.clips[i];
+        isDraggingObject = true;
+        isRotatingObject = false;
         selectedObj.isDoubleClicked = false;
-        selectedObj.formatProperties()
-        break
+        selectedObj.formatProperties();
+        break;
       }
     }
-  }else if(multipleSelect){
-    objects.forEach(obj =>{
-      if(obj.whatSelected(pos)){
-        if(!measurementArr.includes(obj)){
-multipleSelectArr.push(obj)
+  } else if (multipleSelect) {
+    objects.forEach((obj) => {
+      if (obj.whatSelected(pos)) {
+        if (!measurementArr.includes(obj)) {
+          multipleSelectArr.push(obj);
         }
-
       }
-    })
-    
+    });
   } else {
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].whatSelected(pos)) {
         selectedObj = objects[i];
-        if(selectedObj.clips && selectedObj.clips.length > 0){
-          editclip.style.display = "block"
-          clippedObject = selectedObj
-        }else editclip.style.display = "none"
+        if (selectedObj.clips && selectedObj.clips.length > 0) {
+          editclip.style.display = "block";
+          clippedObject = selectedObj;
+        } else editclip.style.display = "none";
         isRotatingObject = false;
-        selectedText = null;
         selectedObj.isDoubleClicked = false;
         selectedObj.formatProperties();
         isDraggingObject = true;
         break;
-      }else{
-        selectedObj = null
+      } else {
+        selectedObj = null;
       }
     }
   }
@@ -4435,54 +4523,6 @@ multipleSelectArr.push(obj)
   lastMouseX = pos.x;
   lastMouseY = pos.y;
   draw();
-});
-canvass.addEventListener("mousedown", (event) => {
-  const textPos = textMousePos(event);
-  if(isDrawing === "text"){
-    const textbox = new TextBox()
-    textbox.addObject()
-    textbox.changeLocation(textPos.x ,"x")
-    textbox.changeLocation(textPos.y - (parseFloat(window.getComputedStyle(textbox.input).height) / 2),"y")
-    textBoxes.push(textbox)
-  }
-  else if (cloneText) {
-    const cloned = cloneText.showClone();
-    cloned.input.style.left = `${
-      textPos.x - cloneText.input.getBoundingClientRect().width / 2
-    }px`;
-    cloned.input.style.top = `${
-      textPos.y - cloneText.input.getBoundingClientRect().height / 2
-    }px`;
-    textBoxes.push(cloneText);
-  } else {
-    for (let i = textBoxes.length - 1; i >= 0; i--) {
-      if (textBoxes[i].whatSelected({ x: event.clientX, y: event.clientY })) {
-        if (textBoxes[i].isDoubleClicked === false) {
-          event.preventDefault();
-        }
-        selectedText = textBoxes[i];
-        selectedObj = null;
-        isRotatingObject = false;
-        selectedText.formatProperties();
-        isDraggingText = true;
-        break;
-      }
-    }
-
-  }
-
-  if (selectedText) {
-    selectedText.isDoubleClicked = false;
-  }
-  textLastMouseX = textPos.x;
-  textLastMouseY = textPos.y;
-  draw();
-  if(!isDraggingObject && !isDraggingText){
-        isPanning = true;
-    startX = event.clientX - panX;
-    startY = event.clientY - panY;
-  }
-
 });
 
 canvas.addEventListener("dblclick", (event) => {
@@ -4495,44 +4535,25 @@ canvas.addEventListener("dblclick", (event) => {
     }
   }
 });
-canvass.addEventListener("dblclick", (event) => {
-  for (let i = textBoxes.length - 1; i >= 0; i--) {
-    if (textBoxes[i].whatSelected({ x: event.clientX, y: event.clientY })) {
-      textBoxes[i].isDoubleClicked = textBoxes[i].isDoubleClicked
-        ? false
-        : true;
-      selectedText = textBoxes[i];
-      selectedText.formatSelected({ x: event.clientX, y: event.clientY });
-    }
-  }
-});
-window.addEventListener("mouseup",()=>isPanning = false)
-canvas.addEventListener("mouseup", () => {
-  if(drawingStart){
-    drawingStart = false
-    objects.push(drawingObject())
 
+window.addEventListener("mouseup", () => (isPanning = false));
+canvas.addEventListener("mouseup", () => {
+  if (drawingStart) {
+    drawingStart = false;
+    objects.push(drawingObject());
   }
-  if(isDraggingObject || isRotatingObject){
-          undoObject.push(cloneObject(objects));
-  redoObject.length = 0
-  }
+  // if (isDraggingObject || isRotatingObject) {
+  //   undoObject.push(cloneObject(objects));
+  //   redoObject.length = 0;
+  // }
   isDraggingObject = false;
-  isDraggingText = false
-});
-canvass.addEventListener("mouseup", () => {
-  isDraggingText = false;
-  isDraggingObject = false;
-  isPanning = false
 });
 
 canvas.addEventListener("mousemove", (event) => {
-
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
-  if(drawingStart){
-    drawingCoordinate.end = {x:pos.x,y:pos.y}
-  }
-  else if (cloneObj) {
+  if (drawingStart) {
+    drawingCoordinate.end = { x: pos.x, y: pos.y };
+  } else if (cloneObj) {
     cloneObj.formatSelected(pos);
   } else if ((isDraggingObject || isRotatingObject) && selectedObj) {
     selectedObj.formatSelected(pos);
@@ -4542,54 +4563,27 @@ canvas.addEventListener("mousemove", (event) => {
   lastMouseY = pos.y;
   draw();
 });
-canvass.addEventListener("mousemove", (event) => {
-
-  const textPos = textMousePos(event);
-  if (isPanning && !isDraggingText && !isDraggingObject&& !isRotatingObject
-        && pen === null && isDrawing === null){
-              panX = event.clientX - startX
-    panY = event.clientY - startY
-  
-    updateZoom()
-      }
-  else if (cloneText) {
-    cloneText.input.style.left = `${
-      textPos.x - cloneText.input.getBoundingClientRect().width / 2
-    }px`;
-    cloneText.input.style.top = `${
-      textPos.y - cloneText.input.getBoundingClientRect().height / 2
-    }px`;
-  } else if (isDraggingText && selectedText) {
-    selectedText.formatSelected(event);
-    selectedText.formatProperties();
-  }
-  textLastMouseX = textPos.x;
-  textLastMouseY = textPos.y;
-  draw();
-});
 
 function draw() {
-  try{
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (pen) {
-    pen.addObject();
+  try {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (pen) {
+      pen.addObject();
+    }
+    if (cloneObj) {
+      cloneObj.addObject();
+    }
+    if (objects.length > 0) {
+      objects.forEach((obj) => {
+        obj.addObject();
+      });
+    }
+    if (drawingStart) {
+      drawingObject().addObject();
+    }
+  } catch (err) {
+    console.log(err);
   }
-  if (cloneObj) {
-    cloneObj.addObject();
-  }
-  if(objects.length > 0){
-
-  objects.forEach((obj) => {
-    obj.addObject();
-  });}
-    if(drawingStart){
-        drawingObject().addObject()
-  }
-  }catch(err){
-    console.log(err)
-  }
-
 }
 
 draw();

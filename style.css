@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Londrina+Solid:wght@100;300;400;900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Pacifico&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
 :root{
   --bg-color: #101010;
   --side-color: #181818;
@@ -11,31 +12,34 @@
   --aligin-sec: #1f1f1f;
   --button-hover: #616161;
 }
+
 *{
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: "Inter",sans-serif;
 }
+
 body{
   background-color: var(--bg-color);
 }
+
 header{
   background-color: var(--side-color);
   padding: 0.5rem 2rem;
   display: flex;
   flex-direction: row;
-
   align-items: center;
   justify-content: space-between;
-
 }
+
 header > section{
   display: flex;
   flex-direction: row;
-    gap: 1.5rem;
-    align-items: center;
+  gap: 1.5rem;
+  align-items: center;
 }
+
 header > div button{
   padding: 1rem 1.3rem;
   border: none;
@@ -43,20 +47,27 @@ header > div button{
   color: var(--h3-fill);
   background-color: var(--icon-img);
 }
+
 .first-header{
   display: flex;
   flex-direction: row;
   color: var(--h3-fill);
   align-items: center;
   gap: 0.5rem;
-  
 }
+
 .first-header > div{
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
-.first-header > div div,.two-grid > div,.thick,.generate1 > div div,.autocomplete-container{
+
+/* NOTE: updated .two-grid > div to .two-grid > .field (semantic change) */
+.first-header > div div,
+.two-grid > .field,
+.thick,
+.generate1 > div div,
+.autocomplete-container{
   font-size: 0.7rem;
   background-color: var(--input-img);
   width: auto;
@@ -67,11 +78,12 @@ header > div button{
   border-radius: 0.3rem;
   font-weight: bold;
   color: var(--h3-fill);
-
 }
+
 .thick{
   text-wrap: nowrap;
 }
+
 .first-header input{
   outline: none;
   background-color: transparent;
@@ -82,11 +94,13 @@ header > div button{
   width: 100px;
   color: var(--input-color);
 }
+
 .second-header{
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
 }
+
 .second-header button{
   height: 50px;
   width: 45px;
@@ -94,48 +108,34 @@ header > div button{
   border-radius: 0.1rem;
   border: none;
   position: relative;
-
 }
+
 .second-header button::before{
   content: "";
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%,-50%);
-  background-color: var(--input-color) ;
-
+  background-color: var(--input-color);
 }
-.textarea{
-  position : absolute;
-   color : #fff000;
-   font-size : 50px;
-   padding : 1rem;
-   outline : none;
-   background-color : transparent;
-   border : none;
-   text-align : left;
-   font-family : "sans-serif";
-   resize: none;
-   white-space: pre;
-   overflow: hidden;
-
-}
-
 
 .second-header button:first-child::before{
   width: 27px;
   height: 32px;
 }
+
 .third-header{
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 0.5rem;
 }
+
 .second-header button:last-child::before{
   width: 32px;
-  height:27px ;
+  height:27px;
 }
+
 header select{
   height: 40px;
   outline: none;
@@ -163,7 +163,10 @@ main{
   gap: 1rem;
   overflow-y: auto;
 }
-.leftSidebar > button,.zoomin,.zoomout{
+
+.leftSidebar > button,
+.zoomin,
+.zoomout{
   min-width: 40px;
   min-height: 40px;
   width: 40px;
@@ -175,35 +178,44 @@ main{
   transition: all 0.3s;
 }
 
-.leftSidebar > button img,.zoomin img,.zoomout img{
+.leftSidebar > button img,
+.zoomin img,
+.zoomout img{
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
-.leftSidebar .active {
+
+.leftSidebar .active{
   border: 2px solid var(--icon-img);
   background-color: var(--side-color);
 }
+
 #propertiesTab{
   background-color: var(--side-color);
   height: 100%;
   overflow-y: auto;
   z-index: 3;
 }
-#propertiesTab::-webkit-scrollbar,.leftSidebar::-webkit-scrollbar{
-  width: 5px;
 
+#propertiesTab::-webkit-scrollbar,
+.leftSidebar::-webkit-scrollbar{
+  width: 5px;
 }
-#propertiesTab::-webkit-scrollbar-thumb,.leftSidebar::-webkit-scrollbar-thumb {
+
+#propertiesTab::-webkit-scrollbar-thumb,
+.leftSidebar::-webkit-scrollbar-thumb{
   background-color: var(--h3-fill);
   border-radius: 10px;
 }
+
 main > section{
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
 }
+
 .upsec{
   top: 30px;
   left: 50%;
@@ -214,10 +226,10 @@ main > section{
   justify-content: space-between;
   width: 95%;
   z-index: 3;
-
 }
+
 .notification{
-  padding: 1rem 2.5rem ;
+  padding: 1rem 2.5rem;
   position: absolute;
   transform: translate(-50%);
   left: 50%;
@@ -231,6 +243,7 @@ main > section{
   opacity: 1;
   z-index: 5;
 }
+
 .upsec .editclip{
   position: absolute;
   width: 100%;
@@ -241,32 +254,32 @@ main > section{
   color: var(--input-color);
   display: none;
 }
-@keyframes notify {
-  0%{
-      transform: translate(-50%);
-  }
-  100%{
-      transform: translate(-50%,50px);
-  }
-} 
+
+@keyframes notify{
+  0%{ transform: translate(-50%); }
+  100%{ transform: translate(-50%,50px); }
+}
+
 #propertiesTab > div:first-child{
-  border-bottom: var(--border-bottom) ;
+  border-bottom: var(--border-bottom);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
+
 #propertiesTab > div:first-child > div{
   display: flex;
   flex-direction: row;
   padding: 1rem;
   justify-content: space-between;
-
   align-items: center;
 }
-#propertiesTab > div:first-child  >div h3{
+
+#propertiesTab > div:first-child > div h3{
   color: var(--h3-fill);
   font-size: 1.1rem;
 }
+
 #propertiesTab > div:first-child > div button{
   width: 30px;
   height: 5px;
@@ -274,6 +287,7 @@ main > section{
   border-radius: 0.5rem;
   background-color: var(--close-button);
 }
+
 #properties > div{
   padding: 1rem;
   border-bottom: var(--border-bottom);
@@ -282,23 +296,37 @@ main > section{
   gap: 1rem;
   font-size: 0.7rem;
 }
+
 .two-grid{
-   display: grid;
-   grid-template-columns: 1fr 1fr;
-   justify-content: space-between;
-   gap: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  justify-content: space-between;
+  gap: 1rem;
 }
+
 #properties h3{
   font-size: 0.95rem;
   color: var(--h3-fill);
 }
-.two-grid > div,.generate1 > div div,.autocomplete-container{
+
+/* NOTE: updated .two-grid > div to .two-grid > .field */
+.two-grid > .field,
+.generate1 > div div,
+.autocomplete-container{
   display: flex;
   flex-direction: row;
   align-items: center;
 }
-.two-grid input,.generate1 > div input,.color-div input[type="number"],.color-sec input,.thick input,.autocomplete-container input{
-    outline: none;
+
+/* NOTE: added .field input to match new semantic label wrapper */
+.two-grid input,
+.generate1 > div input,
+.color-div input[type="number"],
+.color-sec input,
+.thick input,
+.autocomplete-container input,
+.field input{
+  outline: none;
   background-color: transparent;
   border: none;
   border-left: 2px solid var(--side-color);
@@ -307,6 +335,12 @@ main > section{
   width: 100%;
   color: var(--input-color);
 }
+
+/* Optional: label text span */
+.field-label{
+  text-wrap: nowrap;
+}
+
 #properties select{
   padding: 0.5rem;
   outline: none;
@@ -314,9 +348,18 @@ main > section{
   border-radius: 0.3rem;
   background-color: var(--input-img);
   color: var(--input-color);
-  
 }
-.color-div,.uniform-div{
+#properties > div,
+#properties > section{
+  padding: 1rem;
+  border-bottom: var(--border-bottom);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.7rem;
+}
+.color-div,
+.uniform-div{
   background-color:var(--icon-img);
   color:var(--input-color);
   padding:0.5rem;
@@ -326,8 +369,8 @@ main > section{
   border-radius: 0.3rem;
   display: flex;
   gap: 0.3rem;
-  
 }
+
 .color-div > div{
   background-color: var(--input-img);
   padding: 0.5rem;
@@ -338,54 +381,66 @@ main > section{
   font-size: 0.5rem;
   border-radius: 0.1rem;
 }
+
 .color-div > div input[type="number"]{
   min-width: 30px;
   width: 100%;
 }
-.color-div input[type="color"],.uniform-div input[type="color"]{
+
+.color-div input[type="color"],
+.uniform-div input[type="color"]{
   background-color: var(--input-img);
   outline: none;
   border: none;
   padding: 0.2rem;
 }
+
 .color-div button{
   width: 20px;
   height: 5px;
-  background-color: var(--h3-fill) ;
+  background-color: var(--h3-fill);
   border: none;
   border-radius: 0.3rem;
 }
+
 .color-sec{
   display: flex;
   flex-direction: row;
   font-size: 0.7rem;
   gap: 1rem;
 }
-.color-sec div,.color-sec button{
+
+.color-sec div,
+.color-sec button{
   padding: 0.5rem;
   display: flex;
   flex-direction: row;
   font-size: inherit;
   text-wrap: nowrap;
   align-items: center;
-    background-color: var(--input-img);
+  background-color: var(--input-img);
   color: var(--input-color);
   border: none;
   border-radius: 0.2rem;
 }
+
 .color-sec button{
   gap: 0.5rem;
 }
+
 #properties .color-sec input{
   margin-left: 0.5rem;
   padding-right: 0;
 }
+
 .color-sec img{
   width: 15px;
   height: auto;
   object-fit: cover;
 }
-.normalb ,.dashedb{
+
+.normalb,
+.dashedb{
   height: 35px;
   width: 34px;
   background-color: var(--input-img);
@@ -394,7 +449,9 @@ main > section{
   border: none;
   margin-left: 0.5rem;
 }
-.normalb::before,.dashedb::before{
+
+.normalb::before,
+.dashedb::before{
   content: "";
   position: absolute;
   left: 50%;
@@ -403,12 +460,15 @@ main > section{
   width: 20px;
   height: 15px;
 }
+
 .normalb::before{
   border: 2px solid var(--input-color);
 }
+
 .dashedb::before{
   border: 2px dashed var(--input-color);
 }
+
 .canvas{
   width: 100%;
   height: 100%;
@@ -419,10 +479,11 @@ main > section{
 }
 
 img{
-    touch-action: none;
+  touch-action: none;
   user-select: none;
   pointer-events: none;
 }
+
 .canvas > div{
   position: absolute;
   left: 50%;
@@ -435,40 +496,49 @@ img{
   user-select: none;
   pointer-events: none;
 }
+
 #canvas{
   width: 100%;
   height: 100%;
 }
 
-.outlinet,.outlinef{
+.outlinet,
+.outlinef{
   position: relative;
   border: none;
-    background-color: var(--h3-fill);
-      height: 5px;
+  background-color: var(--h3-fill);
+  height: 5px;
   border-radius: 0.5rem;
 }
+
 .outlinet{
   width: 40px;
 }
-.outlinef,.outlinef::before{
+
+.outlinef,
+.outlinef::before{
   width: 20px;
 }
+
 .outlinef::before{
   content: "";
-      background-color: var(--h3-fill);
-      height: 5px;
+  background-color: var(--h3-fill);
+  height: 5px;
   border-radius: 0.5rem;
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%,-50%) rotate(90deg);
 }
-.shape > div{
+
+/* NOTE: updated .shape > div to .shape > .shape-row */
+.shape > .shape-row{
   display: flex;
   flex-direction: row;
   gap: 1rem;
   justify-content: center;
 }
+
 .shape button{
   width: 40px;
   height: 40px;
@@ -477,7 +547,11 @@ img{
   background-color: var(--icon-img);
   padding: 0.5rem;
 }
-.shape .normal,.imageb,.iteratedsec button,.image-file{
+
+.shape .normal,
+.imageb,
+.iteratedsec button,
+.image-file{
   background-color: var(--icon-img);
   border-radius: 0.3rem;
   border: none;
@@ -486,20 +560,28 @@ img{
   height: auto;
   color: var(--input-color);
 }
+
 .shape img{
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
+
 .two-grid img{
   width: 20px;
   height: auto;
 }
-.add-image,.image-file{
+
+.add-image,
+.image-file{
   position: relative;
   overflow: hidden;
 }
-.add-image input,#font-import input,.iteratedsec input,.image-file input{
+
+.add-image input,
+#font-import input,
+.iteratedsec input,
+.image-file input{
   position: absolute;
   width: 100%;
   height: 100%;
@@ -509,9 +591,14 @@ img{
   background-color: transparent;
   color: transparent;
 }
-.add-image input::file-selector-button,#font-import input::file-selector-button,.iteratedsec input::file-selector-button,.image-file input::file-selector-button{
+
+.add-image input::file-selector-button,
+#font-import input::file-selector-button,
+.iteratedsec input::file-selector-button,
+.image-file input::file-selector-button{
   display: none;
 }
+
 .preview{
   width: 150px;
   height: 150px;
@@ -522,19 +609,21 @@ img{
   display: flex;
   justify-content: center;
   align-items: center;
-  
 }
+
 .preview img{
   width: 90%;
   height: 90%;
   object-fit: contain;
 }
-.iteratedsec {
+
+.iteratedsec{
   color: var(--input-color);
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
+
 .iteratedsec > div{
   display: flex;
   flex-direction: row;
@@ -543,13 +632,16 @@ img{
   overflow: hidden;
   padding: 0.5rem;
 }
+
 .iteratedsec.selected{
   background-color: var(--input-img);
 }
-.iteratedsec  p{
+
+.iteratedsec p{
   overflow: hidden;
   flex: 1;
 }
+
 .iteratedsec button{
   background-color: var(--icon-img);
   border-radius: 0.3rem;
@@ -561,10 +653,11 @@ img{
   font-size: 0.6rem;
   position: relative;
 }
+
 .autocomplete-container{
   position: relative;
-width: 100%;
-text-wrap: nowrap;
+  width: 100%;
+  text-wrap: nowrap;
 }
 
 .font-import{
@@ -577,35 +670,43 @@ text-wrap: nowrap;
   align-items: center;
   justify-content: center;
 }
+
 .font-import img{
   width: 70%;
   height: 70%;
   object-fit: contain;
 }
+
 .autocomplete-container input::placeholder{
   color: var(--input-color);
 }
+
 .dropdown{
   position: absolute;
   top: 20px;
   height: 100px;
   right: 0;
   overflow-y: scroll;
-  background-color: var(--input-img) ;
+  background-color: var(--input-img);
   padding: 1rem 0;
 }
-.dropdown::-webkit-scrollbar,.text::-webkit-scrollbar{
-  width: 4px;
 
+.dropdown::-webkit-scrollbar,
+.text::-webkit-scrollbar{
+  width: 4px;
 }
-.dropdown::-webkit-scrollbar-thumb,.text::-webkit-scrollbar-thumb{
-    background-color: var(--h3-fill);
+
+.dropdown::-webkit-scrollbar-thumb,
+.text::-webkit-scrollbar-thumb{
+  background-color: var(--h3-fill);
   border-radius: 5px;
 }
+
 .dropdown > div{
   padding: 0.5rem;
   border-bottom: var(--border-bottom);
 }
+
 .text{
   height: 300px;
   border-radius: 0.5rem;
@@ -614,20 +715,25 @@ text-wrap: nowrap;
   color: var(--input-color);
   padding: 1rem;
   resize: none;
+  width: 100%;
 }
+
 #propertiesTab #properties .selected{
   background-color: var(--button-hover);
 }
+
 #propertiesTab button{
   transition: all 0.5s;
 }
+
 input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+input[type=number]::-webkit-outer-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.properties-align,.flip{
+.properties-align,
+.flip{
   display: flex;
   flex-direction: row;
   gap: 1.3rem;
@@ -640,33 +746,40 @@ input[type=number]::-webkit-outer-spin-button {
   overflow: hidden;
   margin-bottom: 1rem;
 }
+
 .properties-align::before{
   position: absolute;
   width: 3px;
   height: 100%;
-  background-color: var(--bg-color) ;
+  background-color: var(--bg-color);
   left: 50%;
   top: 50%;
   transform: translate(-50%,-50%);
   content: "";
 }
+
 .properties-align img{
   height: 100%;
   width: 100%;
   object-fit: contain;
 }
-.properties-align > div,.upsec > div{
+
+.properties-align > div,
+.upsec > div{
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
 }
+
 .upsec > div{
   background-color: var(--aligin-sec);
   padding: 0.5rem;
   border-radius: 0.2rem;
-
 }
-.properties-align button,.upsec button,.flip button{
+
+.properties-align button,
+.upsec button,
+.flip button{
   height: 28px;
   width: 30px;
   border: none;
@@ -674,16 +787,15 @@ input[type=number]::-webkit-outer-spin-button {
   border-radius: 0.2rem;
   padding: 0.3rem;
 }
+
 .properties-align button:active{
-  background-color:  var(--button-hover);
-}
-.leftSidebar.active{
   background-color: var(--button-hover);
 }
 
 .leftSidebar.active{
   background-color: var(--button-hover);
 }
+
 .generate{
   position: absolute;
   top: 50%;
@@ -699,21 +811,23 @@ input[type=number]::-webkit-outer-spin-button {
   z-index: 3;
   display: none;
 }
+
 .generate > div:first-child{
   width: 100%;
   display: flex;
-  flex-direction:row ;
+  flex-direction:row;
   align-items: center;
   justify-content: end;
   color: var(--h3-fill);
   border-bottom: var(--border-bottom);
   padding-bottom: 1rem;
   gap: 40%;
-
 }
+
 .generate h3{
   font-size: 1.3rem;
 }
+
 .generate > button{
   padding: 0.7rem 2.5rem;
   border: none;
@@ -723,14 +837,16 @@ input[type=number]::-webkit-outer-spin-button {
   font-weight: 700;
   border-radius: 0.3rem;
 }
+
 .generate > div:first-child button{
   background-color: transparent;
   border: none;
   height: 15px;
   width: 15px;
 }
+
 .generate1 select{
-  padding: 0.5rem ;
+  padding: 0.5rem;
   border: none;
   outline: none;
   font-size: 0.7rem;
@@ -738,6 +854,7 @@ input[type=number]::-webkit-outer-spin-button {
   background-color: var(--input-img);
   color: var(--h3-fill);
 }
+
 .generate1{
   display: flex;
   flex-direction: row;
@@ -745,16 +862,18 @@ input[type=number]::-webkit-outer-spin-button {
   align-items: center;
   padding: 1rem 0;
 }
+
 .generate1 > div{
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
   text-wrap: nowrap;
-  align-items:center ;
+  align-items:center;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--h3-fill);
 }
+
 .generate1 > div div input{
   width: 50px;
 }
@@ -764,8 +883,8 @@ input[type=number]::-webkit-outer-spin-button {
   height: 100%;
   object-fit: contain;
 }
+
 footer{
   background-color: var(--side-color);
   padding: 1rem;
-
 }
