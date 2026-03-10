@@ -50,6 +50,13 @@ let isRotatingObject = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
 let scale = 1;
+let panX = 0;
+let panY = 0;
+
+let isPanning = false;
+let startX = 0;
+let startY = 0;
+
 let selectedObj = null;
 let clipped = null;
 let defaultFonts =[  "serif",
@@ -64,13 +71,7 @@ let defaultFonts =[  "serif",
 let allFonts = [
 ...defaultFonts
 ];
-let isPanning = false;
-let panStartX = 0;
-let panStartY = 0;
-let panOriginX = 0;
-let panOriginY = 0;
-let panX = 0;
-let panY = 0;
+
 fetch(
   "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8",
 )
@@ -396,7 +397,7 @@ class Formats {
       document.querySelector(".addColor").addEventListener("click", () => {
         this.color.push("#ff0000");
         this.colorStop = [];
-        draw();
+        requestDraw()
         this.formatProperties();
       });
       document.querySelectorAll(".color-div").forEach((div, i) => {
@@ -413,7 +414,7 @@ class Formats {
         div.querySelector("button").addEventListener("click", (e) => {
           this.color.splice(i, 1);
           this.colorStop = [];
-          draw();
+          requestDraw()
           this.formatProperties();
         });
       });
@@ -1367,18 +1368,16 @@ propertiesBar.innerHTML = `
       .forEach((input) => {
         input.addEventListener(
           "input",
-          (e) => setTimeout(this.changeProperties(e)),
-          1000,
+          (e) => this.changeProperties(e)
         );
       });
     propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
       input.addEventListener(
         "change",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000,
+       (e) => this.changeProperties(e)
       );
     });
-    draw();
+    requestDraw()
   }
 
 changeProperties(e) {
@@ -1476,7 +1475,7 @@ if (name === "outlineThickness") this.outlineThickness = value;
     this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
   }
 
-  draw();
+  requestDraw()
   undoObject.push(cloneObject(objects));
 
 }
@@ -1838,7 +1837,7 @@ class Ellipse extends Formats {
         1000,
       );
     });
-    draw();
+    requestDraw()
   }
   changeProperties(e) {
     const name = e.target.name;
@@ -1866,7 +1865,7 @@ class Ellipse extends Formats {
     }
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    draw();
+    requestDraw()
     undoObject.push(cloneObject(objects));
     undoText.push("object");
   }
@@ -2269,7 +2268,7 @@ class Polygon extends Formats {
         1000,
       );
     });
-    draw();
+    requestDraw()
   }
   changeProperties(e) {
     const name = e.target.name;
@@ -2319,7 +2318,7 @@ class Polygon extends Formats {
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     undoObject.push(cloneObject(objects));
     undoText.push("object");
-    draw();
+    requestDraw()
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -2748,7 +2747,7 @@ class Line extends Formats {
           1000,
         );
       });
-      draw();
+      requestDraw()
     }
   }
   changeProperties(e) {
@@ -2793,7 +2792,7 @@ class Line extends Formats {
     }
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    draw();
+    requestDraw()
     undoObject.push(cloneObject(objects));
     undoText.push("object");
   }
@@ -3146,7 +3145,7 @@ super.similarPropties()
       el.addEventListener("click", () => {
         this.shadow = !this.shadow;
         this.formatProperties();
-        draw();
+        requestDraw()
       });
       return;
     }
@@ -3154,7 +3153,7 @@ super.similarPropties()
       el.addEventListener("click", () => {
         this.iterated= !this.iterated;
         this.formatProperties();
-        draw();
+        requestDraw()
       });
       return;
     }
@@ -3226,7 +3225,7 @@ if(!(defaultFonts.includes(this.fontFamily))){
   if (name === "shadowOffsetX") this.shadowStyle.offsetX = Number(e.target.value) || 0;
   if (name === "shadowOffsetY") this.shadowStyle.offsetY = Number(e.target.value) || 0;
 
-  draw();
+  requestDraw()
 }
 
   doubleClicked(mouse) {
@@ -3422,7 +3421,7 @@ class Images extends Formats {
 
     document.getElementById("maintainAspect").addEventListener("click", () => {
       this.height = this.aspectRatio * this.width;
-      draw();
+      requestDraw()
     });
     document.getElementById("removeBg").addEventListener("click", async () => {
       try {
@@ -3474,7 +3473,7 @@ class Images extends Formats {
         1000,
       );
     });
-    draw();
+    requestDraw()
   }
   changeProperties(e) {
     const name = e.target.name;
@@ -3501,7 +3500,7 @@ class Images extends Formats {
         };
       });
     }
-    draw();
+    requestDraw()
   }
   drawIteratedImage(i) {
     if (this.iteratedFiles.length >= i) {
@@ -3620,7 +3619,7 @@ function undo() {
   if (undoObject.length > 1) {
     redoObject.push(undoObject.pop());
     objects = cloneObject(undoObject[undoObject.length - 1]);
-    draw();
+    requestDraw()
   }
 }
 
@@ -3629,7 +3628,7 @@ function redo() {
     const redoState = redoObject.pop();
     undoObject.push(redoState);
     objects = cloneObject(redoState);
-    draw();
+    requestDraw()
   }
 }
 
@@ -3669,7 +3668,7 @@ document.getElementById("measurement").addEventListener("change", (e) => {
   whatsMeasured = e.target.value;
   width.value = changeValues(canvassDiv.getBoundingClientRect().width);
   height.value = changeValues(canvassDiv.getBoundingClientRect().height);
-  draw();
+  requestDraw()
   if (selectedObj) selectedObj.formatProperties();
 });
 document.getElementById("paperSize").addEventListener("change", (e) => {
@@ -3780,29 +3779,8 @@ document.getElementById("zoom").addEventListener("click", () => {
   <button class="zoomout"><img src="images/Group 47.svg"></button>
   </div>
   `;
-
-  let interval;
-  document.querySelector(".zoomTo").addEventListener("click",()=>{
-    isDrawing = "zoom"
-  })
-  document.querySelector(".zoomin").addEventListener("mousedown", () => {
-    interval = setInterval(() => {
-      scale += 0.01;
-      updateZoom();
-    }, 100);
-  });
-  document
-    .querySelector(".zoomin")
-    .addEventListener("mouseup", () => clearInterval(interval));
-  document.querySelector(".zoomout").addEventListener("mousedown", () => {
-    interval = setInterval(() => {
-      scale -= 0.01;
-      updateZoom();
-    }, 100);
-  });
-  document
-    .querySelector(".zoomout")
-    .addEventListener("mouseup", () => clearInterval(interval));
+  scale +=1
+  draw()
 });
 function flip(value) {
   if (selectedObj) {
@@ -3810,7 +3788,7 @@ function flip(value) {
       selectedObj.scaleX *= -1;
     } else selectedObj.scaleY *= -1;
   }
-  draw();
+  requestDraw()
 }
 document.querySelector(".generateButton").addEventListener("click", () => {
   document.querySelector(".generate").style.display = "flex";
@@ -3861,7 +3839,7 @@ document.getElementById("duplicate").addEventListener("click", () => {
 //     if (index !== -1) {
 //       objects.splice(index, 1);
 //       objects.push(selectedObj);
-//       draw();
+//      requestDraw()
 //     }
 //   }
 // });
@@ -3871,7 +3849,7 @@ document.getElementById("duplicate").addEventListener("click", () => {
 //     if (index !== -1) {
 //       objects.splice(index, 1);
 //       objects.unshift(selectedObj);
-//       draw();
+//      requestDraw()
 //     }
 //   }
 // });
@@ -3881,7 +3859,7 @@ document.getElementById("delete").addEventListener("click", () => {
     objects.splice(index, 1);
     selectedObj = null;
     propertiesBar.innerHTML = "";
-    draw();
+    requestDraw()
   }
 });
 let scaleRatio;
@@ -3905,11 +3883,10 @@ function canvasSize() {
     canvas.style.height = canvass.style.height = `${newHeight}px`;
     canvas.width = newWidth;
     canvas.height = newHeight;
-    scale = 1 / scaleRatio;
-    updateZoom();
+    canvass.style.transform = `scale(${ 1 / scaleRatio})`
   }
 
-  draw();
+  requestDraw()
 }
 function applyOpacityToHex(hexColor, opacityPercent) {
   if (hexColor.length >= 9) hexColor = hexColor.slice(0, 7);
@@ -4043,36 +4020,6 @@ function radToDeg(val, type) {
     return parseFloat(((val * 180) / Math.PI).toFixed(2));
   }
 }
-function updateZoom(exception = true) {
-  const canvaRect = document.querySelector(".canva").getBoundingClientRect();
-  const canvassRect = canvass.getBoundingClientRect();
-  if (exception) {
-    panX = panX > 0 ? 0 : panX;
-    panY = panY > 0 ? 0 : panY;
-
-    panX =
-      panX < canvaRect.width - canvassRect.width
-        ? canvaRect.width - canvassRect.width
-        : panX;
-    panY =
-      panY < canvaRect.height - canvassRect.height
-        ? canvaRect.height - canvassRect.height
-        : panY;
-  }
-  if (scale < 1 / scaleRatio) {
-    const newCoordinate = {
-      width: (canvaRect.width * 1) / scale,
-      height: (canvaRect.height * 1) / scale,
-    };
-    canvass.style.width = canvas.style.width = `${newCoordinate.width}px`;
-    canvass.style.height = canvas.style.height = `${newCoordinate.height}px`;
-    canvas.width = newCoordinate.width;
-    canvas.height = newCoordinate.height;
-  }
-
-  canvass.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-  draw();
-}
 
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");
@@ -4190,7 +4137,7 @@ function addImage(e) {
     const sprite = new Images(img, img.width, img.height, file);
     objects.push(sprite);
     images.push(sprite);
-    draw();
+    requestDraw()
   };
 }
 function addTextbox() {
@@ -4206,7 +4153,7 @@ function addLine() {
   canvas.style.cursor = "crosshair";
   const line = new Line();
   pen = line;
-  draw();
+  requestDraw()
 }
 function addRectangle() {
   canvas.style.cursor = "crosshair";
@@ -4263,7 +4210,7 @@ function align(arg) {
           other.changeLocation(value - otherSnap.height, "y");
       }
     });
-    draw();
+    requestDraw()
   }
 }
 function group() {
@@ -4278,76 +4225,6 @@ function group() {
     objects.push(newGroup);
   }
 }
-function zoomToDrawnRect(padding = 40) {
-  const viewport = document.querySelector(".canva").getBoundingClientRect();
-
-  // 1) normalize rectangle in CANVAS px
-  const x1 = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
-  const y1 = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
-  const x2 = Math.max(drawingCoordinate.start.x, drawingCoordinate.end.x);
-  const y2 = Math.max(drawingCoordinate.start.y, drawingCoordinate.end.y);
-
-  const w = x2 - x1;
-  const h = y2 - y1;
-  if (w < 2 || h < 2) return;
-
-  // 2) canvas px -> client px (screen)
-  const c1 = reverseMousePos(canvas, { x: x1, y: y1 });
-  const c2 = reverseMousePos(canvas, { x: x2, y: y2 });
-
-  // 3) client px -> viewport-local px
-  const s1x = c1.x - viewport.left;
-  const s1y = c1.y - viewport.top;
-  const s2x = c2.x - viewport.left;
-  const s2y = c2.y - viewport.top;
-
-  // 4) viewport-local px -> WORLD coords (undo current transform)
-  const wx1 = (s1x - panX) / scale;
-  const wy1 = (s1y - panY) / scale;
-  const wx2 = (s2x - panX) / scale;
-  const wy2 = (s2y - panY) / scale;
-
-  zoomToWorldRect(
-    {
-      x: Math.min(wx1, wx2),
-      y: Math.min(wy1, wy2),
-      width: Math.abs(wx2 - wx1),
-      height: Math.abs(wy2 - wy1),
-    },
-    padding
-  );
-}
-function zoomToWorldRect(rect, padding = 40) {
-  const viewportEl = document.querySelector(".canva");
-  const viewport = viewportEl.getBoundingClientRect();
-
-  // protect against bad rects
-  if (!rect || rect.width <= 0 || rect.height <= 0) return;
-
-  // scale so rect fits inside viewport (minus padding)
-  const targetScale = Math.min(
-    (viewport.width - padding) / rect.width,
-    (viewport.height - padding) / rect.height
-  );
-
-  scale = targetScale;
-
-  // center of the rect in WORLD coords
-  const cx = rect.x + rect.width / 2;
-  const cy = rect.y + rect.height / 2;
-
-  // center of viewport in SCREEN coords (inside viewport)
-  const screenCx = viewport.width / 2;
-  const screenCy = viewport.height / 2;
-
-  // With transform-origin 0 0:
-  // screen = world * scale + pan
-  // => pan = screen - world*scale
-  panX = screenCx - cx * scale;
-  panY = screenCy - cy * scale;
-
-  updateZoom(true); // applies transform + draw + clamp
-}
 
 function getMousePos(canvas, evt) {
   const rect = canvas.getBoundingClientRect();
@@ -4359,16 +4236,7 @@ function getMousePos(canvas, evt) {
     y: (evt.y - rect.top) * scaleY,
   };
 }
-function reverseMousePos(canvas, pt) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
 
-  return {
-    x: rect.left + (pt.x / scaleX),
-    y: rect.top  + (pt.y / scaleY),
-  };
-}
 async function generateCard() {
   selectedObj = null;
   generationArea.innerHTML = "";
@@ -4509,20 +4377,33 @@ async function generateCard() {
   document.querySelector(".generate").style.display = "none";
 }
 
+let needsDraw = false;
+
+function requestDraw() {
+  if (needsDraw) return;
+  needsDraw = true;
+
+  requestAnimationFrame(() => {
+    needsDraw = false;
+    draw()
+  });
+}
+
 canvas.addEventListener("mousedown", (event) => {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
 
   isDraggingObject = false;
-  if (isDrawing !== null) {
-    if(isDrawing === "text"){
-  const text = new TextBox(pos.x,pos.y);
-  objects.push(text);
-  textBoxes.push(text)
-    }else{
-    drawingStart = true;
-    drawingCoordinate.start = { x: pos.x, y: pos.y };
-    drawingCoordinate.end = { x: pos.x, y: pos.y };
+  isPanning = false;
 
+  if (isDrawing !== null) {
+    if (isDrawing === "text") {
+      const text = new TextBox(pos.x, pos.y);
+      objects.push(text);
+      textBoxes.push(text);
+    } else {
+      drawingStart = true;
+      drawingCoordinate.start = { x: pos.x, y: pos.y };
+      drawingCoordinate.end = { x: pos.x, y: pos.y };
     }
   } else if (pen !== null) {
     pen.drawPen(pos);
@@ -4532,8 +4413,10 @@ canvas.addEventListener("mousedown", (event) => {
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].whatSelected(pos) && objects[i] !== clipped) {
         clipped.clipped = "clipped";
+
         const objectsCoordinate = objects[i].whereToSnap().pos;
         const clippedCoordinate = clipped.whereToSnap().pos;
+
         if (
           clippedCoordinate.x >
           objectsCoordinate.x + objectsCoordinate.width
@@ -4541,35 +4424,40 @@ canvas.addEventListener("mousedown", (event) => {
           clipped.changeLocation(
             objectsCoordinate.x +
               (objectsCoordinate.width - clippedCoordinate.width) / 2,
-            "x",
+            "x"
           );
           clipped.changeLocation(
             objectsCoordinate.y +
               (objectsCoordinate.height - clippedCoordinate.height) / 2,
-            "y",
+            "y"
           );
         }
-        objects[i].clips.push(clipped);
-        let index = objects.indexOf(clipped);
 
+        objects[i].clips.push(clipped);
+
+        const index = objects.indexOf(clipped);
         selectedObj = objects[i];
         objects.splice(index, 1);
         clipped = null;
         break;
       }
     }
+
     if (clipped === null) {
       notify("Clipped");
       canvas.style.cursor = "default";
-    } else notify("Select An Object");
+    } else {
+      notify("Select An Object");
+    }
   } else if (cloneObj) {
-    let cloned = cloneObj.showClone();
+    const cloned = cloneObj.showClone();
     objects.push(cloned);
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;
   } else if (clippedObject !== null && previousClip !== null) {
     editclip.style.display = "block";
-    for (let i = clippedObject.clips.length - 1; i >= 0; i++) {
+
+    for (let i = clippedObject.clips.length - 1; i >= 0; i--) {
       if (clippedObject.clips[i].whatSelected(pos)) {
         selectedObj = clippedObject.clips[i];
         isDraggingObject = true;
@@ -4582,133 +4470,168 @@ canvas.addEventListener("mousedown", (event) => {
   } else if (multipleSelect) {
     objects.forEach((obj) => {
       if (obj.whatSelected(pos)) {
-        if (!measurementArr.includes(obj)) {
+        if (!measurementArr.includes(obj) && !multipleSelectArr.includes(obj)) {
           multipleSelectArr.push(obj);
         }
       }
     });
   } else {
+    let hitObject = null;
+
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].whatSelected(pos)) {
-        selectedObj = objects[i];
-        if (selectedObj.clips && selectedObj.clips.length > 0) {
-          editclip.style.display = "block";
-          clippedObject = selectedObj;
-        } else editclip.style.display = "none";
-        isRotatingObject = false;
-        selectedObj.isDoubleClicked = false;
-        selectedObj.formatProperties();
-        isDraggingObject = true;
+        hitObject = objects[i];
         break;
-      } else {
-        selectedObj = null;
-        
       }
     }
-    if(selectedObj === null){
-      isPanning = true
-        panStartX = event.clientX;
-  panStartY = event.clientY;
-  panOriginX = panX;
-  panOriginY = panY;
+
+    if (hitObject) {
+      selectedObj = hitObject;
+
+      if (selectedObj.clips && selectedObj.clips.length > 0) {
+        editclip.style.display = "block";
+        clippedObject = selectedObj;
+      } else {
+        editclip.style.display = "none";
+      }
+
+      isRotatingObject = false;
+      selectedObj.isDoubleClicked = false;
+      selectedObj.formatProperties();
+      isDraggingObject = true;
+    } else {
+      selectedObj = null;
+      editclip.style.display = "none";
+      isPanning = true;
+      startX = event.clientX;
+      startY = event.clientY;
     }
   }
 
   lastMouseX = pos.x;
   lastMouseY = pos.y;
-  draw();
+  requestDraw();
 });
 
 canvas.addEventListener("dblclick", (event) => {
-  const pos = getMousePos(canvas, event);
+  const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
+
   for (let i = objects.length - 1; i >= 0; i--) {
-    if (objects[i].whatSelected({ x: pos.x, y: pos.y })) {
-      objects[i].doubleClicked(pos);
+    if (objects[i].whatSelected(pos)) {
       selectedObj = objects[i];
-      draw();
+      selectedObj.doubleClicked(pos);
+      requestDraw();
+      break;
     }
   }
 });
-window.addEventListener("mousemove", (e) => {
-  if (!isPanning) return;
 
-  const dx = e.clientX - panStartX;
-  const dy = e.clientY - panStartY;
-
-  panX = panOriginX + dx;
-  panY = panOriginY + dy;
-
-  updateZoom(true);
-});
-window.addEventListener("mouseup", () => (isPanning = false));
-canvas.addEventListener("mouseup", () => {
+window.addEventListener("mouseup", () => {
   if (drawingStart) {
     drawingStart = false;
-    if(isDrawing === "zoom"){
-      zoomToDrawnRect()
-    }else{
-    objects.push(drawingObject());
-    }
 
+    if (isDrawing === "zoom") {
+      zoomToDrawnRect();
+    } else {
+      objects.push(drawingObject());
+    }
   }
+
   // if (isDraggingObject || isRotatingObject) {
   //   undoObject.push(cloneObject(objects));
   //   redoObject.length = 0;
   // }
+
   isDraggingObject = false;
+  isRotatingObject = false;
+  isPanning = false;
+
+  // if (selectedObj && !cloneObj && !pen) {
+  //   selectedObj.formatProperties();
+  // }
+
+  requestDraw();
+});
+
+canvas.addEventListener("mouseleave", () => {
+  if (!isDraggingObject && !drawingStart) {
+    isPanning = false;
+  }
 });
 
 canvas.addEventListener("mousemove", (event) => {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
+  let changed = false;
+
+  if (isPanning) {
+    panX += event.clientX - startX;
+    panY += event.clientY - startY;
+
+    startX = event.clientX;
+    startY = event.clientY;
+    changed = true;
+  }
+
   if (drawingStart) {
     drawingCoordinate.end = { x: pos.x, y: pos.y };
+    changed = true;
   } else if (cloneObj) {
     cloneObj.formatSelected(pos);
+    changed = true;
   } else if ((isDraggingObject || isRotatingObject) && selectedObj) {
     selectedObj.formatSelected(pos);
-    selectedObj.formatProperties();
+    changed = true;
   }
+
   lastMouseX = pos.x;
   lastMouseY = pos.y;
-  draw();
-});
 
+  if (changed) {
+    requestDraw();
+  }
+});
 
 function draw() {
   try {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.setTransform(scale, 0, 0, scale, panX, panY);
+
     if (pen) {
       pen.addObject();
     }
+
     if (cloneObj) {
       cloneObj.addObject();
     }
+
     if (objects.length > 0) {
       objects.forEach((obj) => {
         obj.addObject();
       });
     }
+
     if (drawingStart) {
-if (isDrawing === "zoom") {
-  const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
-  const y = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
-  const w = Math.abs(drawingCoordinate.end.x - drawingCoordinate.start.x);
-  const h = Math.abs(drawingCoordinate.end.y - drawingCoordinate.start.y);
+      if (isDrawing === "zoom") {
+        const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
+        const y = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
+        const w = Math.abs(drawingCoordinate.end.x - drawingCoordinate.start.x);
+        const h = Math.abs(drawingCoordinate.end.y - drawingCoordinate.start.y);
 
-  ctx.save();
-  ctx.globalAlpha = 0.25;
-  ctx.fillRect(x, y, w, h);
-  ctx.globalAlpha = 1;
-  ctx.strokeRect(x, y, w, h);
-  ctx.restore();
-}else{
-      drawingObject().addObject();
-    }
-
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        ctx.fillRect(x, y, w, h);
+        ctx.globalAlpha = 1;
+        ctx.strokeRect(x, y, w, h);
+        ctx.restore();
+      } else {
+        drawingObject().addObject();
+      }
     }
   } catch (err) {
     console.log(err);
   }
 }
 
-draw();
+requestDraw();

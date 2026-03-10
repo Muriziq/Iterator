@@ -1,24 +1,396 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Canvas Pan + Zoom (Crisp DPR)</title>
   <style>
-    div{
-      width: 800px;
-      height: 800px;
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0b0d12;
+      color: #e9eefc;
+      height: 100vh;
+      display: grid;
+      place-items: center;
     }
-    canvas{
-      height: 100%;
-      width: 100%;
+    .wrap {
+      width: min(1100px, 92vw);
+      height: min(720px, 84vh);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+    }
+    .bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      backdrop-filter: blur(10px);
+    }
+    .bar .left { display: flex; gap: 10px; align-items: center; }
+    button {
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: inherit;
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button:hover { background: rgba(255,255,255,.10); }
+    .hint { opacity: .85; font-size: 14px; }
+    .stage {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.10);
+      background:
+        radial-gradient(900px 500px at 20% 10%, rgba(80,120,255,.22), transparent 60%),
+        radial-gradient(700px 450px at 80% 70%, rgba(255,120,200,.16), transparent 60%),
+        #0a0c11;
+    }
+    canvas { display: block; width: 100%; height: 100%; } /* CSS size = container */
+    .hud {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+      font-size: 12px;
+      line-height: 1.25;
+      pointer-events: none;
+      white-space: pre;
     }
   </style>
 </head>
+
 <body>
-  <div>
-  <canvas></canvas>
+  <div class="wrap">
+    <div class="bar">
+      <div class="left">
+        <button id="resetBtn">Reset view</button>
+        <button id="fitBtn">Fit content</button>
+        <span class="hint">Wheel = zoom • Drag = pan • Space+Drag = pan • Double-click = reset</span>
+      </div>
+      <div class="hint" id="status"></div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="c"></canvas>
+      <div class="hud" id="hud"></div>
+    </div>
   </div>
 
+<script>
+(() => {
+  const stage = document.getElementById("stage");
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  const hud = document.getElementById("hud");
+  const status = document.getElementById("status");
+  const resetBtn = document.getElementById("resetBtn");
+  const fitBtn = document.getElementById("fitBtn");
+
+  // "World" content bounds (in world units)
+  const world = { x: 0, y: 0, w: 2000, h: 1200 };
+
+  // Camera state (pan in world units, scale is zoom)
+  const cam = {
+    scale: 1,
+    panX: 0,
+    panY: 0,
+    minScale: 0.15,
+    maxScale: 12
+  };
+
+  let isDragging = false;
+  let dragStart = { x: 0, y: 0 };
+  let camStart = { panX: 0, panY: 0 };
+  let spaceDown = false;
+
+  function getDPR() {
+    return window.devicePixelRatio || 1;
+  }
+
+  function getStageRect() {
+    return stage.getBoundingClientRect();
+  }
+
+  function resizeCanvasToStage() {
+    const rect = getStageRect();
+    const dpr = getDPR();
+
+    // CSS size is controlled by CSS (width/height 100%),
+    // but we still ensure the drawing buffer matches DPR.
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    return { rect, dpr };
+  }
+
+  function screenToWorld(sx, sy) {
+    // sx, sy in screen (stage) px
+    return {
+      x: (sx / cam.scale) - cam.panX,
+      y: (sy / cam.scale) - cam.panY,
+    };
+  }
+
+  function clampCameraToWorld() {
+    // keep world at least partially visible; feels natural
+    const rect = getStageRect();
+    const viewW = rect.width / cam.scale;
+    const viewH = rect.height / cam.scale;
+
+    // Allow a little overscroll margin if you want:
+    const margin = 80 / cam.scale;
+
+    const minX = (viewW - (world.x + world.w)) - margin;
+    const maxX = -world.x + margin;
+    const minY = (viewH - (world.y + world.h)) - margin;
+    const maxY = -world.y + margin;
+
+    cam.panX = Math.max(minX, Math.min(maxX, cam.panX));
+    cam.panY = Math.max(minY, Math.min(maxY, cam.panY));
+  }
+
+  function applyTransform(dpr) {
+    // Clear in screen space
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // World -> screen with DPR + camera
+    ctx.setTransform(
+      dpr * cam.scale, 0,
+      0, dpr * cam.scale,
+      dpr * cam.panX, dpr * cam.panY
+    );
+  }
+
+  function drawGrid() {
+    const step = 100;
+    ctx.save();
+    ctx.lineWidth = 1 / cam.scale;
+
+    // soft grid
+    ctx.globalAlpha = 0.25;
+    for (let x = world.x; x <= world.x + world.w; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, world.y);
+      ctx.lineTo(x, world.y + world.h);
+      ctx.stroke();
+    }
+    for (let y = world.y; y <= world.y + world.h; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(world.x, y);
+      ctx.lineTo(world.x + world.w, y);
+      ctx.stroke();
+    }
+
+    // stronger axes lines
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 2 / cam.scale;
+    ctx.beginPath();
+    ctx.rect(world.x, world.y, world.w, world.h);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawContent() {
+    // A few shapes to show clarity at any zoom
+    // Rect cards
+    for (let i = 0; i < 18; i++) {
+      const x = 120 + (i % 6) * 300;
+      const y = 120 + Math.floor(i / 6) * 260;
+
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.lineWidth = 2 / cam.scale;
+      ctx.beginPath();
+      roundRect(ctx, x, y, 240, 170, 18);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      roundRect(ctx, x + 10, y + 12, 220, 52, 14);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.55;
+      ctx.font = `${Math.max(12, 18 / cam.scale)}px system-ui`;
+      ctx.fillText(`Card ${i + 1}`, x + 18, y + 44);
+
+      ctx.restore();
+    }
+
+    // A circle + crosshair
+    ctx.save();
+    ctx.lineWidth = 2 / cam.scale;
+    ctx.beginPath();
+    ctx.arc(1600, 820, 140, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(1600 - 200, 820);
+    ctx.lineTo(1600 + 200, 820);
+    ctx.moveTo(1600, 820 - 200);
+    ctx.lineTo(1600, 820 + 200);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function render() {
+    const { dpr } = resizeCanvasToStage();
+
+    clampCameraToWorld();
+    applyTransform(dpr);
+
+    // crisp strokes (you can set true if you draw images and want smoothing)
+    ctx.imageSmoothingEnabled = true;
+
+    // grid and content
+    ctx.strokeStyle = "rgba(255,255,255,.22)";
+    drawGrid();
+
+    ctx.strokeStyle = "rgba(255,255,255,.42)";
+    drawContent();
+
+    // HUD (screen space)
+    const rect = getStageRect();
+    const viewW = rect.width / cam.scale;
+    const viewH = rect.height / cam.scale;
+
+    hud.textContent =
+`scale: ${cam.scale.toFixed(3)}
+panX: ${cam.panX.toFixed(2)}   panY: ${cam.panY.toFixed(2)}
+view (world): ${viewW.toFixed(1)} × ${viewH.toFixed(1)}
+DPR: ${getDPR().toFixed(2)}`;
+
+    status.textContent = isDragging ? "PANNING…" : "";
+  }
+
+  function zoomAt(sx, sy, zoomFactor) {
+    // keep the world point under cursor fixed
+    const before = screenToWorld(sx, sy);
+
+    const nextScale = Math.max(cam.minScale, Math.min(cam.maxScale, cam.scale * zoomFactor));
+    cam.scale = nextScale;
+
+    const after = screenToWorld(sx, sy);
+    // adjust pan by the delta
+    cam.panX += (after.x - before.x);
+    cam.panY += (after.y - before.y);
+  }
+
+  function resetView() {
+    cam.scale = 1;
+    cam.panX = 20;
+    cam.panY = 20;
+    render();
+  }
+
+  function fitToContent() {
+    const rect = getStageRect();
+    const padding = 40;
+    const scaleX = (rect.width - padding * 2) / world.w;
+    const scaleY = (rect.height - padding * 2) / world.h;
+    cam.scale = Math.max(cam.minScale, Math.min(cam.maxScale, Math.min(scaleX, scaleY)));
+
+    // center world in view
+    const viewW = rect.width / cam.scale;
+    const viewH = rect.height / cam.scale;
+    cam.panX = (viewW - world.w) / 2 - world.x;
+    cam.panY = (viewH - world.h) / 2 - world.y;
+
+    render();
+  }
+
+  // Events
+  stage.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const rect = getStageRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+
+    const factor = e.deltaY < 0 ? 1.12 : 0.89;
+    zoomAt(sx, sy, factor);
+    render();
+  }, { passive: false });
+
+  stage.addEventListener("mousedown", (e) => {
+    // Pan with left mouse OR Space+left mouse
+    if (e.button !== 0) return;
+
+    isDragging = true;
+    const rect = getStageRect();
+    dragStart.x = e.clientX - rect.left;
+    dragStart.y = e.clientY - rect.top;
+    camStart.panX = cam.panX;
+    camStart.panY = cam.panY;
+
+    stage.style.cursor = "grabbing";
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    const rect = getStageRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+
+    // Convert screen delta -> world delta
+    const dx = (sx - dragStart.x) / cam.scale;
+    const dy = (sy - dragStart.y) / cam.scale;
+
+    cam.panX = camStart.panX + dx;
+    cam.panY = camStart.panY + dy;
+    render();
+  });
+
+  window.addEventListener("mouseup", () => {
+    isDragging = false;
+    stage.style.cursor = "default";
+    render();
+  });
+
+  stage.addEventListener("dblclick", () => resetView());
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space") spaceDown = true;
+  });
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "Space") spaceDown = false;
+  });
+
+  resetBtn.addEventListener("click", resetView);
+  fitBtn.addEventListener("click", fitToContent);
+
+  window.addEventListener("resize", render);
+
+  // Start
+  fitToContent();
+})();
+</script>
 </body>
 </html>
