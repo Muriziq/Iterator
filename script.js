@@ -4225,19 +4225,28 @@ function group() {
     objects.push(newGroup);
   }
 }
-
 function getMousePos(canvas, evt) {
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
 
+  // Mouse position inside the canvas element
+  const screenX = evt.x - rect.left;
+  const screenY = evt.y - rect.top;
+
+  // Convert CSS pixels to actual canvas pixels
+  const canvasX = screenX * (canvas.width / rect.width);
+  const canvasY = screenY * (canvas.height / rect.height);
+
+  // Undo pan + zoom to get world coordinates
   return {
-    x: (evt.x - rect.left) * scaleX,
-    y: (evt.y - rect.top) * scaleY,
+    x: (canvasX - panX) / scale,
+    y: (canvasY - panY) / scale,
   };
 }
 
 async function generateCard() {
+  scale = 1
+  panX=0;panY=0;
+  requestDraw()
   selectedObj = null;
   generationArea.innerHTML = "";
 
@@ -4271,7 +4280,7 @@ async function generateCard() {
 
   // scale for preview grid placement (DOM sizing)
   const paperRect0 = canvassDiv.getBoundingClientRect();
-  const scale = Math.min(cellWidth / paperRect0.width, cellHeight / paperRect0.height);
+  const localScale = Math.min(cellWidth / paperRect0.width, cellHeight / paperRect0.height);
 
   let iterationLength = 1;
 
@@ -4360,8 +4369,8 @@ async function generateCard() {
         boxCountInPage = 0;
       }
 
-      div.style.width = `${paperRect0.width * scale}px`;
-      div.style.height = `${paperRect0.height * scale}px`;
+      div.style.width = `${paperRect0.width * localScale}px`;
+      div.style.height = `${paperRect0.height * localScale}px`;
 
       img.style.width = "100%";
       img.style.height = "100%";
@@ -4598,6 +4607,15 @@ function draw() {
 
     ctx.setTransform(scale, 0, 0, scale, panX, panY);
 
+    ctx.beginPath()
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(
+      (canvas.width-measurement.width)/2,
+      (canvas.height-measurement.height)/2,
+      measurement.width,
+      measurement.height
+    )
+    ctx.closePath()
     if (pen) {
       pen.addObject();
     }
