@@ -3774,13 +3774,58 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
 document.getElementById("zoom").addEventListener("click", () => {
   propertiesBar.innerHTML = `
   <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
-  <button class="zoomin"><img src="images/Group 46.svg"></button>
-  <button class="zoomTo"><img src="images/Group 46.svg"></button>
-  <button class="zoomout"><img src="images/Group 47.svg"></button>
+    <button class="zoomin"><img src="images/Group 46.svg"></button>
+    <button class="zoomout"><img src="images/Group 47.svg"></button>
+    <button class="fitToPage">Fit To Page</button>
   </div>
   `;
-  scale +=1
-  draw()
+
+  isDrawing = "zoom";
+  canvas.style.cursor = "zoom-in";
+
+
+  const zoomInBtn = propertiesBar.querySelector(".zoomin");
+  const zoomOutBtn = propertiesBar.querySelector(".zoomout");
+  const fitBtn = propertiesBar.querySelector(".fitToPage");
+
+  let zoomInterval;
+
+  function zoomIn() {
+    scale *= 1.05;
+    requestDraw();
+  }
+
+  function zoomOut() {
+    scale /= 1.05;
+    requestDraw();
+  }
+
+  /* HOLD TO ZOOM IN */
+  zoomInBtn.addEventListener("mousedown", () => {
+    zoomIn();
+    zoomInterval = setInterval(zoomIn, 30);
+  });
+
+  /* HOLD TO ZOOM OUT */
+  zoomOutBtn.addEventListener("mousedown", () => {
+    zoomOut();
+    zoomInterval = setInterval(zoomOut, 30);
+  });
+
+  /* STOP WHEN RELEASED */
+  window.addEventListener("mouseup", () => {
+    clearInterval(zoomInterval);
+  });
+
+  /* FIT TO PAGE */
+  fitBtn.addEventListener("click", () => {
+    scale = 1;
+    panX = 0;
+    panY = 0;
+    requestDraw();
+  });
+
+  requestDraw();
 });
 function flip(value) {
   if (selectedObj) {
@@ -3867,6 +3912,10 @@ let newWidth;
 let newHeight;
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
+  scale = 1
+  panX=0
+  panY=0
+  requestDraw()
   const canvassRect = canvas.getBoundingClientRect();
   width.value = changeValues(measurement.width);
   height.value = changeValues(measurement.height);
@@ -3884,6 +3933,11 @@ function canvasSize() {
     canvas.width = newWidth;
     canvas.height = newHeight;
     canvass.style.transform = `scale(${ 1 / scaleRatio})`
+  }else{
+   zoomToRect({x:(canvas.width-measurement.width)/2,
+    y:(canvas.height-measurement.height)/2,
+    width:measurement.width,
+    height:measurement.height})
   }
 
   requestDraw()
@@ -4242,6 +4296,27 @@ function getMousePos(canvas, evt) {
     y: (canvasY - panY) / scale,
   };
 }
+function zoomToRect(rect) {
+  if (rect.width <= 0 || rect.height <= 0) return;
+
+  const padding = 20; // optional space around the rect
+
+  const availableWidth = canvas.width - padding * 2;
+  const availableHeight = canvas.height - padding * 2;
+
+  const scaleX = availableWidth / rect.width;
+  const scaleY = availableHeight / rect.height;
+
+  scale = Math.min(scaleX, scaleY);
+
+  const rectCenterX = rect.x + rect.width / 2;
+  const rectCenterY = rect.y + rect.height / 2;
+
+  panX = canvas.width / 2 - rectCenterX * scale;
+  panY = canvas.height / 2 - rectCenterY * scale;
+
+  requestDraw();
+}
 
 async function generateCard() {
   scale = 1
@@ -4540,7 +4615,12 @@ window.addEventListener("mouseup", () => {
     drawingStart = false;
 
     if (isDrawing === "zoom") {
-      zoomToDrawnRect();
+              const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
+        const y = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
+        const w = Math.abs(drawingCoordinate.end.x - drawingCoordinate.start.x);
+        const h = Math.abs(drawingCoordinate.end.y - drawingCoordinate.start.y);
+
+      zoomToRect({x:x,y:y,width:w,height:h})
     } else {
       objects.push(drawingObject());
     }
