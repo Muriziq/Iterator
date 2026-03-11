@@ -1229,7 +1229,12 @@ propertiesBar.innerHTML = `
       }">
         <img src="images/Group 34.svg" alt="Convert">
       </button>
-      <button class="rounded-edge">
+      <button class="rounded-edge ${
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "rounded"
+          ? "selected"
+          : ""
+      }" >
         <img src="images/Group 32.svg" alt="Rounded edge">
       </button>
     </div>
@@ -1570,6 +1575,7 @@ if (name === "outlineThickness") this.outlineThickness = value;
       return true;
     }
   }
+
 }
 
 class Ellipse extends Formats {
@@ -1766,44 +1772,77 @@ class Ellipse extends Formats {
     super.circFormat(mouse, x, y);
   }
   formatProperties() {
-    propertiesBar.innerHTML = `
-    <div>
+propertiesBar.innerHTML = `
+  <section class="coord-section">
     <h3>Coordinate</h3>
-        <div class="two-grid">
-    <div>X    <input type="number" name="x" value="${changeValues(
-      this.x - this.radiusX,
-    )}"></div>
-    <div> Y   <input type="number" name="y" value="${changeValues(
-      this.y,
-    )}"></div>
-    <div>W    <input type="number" name="radiusX" value="${changeValues(
-      this.radiusX,
-    )}"></div>
-    <div> H  <input type="number" name="radiusY" value="${changeValues(
-      this.radiusY,
-    )}"> </div> 
-    <div>Rotation <input type="number" name="angle" value="${radToDeg(
-      this.angle,
-      "deg",
-    )}"></div>
-    <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
+
+    <div class="two-grid coord-grid">
+      <label class="field">
+        <span class="field-label">X</span>
+        <input type="number" name="x" value="${changeValues(this.x - this.radiusX)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Y</span>
+        <input type="number" name="y" value="${changeValues(this.y)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">W</span>
+        <input type="number" name="radiusX" value="${changeValues(this.radiusX)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">H</span>
+        <input type="number" name="radiusY" value="${changeValues(this.radiusY)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Rotation</span>
+        <input type="number" name="angle" value="${radToDeg(this.angle, "deg")}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Opacity</span>
+        <input type="number" name="opacity" min="0" max="100" value="100">
+      </label>
     </div>
-    </div>
-    ${super.similarProptiesOutput()}
-    <div class="shape">
-    <div><button class="fill"><img src="images/Ellipse 11.svg"></button><button class="pie"><img src="images/pie.png"></button><button class="curve"><img src="images/curveEnd.png" style="transform: rotate(-45deg)"></button></div>
-    <div style="display:${
-      this.mode === "fill" ? "none" : "grid"
-    }" class="two-grid"><div><img style="transform: rotate(-90deg)" src="images/curveEnd.png"><input type="number" value="${radToDeg(
-      this.arcStart,
-      "deg",
-    )}" name="arcStart"></div><div><img src="images/curveEnd.png"><input type="number" value="${radToDeg(
-      this.arcEnd,
-      "deg",
-    )}" name="arcEnd"></div></div>
+  </section>
+
+  ${super.similarProptiesOutput()}
+
+  <section class="shape">
+    <div class="shape-row">
+      <button class="fill ${this.mode === "fill" ? "selected" : ""}">
+        <img src="images/Ellipse 11.svg" alt="Fill">
+      </button>
+
+      <button class="pie ${this.mode === "pie" ? "selected" : ""}">
+        <img src="images/pie.png" alt="Pie">
+      </button>
+
+      <button class="curve ${this.mode === "curve" ? "selected" : ""}">
+        <img src="images/curveEnd.png" style="transform: rotate(-45deg)" alt="Curve">
+      </button>
     </div>
 
-    `;
+    <div
+      class="two-grid coord-grid"
+      style="display:${this.mode === "fill" ? "none" : "grid"}"
+    >
+      <label class="field">
+        <span class="field-label"><img style="transform: rotate(-90deg)" src="images/curveEnd.png" alt="Arc start"></span>
+                  <input type="number" name="arcStart" value="${radToDeg(this.arcStart, "deg")}">
+
+      </label>
+
+      <label class="field">
+        <span class="field-label"><img src="images/curveEnd.png" alt="Arc end"></span>
+          <input type="number" name="arcEnd" value="${radToDeg(this.arcEnd, "deg")}">
+      </label>
+    </div>
+  </section>
+`;
     super.similarPropties();
     document.querySelector(".fill").addEventListener("click", () => {
       this.mode = "fill";
@@ -4218,11 +4257,37 @@ function addEllipse() {
   isDrawing = "ellipse";
 }
 function align(arg) {
+  let last
+  let other
+  let value
+  let valid = false
   if (multipleSelectArr.length > 1) {
-    const last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap();
-    const others = multipleSelectArr.slice(0, -1);
-    let value;
-    switch (arg) {
+    last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap();
+    other = multipleSelectArr.slice(0, -1);
+    valid = true
+  }
+  else if(selectedObj){
+const offsetX = (canvas.width - measurement.width) / 2;
+const offsetY = (canvas.height - measurement.height) / 2;
+
+last = {
+  x: [
+    offsetX,
+    offsetX + measurement.width / 2,
+    offsetX + measurement.width
+  ],
+  y: [
+    offsetY,
+    offsetY + measurement.height / 2,
+    offsetY + measurement.height
+  ]
+};
+    other = [selectedObj]
+    valid = true
+  }
+  if(!valid) return
+
+  switch (arg) {
       case "left":
         value = last.x[0];
         break;
@@ -4242,30 +4307,29 @@ function align(arg) {
         value = last.y[2];
         break;
     }
-    others.forEach((other) => {
-      const otherSnap = other.whereToSnap().pos;
+    for(let oth=0;oth<other.length;oth++){
+      const otherSnap = other[oth].whereToSnap().pos;
       switch (arg) {
         case "left":
-          other.changeLocation(value, "x");
+          other[oth].changeLocation(value, "x");
           break;
         case "centerX":
-          other.changeLocation(value - otherSnap.width / 2, "x");
+          other[oth].changeLocation(value - otherSnap.width / 2, "x");
           break;
         case "right":
-          other.changeLocation(value - otherSnap.width, "x");
+          other[oth].changeLocation(value - otherSnap.width, "x");
           break;
         case "top":
-          other.changeLocation(value, "y");
+          other[oth].changeLocation(value, "y");
           break;
         case "centerY":
-          other.changeLocation(value - otherSnap.height / 2, "y");
+          other[oth].changeLocation(value - otherSnap.height / 2, "y");
           break;
         case "bottom":
-          other.changeLocation(value - otherSnap.height, "y");
+          other[oth].changeLocation(value - otherSnap.height, "y");
       }
-    });
+    }
     requestDraw()
-  }
 }
 function group() {
   if (multipleSelectArr.length > 1) {
@@ -4626,10 +4690,10 @@ window.addEventListener("mouseup", () => {
     }
   }
 
-  // if (isDraggingObject || isRotatingObject) {
-  //   undoObject.push(cloneObject(objects));
-  //   redoObject.length = 0;
-  // }
+  if (isDraggingObject || isRotatingObject) {
+    undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
+  }
 
   isDraggingObject = false;
   isRotatingObject = false;

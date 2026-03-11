@@ -24,7 +24,7 @@ body{
   background-color: var(--bg-color);
 }
 
-header{
+body > header{
   background-color: var(--side-color);
   padding: 0.5rem 2rem;
   display: flex;
