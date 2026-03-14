@@ -56,7 +56,7 @@ let panY = 0;
 let isPanning = false;
 let startX = 0;
 let startY = 0;
-
+let drawingImage = null 
 let selectedObj = null;
 let clipped = null;
 let defaultFonts =[  "serif",
@@ -89,7 +89,7 @@ window.addEventListener("load", () => {
 });
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
-    let threshold = 10;
+    let threshold = adapt(10);
     for (let i = 0; i < points.length; i++) {
       const current = points[i];
       const next = points[(i + 1) % points.length];
@@ -137,7 +137,7 @@ class LineUtils {
       const p = points[i].points;
       const pdx = localMouseX - p.x;
       const pdy = localMouseY - p.y;
-      if (pdx * pdx + pdy * pdy < 10 * 10) {
+      if (pdx * pdx + pdy * pdy < adapt(10) * adapt(10)) {
         return { value: i, type: "pointIndex" };
       }
     }
@@ -148,7 +148,7 @@ class LineUtils {
           const cp = points[i].controls[j];
           const cdx = localMouseX - cp.x;
           const cdy = localMouseY - cp.y;
-          if (cdx * cdx + cdy * cdy < 10 * 10) {
+          if (cdx * cdx + cdy * cdy < adapt(10) * adapt(10)) {
             return {
               value: { curveIndex: i, controlIndex: j },
               type: "curveIndex",
@@ -279,14 +279,14 @@ class LineUtils {
   static drawEditArcs(points, selectedArea, selectedLineIndex) {
     points.forEach((p, i) => {
       ctx.beginPath();
-      ctx.rect(p.points.x - 4, p.points.y - 4, 8, 8);
+      ctx.rect(p.points.x - adapt(4), p.points.y - adapt(4), adapt(8), adapt(8));
 
       if (selectedArea === "pointIndex" && i === selectedLineIndex)
         ctx.fillStyle = "#0000ff";
       else ctx.fillStyle = "#0000ff88";
       ctx.strokeStyle = "#e4e4e4";
       ctx.fill();
-      ctx.lineWidth = 2;
+      ctx.lineWidth = adapt(2);
       ctx.stroke();
     });
 
@@ -297,10 +297,10 @@ class LineUtils {
           ctx.moveTo(isCurve.points.x, isCurve.points.y);
           ctx.lineTo(cp.x, cp.y);
           ctx.strokeStyle = "#0000ff88";
-          ctx.lineWidth = 2;
+          ctx.lineWidth = adapt(2);
           ctx.stroke();
           ctx.beginPath();
-          ctx.rect(cp.x - 3, cp.y - 3, 6, 6);
+          ctx.rect(cp.x - adapt(3), cp.y - adapt(3), adapt(6), adapt(6));
           const isSelected =
             selectedArea === "curveIndex" &&
             selectedLineIndex.curveIndex === i &&
@@ -379,6 +379,20 @@ class Formats {
   constructor() {
     this.scaleX = 1;
     this.scaleY = 1;
+     this.color = ["#ff0000", "#0000ff"];
+    this.outline = true;
+    this.outlineColor = "#00ff00";
+    this.outlineThickness = adapt(2);
+    this.lineDashWidth = adapt(5);
+    this.lineDashSpacing = adapt(3);
+        this.outlineType = [];
+    this.isDoubleClicked = false;
+        this.opacity = 100;
+            this.colorFill = "none";
+    this.colorDeg = 0.2;
+    this.colorStop = [];
+
+        this.angle = 0;
   }
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
@@ -554,13 +568,13 @@ similarProptiesOutput() {
         const nextPoint = this.points[i].points;
         if (
           Math.abs(nextPoint.x - this.points[this.selectedLineIndex].points.x) <
-          10
+          adapt(10)
         ) {
           this.points[this.selectedLineIndex].points.x = nextPoint.x;
         }
         if (
           Math.abs(nextPoint.y - this.points[this.selectedLineIndex].points.y) <
-          10
+          adapt(10)
         ) {
           this.points[this.selectedLineIndex].points.y = nextPoint.y;
         }
@@ -588,7 +602,7 @@ similarProptiesOutput() {
         const length = Math.sqrt(dx * dx + dy * dy);
         const ux = dx / length;
         const uy = dy / length;
-        const handleLength = length * 0.2;
+        const handleLength =length * 0.2;
         const control1 = {
           x: localMouseX - ux * handleLength,
           y: localMouseY - uy * handleLength,
@@ -724,16 +738,7 @@ class Rectangle extends Formats {
     this.y = y;
     this.width = width;
     this.height = height;
-    this.color = ["#ff0000", "#0000ff"];
-    this.outline = false;
-    this.outlineColor = "#00ff00";
-    this.outlineThickness = 2;
-    this.lineDashWidth = 5;
-    this.lineDashSpacing = 3;
-    this.selectedArea = null;
-    this.outlineType = [];
-    this.isDoubleClicked = false;
-    this.angle = 0;
+
     this.roundedOrbeveled = "beveled";
     this.cornerRadius = 0;
     this.clipped = "none";
@@ -792,12 +797,9 @@ class Rectangle extends Formats {
         cornerRadius: 0,
       },
     ];
-    this.opacity = 100;
     this.selectedLineIndex = null;
     this.mode = "edit";
-    this.colorFill = "uniform";
-    this.colorDeg = 0.2;
-    this.colorStop = [];
+
   }
   addObject() {
     const xs = this.points.map((p) => p.points.x);
@@ -867,15 +869,15 @@ class Rectangle extends Formats {
     }
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = 1;
+      ctx.lineWidth = adapt(1);
       ctx.strokeStyle = "#0000ff";
-      ctx.setLineDash([5, 3]);
+      ctx.setLineDash([adapt(5), adapt(3)]);
       if (this.roundedOrbeveled !== "shaped") {
         ctx.strokeRect(
-          -this.width / 2 - 2,
-          -this.height / 2 - 2,
-          this.width + 4,
-          this.height + 4,
+          -this.width / 2 - adapt(2),
+          -this.height / 2 - adapt(2),
+          this.width + adapt(4),
+          this.height + adapt(4),
         );
       } else {
         ctx.strokeRect(
@@ -887,7 +889,7 @@ class Rectangle extends Formats {
         if (this.mode === "normal") {
           ctx.beginPath();
           ctx.fillStyle = "#0000ff88";
-          ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
+          ctx.fillRect(this.maxX - adapt(10), this.maxY - adapt(10), adapt(20), adapt(20));
         }
       }
 
@@ -1042,8 +1044,8 @@ class Rectangle extends Formats {
         return true;
       } else if (this.mode === "normal") {
         if (
-          Math.abs(localMouseX - this.maxX) < 10 &&
-          Math.abs(localMouseY - this.maxY) < 10
+          Math.abs(localMouseX - this.maxX) < adapt(10) &&
+          Math.abs(localMouseY - this.maxY) < adapt(10)
         ) {
           this.selectedArea = "scale";
 
@@ -1069,7 +1071,7 @@ class Rectangle extends Formats {
         localY,
         this.width,
         this.height,
-        10,
+        adapt(10),
       );
 
       return this.selectedArea !== null;
@@ -1286,59 +1288,59 @@ propertiesBar.innerHTML = `
     });
     document.querySelector(".shapetool").addEventListener("click", () => {
       this.roundedOrbeveled = "shaped";
-      this.points = [
-        {
-          points: { x: -this.width / 2, y: -this.height / 2 },
-          edgeModes: null,
-          controls: [
-            { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
-            { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
-          ],
-          cornerRadius: 0,
-        },
-        {
-          points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
-          edgeModes: null,
-          controls: [
-            {
-              x: -this.width / 2 + this.width,
-              y: -this.height / 2 + this.height * 0.25,
-            },
-            {
-              x: -this.width / 2 + this.width,
-              y: -this.height / 2 + this.height * 0.75,
-            },
-          ],
-          cornerRadius: 0,
-        },
-        {
-          points: {
+    this.points = [
+      {
+        points: { x: -this.width / 2, y: -this.height / 2 },
+        edgeModes: null,
+        controls: [
+          { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
+          { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
+        ],
+        cornerRadius: 0,
+      },
+      {
+        points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
+        edgeModes: null,
+        controls: [
+          {
             x: -this.width / 2 + this.width,
+            y: -this.height / 2 + this.height * 0.25,
+          },
+          {
+            x: -this.width / 2 + this.width,
+            y: -this.height / 2 + this.height * 0.75,
+          },
+        ],
+        cornerRadius: 0,
+      },
+      {
+        points: {
+          x: -this.width / 2 + this.width,
+          y: -this.height / 2 + this.height,
+        },
+        edgeModes: null,
+        controls: [
+          {
+            x: -this.width / 2 + this.width * 0.75,
             y: -this.height / 2 + this.height,
           },
-          edgeModes: null,
-          controls: [
-            {
-              x: -this.width / 2 + this.width * 0.75,
-              y: -this.height / 2 + this.height,
-            },
-            {
-              x: -this.width / 2 + this.width * 0.25,
-              y: -this.height / 2 + this.height,
-            },
-          ],
-          cornerRadius: 0,
-        },
-        {
-          points: { x: -this.width / 2, y: -this.height / 2 + this.height },
-          edgeModes: null,
-          controls: [
-            { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
-            { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
-          ],
-          cornerRadius: 0,
-        },
-      ];
+          {
+            x: -this.width / 2 + this.width * 0.25,
+            y: -this.height / 2 + this.height,
+          },
+        ],
+        cornerRadius: 0,
+      },
+      {
+        points: { x: -this.width / 2, y: -this.height / 2 + this.height },
+        edgeModes: null,
+        controls: [
+          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
+          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
+        ],
+        cornerRadius: 0,
+      },
+    ];
       this.cornerRadius = 0;
       this.scaleX = 1;
       this.scaleY = 1;
@@ -1585,24 +1587,9 @@ class Ellipse extends Formats {
     this.y = y;
     this.radiusX = radiusX;
     this.radiusY = radiusY;
-    this.angle = 0;
-    this.color = ["#ff0000", "#00ff00"];
-    this.outline = false;
-    this.outlineColor = "#00ff00";
-    this.outlineThickness = 10;
-    this.lineDashWidth = 5;
-    this.outlineType = [];
     this.isDashed = false;
-    this.lineDashSpacing = 3;
-    this.isDoubleClicked = false;
-    this.selectedArea;
-    this.opacity = 100;
     this.arcStart = 0;
     this.arcEnd = 2 * Math.PI;
-    this.colorFill = "uniform";
-    this.mode = "fill";
-    this.colorStop = [];
-    this.colorDeg = 0;
     this.clipped = "none";
     this.clips = [];
   }
@@ -1646,8 +1633,8 @@ class Ellipse extends Formats {
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
       ctx.strokeStyle = "#0000ff";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 3]);
+      ctx.lineWidth = adapt(2);
+      ctx.setLineDash([adapt(5), adapt(3)]);
       ctx.strokeRect(
         -this.radiusX,
         -this.radiusY,
@@ -1756,7 +1743,7 @@ class Ellipse extends Formats {
       localY,
       rectW,
       rectH,
-      10,
+      adapt(10),
     );
     return this.selectedArea !== null;
   }
@@ -1772,6 +1759,8 @@ class Ellipse extends Formats {
     super.circFormat(mouse, x, y);
   }
   formatProperties() {
+    const pie = "images/pie.png"
+    const curveEnd = "images/curveEnd.png"
 propertiesBar.innerHTML = `
   <section class="coord-section">
     <h3>Coordinate</h3>
@@ -1810,7 +1799,6 @@ propertiesBar.innerHTML = `
   </section>
 
   ${super.similarProptiesOutput()}
-
   <section class="shape">
     <div class="shape-row">
       <button class="fill ${this.mode === "fill" ? "selected" : ""}">
@@ -1818,11 +1806,11 @@ propertiesBar.innerHTML = `
       </button>
 
       <button class="pie ${this.mode === "pie" ? "selected" : ""}">
-        <img src="images/pie.png" alt="Pie">
+        <img src="${pie}" alt="Pie">
       </button>
 
       <button class="curve ${this.mode === "curve" ? "selected" : ""}">
-        <img src="images/curveEnd.png" style="transform: rotate(-45deg)" alt="Curve">
+        <img src="${curveEnd}" style="transform: rotate(-45deg)" alt="Curve">
       </button>
     </div>
 
@@ -1946,24 +1934,10 @@ class Polygon extends Formats {
     this.y = y;
     this.radiusX = radiusX;
     this.radiusY = radiusY;
-    this.angle = 0;
-    this.color = ["#FFCC00", "#ff0000"];
-    this.outline = false;
-    this.outlineColor = "#00ff00";
-    this.outlineThickness = 10;
-    this.lineDashWidth = 5;
-    this.outlineType = [];
-    this.lineDashSpacing = 3;
-    this.selectedArea = null;
-    this.isDoubleClicked = false;
     this.points = [];
     this.mode = "normal";
     this.cornerRadius = 0;
     this.selectedLineIndex = null;
-    this.colorStop = [];
-    this.colorDeg = 0;
-    this.colorFill = "uniform";
-    this.opacity = 100;
     this.clipped = "none";
     this.clips = [];
   }
@@ -2035,9 +2009,9 @@ class Polygon extends Formats {
 
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = 1;
+      ctx.lineWidth = adapt(1);
       ctx.strokeStyle = "#0000ff";
-      ctx.setLineDash([5, 3]);
+      ctx.setLineDash([adapt(5), adapt(3)]);
       ctx.strokeRect(
         this.minX,
         this.minY,
@@ -2047,7 +2021,7 @@ class Polygon extends Formats {
       if (this.mode === "normal") {
         ctx.beginPath();
         ctx.fillStyle = "#0000ff88";
-        ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
+        ctx.fillRect(this.maxX - adapt(10), this.maxY - adapt(10), adapt(20), adapt(20));
       }
     }
 
@@ -2144,10 +2118,10 @@ class Polygon extends Formats {
       this.selectedArea = answer.type;
       this.selectedLineIndex = answer.value;
       return true;
-    } else {
+    } else if (this.mode === "normal") {
       if (
-        Math.abs(localX - this.maxX) < 10 &&
-        Math.abs(localY - this.maxY) < 10
+        Math.abs(localX - this.maxX) < adapt(10) &&
+        Math.abs(localY - this.maxY) < adapt(10)
       ) {
         this.selectedArea = "scale";
 
@@ -2232,50 +2206,96 @@ class Polygon extends Formats {
     }
   }
   formatProperties() {
-    propertiesBar.innerHTML = `
-   <div>
-    <h3>Coordinate</h3>
-    <div class="two-grid">
-    <div>X    <input type="number" name="x" value="${changeValues(
-      this.x + this.minX,
-    )}"></div>
-    <div> Y   <input type="number" name="y" value="${changeValues(
-      this.x + this.minY,
-    )}"></div>
-    <div>W    <input type="number" name="width" value="${changeValues(
-      this.maxX - this.minX,
-    )}"></div>
-    <div> H  <input type="number" name="height" value="${changeValues(
-      this.maxY - this.minY,
-    )}"> </div> 
-    <div>Rotation <input type="number" name="angle" value="${radToDeg(
-      this.angle,
-      "deg",
-    )}"></div>
-    <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>
-    <div>Sides <input type="number" name="sides" value="${this.sides}"></div>
-    </div>
-    </div>
-    ${super.similarProptiesOutput()}
-    <div class="shape">
-            <div><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
-    <div style="display:${
+propertiesBar.innerHTML = `
+<section class="coord-section">
+  <h3>Coordinate</h3>
+
+  <div class="two-grid coord-grid">
+    <label class="field">
+      <span class="field-label">X</span>
+      <input type="number" name="x" value="${changeValues(this.x + this.minX)}">
+    </label>
+
+    <label class="field">
+      <span class="field-label">Y</span>
+      <input type="number" name="y" value="${changeValues(this.x + this.minY)}">
+    </label>
+
+    <label class="field">
+      <span class="field-label">W</span>
+      <input type="number" name="width" value="${changeValues(this.maxX - this.minX)}">
+    </label>
+
+    <label class="field">
+      <span class="field-label">H</span>
+      <input type="number" name="height" value="${changeValues(this.maxY - this.minY)}">
+    </label>
+
+    <label class="field">
+      <span class="field-label">Rotation</span>
+      <input type="number" name="angle" value="${radToDeg(this.angle, "deg")}">
+    </label>
+
+    <label class="field">
+      <span class="field-label">Opacity</span>
+      <input type="number" name="opacity" min="0" max="100" value="100">
+    </label>
+
+    <label class="field">
+      <span class="field-label">Sides</span>
+      <input type="number" name="sides" value="${this.sides}">
+    </label>
+  </div>
+</section>
+
+${super.similarProptiesOutput()}
+
+<section class="shape">
+
+  <div class="shape-row" style="display: ${this.mode === "edit" ? "flex" : "none"}">
+      <button class="convert ${
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "shaped"
+          ? "selected"
+          : ""
+      }">
+        <img src="images/Group 34.svg" alt="Convert">
+      </button>
+      <button class="rounded-edge ${
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "rounded"
+          ? "selected"
+          : ""
+      }" >
+        <img src="images/Group 32.svg" alt="Rounded edge">
+      </button>
+  </div>
+
+  <label
+    class="thick"
+    style="display:${
       this.selectedArea === "pointIndex" &&
       this.points[this.selectedLineIndex].edgeModes === "shaped"
         ? "none"
         : "flex"
-    }" class="thick">
-    Corner Radius <input type="number" name="cornerRadius" value="${
+    }"
+  >
+    <span class="field-label">Corner Radius</span>
+    <input type="number" name="cornerRadius" value="${
       this.selectedArea === "pointIndex"
         ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
         : changeValues(this.cornerRadius)
     }">
-    </div>
-    <div style="display: flex;justify-content:end;align-items:end"><button class="normal">${
-      this.mode === "edit" ? "Done" : "Edit"
-    }</button></div>
-    </div>
-    `;
+  </label>
+
+  <div class="shape-row shape-actions" style="justify-content:end;align-items:end">
+    <button class="normal">
+      ${this.mode === "edit" ? "Done" : "Edit"}
+    </button>
+  </div>
+
+</section>
+`;
     super.similarPropties();
     document.querySelector(".rounded-edge").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
@@ -2356,7 +2376,6 @@ class Polygon extends Formats {
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     undoObject.push(cloneObject(objects));
-    undoText.push("object");
     requestDraw()
   }
   showClone() {
@@ -2428,24 +2447,10 @@ class Line extends Formats {
   constructor() {
     super();
     this.points = [];
-    this.color = ["#ff0000", "#0000ff"];
-    this.outlineColor = "#00ff00";
-    this.outlineThickness = 2;
-    this.outline = true;
-    this.lineDashWidth = 5;
-    this.outlineType = [];
-    this.lineDashSpacing = 3;
     this.mode = "edit";
     this.selectedLineIndex = null;
-    this.angle = 0;
     this.x;
     this.y;
-    this.selectedArea = null;
-    this.colorStop = [];
-    this.colorDeg = 0;
-    this.colorFill = "uniform";
-    this.opacity = 100;
-    this.isDoubleClicked = false;
     this.close = false;
     this.clipped = "none";
     this.clips = [];
@@ -2488,9 +2493,9 @@ class Line extends Formats {
         );
       if (selectedObj === this || multipleSelectArr.includes(this)) {
         ctx.beginPath();
-        ctx.lineWidth = 1;
+        ctx.lineWidth = adapt(1);
         ctx.strokeStyle = "#0000ff";
-        ctx.setLineDash([5, 3]);
+        ctx.setLineDash([adapt(5), adapt(3)]);
         ctx.strokeRect(
           this.minX,
           this.minY,
@@ -2500,7 +2505,7 @@ class Line extends Formats {
         if (this.mode === "normal") {
           ctx.beginPath();
           ctx.fillStyle = "#0000ff88";
-          ctx.fillRect(this.maxX - 10, this.maxY - 10, 20, 20);
+          ctx.fillRect(this.maxX - adapt(10), this.maxY - adapt(10), adapt(20), adapt(20));
         }
       }
       ctx.restore();
@@ -2580,8 +2585,8 @@ class Line extends Formats {
       points: { x: mouse.x - this.x, y: mouse.y - this.y },
       edgeModes: null,
       controls: [
-        { x: mouse.x - this.x - 20, y: mouse.y - this.y },
-        { x: mouse.x - this.x + 20, y: mouse.y - this.y },
+        { x: mouse.x - this.x - adapt(20), y: mouse.y - this.y },
+        { x: mouse.x - this.x + adapt(20), y: mouse.y - this.y },
       ],
       cornerRadius: 0,
     });
@@ -2841,35 +2846,22 @@ class TextBox extends Formats{
   constructor(x, y) {
     super()
     this.text = "Add Textbox";
-    this.fontSize = 30;
+    this.fontSize = adapt(30);
     this.fontFamily = "Arial";
     this.color = ["#FFCC00", "#ff0000"];
     this.x = x;
     this.y = y;
     this.fontStyle = "bold";
-    this.angle = 0;
     this.width = 0;
     this.height = 0;
-    this.selectedArea;
-    this.outline = false;
-    this.outlineColor = "#ff0000";
-    this.outlineThickness = 5;
     this.textAllign = "left";
-    this.lineDashWidth = 5;
-    this.outlineType = [];
-    this.lineDashSpacing = 3;
-    this.colorStop = [];
-    this.colorDeg = 0;
-    this.colorFill = "uniform";
-    this.opacity = 100;
     this.clipped = "none";
-    this.clips = [];
     this.shadow = false;
     this.shadowStyle = { color: "#000000", blur: 10, offsetX: 5, offsetY: 5 };
-    this.isDoubleClicked = false;
-    this.lineHeight = 30;
+    this.lineHeight = adapt(30);
         this.textArea = "";
     this.iterated = false;
+        this.clipped = "none";
   }
 addObject() {
   ctx.save();
@@ -2934,22 +2926,27 @@ addObject() {
 
   if (selectedObj === this || multipleSelectArr.includes(this)) {
     ctx.beginPath();
-    ctx.lineWidth = 1;
+    ctx.lineWidth = adapt(1);
     ctx.strokeStyle = "#0000ff";
-    ctx.setLineDash([5, 3]);
+    ctx.setLineDash([adapt(5), adapt(3)]);
     ctx.strokeRect(
-      -this.width / 2 - 2,
-      -this.height / 2 - 2,
-      this.width + 4,
-      this.height + 4
+      -this.width / 2 - adapt(2),
+      -this.height / 2 - adapt(2),
+      this.width + adapt(4),
+      this.height + adapt(4)
     );
     ctx.closePath();
   }
 
   ctx.restore();
+
 }
 
+showClone(){
+      let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
 
+    return clone;
+}
   colorType() {
     const colors = this.color.map((color) =>
       applyOpacityToHex(color, this.opacity),
@@ -3010,7 +3007,7 @@ addObject() {
     }
   }
   whatSelected(mouse) {
-    const threshold = 10;
+    const threshold = adapt(10);
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
 
@@ -3033,7 +3030,6 @@ addObject() {
     return this.selectedArea !== null;
   }
   formatSelected(mouse) {
-    console.log(this.selectedArea);
     if (this.isDoubleClicked) {
       const center = {
         x: this.x + this.width / 2,
@@ -3211,8 +3207,8 @@ changeProperties(e) {
 
   if (name === "text") this.text = e.target.value;
 
-  if (name === "x") this.x = Number(e.target.value) || 0;
-  if (name === "y") this.y = Number(e.target.value) || 0;
+  if (name === "x") this.x = backValues(Number(e.target.value) || 0);
+  if (name === "y") this.y = backValues(Number(e.target.value) || 0);
 
   // Width/Height: if you want them editable, you can scale text box;
   // for now we set the values directly (matches your existing props panel pattern).
@@ -3222,8 +3218,11 @@ changeProperties(e) {
   if (name === "angle") this.angle = degToRad(Number(e.target.value) || 0);
   if (name === "opacity") this.opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
 
-  if (name === "fontSize") this.fontSize = Math.max(1, Number(e.target.value) || 1);
-  if (name === "lineHeight") this.lineHeight = Math.max(1, Number(e.target.value) || 1);
+  if (name === "fontSize"){
+this.fontSize = backValues(Math.max(1, Number(e.target.value) || 1));
+this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
+  } 
+  if (name === "lineHeight") this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
 if (name === "textarea") {
         this.textArea = e.target.value;
     }
@@ -3274,23 +3273,38 @@ if(!(defaultFonts.includes(this.fontFamily))){
     const texts = this.textArea.split("\n")
     if(this.iterated && i < texts.length) this.text = texts[i]
   }
+  whereToSnap() {
+    return {
+      x: [this.x, this.x + this.width / 2, this.x + this.width],
+      y: [this.y, this.y + this.height / 2, this.y + this.height],
+      pos: { x: this.x, y: this.y, width: this.width, height: this.height },
+    };
+  }
+  changeLocation(value, type) {
+    if (type === "x") {
+      this.x = value;
+    } else {
+      this.y = value;
+    }
+  }
+    moveClip(x, y) {
+    this.x += x;
+    this.y += y;
+  }
 }
 
 class Images extends Formats {
-  constructor(image, width, height, originalFile) {
+  constructor(x,y,image, width, aspectRatio, originalFile) {
     super();
-    this.x = 100;
-    this.y = 100;
-    this.width = 150;
-    this.aspectRatio = height / width;
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.aspectRatio = aspectRatio;
     this.height = this.width * this.aspectRatio;
     this.image = 0;
-    this.isDoubleClicked = false;
-    this.angle = 0;
     this.selectedArea;
     this.originalFiles = [originalFile];
     this.iteratedFiles = [image];
-    this.opacity = 100;
     this.maintainApect = false;
     this.clipped = "none";
     this.imagePreview = image.src;
@@ -3318,14 +3332,14 @@ class Images extends Formats {
 
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = 1;
+      ctx.lineWidth = adapt(1);
       ctx.strokeStyle = "#0000ff";
-      ctx.setLineDash([5, 3]);
+      ctx.setLineDash([adapt(5), adapt(3)]);
       ctx.strokeRect(
-        -this.width / 2 - 2,
-        -this.height / 2 - 2,
-        this.width + 4,
-        this.height + 4,
+        -this.width / 2 - adapt(2),
+        -this.height / 2 - adapt(2),
+        this.width + adapt(4),
+        this.height + adapt(4),
       );
       ctx.closePath();
     }
@@ -3337,7 +3351,6 @@ class Images extends Formats {
     this.y += y;
   }
   whatSelected(mouse) {
-    const threshold = 10;
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
 
@@ -3353,7 +3366,7 @@ class Images extends Formats {
       localY,
       this.width,
       this.height,
-      10,
+      adapt(10),
     );
 
     return this.selectedArea !== null;
@@ -3388,62 +3401,91 @@ class Images extends Formats {
     return clone;
   }
   formatProperties() {
-    propertiesBar.innerHTML = `
-    <div>
+propertiesBar.innerHTML = `
+  <section class="coord-section">
     <h3>Coordinate</h3>
-       <div class="two-grid">
-    <div>X <input type="number" name="x" value="${changeValues(this.x)}"> </div>
-        <div>Y<input type="number" name="y" value="${changeValues(
-          this.y,
-        )}"></div>
-    <div>W </label><input type="number" name="width" value="${changeValues(
-      this.width,
-    )}"></div>
-    <div>H <input type="number" name="height" value="${changeValues(
-      this.height,
-    )}"></div>
-    <div>Opacity <input type="number" name="opacity" value="${
-      this.opacity
-    }"></div>
-    <div>Rotation <input type="number" name="angle" value="${radToDeg(
-      this.angle,
-      "deg",
-    )}"></div>
-    </div> 
-        <div style="display:flex;flex-direction:column; gap:1rem"><button class="imageb" id="removeBg">Remove Background</button>
-    <button class="imageb" id="maintainAspect">Aspect Ratio</button></div>
-    </div>
-    <div>
-    <h3>All Images</h3>
-        <div class="preview"><img src="${this.imagePreview}"></div>
-    <section class="iteratedsec">
 
+    <div class="two-grid coord-grid">
+      <label class="field">
+        <span class="field-label">X</span>
+        <input type="number" name="x" value="${changeValues(this.x)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Y</span>
+        <input type="number" name="y" value="${changeValues(this.y)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">W</span>
+        <input type="number" name="width" value="${changeValues(this.width)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">H</span>
+        <input type="number" name="height" value="${changeValues(this.height)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Opacity</span>
+        <input type="number" name="opacity" value="${this.opacity}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Rotation</span>
+        <input type="number" name="angle" value="${radToDeg(this.angle, "deg")}">
+      </label>
+    </div>
+
+    <div  style=" display:flex;flex-direction:column; gap:1rem">
+      <button class="imageb" id="removeBg">Remove Background</button>
+      <button class="imageb" id="maintainAspect">Aspect Ratio</button>
+    </div>
+  </section>
+
+  <section class="coord-section">
+    <h3>All Images</h3>
+
+    <div class="preview">
+      <img src="${this.imagePreview}" alt="Selected preview">
+    </div>
+
+    <section class="iteratedsec">
       ${this.originalFiles
         .map(
-          (file, i) =>
-            `<div ${
+          (file, i) => `
+            <div ${
               this.imagePreview === this.iteratedFiles[i].src
                 ? "class='selected'"
                 : ""
             }>
-        <p>${file.name}</p>
-        <button>Change<input type="file"></button>
-        </div>`,
+              <p>${file.name}</p>
+              <button class="change">
+                Change
+                <input type="file">
+              </button>
+              <button class="del"> D</button>
+            </div>
+          `,
         )
         .join("")}
     </section>
-    <button class="image-file">Add Images <input type="file" multiple accept=".jpg,.png,.svg" name="iteratedFiles" >
-</button>
-    </div>
-   
-  `;
-     super.similarPropties();
+
+    <button class="image-file">
+      Add Images
+      <input type="file" multiple accept=".jpg,.png,.svg" name="iteratedFiles">
+    </button>
+  </section>
+`;
     document.querySelectorAll(".iteratedsec > div").forEach((div, i) => {
       div.addEventListener("click", () => {
         this.imagePreview = this.iteratedFiles[i].src;
+        this.image = i
+                        requestDraw()
         this.formatProperties();
+
       });
-      div.querySelector("button").addEventListener("change", (e) => {
+      div.querySelector(".change").addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const url = URL.createObjectURL(file);
@@ -3454,8 +3496,20 @@ class Images extends Formats {
           this.originalFiles[i] = file;
         };
         this.imagePreview = img.src;
+                requestDraw()
         this.formatProperties();
+
       });
+      div.querySelector(".del").addEventListener("click",()=>{
+        if(this.originalFiles.length > 1){
+        this.iteratedFiles.splice(i,1)
+        this.originalFiles.splice(i,1)
+                        requestDraw()
+        this.formatProperties();
+        }
+
+      })
+
     });
 
     document.getElementById("maintainAspect").addEventListener("click", () => {
@@ -3830,12 +3884,12 @@ document.getElementById("zoom").addEventListener("click", () => {
   let zoomInterval;
 
   function zoomIn() {
-    scale *= 1.05;
+    scale = scale + (scale*0.05);
     requestDraw();
   }
 
   function zoomOut() {
-    scale /= 1.05;
+    scale = scale - (scale*0.05);
     requestDraw();
   }
 
@@ -3861,6 +3915,10 @@ document.getElementById("zoom").addEventListener("click", () => {
     scale = 1;
     panX = 0;
     panY = 0;
+       zoomToRect({x:(canvas.width-measurement.width)/2,
+    y:(canvas.height-measurement.height)/2,
+    width:measurement.width,
+    height:measurement.height})
     requestDraw();
   });
 
@@ -4038,6 +4096,15 @@ function drawingObject() {
         (end.x - start.x) / 2,
         (end.y - start.y) / 2,
       );
+    case "image":
+      return new Images(
+                start.x ,
+        start.y ,
+        drawingImage.image,
+        end.x - start.x,
+        drawingImage.aspectRatio,
+        drawingImage.originalFile
+      )
   }
 }
 function moveTool() {
@@ -4071,6 +4138,9 @@ function backValues(x) {
   } else if (whatsMeasured === "mm") {
     return x * 3.78;
   }
+}
+function adapt(size){
+  return size / scale;
 }
 let previousClip = null;
 let previousOpacity;
@@ -4227,10 +4297,13 @@ function addImage(e) {
   const img = new Image();
   img.src = url;
   img.onload = () => {
-    const sprite = new Images(img, img.width, img.height, file);
-    objects.push(sprite);
-    images.push(sprite);
-    requestDraw()
+        drawingImage = {
+          image: img,
+          originalFile: file,
+          aspectRatio: img.height/img.width
+        }
+    isDrawing = "image"
+
   };
 }
 function addTextbox() {
@@ -4432,15 +4505,14 @@ async function generateCard() {
 
   const maxImageIterLength = Math.max(
     1,
-    ...images.map((imgObj) =>
-      imgObj.iteratedFiles && imgObj.iteratedFiles.length > 0
+    ...images.map((imgObj) => imgObj.iteratedFiles.length
         ? imgObj.iteratedFiles.length
         : 1
     )
   );
 
   iterationLength = Math.max(iterationLength, maxImageIterLength);
-
+ console.log(maxImageIterLength)
   let boxCountInPage = 0;
 
   // Increase output resolution. You can change this to 1, 2, 3...
@@ -4448,6 +4520,7 @@ async function generateCard() {
 
   for (let i = 0; i < iterationLength; i++) {
     // 1) draw current iteration onto main canvas
+   
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     images.forEach((img) => img.drawIteratedImage(i));
     textBoxes.forEach((textBox) => textBox.drawIteratedImage(i));
@@ -4686,7 +4759,13 @@ window.addEventListener("mouseup", () => {
 
       zoomToRect({x:x,y:y,width:w,height:h})
     } else {
-      objects.push(drawingObject());
+      const drawedObject = drawingObject()
+      objects.push(drawedObject);
+      if(isDrawing === "image"){
+        images.push(drawedObject)
+isDrawing = null
+canvas.style.cursor = "default"
+      } 
     }
   }
 
@@ -4785,6 +4864,7 @@ function draw() {
         ctx.globalAlpha = 0.25;
         ctx.fillRect(x, y, w, h);
         ctx.globalAlpha = 1;
+        ctx.lineWidth = adapt(2)
         ctx.strokeRect(x, y, w, h);
         ctx.restore();
       } else {
