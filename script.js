@@ -1059,7 +1059,11 @@ class Rectangle extends Formats {
     ctx.rotate(this.angle);
     ctx.scale(this.scaleX, this.scaleY);
         this.createPath();
-        const isInside = ctx.isPointInPath(localMouseX, localMouseY);
+        const worldMouse = {
+  x: (mouse.x - panX) / scale,
+  y: (mouse.y - panY) / scale
+};
+        const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
         ctx.restore();
 
         if (isInside) {
@@ -2155,25 +2159,38 @@ class Polygon extends Formats {
 
         return true;
       }
-      ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.rotate(this.angle);
-          ctx.scale(this.scaleX, this.scaleY);
+ctx.save();
 
-      ctx.beginPath();
-      let edgeCurve = false;
-      this.points.forEach((p) => {
-        if (p.edgeModes !== null) edgeCurve = true;
-      });
-      if (edgeCurve) LineUtils.drawSmartShape(this.points);
-      else {
-        LineUtils.drawRoundedShape(this.points, this.cornerRadius);
-        this.points.forEach((p) => {
-          p.cornerRadius = this.cornerRadius;
-        });
-      }
-      const isInside = ctx.isPointInPath(mouse.x,mouse.y);
-      ctx.restore();
+ctx.translate(this.x, this.y);
+ctx.rotate(this.angle);
+ctx.scale(this.scaleX, this.scaleY);
+
+ctx.beginPath();
+
+let edgeCurve = false;
+
+this.points.forEach((p) => {
+  if (p.edgeModes !== null) edgeCurve = true;
+});
+
+if (edgeCurve) {
+  LineUtils.drawSmartShape(this.points);
+} else {
+  LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+
+  this.points.forEach((p) => {
+    p.cornerRadius = this.cornerRadius;
+  });
+}
+
+const worldMouse = {
+  x: (mouse.x - panX) / scale,
+  y: (mouse.y - panY) / scale
+};
+
+const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
+
+ctx.restore();
 
       if (isInside) {
         this.selectedArea = "Selected";
@@ -2693,9 +2710,14 @@ class Line extends Formats {
       ctx.save();
       ctx.translate(this.x, this.y);
       ctx.rotate(this.angle);
+      ctx.scale(this.scaleX, this.scaleY);
       ctx.beginPath();
       LineUtils.drawSmartShape(this.points, this.close);
-      const isInside = ctx.isPointInPath(mouse.x, mouse.y);
+      const worldMouse = {
+  x: (mouse.x - panX) / scale,
+  y: (mouse.y - panY) / scale
+};
+      const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
       ctx.restore();
       if (isInside) {
         this.selectedArea = "Selected";
