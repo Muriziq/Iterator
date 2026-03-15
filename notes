@@ -114,3 +114,752 @@ function updateZoom(exception = true) {
   canvass.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
   draw();
 }
+
+
+
+[
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#062c39ff",
+            "#0000ffff"
+        ],
+        "outline": false,
+        "outlineColor": "#062c39",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "uniform",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "x": 583.5,
+        "y": 327,
+        "width": 340,
+        "height": 208,
+        "roundedOrbeveled": "beveled",
+        "cornerRadius": 0,
+        "clipped": "none",
+        "clips": [],
+        "points": [
+            {
+                "points": {
+                    "x": -114.0943793725778,
+                    "y": -77.91710975557876
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": -57.0471896862889,
+                        "y": -77.91710975557876
+                    },
+                    {
+                        "x": 57.0471896862889,
+                        "y": -77.91710975557876
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": 114.0943793725778,
+                    "y": -77.91710975557876
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": 114.0943793725778,
+                        "y": -38.95855487778938
+                    },
+                    {
+                        "x": 114.0943793725778,
+                        "y": 38.95855487778938
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": 114.0943793725778,
+                    "y": 77.91710975557876
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": 57.0471896862889,
+                        "y": 77.91710975557876
+                    },
+                    {
+                        "x": -57.0471896862889,
+                        "y": 77.91710975557876
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": -114.0943793725778,
+                    "y": 77.91710975557876
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": -114.0943793725778,
+                        "y": 38.95855487778938
+                    },
+                    {
+                        "x": -114.0943793725778,
+                        "y": -38.95855487778938
+                    }
+                ],
+                "cornerRadius": 0
+            }
+        ],
+        "selectedLineIndex": null,
+        "mode": "edit",
+        "minX": -114.0943793725778,
+        "minY": -77.91710975557876,
+        "maxX": 114.0943793725778,
+        "maxY": 77.91710975557876,
+        "selectedArea": "Selected"
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#ff0000",
+            "#0000ff"
+        ],
+        "outline": true,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "none",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "x": 581.2027977307537,
+        "y": 414.68067879129023,
+        "width": 340,
+        "aspectRatio": 0.6,
+        "height": 208,
+        "image": 0,
+        "originalFiles": [
+            {}
+        ],
+        "iteratedFiles": [
+            {}
+        ],
+        "maintainApect": false,
+        "clipped": "none",
+        "imagePreview": "blob:http://127.0.0.1:5502/b82b7d5e-b48f-4032-ac7f-f53c2700e39d",
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#cdb05cff",
+            "#0000ffff"
+        ],
+        "outline": false,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "uniform",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "x": 682.6707183790274,
+        "y": 326.61156699993745,
+        "width": 151.6153497702711,
+        "height": 208.67235782206598,
+        "roundedOrbeveled": "shaped",
+        "cornerRadius": 0,
+        "clipped": "none",
+        "clips": [],
+        "points": [
+            {
+                "points": {
+                    "x": -75.80767488513555,
+                    "y": -104.33617891103299
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": -37.90383744256778,
+                        "y": -104.33617891103299
+                    },
+                    {
+                        "x": 37.90383744256778,
+                        "y": -104.33617891103299
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": -31.777964724577146,
+                    "y": -104.33617891103299
+                },
+                "edgeModes": "shaped",
+                "controls": [
+                    {
+                        "x": 0,
+                        "y": -81.36307529759455
+                    },
+                    {
+                        "x": 72.74473852614005,
+                        "y": -9.380683975487386
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": 54.74998741704235,
+                    "y": 104.33617891103299
+                },
+                "edgeModes": "shaped",
+                "controls": [
+                    {
+                        "x": 50.921316968298015,
+                        "y": 48.4349601183327
+                    },
+                    {
+                        "x": 46.70977947467952,
+                        "y": -45.37187963654094
+                    }
+                ],
+                "cornerRadius": 0
+            }
+        ],
+        "selectedLineIndex": 1,
+        "mode": "edit",
+        "minX": -75.80767488513555,
+        "minY": -104.33617891103299,
+        "maxX": 54.74998741704235,
+        "maxY": 104.33617891103299,
+        "selectedArea": "lineIndex"
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#FFCC00ff",
+            "#ff0000ff"
+        ],
+        "outline": true,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "uniform",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "text": "YOUR NAME HERE",
+        "fontSize": 14,
+        "fontFamily": "Arial",
+        "x": 602.6515060002732,
+        "y": 390.55337205734105,
+        "fontStyle": "bold",
+        "width": 128.3447265625,
+        "height": 10,
+        "textAllign": "left",
+        "clipped": "none",
+        "shadow": false,
+        "shadowStyle": {
+            "color": "#000000",
+            "blur": 10,
+            "offsetX": 5,
+            "offsetY": 5
+        },
+        "lineHeight": 14,
+        "textArea": "",
+        "iterated": false,
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#FFCC00",
+            "#ff0000"
+        ],
+        "outline": true,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "none",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "text": "Your Position Here",
+        "fontSize": 6.5,
+        "fontFamily": "Arial",
+        "x": 604.1829741797707,
+        "y": 404.3372342254042,
+        "fontStyle": "bold",
+        "width": 58.027099609375,
+        "height": 6,
+        "textAllign": "left",
+        "clipped": "none",
+        "shadow": false,
+        "shadowStyle": {
+            "color": "#000000",
+            "blur": 10,
+            "offsetX": 5,
+            "offsetY": 5
+        },
+        "lineHeight": 6.5,
+        "textArea": "",
+        "iterated": false,
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#FFCC00",
+            "#ff0000"
+        ],
+        "outline": true,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "none",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "text": "+123-456-789",
+        "fontSize": 7.591240875912408,
+        "fontFamily": "Arial",
+        "x": 622.9434593786176,
+        "y": 431.13918844108235,
+        "fontStyle": "bold",
+        "width": 47.47821044921875,
+        "height": 6,
+        "textAllign": "left",
+        "clipped": "none",
+        "shadow": false,
+        "shadowStyle": {
+            "color": "#000000",
+            "blur": 10,
+            "offsetX": 5,
+            "offsetY": 5
+        },
+        "lineHeight": 7.591240875912408,
+        "textArea": "",
+        "iterated": false,
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#FFCC00",
+            "#ff0000"
+        ],
+        "outline": true,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "none",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "text": "yourname@mail.com\nwww.yourwebsite.com",
+        "fontSize": 7.591240875912408,
+        "fontFamily": "Arial",
+        "x": 623.326326423492,
+        "y": 447.60324603071314,
+        "fontStyle": "bold",
+        "width": 81.54043579101562,
+        "height": 16.59124087591241,
+        "textAllign": "left",
+        "clipped": "none",
+        "shadow": false,
+        "shadowStyle": {
+            "color": "#000000",
+            "blur": 10,
+            "offsetX": 5,
+            "offsetY": 5
+        },
+        "lineHeight": 7.591240875912408,
+        "textArea": "",
+        "iterated": false,
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#FFCC00ff",
+            "#ff0000ff"
+        ],
+        "outline": false,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "uniform",
+        "colorDeg": 0.2,
+        "colorStop": [
+            0,
+            1
+        ],
+        "angle": 0,
+        "text": "123 Anywhere St,Any city",
+        "fontSize": 7.591240875912408,
+        "fontFamily": "Arial",
+        "x": 623.326326423492,
+        "y": 472.87366000549554,
+        "fontStyle": "bold",
+        "width": 92.38064575195312,
+        "height": 9,
+        "textAllign": "left",
+        "clipped": "none",
+        "shadow": false,
+        "shadowStyle": {
+            "color": "#000000",
+            "blur": 10,
+            "offsetX": 5,
+            "offsetY": 5
+        },
+        "lineHeight": 7.591240875912408,
+        "textArea": "",
+        "iterated": false,
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#FFCC00",
+            "#ff0000"
+        ],
+        "outline": true,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "none",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "text": "Add Textbox",
+        "fontSize": 7.591240875912408,
+        "fontFamily": "Arial",
+        "x": 865.6811658290012,
+        "y": 392.467797358461,
+        "fontStyle": "bold",
+        "width": 45.39906311035156,
+        "height": 7,
+        "textAllign": "left",
+        "clipped": "none",
+        "shadow": false,
+        "shadowStyle": {
+            "color": "#000000",
+            "blur": 10,
+            "offsetX": 5,
+            "offsetY": 5
+        },
+        "lineHeight": 7.591240875912408,
+        "textArea": "",
+        "iterated": false,
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#FFCC00",
+            "#ff0000"
+        ],
+        "outline": true,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "none",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "text": "Add Textbox",
+        "fontSize": 7.591240875912408,
+        "fontFamily": "Arial",
+        "x": 864.9154317392523,
+        "y": 405.4858894060761,
+        "fontStyle": "bold",
+        "width": 45.39906311035156,
+        "height": 7,
+        "textAllign": "left",
+        "clipped": "none",
+        "shadow": false,
+        "shadowStyle": {
+            "color": "#000000",
+            "blur": 10,
+            "offsetX": 5,
+            "offsetY": 5
+        },
+        "lineHeight": 7.591240875912408,
+        "textArea": "",
+        "iterated": false,
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#cdb05cff",
+            "#0000ffff"
+        ],
+        "outline": false,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.5060827250608272,
+        "lineDashWidth": 1.2652068126520681,
+        "lineDashSpacing": 0.7591240875912408,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "uniform",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "x": 605.3315753143942,
+        "y": 416.2066710923474,
+        "width": 130.17479525730346,
+        "height": 1.5315402408959358,
+        "roundedOrbeveled": "beveled",
+        "cornerRadius": 0,
+        "clipped": "none",
+        "clips": [],
+        "points": [
+            {
+                "points": {
+                    "x": -65.66169819596331,
+                    "y": -0.7657701204479679
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": -32.830849097981655,
+                        "y": -0.7657701204479679
+                    },
+                    {
+                        "x": 32.830849097981655,
+                        "y": -0.7657701204479679
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": 65.66169819596331,
+                    "y": -0.7657701204479679
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": 65.66169819596331,
+                        "y": -0.38288506022398394
+                    },
+                    {
+                        "x": 65.66169819596331,
+                        "y": 0.38288506022398394
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": 65.66169819596331,
+                    "y": 0.7657701204479679
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": 32.830849097981655,
+                        "y": 0.7657701204479679
+                    },
+                    {
+                        "x": -32.830849097981655,
+                        "y": 0.7657701204479679
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": -65.66169819596331,
+                    "y": 0.7657701204479679
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": -65.66169819596331,
+                        "y": 0.38288506022398394
+                    },
+                    {
+                        "x": -65.66169819596331,
+                        "y": -0.38288506022398394
+                    }
+                ],
+                "cornerRadius": 0
+            }
+        ],
+        "selectedLineIndex": null,
+        "mode": "edit",
+        "minX": -65.66169819596331,
+        "minY": -0.7657701204479679,
+        "maxX": 65.66169819596331,
+        "maxY": 0.7657701204479679,
+        "selectedArea": null
+    },
+    {
+        "scaleX": 1,
+        "scaleY": 1,
+        "color": [
+            "#cdb05cff",
+            "#0000ffff"
+        ],
+        "outline": false,
+        "outlineColor": "#00ff00",
+        "outlineThickness": 0.03943254266650944,
+        "lineDashWidth": 0.0985813566662736,
+        "lineDashSpacing": 0.05914881399976416,
+        "outlineType": [],
+        "isDoubleClicked": false,
+        "opacity": 100,
+        "colorFill": "uniform",
+        "colorDeg": 0.2,
+        "colorStop": [],
+        "angle": 0,
+        "x": 603.4990651264976,
+        "y": 429.45655993521694,
+        "width": 14.021003992922942,
+        "height": 11.217330987558285,
+        "roundedOrbeveled": "shaped",
+        "cornerRadius": 5,
+        "clipped": "none",
+        "clips": [],
+        "points": [
+            {
+                "points": {
+                    "x": -7.010501996461471,
+                    "y": -5.608665493779142
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": -3.5052509982307356,
+                        "y": -5.608665493779142
+                    },
+                    {
+                        "x": 3.5052509982307356,
+                        "y": -5.608665493779142
+                    }
+                ],
+                "cornerRadius": 0
+            },
+            {
+                "points": {
+                    "x": 7.010501996461471,
+                    "y": -5.608665493779142
+                },
+                "edgeModes": "rounded",
+                "controls": [
+                    {
+                        "x": 7.010501996461471,
+                        "y": -2.804332746889571
+                    },
+                    {
+                        "x": 7.010501996461471,
+                        "y": 2.804332746889571
+                    }
+                ],
+                "cornerRadius": 5.5
+            },
+            {
+                "points": {
+                    "x": 7.010501996461471,
+                    "y": 5.608665493779142
+                },
+                "edgeModes": "rounded",
+                "controls": [
+                    {
+                        "x": 3.5052509982307356,
+                        "y": 5.608665493779142
+                    },
+                    {
+                        "x": -3.5052509982307356,
+                        "y": 5.608665493779142
+                    }
+                ],
+                "cornerRadius": 5.5
+            },
+            {
+                "points": {
+                    "x": -7.010501996461471,
+                    "y": 5.608665493779142
+                },
+                "edgeModes": null,
+                "controls": [
+                    {
+                        "x": -7.010501996461471,
+                        "y": 2.804332746889571
+                    },
+                    {
+                        "x": -7.010501996461471,
+                        "y": -2.804332746889571
+                    }
+                ],
+                "cornerRadius": 0
+            }
+        ],
+        "selectedLineIndex": 1,
+        "mode": "normal",
+        "minX": -7.010501996461471,
+        "minY": -5.608665493779142,
+        "maxX": 7.010501996461471,
+        "maxY": 5.608665493779142,
+        "selectedArea": "scale"
+    }
+]

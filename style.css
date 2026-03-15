@@ -243,7 +243,12 @@ main > section{
   opacity: 1;
   z-index: 5;
 }
-
+.upsec{
+  pointer-events: none;
+}
+.upsec button{
+  pointer-events: auto;
+}
 .upsec .editclip{
   position: absolute;
   width: 100%;

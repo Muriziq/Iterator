@@ -2940,7 +2940,7 @@ class TextBox extends Formats{
     this.text = "Add Textbox";
     this.fontSize = adapt(30);
     this.fontFamily = "Arial";
-    this.color = ["#FFCC00", "#ff0000"];
+
     this.x = x;
     this.y = y;
     this.fontStyle = "bold";
@@ -3348,6 +3348,13 @@ if(!(defaultFonts.includes(this.fontFamily))){
   if (name === "textAllign") this.textAllign = e.target.value;
   if (name === "outlineColor") {
     this.outlineColor = e.target.value;
+  }
+    if (name === "bgColor") {
+    this.color[0] = e.target.value;
+  }
+
+  if (name === "colorDeg") {
+    this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
   }
   // Shadow fields
   if (name === "shadowColor") this.shadowStyle.color = e.target.value;
