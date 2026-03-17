@@ -58,18 +58,19 @@
     <main>
 
       <aside class="leftSidebar">
-        <button id="moveTool" onclick="moveTool()"><img src="images/Vector 160.svg" alt=""></button>
-        <button onclick="multipleSelection()"></button>
-        <button onclick="addRectangle()"><img src="images/Rectangle 86.svg" alt=""></button>
-        <button onclick="addEllipse()"><img src="images/Ellipse 11.svg" alt=""></button>
-        <button onclick="addLine()"><img src="images/Group 8.svg" alt=""></button>
-        <button onclick="addPolygon()"><img  src="images/Polygon 1.svg" alt=""></button>
+        <button id="moveTool" onclick="Tools('moveTool')"><img src="images/Vector 160.svg" alt=""></button>
+        <button id="multipleSelect" onclick="Tools('multipleSelection')"></button>
+        <button id="addRect" onclick="Tools('addRectangle')"><img src="images/Rectangle 86.svg" alt=""></button>
+        <button id="addEllipse" onclick="Tools('addEllipse')"><img src="images/Ellipse 11.svg" alt=""></button>
+        <button id="addLine" onclick="Tools('addLine')"><img src="images/Group 8.svg" alt=""></button>
+        <button id="addPolygon" onclick="Tools('addPolygon')"><img  src="images/Polygon 1.svg" alt=""></button>
         <button class="add-image"><input type="file" ><img src="images/Group 35.svg" alt=""></button>
-        <button onclick="addTextbox()"><img src="images/Vector 155.svg" alt=""></button>
+        <button id="addTextbox" onclick="Tools('addTextbox')"><img src="images/Vector 155.svg" alt=""></button>
         <hr style="width: 100%;">
-        <button id="zoom"><img src="images/Vector (3).svg" alt=""></button>
-        <button id="duplicate"><img src="images/Group 44.svg" alt=""></button>
-        <button id="delete"><img src="images/Group 45.svg" alt=""></button>
+        <button id="zoom" onclick="Tools('zoom')"><img src="images/Vector (3).svg" alt=""></button>
+        <button id="duplicate" onclick="Tools('duplicate')"><img src="images/Group 44.svg" alt=""></button>
+        <button id="delete" onclick="Tools('delete')"><img src="images/Group 45.svg" alt=""></button>
+        <button id="pageTo" onclick="Tools('pageTo')"><img src="images/Group 51.svg" alt=""></button>
 
       </aside>
       <section>
@@ -139,8 +140,8 @@
   </div>
 </section>
 <section class="flip" style="gap: 0.5rem;">
-  <button onclick="flip('x')"></button>
-  <button onclick="flip('y')"></button>
+  <button onclick="flip('x')"><img src="images/flipx.png" alt=""></button>
+  <button onclick="flip('y')"><img src="images/flipy.png" alt=""></button>
 </section>
         </div>
 

@@ -52,7 +52,10 @@ let lastMouseY = 0;
 let scale = 1;
 let panX = 0;
 let panY = 0;
-
+let multipleSelectCoor = {
+  start: { x: 0, y: 0 },
+  end: { x: 0, y: 0 }
+};
 let isPanning = false;
 let startX = 0;
 let startY = 0;
@@ -2954,6 +2957,8 @@ class TextBox extends Formats{
         this.textArea = "";
     this.iterated = false;
         this.clipped = "none";
+        this.outline = false
+        this.colorFill = "uniform";
   }
 addObject() {
   ctx.save();
@@ -3976,8 +3981,71 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
     columns.value = 1;
   }
 });
-document.getElementById("zoom").addEventListener("click", () => {
-  propertiesBar.innerHTML = `
+function addImage(e) {
+  canvas.style.cursor = "crosshair";
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.src = url;
+  img.onload = () => {
+        drawingImage = {
+          image: img,
+          originalFile: file,
+          aspectRatio: img.height/img.width
+        }
+    isDrawing = "image"
+
+  };
+}
+function Tools(tool) {
+      isDrawing = null;
+      multipleSelect = false;
+  multipleSelectArr = [];
+
+  duplicateClicked = false;
+  cloneObj = null;
+  pen = null;
+  switch (tool) {
+    case "moveTool":
+        canvas.style.cursor = "default";
+      break;
+
+    case "multipleSelection":
+        selectedObj = null;
+       canvas.style.cursor = "default";
+  multipleSelect = true;
+      break;
+
+    case "addRectangle":
+        canvas.style.cursor = "crosshair";
+  isDrawing = "rect";
+      break;
+
+    case "addEllipse":
+       canvas.style.cursor = "crosshair";
+  isDrawing = "ellipse";
+      break;
+
+    case "addLine":
+       canvas.style.cursor = "crosshair";
+  const line = new Line();
+  pen = line;
+  requestDraw()
+      break;
+
+    case "addPolygon":
+       canvas.style.cursor = "crosshair";
+  isDrawing = "polygon";
+      break;
+
+    case "addTextbox":
+        canvas.style.cursor = "inherit";
+  isDrawing = "text";
+      break;
+
+    case "zoom":
+      propertiesBar.innerHTML = `
   <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
     <button class="zoomin"><img src="images/Group 46.svg"></button>
     <button class="zoomout"><img src="images/Group 47.svg"></button>
@@ -4035,7 +4103,73 @@ document.getElementById("zoom").addEventListener("click", () => {
   });
 
   requestDraw();
-});
+      break;
+
+    case "duplicate":
+       
+  duplicateClicked = !duplicateClicked;
+  if (duplicateClicked) {
+    if (selectedObj) {
+      cloneObj = selectedObj.showClone();
+      cloneObj.changeLocation(lastMouseX, "x");
+      cloneObj.changeLocation(lastMouseY, "y");
+    } else {
+      notify("Please Select An Object");
+      duplicateClicked = false;
+      document.getElementById("moveTool").classList.add("active");
+      document.getElementById("duplicate").classList.remove("active");
+    }
+  } else {
+    cloneObj = null;
+  }
+      break;
+
+    case "delete":
+        if (selectedObj) {
+    let index = objects.indexOf(selectedObj);
+    objects.splice(index, 1);
+    selectedObj = null;
+    propertiesBar.innerHTML = "";
+    requestDraw()
+  }
+      break;
+
+    case "pageTo":
+      propertiesBar.innerHTML = `
+  <div style="display:flex;flex-direction:column;align-items:center; justify-content:center; gap:1rem;border:none">
+    <button class="bringFront">Bring To Front</button>
+    <button class="sendBack">Send To Back</button>
+  </div>
+  `;
+  document.querySelector(".bringFront").addEventListener("click", () => {
+      if (selectedObj) {
+    let index = objects.indexOf(selectedObj);
+    if (index !== -1) {
+      objects.splice(index, 1);
+      objects.push(selectedObj);
+     requestDraw()
+    }
+  }
+  })
+  document.querySelector(".sendBack").addEventListener("click", () => {
+      if (selectedObj) {
+    let index = objects.indexOf(selectedObj);
+    if (index !== -1) {
+      objects.splice(index, 1);
+      objects.unshift(selectedObj);
+     requestDraw()
+    }
+  }
+  })
+      break;
+
+    default:
+      console.log("Unknown tool:", tool);
+      break;
+  }
+  requestDraw()
+}
+
 function flip(value) {
   if (selectedObj) {
     if (value === "x") {
@@ -4069,53 +4203,8 @@ document.getElementById("renderWidth").addEventListener("input", (e) => {
   renderPageSize.width = e.target.value;
 });
 
-document.getElementById("duplicate").addEventListener("click", () => {
-  duplicateClicked = true;
-  if (duplicateClicked) {
-    if (selectedObj) {
-      cloneObj = selectedObj.showClone();
-      cloneObj.changeLocation(lastMouseX, "x");
-      cloneObj.changeLocation(lastMouseY, "y");
-    } else {
-      notify("Please Select An Object");
-      duplicateClicked = false;
-      document.getElementById("moveTool").classList.add("active");
-      document.getElementById("duplicate").classList.remove("active");
-    }
-  } else {
-    cloneObj = null;
-    cloneText = null;
-  }
-});
-// document.getElementById("pageTop").addEventListener("click", () => {
-//   if (selectedObj) {
-//     let index = objects.indexOf(selectedObj);
-//     if (index !== -1) {
-//       objects.splice(index, 1);
-//       objects.push(selectedObj);
-//      requestDraw()
-//     }
-//   }
-// });
-// document.getElementById("pageEnd").addEventListener("click", () => {
-//   if (selectedObj) {
-//     let index = objects.indexOf(selectedObj);
-//     if (index !== -1) {
-//       objects.splice(index, 1);
-//       objects.unshift(selectedObj);
-//      requestDraw()
-//     }
-//   }
-// });
-document.getElementById("delete").addEventListener("click", () => {
-  if (selectedObj) {
-    let index = objects.indexOf(selectedObj);
-    objects.splice(index, 1);
-    selectedObj = null;
-    propertiesBar.innerHTML = "";
-    requestDraw()
-  }
-});
+
+
 let scaleRatio;
 let newWidth;
 let newHeight;
@@ -4219,23 +4308,9 @@ function drawingObject() {
       )
   }
 }
-function moveTool() {
-  isDrawing = null;
-  canvas.style.cursor = "default";
-  multipleSelect = false;
-  multipleSelectArr = [];
-  selectedObj = null;
 
-  duplicateClicked = false;
-}
 
-function multipleSelection() {
-  isDrawing = null;
-  canvas.style.cursor = "default";
-  multipleSelect = true;
-  multipleSelectArr = [];
-  selectedObj = null;
-}
+
 function backValues(x) {
   if (whatsMeasured === "px") {
     return x;
@@ -4401,46 +4476,7 @@ document.querySelector(".snip").addEventListener("click", () => {
 document
   .querySelector(".add-image input")
   .addEventListener("change", (e) => addImage(e));
-function addImage(e) {
-  canvas.style.cursor = "crosshair";
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.src = url;
-  img.onload = () => {
-        drawingImage = {
-          image: img,
-          originalFile: file,
-          aspectRatio: img.height/img.width
-        }
-    isDrawing = "image"
 
-  };
-}
-function addTextbox() {
-  canvas.style.cursor = "inherit";
-  isDrawing = "text";
-
-}
-function addPolygon() {
-  canvas.style.cursor = "crosshair";
-  isDrawing = "polygon";
-}
-function addLine() {
-  canvas.style.cursor = "crosshair";
-  const line = new Line();
-  pen = line;
-  requestDraw()
-}
-function addRectangle() {
-  canvas.style.cursor = "crosshair";
-  isDrawing = "rect";
-}
-function addEllipse() {
-  canvas.style.cursor = "crosshair";
-  isDrawing = "ellipse";
-}
 function align(arg) {
   let last
   let other
@@ -4783,11 +4819,12 @@ canvas.addEventListener("mousedown", (event) => {
     } else {
       notify("Select An Object");
     }
-  } else if (cloneObj) {
+  } else if (cloneObj !== null) {
     const cloned = cloneObj.showClone();
     objects.push(cloned);
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;
+
   } else if (clippedObject !== null && previousClip !== null) {
     editclip.style.display = "block";
 
@@ -4809,6 +4846,17 @@ canvas.addEventListener("mousedown", (event) => {
         }
       }
     });
+    if(multipleSelectArr.length > 0){
+      multipleSelectCoor.start.x = Math.min(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x));
+      multipleSelectCoor.start.y = Math.min(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y));
+      multipleSelectCoor.end.x = Math.max(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width));
+      multipleSelectCoor.end.y = Math.max(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height));
+      if(pos.x >= multipleSelectCoor.start.x && pos.x <= multipleSelectCoor.end.x && pos.y >= multipleSelectCoor.start.y && pos.y <= multipleSelectCoor.end.y){
+        isDraggingObject = true;
+        multipleSelectArr.forEach((obj) => obj.isDoubleClicked = false);
+        selectedObj = null
+      }
+    }
   } else {
     let hitObject = null;
 
@@ -4923,9 +4971,23 @@ canvas.addEventListener("mousemove", (event) => {
   if (drawingStart) {
     drawingCoordinate.end = { x: pos.x, y: pos.y };
     changed = true;
-  } else if (cloneObj) {
+  } else if (cloneObj!== null) {
     cloneObj.formatSelected(pos);
     changed = true;
+  }else if(isDraggingObject && multipleSelect && multipleSelectArr.length > 0){
+    const deltaX = pos.x - lastMouseX;
+    const deltaY = pos.y - lastMouseY;
+
+    multipleSelectArr.forEach((obj) => {
+     obj.moveClip(deltaX, deltaY)
+    });
+              multipleSelectCoor.start.x = Math.min(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x));
+      multipleSelectCoor.start.y = Math.min(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y));
+      multipleSelectCoor.end.x = Math.max(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width));
+      multipleSelectCoor.end.y = Math.max(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height));
+
+    changed = true
+
   } else if ((isDraggingObject || isRotatingObject) && selectedObj) {
     selectedObj.formatSelected(pos);
     changed = true;
@@ -4968,7 +5030,20 @@ function draw() {
         obj.addObject();
       });
     }
-
+    if(multipleSelect && multipleSelectArr.length > 0){
+      ctx.save();
+            ctx.beginPath();
+      ctx.lineWidth = adapt(1);
+      ctx.strokeStyle = "#0000ff";
+      ctx.setLineDash([adapt(5), adapt(3)]);
+      ctx.strokeRect(
+        multipleSelectCoor.start.x,
+        multipleSelectCoor.start.y,
+        multipleSelectCoor.end.x - multipleSelectCoor.start.x,
+        multipleSelectCoor.end.y - multipleSelectCoor.start.y
+      )
+      ctx.restore();
+    }
     if (drawingStart) {
       if (isDrawing === "zoom") {
         const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
