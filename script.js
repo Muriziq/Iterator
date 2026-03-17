@@ -4758,10 +4758,9 @@ function requestDraw() {
     draw()
   });
 }
-
-canvas.addEventListener("mousedown", (event) => {
+function cMousedown(event){
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
-
+console.log(pos)
   isDraggingObject = false;
   isPanning = false;
 
@@ -4893,10 +4892,9 @@ canvas.addEventListener("mousedown", (event) => {
   lastMouseX = pos.x;
   lastMouseY = pos.y;
   requestDraw();
-});
-
-canvas.addEventListener("dblclick", (event) => {
-  const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
+}
+function cDoubleClick(event){
+    const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
 
   for (let i = objects.length - 1; i >= 0; i--) {
     if (objects[i].whatSelected(pos)) {
@@ -4906,10 +4904,9 @@ canvas.addEventListener("dblclick", (event) => {
       break;
     }
   }
-});
-
-window.addEventListener("mouseup", () => {
-  if (drawingStart) {
+}
+function wMouseUp(){
+ if (drawingStart) {
     drawingStart = false;
 
     if (isDrawing === "zoom") {
@@ -4942,20 +4939,19 @@ canvas.style.cursor = "default"
 
 
   requestDraw();
-});
-canvas.addEventListener("mouseup", () => {
+}
+function cMouseUp(){
   if (selectedObj && !cloneObj && !pen) {
     selectedObj.formatProperties();
   }
   requestDraw();
-})
-canvas.addEventListener("mouseleave", () => {
+}
+function cMouseLeave(){
   if (!isDraggingObject && !drawingStart) {
     isPanning = false;
   }
-});
-
-canvas.addEventListener("mousemove", (event) => {
+}
+function cMouseMove(event){
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
   let changed = false;
 
@@ -4999,7 +4995,38 @@ canvas.addEventListener("mousemove", (event) => {
   if (changed) {
     requestDraw();
   }
+}
+
+canvas.addEventListener("mousedown", (event) => {
+cMousedown(event)
 });
+
+canvas.addEventListener("dblclick", (event) => {
+cDoubleClick(event)
+});
+
+window.addEventListener("mouseup",wMouseUp);
+canvas.addEventListener("mouseup",cMouseUp)
+canvas.addEventListener("mouseleave",cMouseLeave);
+
+canvas.addEventListener("mousemove", (event) => {
+cMouseMove(event)
+});
+canvas.addEventListener("touchstart", (event) => {
+  event.preventDefault();
+  cMousedown(event.touches[0])
+},{passive:false})
+canvas.addEventListener("touchmove", (event) => {
+  event.preventDefault()
+  cMouseMove(event.touches[0])
+},{passive:false})
+canvas.addEventListener("touchend",()=>{
+cMouseUp()
+cMouseLeave()
+}
+)
+window.addEventListener("touchend",wMouseUp)
+
 
 function draw() {
   try {
