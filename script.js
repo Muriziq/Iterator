@@ -62,6 +62,22 @@ let startY = 0;
 let drawingImage = null 
 let selectedObj = null;
 let clipped = null;
+let thresholds = {
+  selected : () => adapt(2),
+  normalMode : () => adapt(30),
+  threshold : () => adapt(10),
+  pointHold : () => adapt(10),
+  slineWidth : () => adapt(2),
+  sLineDashWidth : () => adapt(5),
+  sLineDashSpacing: () => adapt(3),
+  sWidth: () => adapt(4),
+  clipWidth: () => adapt(4),
+  drawPenControls: () => adapt(20),
+  sColor:"#0000ff",
+  normalModeColor: "#0000ff88",
+  clipColor: "#ff0000",
+
+}
 let defaultFonts =[  "serif",
   "sans-serif",
   "monospace",
@@ -92,7 +108,7 @@ window.addEventListener("load", () => {
 });
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
-    let threshold = adapt(10);
+    let threshold = thresholds.threshold();
     for (let i = 0; i < points.length; i++) {
       const current = points[i];
       const next = points[(i + 1) % points.length];
@@ -140,7 +156,7 @@ class LineUtils {
       const p = points[i].points;
       const pdx = localMouseX - p.x;
       const pdy = localMouseY - p.y;
-      if (pdx * pdx + pdy * pdy < adapt(10) * adapt(10)) {
+      if (pdx * pdx + pdy * pdy < thresholds.pointHold() * thresholds.pointHold()) {
         return { value: i, type: "pointIndex" };
       }
     }
@@ -151,7 +167,7 @@ class LineUtils {
           const cp = points[i].controls[j];
           const cdx = localMouseX - cp.x;
           const cdy = localMouseY - cp.y;
-          if (cdx * cdx + cdy * cdy < adapt(10) * adapt(10)) {
+          if (cdx * cdx + cdy * cdy < thresholds.pointHold() * thresholds.pointHold()) {
             return {
               value: { curveIndex: i, controlIndex: j },
               type: "curveIndex",
@@ -282,7 +298,7 @@ class LineUtils {
   static drawEditArcs(points, selectedArea, selectedLineIndex) {
     points.forEach((p, i) => {
       ctx.beginPath();
-      ctx.rect(p.points.x - adapt(4), p.points.y - adapt(4), adapt(8), adapt(8));
+      ctx.rect(p.points.x - (thresholds.pointHold() /2), p.points.y - (thresholds.pointHold() /2), thresholds.pointHold(), thresholds.pointHold());
 
       if (selectedArea === "pointIndex" && i === selectedLineIndex)
         ctx.fillStyle = "#0000ff";
@@ -303,7 +319,7 @@ class LineUtils {
           ctx.lineWidth = adapt(2);
           ctx.stroke();
           ctx.beginPath();
-          ctx.rect(cp.x - adapt(3), cp.y - adapt(3), adapt(6), adapt(6));
+          ctx.rect(cp.x - (thresholds.pointHold() / 2), cp.y - (thresholds.pointHold() / 2), thresholds.pointHold(), thresholds.pointHold());
           const isSelected =
             selectedArea === "curveIndex" &&
             selectedLineIndex.curveIndex === i &&
@@ -780,6 +796,7 @@ similarProptiesOutput() {
 class Rectangle extends Formats {
   constructor(x, y, width, height) {
     super();
+    this.type = "rectangle";
     this.x = x;
     this.y = y;
     this.width = width;
@@ -915,15 +932,15 @@ class Rectangle extends Formats {
     }
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = adapt(1);
-      ctx.strokeStyle = "#0000ff";
-      ctx.setLineDash([adapt(5), adapt(3)]);
+      ctx.lineWidth = thresholds.slineWidth();
+      ctx.strokeStyle = thresholds.sColor;
+      ctx.setLineDash([thresholds.sLineDashWidth(), thresholds.sLineDashSpacing()]);
       if (this.roundedOrbeveled !== "shaped") {
         ctx.strokeRect(
-          -this.width / 2 - adapt(2),
-          -this.height / 2 - adapt(2),
-          this.width + adapt(4),
-          this.height + adapt(4),
+          -this.width / 2 - thresholds.sWidth() / 2,
+          -this.height / 2 - thresholds.sWidth() / 2,
+          this.width + thresholds.sWidth(),
+          this.height + thresholds.sWidth(),
         );
       } else {
         ctx.strokeRect(
@@ -934,8 +951,8 @@ class Rectangle extends Formats {
         );
         if (this.mode === "normal") {
           ctx.beginPath();
-          ctx.fillStyle = "#0000ff88";
-          ctx.fillRect(this.maxX - adapt(10), this.maxY - adapt(10), adapt(20), adapt(20));
+          ctx.fillStyle = thresholds.normalModeColor;
+          ctx.fillRect(this.maxX - (thresholds.normalMode()/2), this.maxY - (thresholds.normalMode()/2), thresholds.normalMode(), thresholds.normalMode());
         }
       }
 
@@ -954,6 +971,7 @@ class Rectangle extends Formats {
       });
       ctx.restore();
     }
+
   }
   colorType() {
     const colors = this.color.map((color) =>
@@ -1090,8 +1108,8 @@ class Rectangle extends Formats {
         return true;
       } else if (this.mode === "normal") {
         if (
-          Math.abs(localMouseX - this.maxX) < adapt(10) &&
-          Math.abs(localMouseY - this.maxY) < adapt(10)
+          Math.abs(localMouseX - this.maxX) < (thresholds.normalMode()/2) &&
+          Math.abs(localMouseY - this.maxY) < (thresholds.normalMode()/2)
         ) {
           this.selectedArea = "scale";
 
@@ -1127,7 +1145,7 @@ class Rectangle extends Formats {
         localY,
         this.width,
         this.height,
-        adapt(10),
+        thresholds.threshold(),
       );
 
       return this.selectedArea !== null;
@@ -1163,40 +1181,20 @@ class Rectangle extends Formats {
         this.angle =
           Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
       }else if (this.selectedArea === "scale") {
-this.originalPoints = this.points.map(p => ({
-  point: { x: p.points.x, y: p.points.y },
-  c1: { x: p.controls[0].x, y: p.controls[0].y },
-  c2: { x: p.controls[1].x, y: p.controls[1].y }
-}));
-
-const centerX = (this.minX + this.maxX) / 2;
-const centerY = (this.minY + this.maxY) / 2;
-
-const lastWidth = lastMouseX - centerX;
-const lastHeight = lastMouseY - centerY;
-
-const currentWidth = mouse.x - centerX;
-const currentHeight = mouse.y - centerY;
-
-// Prevent explosion
-const scaleX = lastWidth === 0 ? 1 : currentWidth / lastWidth;
-const scaleY = lastHeight === 0 ? 1 : currentHeight / lastHeight;
-
-this.points.forEach((p, i) => {
-  const original = this.originalPoints[i];
-
-  // Anchor point
-  p.points.x = centerX + (original.point.x - centerX) * scaleX;
-  p.points.y = centerY + (original.point.y - centerY) * scaleY;
-
-  // Control 1
-  p.controls[0].x = centerX + (original.c1.x - centerX) * scaleX;
-  p.controls[0].y = centerY + (original.c1.y - centerY) * scaleY;
-
-  // Control 2
-  p.controls[1].x = centerX + (original.c2.x - centerX) * scaleX;
-  p.controls[1].y = centerY + (original.c2.y - centerY) * scaleY;
-});
+      const lastWidth = lastMouseX - this.x;
+      const lastHeight = lastMouseY - this.y;
+      const currentWidth = mouse.x - this.x;
+      const currentHeight = mouse.y - this.y;
+      const scaleX = currentWidth / lastWidth;
+      const scaleY = currentHeight / lastHeight;
+      this.points.forEach((p) => {
+        p.points.x = p.points.x * scaleX;
+        p.points.y = p.points.y * scaleY;
+        p.controls[0].x = p.controls[0].x * scaleX;
+        p.controls[0].y = p.controls[0].y * scaleY;
+        p.controls[1].x = p.controls[1].x * scaleX;
+        p.controls[1].y = p.controls[1].y * scaleY;
+      });
         } else {
         if (this.roundedOrbeveled !== "shaped") {
           super.rectFormat(mouse);
@@ -1712,9 +1710,9 @@ class Ellipse extends Formats {
     }
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.strokeStyle = "#0000ff";
-      ctx.lineWidth = adapt(2);
-      ctx.setLineDash([adapt(5), adapt(3)]);
+      ctx.lineWidth = thresholds.slineWidth();
+      ctx.strokeStyle = thresholds.sColor;
+      ctx.setLineDash([thresholds.sLineDashWidth(), thresholds.sLineDashSpacing()]);
       ctx.strokeRect(
         -this.radiusX,
         -this.radiusY,
@@ -1823,7 +1821,7 @@ class Ellipse extends Formats {
       localY,
       rectW,
       rectH,
-      adapt(10),
+      thresholds.threshold(),
     );
     return this.selectedArea !== null;
   }
@@ -2111,9 +2109,9 @@ class Polygon extends Formats {
 
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = adapt(1);
-      ctx.strokeStyle = "#0000ff";
-      ctx.setLineDash([adapt(5), adapt(3)]);
+      ctx.lineWidth = thresholds.slineWidth();
+      ctx.strokeStyle = thresholds.sColor;
+      ctx.setLineDash([thresholds.sLineDashWidth(), thresholds.sLineDashSpacing()]);
       ctx.strokeRect(
         this.minX,
         this.minY,
@@ -2122,8 +2120,8 @@ class Polygon extends Formats {
       );
       if (this.mode === "normal") {
         ctx.beginPath();
-        ctx.fillStyle = "#0000ff88";
-        ctx.fillRect(this.maxX - adapt(10), this.maxY - adapt(10), adapt(20), adapt(20));
+        ctx.fillStyle = thresholds.normalModeColor;
+        ctx.fillRect(this.maxX - (thresholds.normalMode() /2), this.maxY - (thresholds.normalMode() /2), thresholds.normalMode(), thresholds.normalMode());
       }
     }
 
@@ -2222,8 +2220,8 @@ class Polygon extends Formats {
       return true;
     } else if (this.mode === "normal") {
       if (
-        Math.abs(localX - this.maxX) < adapt(10) &&
-        Math.abs(localY - this.maxY) < adapt(10)
+        Math.abs(localX - this.maxX) < (thresholds.normalMode()/2) &&
+        Math.abs(localY - this.maxY) < (thresholds.normalMode()/2)
       ) {
         this.selectedArea = "scale";
 
@@ -2608,9 +2606,10 @@ class Line extends Formats {
     this.selectedLineIndex = null;
     this.x;
     this.y;
-    this.close = false;
+    this.isClosed = false;
     this.clipped = "none";
     this.clips = [];
+    this.type = "line"
   }
   addObject() {
     if (this.points.length > 0) {
@@ -2626,8 +2625,10 @@ class Line extends Formats {
       ctx.save();
       ctx.translate(this.x, this.y);
       ctx.rotate(this.angle);
+      ctx.scale(this.scaleX, this.scaleY);
       ctx.beginPath();
-      LineUtils.drawSmartShape(this.points, this.close);
+LineUtils.drawSmartShape(this.points,this.isClosed)
+      
       if (this.colorFill !== "none") {
         ctx.fillStyle = this.colorType();
         ctx.fill();
@@ -2650,9 +2651,9 @@ class Line extends Formats {
         );
       if (selectedObj === this || multipleSelectArr.includes(this)) {
         ctx.beginPath();
-        ctx.lineWidth = adapt(1);
-        ctx.strokeStyle = "#0000ff";
-        ctx.setLineDash([adapt(5), adapt(3)]);
+      ctx.lineWidth = thresholds.slineWidth();
+      ctx.strokeStyle = thresholds.sColor;
+      ctx.setLineDash([thresholds.sLineDashWidth(), thresholds.sLineDashSpacing()]);
         ctx.strokeRect(
           this.minX,
           this.minY,
@@ -2661,8 +2662,8 @@ class Line extends Formats {
         );
         if (this.mode === "normal") {
           ctx.beginPath();
-          ctx.fillStyle = "#0000ff88";
-          ctx.fillRect(this.maxX - adapt(10), this.maxY - adapt(10), adapt(20), adapt(20));
+          ctx.fillStyle = thresholds.normalModeColor;
+          ctx.fillRect(this.maxX - (thresholds.normalMode() / 2), this.maxY - (thresholds.normalMode() / 2), thresholds.normalMode(), thresholds.normalMode());
         }
       }
       ctx.restore();
@@ -2742,11 +2743,12 @@ class Line extends Formats {
       points: { x: mouse.x - this.x, y: mouse.y - this.y },
       edgeModes: null,
       controls: [
-        { x: mouse.x - this.x - adapt(20), y: mouse.y - this.y },
-        { x: mouse.x - this.x + adapt(20), y: mouse.y - this.y },
+        { x: mouse.x - this.x - thresholds.drawPenControls(), y: mouse.y - this.y },
+        { x: mouse.x - this.x + thresholds.drawPenControls(), y: mouse.y - this.y },
       ],
       cornerRadius: 0,
     });
+
   }
   whatSelected(mouse) {
     const dx = mouse.x - this.x;
@@ -2867,59 +2869,133 @@ class Line extends Formats {
   formatProperties() {
     if (pen) {
       propertiesBar.innerHTML = `
-          <div style="display: flex;justify-content:end;align-items:end"><button class="done">Done</button></div>
+          <section class="shape" >
+          <button class="normal done">Done</button>
+          <button class="normal close">Close</button>
+          </section>
       `;
     } else {
-      propertiesBar.innerHTML = `
-       <div>
+propertiesBar.innerHTML = `
+  <section class="coord-section">
     <h3>Coordinate</h3>
-    <div class="two-grid">
-    <div>X    <input type="number" name="x" value="${changeValues(
-      this.x + this.minX,
-    )}"></div>
-    <div> Y   <input type="number" name="y" value="${changeValues(
-      this.x + this.minY,
-    )}"></div>
-    <div>W    <input type="number" name="width" value="${changeValues(
-      this.maxX - this.minX,
-    )}"></div>
-    <div> H  <input type="number" name="height" value="${changeValues(
-      this.maxY - this.minY,
-    )}"> </div> 
-    <div>Rotation <input type="number" name="angle" value="${radToDeg(
-      this.angle,
-      "deg",
-    )}"></div>
-    <div>Opacity <input type="number" name="opacity" min="0" max="100" value="100" ></div>    </div>
+
+    <div class="two-grid coord-grid">
+      <label class="field">
+        <span class="field-label">X</span>
+        <input type="number" name="x" value="${changeValues(this.x + this.minX)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Y</span>
+        <input type="number" name="y" value="${changeValues(this.y + this.minY)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">W</span>
+        <input type="number" name="width" value="${changeValues(this.maxX - this.minX)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">H</span>
+        <input type="number" name="height" value="${changeValues(this.maxY - this.minY)}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Rotation</span>
+        <input type="number" name="angle" value="${radToDeg(this.angle, "deg")}">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Opacity</span>
+        <input type="number" name="opacity" min="0" max="100" value="100">
+      </label>
     </div>
-    ${super.similarProptiesOutput()}
-    <div class="shape">
-            <div><button class="convert"><img src="images/Group 34.svg"></button><button class="rounded-edge"><img src="images/Group 32.svg"></button></div>
-    <div style="display:${
-      this.selectedArea === "pointIndex" &&
-      this.points[this.selectedLineIndex].edgeModes === "rounded"
-        ? "flex"
-        : "none"
-    }" class="thick">
-    Corner Radius <input type="number" name="cornerRadius" value="${
-      this.selectedArea === "pointIndex" &&
-      this.points[this.selectedLineIndex].edgeModes === "rounded"
-        ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
-        : 0
-    }">
+  </section>
+
+  ${super.similarProptiesOutput()}
+
+  <section class="shape">
+    <div class="shape-row">
+      <button class="convert">
+        <img src="images/Group 34.svg" alt="Convert">
+      </button>
+
+      <button class="rounded-edge">
+        <img src="images/Group 32.svg" alt="Rounded edge">
+      </button>
     </div>
-    <div style="display: flex;justify-content:end;align-items:end"><button class="normal">${
-      this.mode === "edit" ? "Done" : "Edit"
-    }</button></div>
+
+    <label
+      class="field thick"
+      style="display:${
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "rounded"
+          ? "flex"
+          : "none"
+      }"
+    >
+      <span class="field-label">Corner Radius</span>
+      <input 
+        type="number" 
+        name="cornerRadius" 
+        value="${
+          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+            ? changeValues(this.points[this.selectedLineIndex].cornerRadius)
+            : 0
+        }"
+      >
+    </label>
+
+    <div class="shape-row shape-actions" style="justify-content:end;align-items:end">
+      <button class="normal">
+        ${this.mode === "edit" ? "Done" : "Edit"}
+      </button>
     </div>
-    `;
+  </section>
+`;
     }
     if (pen) {
       document.querySelector(".done").addEventListener("click", () => {
-        objects.push(this);
         pen = null;
+        Tools("moveTool")
+        selectedObj = this;
+        let minX = Infinity, minY = Infinity;
+let maxX = -Infinity, maxY = -Infinity;
+
+this.points.forEach(p => {
+  // anchor point
+  minX = Math.min(minX, p.points.x);
+  minY = Math.min(minY, p.points.y);
+  maxX = Math.max(maxX, p.points.x);
+  maxY = Math.max(maxY, p.points.y);
+
+  // control points (IMPORTANT for curves)
+  p.controls.forEach(c => {
+    minX = Math.min(minX, c.x);
+    minY = Math.min(minY, c.y);
+    maxX = Math.max(maxX, c.x);
+    maxY = Math.max(maxY, c.y);
+  });
+});
+const centerX = (minX + maxX) / 2;
+const centerY = (minY + maxY) / 2;
+this.points.forEach(p => {
+  p.points.x -= centerX;
+  p.points.y -= centerY;
+
+  p.controls.forEach(c => {
+    c.x -= centerX;
+    c.y -= centerY;
+  });
+});
+this.x += centerX;
+this.y += centerY;
         this.formatProperties();
       });
+      document.querySelector(".close").addEventListener("click", () => {
+        this.isClosed = !this.isClosed
+      })
     } else {
       super.similarPropties();
       document.querySelector(".rounded-edge").addEventListener("click", () => {
@@ -2960,13 +3036,17 @@ class Line extends Formats {
     const name = e.target.name;
     if (name === "angle") {
       this.angle = radToDeg(e.target.value, "rad");
-    } else if (name === "bgColor") {
+    } 
+    if (name === "bgColor") {
       this.color[0] = e.target.value;
-    } else if (name === "colorDeg") {
+    }
+    if (name === "colorDeg") {
       this.colorDeg = radToDeg(e.target.value, "rad");
-    } else if (name === "outlineColor") {
+    }
+    if (name === "outlineColor") {
       this.outlineColor = e.target.value;
-    } else if (e.target.type === "number") {
+    }
+    if (e.target.type === "number") {
       const value = backValues(parseFloat(e.target.value));
       if (name === "x") {
         this.x = value - this.minX;
@@ -3000,7 +3080,6 @@ class Line extends Formats {
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     requestDraw()
     undoObject.push(cloneObject(objects));
-    undoText.push("object");
   }
 }
 
@@ -4051,7 +4130,12 @@ function undo() {
   if (undoObject.length > 1) {
     redoObject.push(undoObject.pop());
     objects = cloneObject(undoObject[undoObject.length - 1]);
+            if(pen !== null && objects[objects.length - 1].type === "line"){
+      pen = objects[objects.length - 1];
+    }else selectedObj = objects[objects.length - 1];
     requestDraw()
+
+
   }
 }
 
@@ -4060,7 +4144,11 @@ function redo() {
     const redoState = redoObject.pop();
     undoObject.push(redoState);
     objects = cloneObject(redoState);
+            if(pen !== null && objects[objects.length - 1].type === "line"){
+      pen = objects[objects.length - 1];
+    }else selectedObj = objects[objects.length - 1];
     requestDraw()
+
   }
 }
 
@@ -4256,6 +4344,7 @@ if(pen !== null) return
        canvas.style.cursor = "crosshair";
   const line = new Line();
   pen = line;
+  objects.push(line)
   requestDraw()
       break;
 
@@ -5008,6 +5097,7 @@ function cMousedown(event){
     }
   } else if (pen !== null) {
     pen.drawPen(pos);
+         undoObject.push(cloneObject(objects)); 
     selectedObj = pen;
     selectedObj.formatProperties();
   } else if (clipped !== null) {
@@ -5276,9 +5366,6 @@ function draw() {
       measurement.height
     )
     ctx.closePath()
-    if (pen) {
-      pen.addObject();
-    }
 
     if (cloneObj) {
       cloneObj.addObject();
