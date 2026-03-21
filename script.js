@@ -400,20 +400,48 @@ class Formats {
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
       this.outlineType = [];
+      if(this.type = "group"){
+        this.list.forEach(l=>l.outlineType = [])
+      }
       this.formatProperties();
     });
     document.querySelector(".dashedb").addEventListener("click", () => {
+                    if(this.type === "group"){
+          this.list.forEach(l=>{
+            l.lineDashWidth = this.lineDashWidth
+        l.lineDashSpacing = this.lineDashSpacing
+          })
+        }
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+      if(this.type === "group"){
+        this.list.forEach(l=>l.outlineType = [l.lineDashWidth, l.lineDashSpacing])
+      }
       this.formatProperties();
     });
     document.getElementById("outline").addEventListener("click", () => {
       this.outline = !this.outline;
+      if(this.type === "group"){
+                this.list.forEach(l=>l.outline = this.outline)
+      }
       this.formatProperties();
     });
     if (this.colorFill === "linear" || this.colorFill === "radial") {
+              if(this.type === "group"){
+          this.list.forEach(l=>{
+            l.color = this.color
+        l.colorStop = this.colorStop
+        l.colorDeg = this.colorDeg
+          })
+        }
       document.querySelector(".addColor").addEventListener("click", () => {
         this.color.push("#ff0000");
         this.colorStop = [];
+        if(this.type === "group"){
+          this.list.forEach(l=>{
+                   this.color.push("#ff0000");
+        this.colorStop = []; 
+          })
+        }
         requestDraw()
         this.formatProperties();
       });
@@ -422,15 +450,27 @@ class Formats {
           .querySelector("input[type='number']")
           .addEventListener("input", (e) => {
             this.colorStop[i] = e.target.value;
+                  if(this.type === "group"){
+                this.list.forEach(l=>l.colorStop[i] = e.target.value)
+      }
           });
         div
           .querySelector("input[type='color']")
           .addEventListener("input", (e) => {
             this.color[i] = e.target.value;
+                              if(this.type === "group"){
+                this.list.forEach(l=>l.color[i] = e.target.value)
+      }
           });
         div.querySelector("button").addEventListener("click", (e) => {
           this.color.splice(i, 1);
           this.colorStop = [];
+                            if(this.type === "group"){
+                this.list.forEach(l=>{
+                            l.color.splice(i, 1);
+          l.colorStop = [];
+                })
+      }
           requestDraw()
           this.formatProperties();
         });
@@ -439,6 +479,9 @@ class Formats {
 
     document.querySelector(".color-select").addEventListener("change", (e) => {
       this.colorFill = e.target.value;
+            if(this.type === "group"){
+                this.list.forEach(l=>l.colorFill = this.colorFill)
+      }
       this.formatProperties();
     });
   }
@@ -1119,7 +1162,42 @@ class Rectangle extends Formats {
         };
         this.angle =
           Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
-      } else {
+      }else if (this.selectedArea === "scale") {
+this.originalPoints = this.points.map(p => ({
+  point: { x: p.points.x, y: p.points.y },
+  c1: { x: p.controls[0].x, y: p.controls[0].y },
+  c2: { x: p.controls[1].x, y: p.controls[1].y }
+}));
+
+const centerX = (this.minX + this.maxX) / 2;
+const centerY = (this.minY + this.maxY) / 2;
+
+const lastWidth = lastMouseX - centerX;
+const lastHeight = lastMouseY - centerY;
+
+const currentWidth = mouse.x - centerX;
+const currentHeight = mouse.y - centerY;
+
+// Prevent explosion
+const scaleX = lastWidth === 0 ? 1 : currentWidth / lastWidth;
+const scaleY = lastHeight === 0 ? 1 : currentHeight / lastHeight;
+
+this.points.forEach((p, i) => {
+  const original = this.originalPoints[i];
+
+  // Anchor point
+  p.points.x = centerX + (original.point.x - centerX) * scaleX;
+  p.points.y = centerY + (original.point.y - centerY) * scaleY;
+
+  // Control 1
+  p.controls[0].x = centerX + (original.c1.x - centerX) * scaleX;
+  p.controls[0].y = centerY + (original.c1.y - centerY) * scaleY;
+
+  // Control 2
+  p.controls[1].x = centerX + (original.c2.x - centerX) * scaleX;
+  p.controls[1].y = centerY + (original.c2.y - centerY) * scaleY;
+});
+        } else {
         if (this.roundedOrbeveled !== "shaped") {
           super.rectFormat(mouse);
         }
@@ -1132,24 +1210,7 @@ class Rectangle extends Formats {
             );
           }
         }
-        if (this.selectedArea === "scale") {
-          const centerX = (this.minX + this.maxX) / 2;
-          const centerY = (this.minY + this.maxY) / 2;
-          const lastWidth = lastMouseX - centerX;
-          const lastHeight = lastMouseY - centerY;
-          const currentWidth = mouse.x - centerX;
-          const currentHeight = mouse.y - centerY;
-          const scaleX = currentWidth / lastWidth;
-          const scaleY = currentHeight / lastHeight;
-          this.points.forEach((p) => {
-            p.points.x = centerX + (p.points.x - centerX) * scaleX;
-            p.points.y = centerY + (p.points.y - centerY) * scaleY;
-            p.controls[0].x = centerX + (p.controls[0].x - centerX) * scaleX;
-            p.controls[0].y = centerY + (p.controls[0].y - centerY) * scaleY;
-            p.controls[1].x = centerX + (p.controls[1].x - centerX) * scaleX;
-            p.controls[1].y = centerY + (p.controls[1].y - centerY) * scaleY;
-          });
-        }
+
       }
     }
   }
@@ -1560,13 +1621,19 @@ if (name === "outlineThickness") this.outlineThickness = value;
         clip.changeLocation(lastLocation, "x");
       });
       this.x = value;
-    } else {
+    } else if(type === "y"){ {
       this.clips.forEach((clip) => {
         const lastLocation = clip.whereToSnap().pos.y - this.y + value;
         clip.changeLocation(lastLocation, "y");
       });
 
       this.y = value;
+    }}
+    else if(type === "scaleX"){
+      this.width *=value
+    }
+    else if(type === "scaleY"){
+      this.height *=value
     }
   }
 
@@ -3739,11 +3806,14 @@ changeProperties(e) {
     }
   }
 }
-class Group {
+class Group extends Formats {
   constructor(list) {
+    super()
+    this.type = "group";
     this.list = list;
     this.isDoubleClicked = false;
-    this.rotationAngle = 0;
+    // this.angle = 0;
+    this.minX;this.maxX;this.minY;this.maxY;this.x;this.y;
   }
   addObject() {
     this.minX = Math.min(...this.list.map((l) => l.whereToSnap().x[0]));
@@ -3753,12 +3823,23 @@ class Group {
     this.x = (this.minX + this.maxX) / 2;
     this.y = (this.minY + this.maxY) / 2;
     ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotationAngle);
 
-    ctx.lineWidth = 1;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+
+
+    this.list.forEach((obj) => {
+      ctx.save();
+      ctx.translate(-this.x, -this.y);
+      obj.addObject();
+      ctx.restore();
+    });
+    if(selectedObj === this || multipleSelectArr.includes(this)){
+      ctx.beginPath()
+    ctx.lineWidth = adapt(1);
     ctx.strokeStyle = "#0000ff";
-    ctx.setLineDash([5, 3]);
+    ctx.setLineDash([adapt(5), adapt(3)]);
 
     ctx.strokeRect(
       this.minX - this.x,
@@ -3766,44 +3847,86 @@ class Group {
       this.maxX - this.minX,
       this.maxY - this.minY,
     );
-
-    this.list.forEach((obj) => {
-      const snap = obj.whereToSnap();
-      ctx.save();
-      ctx.translate(-this.x, -this.y);
-      obj.addObject();
-      ctx.restore();
-    });
-
+    ctx.closePath()
+    
+              ctx.beginPath();
+          ctx.fillStyle = "#0000ff88";
+          ctx.fillRect(this.maxX -this.x - adapt(10), this.maxY -this.y- adapt(10), adapt(20), adapt(20));
+          ctx.closePath();
+    }
     ctx.restore();
   }
   whatSelected(mouse) {
+    this.selectedArea = null
     const dx = mouse.x - this.x;
     const dy = mouse.y - this.y;
-    const angle = -this.rotationAngle;
+    const angle = -this.angle;
     const localX = dx * Math.cos(angle) - dy * Math.sin(angle);
     const localY = dx * Math.sin(angle) + dy * Math.cos(angle);
-    if (
+    if(          Math.abs(localX - this.maxX + this.x) < adapt(10) &&
+          Math.abs(localY - this.maxY + this.y) < adapt(10)){
+            this.selectedArea = "scale"
+    }
+    else if (
       localX >= this.minX - this.x &&
       localX <= this.maxX - this.x &&
       localY >= this.minY - this.y &&
       localY <= this.maxY - this.y
     ) {
-      return true;
-      console.log("true");
+      this.selectedArea = "normal"
     }
-    return false;
+    console.log(this.selectedArea)
+    return this.selectedArea !== null
   }
 
   formatSelected(mouse) {
     if (this.isDoubleClicked) {
-      this.rotationAngle =
+      this.angle =
         Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
     } else {
+      if(this.selectedArea === "normal"){
       this.list.forEach((l) =>
         l.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
       );
+      }else{
+
+const lastWidth = lastMouseX - this.x;
+const lastHeight = lastMouseY - this.y;
+
+const currentWidth = mouse.x - this.x;
+const currentHeight = mouse.y - this.y;
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+        const localMouseX = currentWidth * cos - currentHeight * sin;
+    const localMouseY = currentWidth * sin + currentHeight * cos;
+  
+        const lastlocalMouseX = lastWidth * cos - lastHeight * sin;
+    const lastlocalMouseY = lastWidth * sin + lastHeight * cos;
+  
+const scaleX = localMouseX / lastlocalMouseX;
+const scaleY = localMouseY / lastlocalMouseY;
+
+this.list.forEach((l) => {
+  // 1. Get distance from center
+  const pos = l.whereToSnap().pos;
+  const dx = pos.x - this.x;
+  const dy = pos.y - this.y;
+
+
+  l.changeLocation(this.x + dx * scaleX, "x");
+  l.changeLocation(this.y + dy * scaleY, "y");
+  l.changeLocation(scaleX, "scaleX");
+  l.changeLocation(scaleY, "scaleY");
+
+});
+      }
+
     }
+  }
+  showClone(){
+        let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+clone.list = this.list.map(obj => obj.showClone());
+    return clone;
   }
   doubleClicked(mouse) {
     isRotatingObject = true;
@@ -3811,7 +3934,106 @@ class Group {
     return true;
   }
   formatProperties() {
-    console.log("yah");
+    propertiesBar.innerHTML = `
+    <button class="btn" id="ungroup-btn">UnGroup</button>
+    <section class="coord-section">
+          <h3>Coordinate</h3>
+          <div class="two-grid coord-grid">
+            <label class="field">
+              <span class="field-label">X</span>
+              <input type="number" name="x" value="${changeValues(this.minX)}">
+            </label>
+            <label class="field">
+              <span class="field-label">Y</span>
+              <input type="number" name="y" value="${changeValues(this.minY)}">
+            </label>
+            <label class="field">
+              <span class="field-label">W</span>
+              <input type="number" name="width" value="${changeValues(this.maxX - this.minX)}">
+            </label>
+            <label class="field">
+              <span class="field-label">H</span>
+              <input type="number" name="height" value="${changeValues(this.maxY - this.minY)}">
+            </label>
+                  <label class="field">
+        <span class="field-label">Rotation</span>
+        <input type="number" name="angle" value="${radToDeg(this.angle, "deg")}">
+      </label>
+                  <label class="field">
+        <span class="field-label">Opacity</span>
+        <input type="number" name="opacity" min="0" max="100" value="100">
+      </label>
+          </div>
+        </section>
+        
+  ${super.similarProptiesOutput()}
+
+    `
+    document.getElementById("ungroup-btn").addEventListener("click", () => {
+      this.list.forEach(l=> objects.push(l))
+      const index = objects.indexOf(this)
+      objects.splice(index, 1);
+      selectedObj = null
+      Tools("moveTool")
+    })
+    super.similarPropties();
+        propertiesBar
+      .querySelectorAll("input[type='text'],input[type='number']")
+      .forEach((input) => {
+        input.addEventListener(
+          "input",
+          (e) => this.changeProperties(e)
+        );
+      });
+    propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
+      input.addEventListener(
+        "change",
+       (e) => this.changeProperties(e)
+      );
+    });
+    requestDraw()
+  }
+  changeProperties(e){
+    const name = e.target.name;
+    if (name === "angle") {
+      this.angle = degToRad(Number(e.target.value) || 0);
+    }
+    else if(name==="x"){
+      const value = backValues(Number(e.target.value) || 0);
+      const diff = value - this.minX;
+      // this.x = diff + this.x;
+      this.list.forEach(l=>l.moveClip(diff,0))
+    }
+    else if(name==="y"){
+      const value = backValues(Number(e.target.value) || 0);
+      const diff = value - this.minY;
+      // this.y = diff + this.y;
+      this.list.forEach(l=>l.moveClip(0,diff))
+    }
+    else if(name==="width"){
+      const value = backValues(Number(e.target.value) || 0);
+      const diff = value/(this.maxX - this.minX);
+      this.list.forEach(l=>l.changeLocation(diff,"scaleX"))
+    }
+    else if(name==="height"){
+      const value = backValues(Number(e.target.value) || 0);
+      const diff = value/(this.maxY - this.minY);
+      this.list.forEach(l=>l.changeLocation(diff,"scaleY"))
+    }
+    else if(name==="opacity"){
+      const value = Number(e.target.value) || 0;
+      this.list.forEach(l=>l.opacity = value)
+      this.opacity= value
+    }
+    else if(e.target.type === "number"){
+       const value = backValues(Number(e.target.value) || 0);
+        this.list.forEach(l=>l[name] = value)
+        this[name] = value
+    }else{
+      this.list.forEach(l=>l[name] = e.target.value)
+      this[name] = e.target.value
+    }
+    requestDraw()
   }
 }
 function blobToBase64(blob) {
@@ -3902,14 +4124,7 @@ document.getElementById("paperSize").addEventListener("change", (e) => {
   }
   canvasSize();
 });
-document.querySelectorAll(".leftSidebar button").forEach((button) => {
-  button.addEventListener("click", () => {
-    button.classList.add("active");
-    document.querySelectorAll(".leftSidebar button").forEach((butt) => {
-      if (butt !== button) butt.classList.remove("active");
-    });
-  });
-});
+
 width.addEventListener("input", (e) => {
   const widthValue = backValues(e.target.value);
   const heightValue = backValues(height.value);
@@ -3999,13 +4214,23 @@ function addImage(e) {
   };
 }
 function Tools(tool) {
+  document.querySelectorAll(".leftSidebar button").forEach((button) => {
+    if(pen !== null){
+      if(button.id !== "addLine") button.classList.remove("active")
+      else button.classList.add("active")
+    }else{
+      if(button.id === tool) button.classList.add("active")
+      else button.classList.remove("active")
+    }
+});
+if(pen !== null) return
       isDrawing = null;
       multipleSelect = false;
   multipleSelectArr = [];
 
   duplicateClicked = false;
   cloneObj = null;
-  pen = null;
+
   switch (tool) {
     case "moveTool":
         canvas.style.cursor = "default";
@@ -4133,6 +4358,8 @@ function Tools(tool) {
     requestDraw()
   }
       break;
+case "add-image":
+  return
 
     case "pageTo":
       propertiesBar.innerHTML = `
@@ -4550,7 +4777,11 @@ last = {
           other[oth].changeLocation(value - otherSnap.height, "y");
       }
     }
+
     requestDraw()
+          undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
+
 }
 function group() {
   if (multipleSelectArr.length > 1) {
@@ -4562,6 +4793,8 @@ function group() {
     multipleSelectArr = [];
     multipleSelect = false;
     objects.push(newGroup);
+    selectedObj = newGroup;
+    requestDraw()
   }
 }
 function getMousePos(canvas, evt) {
@@ -4760,7 +4993,6 @@ function requestDraw() {
 }
 function cMousedown(event){
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
-console.log(pos)
   isDraggingObject = false;
   isPanning = false;
 
