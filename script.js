@@ -54,31 +54,31 @@ let panX = 0;
 let panY = 0;
 let multipleSelectCoor = {
   start: { x: 0, y: 0 },
-  end: { x: 0, y: 0 }
+  end: { x: 0, y: 0 },
 };
 let isPanning = false;
 let startX = 0;
 let startY = 0;
-let drawingImage = null 
+let drawingImage = null;
 let selectedObj = null;
 let clipped = null;
 let thresholds = {
-  selected : () => adapt(2),
-  normalMode : () => adapt(30),
-  threshold : () => adapt(10),
-  pointHold : () => adapt(10),
-  slineWidth : () => adapt(2),
-  sLineDashWidth : () => adapt(5),
+  selected: () => adapt(2),
+  normalMode: () => adapt(30),
+  threshold: () => adapt(10),
+  pointHold: () => adapt(10),
+  slineWidth: () => adapt(2),
+  sLineDashWidth: () => adapt(5),
   sLineDashSpacing: () => adapt(3),
   sWidth: () => adapt(4),
   clipWidth: () => adapt(4),
   drawPenControls: () => adapt(20),
-  sColor:"#0000ff",
+  sColor: "#0000ff",
   normalModeColor: "#0000ff88",
   clipColor: "#ff0000",
-
-}
-let defaultFonts =[  "serif",
+};
+let defaultFonts = [
+  "serif",
   "sans-serif",
   "monospace",
   "cursive",
@@ -86,10 +86,9 @@ let defaultFonts =[  "serif",
   "system-ui",
   "emoji",
   "math",
-  "fangsong",]
-let allFonts = [
-...defaultFonts
+  "fangsong",
 ];
+let allFonts = [...defaultFonts];
 
 fetch(
   "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8",
@@ -156,7 +155,10 @@ class LineUtils {
       const p = points[i].points;
       const pdx = localMouseX - p.x;
       const pdy = localMouseY - p.y;
-      if (pdx * pdx + pdy * pdy < thresholds.pointHold() * thresholds.pointHold()) {
+      if (
+        pdx * pdx + pdy * pdy <
+        thresholds.pointHold() * thresholds.pointHold()
+      ) {
         return { value: i, type: "pointIndex" };
       }
     }
@@ -167,7 +169,10 @@ class LineUtils {
           const cp = points[i].controls[j];
           const cdx = localMouseX - cp.x;
           const cdy = localMouseY - cp.y;
-          if (cdx * cdx + cdy * cdy < thresholds.pointHold() * thresholds.pointHold()) {
+          if (
+            cdx * cdx + cdy * cdy <
+            thresholds.pointHold() * thresholds.pointHold()
+          ) {
             return {
               value: { curveIndex: i, controlIndex: j },
               type: "curveIndex",
@@ -298,7 +303,12 @@ class LineUtils {
   static drawEditArcs(points, selectedArea, selectedLineIndex) {
     points.forEach((p, i) => {
       ctx.beginPath();
-      ctx.rect(p.points.x - (thresholds.pointHold() /2), p.points.y - (thresholds.pointHold() /2), thresholds.pointHold(), thresholds.pointHold());
+      ctx.rect(
+        p.points.x - thresholds.pointHold() / 2,
+        p.points.y - thresholds.pointHold() / 2,
+        thresholds.pointHold(),
+        thresholds.pointHold(),
+      );
 
       if (selectedArea === "pointIndex" && i === selectedLineIndex)
         ctx.fillStyle = "#0000ff";
@@ -319,7 +329,12 @@ class LineUtils {
           ctx.lineWidth = adapt(2);
           ctx.stroke();
           ctx.beginPath();
-          ctx.rect(cp.x - (thresholds.pointHold() / 2), cp.y - (thresholds.pointHold() / 2), thresholds.pointHold(), thresholds.pointHold());
+          ctx.rect(
+            cp.x - thresholds.pointHold() / 2,
+            cp.y - thresholds.pointHold() / 2,
+            thresholds.pointHold(),
+            thresholds.pointHold(),
+          );
           const isSelected =
             selectedArea === "curveIndex" &&
             selectedLineIndex.curveIndex === i &&
@@ -398,67 +413,69 @@ class Formats {
   constructor() {
     this.scaleX = 1;
     this.scaleY = 1;
-     this.color = ["#ff0000", "#0000ff"];
+    this.color = ["#ff0000", "#0000ff"];
     this.outline = true;
     this.outlineColor = "#00ff00";
     this.outlineThickness = adapt(2);
     this.lineDashWidth = adapt(5);
     this.lineDashSpacing = adapt(3);
-        this.outlineType = [];
+    this.outlineType = [];
     this.isDoubleClicked = false;
-        this.opacity = 100;
-            this.colorFill = "none";
+    this.opacity = 100;
+    this.colorFill = "none";
     this.colorDeg = 0.2;
     this.colorStop = [];
 
-        this.angle = 0;
+    this.angle = 0;
   }
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
       this.outlineType = [];
-      if(this.type = "group"){
-        this.list.forEach(l=>l.outlineType = [])
+      if ((this.type = "group")) {
+        this.list.forEach((l) => (l.outlineType = []));
       }
       this.formatProperties();
     });
     document.querySelector(".dashedb").addEventListener("click", () => {
-                    if(this.type === "group"){
-          this.list.forEach(l=>{
-            l.lineDashWidth = this.lineDashWidth
-        l.lineDashSpacing = this.lineDashSpacing
-          })
-        }
+      if (this.type === "group") {
+        this.list.forEach((l) => {
+          l.lineDashWidth = this.lineDashWidth;
+          l.lineDashSpacing = this.lineDashSpacing;
+        });
+      }
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-      if(this.type === "group"){
-        this.list.forEach(l=>l.outlineType = [l.lineDashWidth, l.lineDashSpacing])
+      if (this.type === "group") {
+        this.list.forEach(
+          (l) => (l.outlineType = [l.lineDashWidth, l.lineDashSpacing]),
+        );
       }
       this.formatProperties();
     });
     document.getElementById("outline").addEventListener("click", () => {
       this.outline = !this.outline;
-      if(this.type === "group"){
-                this.list.forEach(l=>l.outline = this.outline)
+      if (this.type === "group") {
+        this.list.forEach((l) => (l.outline = this.outline));
       }
       this.formatProperties();
     });
     if (this.colorFill === "linear" || this.colorFill === "radial") {
-              if(this.type === "group"){
-          this.list.forEach(l=>{
-            l.color = this.color
-        l.colorStop = this.colorStop
-        l.colorDeg = this.colorDeg
-          })
-        }
+      if (this.type === "group") {
+        this.list.forEach((l) => {
+          l.color = this.color;
+          l.colorStop = this.colorStop;
+          l.colorDeg = this.colorDeg;
+        });
+      }
       document.querySelector(".addColor").addEventListener("click", () => {
         this.color.push("#ff0000");
         this.colorStop = [];
-        if(this.type === "group"){
-          this.list.forEach(l=>{
-                   this.color.push("#ff0000");
-        this.colorStop = []; 
-          })
+        if (this.type === "group") {
+          this.list.forEach((l) => {
+            this.color.push("#ff0000");
+            this.colorStop = [];
+          });
         }
-        requestDraw()
+        this.addObject();
         this.formatProperties();
       });
       document.querySelectorAll(".color-div").forEach((div, i) => {
@@ -466,28 +483,28 @@ class Formats {
           .querySelector("input[type='number']")
           .addEventListener("input", (e) => {
             this.colorStop[i] = e.target.value;
-                  if(this.type === "group"){
-                this.list.forEach(l=>l.colorStop[i] = e.target.value)
-      }
+            if (this.type === "group") {
+              this.list.forEach((l) => (l.colorStop[i] = e.target.value));
+            }
           });
         div
           .querySelector("input[type='color']")
           .addEventListener("input", (e) => {
             this.color[i] = e.target.value;
-                              if(this.type === "group"){
-                this.list.forEach(l=>l.color[i] = e.target.value)
-      }
+            if (this.type === "group") {
+              this.list.forEach((l) => (l.color[i] = e.target.value));
+            }
           });
         div.querySelector("button").addEventListener("click", (e) => {
           this.color.splice(i, 1);
           this.colorStop = [];
-                            if(this.type === "group"){
-                this.list.forEach(l=>{
-                            l.color.splice(i, 1);
-          l.colorStop = [];
-                })
-      }
-          requestDraw()
+          if (this.type === "group") {
+            this.list.forEach((l) => {
+              l.color.splice(i, 1);
+              l.colorStop = [];
+            });
+          }
+          this.addObject();
           this.formatProperties();
         });
       });
@@ -495,14 +512,15 @@ class Formats {
 
     document.querySelector(".color-select").addEventListener("change", (e) => {
       this.colorFill = e.target.value;
-            if(this.type === "group"){
-                this.list.forEach(l=>l.colorFill = this.colorFill)
+      if (this.type === "group") {
+        this.list.forEach((l) => (l.colorFill = this.colorFill));
       }
+      this.addObject();
       this.formatProperties();
     });
   }
-similarProptiesOutput() {
-  return `
+  similarProptiesOutput() {
+    return `
     <section class="fill-section">
       <h3>Fill</h3>
 
@@ -532,7 +550,7 @@ similarProptiesOutput() {
               <div class="color-div">
                 <div style="text-wrap:nowrap; padding:0.5rem 1rem">Index: ${i}</div>
 
-                <label>
+                <label style="display:flex;flex-direaction:row;gap:0.5rem">
                   Stop:
                   <input
                     type="number"
@@ -546,14 +564,14 @@ similarProptiesOutput() {
                 <input type="color" value="${color.length > 7 ? color.slice(0, 7) : color}">
                 <button></button>
               </div>
-            `
+            `,
           )
           .join("")}
 
         <section class="color-sec">
           <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
 
-          <label style="display:${this.colorFill === "linear" ? "flex" : "none"}">
+          <label  style="display:${this.colorFill === "linear" ? "flex" : "none"}">
             Rotation
             <input type="number" name="colorDeg" value="${radToDeg(this.colorDeg, "deg")}">deg
           </label>
@@ -600,7 +618,7 @@ similarProptiesOutput() {
       </section>
     </section>
   `;
-}
+  }
 
   lineFormat(localMouseX, localMouseY, localDeltaX, localDeltaY) {
     if (this.selectedArea === "lineIndex") {
@@ -664,7 +682,7 @@ similarProptiesOutput() {
         const length = Math.sqrt(dx * dx + dy * dy);
         const ux = dx / length;
         const uy = dy / length;
-        const handleLength =length * 0.2;
+        const handleLength = length * 0.2;
         const control1 = {
           x: localMouseX - ux * handleLength,
           y: localMouseY - uy * handleLength,
@@ -862,7 +880,6 @@ class Rectangle extends Formats {
     ];
     this.selectedLineIndex = null;
     this.mode = "edit";
-
   }
   addObject() {
     const xs = this.points.map((p) => p.points.x);
@@ -934,7 +951,10 @@ class Rectangle extends Formats {
       ctx.beginPath();
       ctx.lineWidth = thresholds.slineWidth();
       ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([thresholds.sLineDashWidth(), thresholds.sLineDashSpacing()]);
+      ctx.setLineDash([
+        thresholds.sLineDashWidth(),
+        thresholds.sLineDashSpacing(),
+      ]);
       if (this.roundedOrbeveled !== "shaped") {
         ctx.strokeRect(
           -this.width / 2 - thresholds.sWidth() / 2,
@@ -952,7 +972,12 @@ class Rectangle extends Formats {
         if (this.mode === "normal") {
           ctx.beginPath();
           ctx.fillStyle = thresholds.normalModeColor;
-          ctx.fillRect(this.maxX - (thresholds.normalMode()/2), this.maxY - (thresholds.normalMode()/2), thresholds.normalMode(), thresholds.normalMode());
+          ctx.fillRect(
+            this.maxX - thresholds.normalMode() / 2,
+            this.maxY - thresholds.normalMode() / 2,
+            thresholds.normalMode(),
+            thresholds.normalMode(),
+          );
         }
       }
 
@@ -971,7 +996,6 @@ class Rectangle extends Formats {
       });
       ctx.restore();
     }
-
   }
   colorType() {
     const colors = this.color.map((color) =>
@@ -1108,25 +1132,25 @@ class Rectangle extends Formats {
         return true;
       } else if (this.mode === "normal") {
         if (
-          Math.abs(localMouseX - this.maxX) < (thresholds.normalMode()/2) &&
-          Math.abs(localMouseY - this.maxY) < (thresholds.normalMode()/2)
+          Math.abs(localMouseX - this.maxX) < thresholds.normalMode() / 2 &&
+          Math.abs(localMouseY - this.maxY) < thresholds.normalMode() / 2
         ) {
           this.selectedArea = "scale";
 
           return true;
         }
-        ctx.save()
-        ctx.setTransform(scale,0,0,scale,panX,panY)
-            const centerX = this.x + this.width / 2;
-    const centerY = this.y + this.height / 2;
-    ctx.translate(centerX, centerY);
-    ctx.rotate(this.angle);
-    ctx.scale(this.scaleX, this.scaleY);
+        ctx.save();
+        ctx.setTransform(scale, 0, 0, scale, panX, panY);
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        ctx.translate(centerX, centerY);
+        ctx.rotate(this.angle);
+        ctx.scale(this.scaleX, this.scaleY);
         this.createPath();
         const worldMouse = {
-  x: (mouse.x - panX) / scale,
-  y: (mouse.y - panY) / scale
-};
+          x: (mouse.x - panX) / scale,
+          y: (mouse.y - panY) / scale,
+        };
         const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
         ctx.restore();
 
@@ -1180,22 +1204,22 @@ class Rectangle extends Formats {
         };
         this.angle =
           Math.atan2(mouse.y - center.y, mouse.x - center.x) - Math.PI / 2;
-      }else if (this.selectedArea === "scale") {
-      const lastWidth = lastMouseX - this.x;
-      const lastHeight = lastMouseY - this.y;
-      const currentWidth = mouse.x - this.x;
-      const currentHeight = mouse.y - this.y;
-      const scaleX = currentWidth / lastWidth;
-      const scaleY = currentHeight / lastHeight;
-      this.points.forEach((p) => {
-        p.points.x = p.points.x * scaleX;
-        p.points.y = p.points.y * scaleY;
-        p.controls[0].x = p.controls[0].x * scaleX;
-        p.controls[0].y = p.controls[0].y * scaleY;
-        p.controls[1].x = p.controls[1].x * scaleX;
-        p.controls[1].y = p.controls[1].y * scaleY;
-      });
-        } else {
+      } else if (this.selectedArea === "scale") {
+        const lastWidth = lastMouseX - this.x;
+        const lastHeight = lastMouseY - this.y;
+        const currentWidth = mouse.x - this.x;
+        const currentHeight = mouse.y - this.y;
+        const scaleX = currentWidth / lastWidth;
+        const scaleY = currentHeight / lastHeight;
+        this.points.forEach((p) => {
+          p.points.x = p.points.x * scaleX;
+          p.points.y = p.points.y * scaleY;
+          p.controls[0].x = p.controls[0].x * scaleX;
+          p.controls[0].y = p.controls[0].y * scaleY;
+          p.controls[1].x = p.controls[1].x * scaleX;
+          p.controls[1].y = p.controls[1].y * scaleY;
+        });
+      } else {
         if (this.roundedOrbeveled !== "shaped") {
           super.rectFormat(mouse);
         }
@@ -1208,7 +1232,6 @@ class Rectangle extends Formats {
             );
           }
         }
-
       }
     }
   }
@@ -1226,7 +1249,7 @@ class Rectangle extends Formats {
   }
 
   formatProperties() {
-propertiesBar.innerHTML = `
+    propertiesBar.innerHTML = `
   <section class="coord-section">
     <h3>Coordinate</h3>
 
@@ -1360,59 +1383,59 @@ propertiesBar.innerHTML = `
     });
     document.querySelector(".shapetool").addEventListener("click", () => {
       this.roundedOrbeveled = "shaped";
-    this.points = [
-      {
-        points: { x: -this.width / 2, y: -this.height / 2 },
-        edgeModes: null,
-        controls: [
-          { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
-          { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
-        ],
-        cornerRadius: 0,
-      },
-      {
-        points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
-        edgeModes: null,
-        controls: [
-          {
-            x: -this.width / 2 + this.width,
-            y: -this.height / 2 + this.height * 0.25,
-          },
-          {
-            x: -this.width / 2 + this.width,
-            y: -this.height / 2 + this.height * 0.75,
-          },
-        ],
-        cornerRadius: 0,
-      },
-      {
-        points: {
-          x: -this.width / 2 + this.width,
-          y: -this.height / 2 + this.height,
+      this.points = [
+        {
+          points: { x: -this.width / 2, y: -this.height / 2 },
+          edgeModes: null,
+          controls: [
+            { x: -this.width / 2 + this.width * 0.25, y: -this.height / 2 },
+            { x: -this.width / 2 + this.width * 0.75, y: -this.height / 2 },
+          ],
+          cornerRadius: 0,
         },
-        edgeModes: null,
-        controls: [
-          {
-            x: -this.width / 2 + this.width * 0.75,
+        {
+          points: { x: -this.width / 2 + this.width, y: -this.height / 2 },
+          edgeModes: null,
+          controls: [
+            {
+              x: -this.width / 2 + this.width,
+              y: -this.height / 2 + this.height * 0.25,
+            },
+            {
+              x: -this.width / 2 + this.width,
+              y: -this.height / 2 + this.height * 0.75,
+            },
+          ],
+          cornerRadius: 0,
+        },
+        {
+          points: {
+            x: -this.width / 2 + this.width,
             y: -this.height / 2 + this.height,
           },
-          {
-            x: -this.width / 2 + this.width * 0.25,
-            y: -this.height / 2 + this.height,
-          },
-        ],
-        cornerRadius: 0,
-      },
-      {
-        points: { x: -this.width / 2, y: -this.height / 2 + this.height },
-        edgeModes: null,
-        controls: [
-          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
-          { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
-        ],
-        cornerRadius: 0,
-      },
-    ];
+          edgeModes: null,
+          controls: [
+            {
+              x: -this.width / 2 + this.width * 0.75,
+              y: -this.height / 2 + this.height,
+            },
+            {
+              x: -this.width / 2 + this.width * 0.25,
+              y: -this.height / 2 + this.height,
+            },
+          ],
+          cornerRadius: 0,
+        },
+        {
+          points: { x: -this.width / 2, y: -this.height / 2 + this.height },
+          edgeModes: null,
+          controls: [
+            { x: -this.width / 2, y: -this.height / 2 + this.height * 0.75 },
+            { x: -this.width / 2, y: -this.height / 2 + this.height * 0.25 },
+          ],
+          cornerRadius: 0,
+        },
+      ];
       this.cornerRadius = 0;
       this.scaleX = 1;
       this.scaleY = 1;
@@ -1445,119 +1468,112 @@ propertiesBar.innerHTML = `
     propertiesBar
       .querySelectorAll("input[type='text'],input[type='number']")
       .forEach((input) => {
-        input.addEventListener(
-          "input",
-          (e) => this.changeProperties(e)
-        );
+        input.addEventListener("input", (e) => this.changeProperties(e));
       });
     propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
-      input.addEventListener(
-        "change",
-       (e) => this.changeProperties(e)
-      );
+      input.addEventListener("change", (e) => this.changeProperties(e));
     });
-    requestDraw()
+    requestDraw();
   }
 
-changeProperties(e) {
-  const name = e.target.name;
+  changeProperties(e) {
+    const name = e.target.name;
 
-  if (name === "angle") {
-    this.angle = radToDeg(Number(e.target.value) || 0, "rad");
-  }
-
-  if (name === "bgColor") {
-    this.color[0] = e.target.value;
-  }
-
-  if (name === "colorDeg") {
-    this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
-  }
-
-  if (name === "outlineColor") {
-    this.outlineColor = e.target.value;
-  }
-
-  if (e.target.type === "number") {
-    const value = backValues(Number(e.target.value) || 0);
-if (name === "outlineThickness") this.outlineThickness = value;
-
-    if (name === "x") {
-      this.x =
-        this.roundedOrbeveled === "shaped"
-          ? value - this.minX - this.width / 2
-          : value;
+    if (name === "angle") {
+      this.angle = radToDeg(Number(e.target.value) || 0, "rad");
     }
 
-    if (name === "y") {
-      this.y =
-        this.roundedOrbeveled === "shaped"
-          ? value - this.minY - this.height / 2
-          : value;
+    if (name === "bgColor") {
+      this.color[0] = e.target.value;
     }
 
-    if (name === "cornerRadius") {
-      if (
-        this.selectedArea === "pointIndex" &&
-        this.points[this.selectedLineIndex].edgeModes === "rounded"
-      ) {
-        this.points[this.selectedLineIndex].cornerRadius = value;
-      } else {
-        this.cornerRadius = value;
+    if (name === "colorDeg") {
+      this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
+    }
+
+    if (name === "outlineColor") {
+      this.outlineColor = e.target.value;
+    }
+
+    if (e.target.type === "number") {
+      const value = backValues(Number(e.target.value) || 0);
+      if (name === "outlineThickness") this.outlineThickness = value;
+
+      if (name === "x") {
+        this.x =
+          this.roundedOrbeveled === "shaped"
+            ? value - this.minX - this.width / 2
+            : value;
+      }
+
+      if (name === "y") {
+        this.y =
+          this.roundedOrbeveled === "shaped"
+            ? value - this.minY - this.height / 2
+            : value;
+      }
+
+      if (name === "cornerRadius") {
+        if (
+          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+        ) {
+          this.points[this.selectedLineIndex].cornerRadius = value;
+        } else {
+          this.cornerRadius = value;
+        }
+      }
+
+      if (name === "opacity") {
+        this.opacity = Number(e.target.value) || 0;
+      }
+
+      if (name === "width") {
+        if (this.roundedOrbeveled === "shaped") {
+          const base = this.maxX - this.minX || 1;
+          const scaleX = value / base;
+
+          this.points.forEach((p) => {
+            p.points.x *= scaleX;
+            p.controls[0].x *= scaleX;
+            p.controls[1].x *= scaleX;
+          });
+        } else {
+          this.width = value;
+        }
+      }
+
+      if (name === "height") {
+        if (this.roundedOrbeveled === "shaped") {
+          const base = this.maxY - this.minY || 1;
+          const scaleY = value / base;
+
+          this.points.forEach((p) => {
+            p.points.y *= scaleY;
+            p.controls[0].y *= scaleY;
+            p.controls[1].y *= scaleY;
+          });
+        } else {
+          this.height = value;
+        }
+      }
+
+      if (name === "lineDashWidth") {
+        this.lineDashWidth = value;
+      }
+
+      if (name === "lineDashSpacing") {
+        this.lineDashSpacing = value;
       }
     }
 
-    if (name === "opacity") {
-      this.opacity = Number(e.target.value) || 0;
+    if (this.outlineType.length !== 0) {
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     }
 
-    if (name === "width") {
-      if (this.roundedOrbeveled === "shaped") {
-        const base = this.maxX - this.minX || 1;
-        const scaleX = value / base;
-
-        this.points.forEach((p) => {
-          p.points.x *= scaleX;
-          p.controls[0].x *= scaleX;
-          p.controls[1].x *= scaleX;
-        });
-      } else {
-        this.width = value;
-      }
-    }
-
-    if (name === "height") {
-      if (this.roundedOrbeveled === "shaped") {
-        const base = this.maxY - this.minY || 1;
-        const scaleY = value / base;
-
-        this.points.forEach((p) => {
-          p.points.y *= scaleY;
-          p.controls[0].y *= scaleY;
-          p.controls[1].y *= scaleY;
-        });
-      } else {
-        this.height = value;
-      }
-    }
-
-    if (name === "lineDashWidth") {
-      this.lineDashWidth = value;
-    }
-
-    if (name === "lineDashSpacing") {
-      this.lineDashSpacing = value;
-    }
+    requestDraw();
+    undoObject.push(cloneObject(objects));
   }
-
-  if (this.outlineType.length !== 0) {
-    this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-  }
-
-  requestDraw()
-  undoObject.push(cloneObject(objects));
-
-}
 
   drawBeveledRect(x, y, width, height, bevel) {
     ctx.beginPath();
@@ -1619,19 +1635,19 @@ if (name === "outlineThickness") this.outlineThickness = value;
         clip.changeLocation(lastLocation, "x");
       });
       this.x = value;
-    } else if(type === "y"){ {
-      this.clips.forEach((clip) => {
-        const lastLocation = clip.whereToSnap().pos.y - this.y + value;
-        clip.changeLocation(lastLocation, "y");
-      });
+    } else if (type === "y") {
+      {
+        this.clips.forEach((clip) => {
+          const lastLocation = clip.whereToSnap().pos.y - this.y + value;
+          clip.changeLocation(lastLocation, "y");
+        });
 
-      this.y = value;
-    }}
-    else if(type === "scaleX"){
-      this.width *=value
-    }
-    else if(type === "scaleY"){
-      this.height *=value
+        this.y = value;
+      }
+    } else if (type === "scaleX") {
+      this.width *= value;
+    } else if (type === "scaleY") {
+      this.height *= value;
     }
   }
 
@@ -1655,7 +1671,6 @@ if (name === "outlineThickness") this.outlineThickness = value;
       return true;
     }
   }
-
 }
 
 class Ellipse extends Formats {
@@ -1712,7 +1727,10 @@ class Ellipse extends Formats {
       ctx.beginPath();
       ctx.lineWidth = thresholds.slineWidth();
       ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([thresholds.sLineDashWidth(), thresholds.sLineDashSpacing()]);
+      ctx.setLineDash([
+        thresholds.sLineDashWidth(),
+        thresholds.sLineDashSpacing(),
+      ]);
       ctx.strokeRect(
         -this.radiusX,
         -this.radiusY,
@@ -1837,9 +1855,9 @@ class Ellipse extends Formats {
     super.circFormat(mouse, x, y);
   }
   formatProperties() {
-    const pie = "images/pie.png"
-    const curveEnd = "images/curveEnd.png"
-propertiesBar.innerHTML = `
+    const pie = "images/pie.png";
+    const curveEnd = "images/curveEnd.png";
+    propertiesBar.innerHTML = `
   <section class="coord-section">
     <h3>Coordinate</h3>
 
@@ -1942,60 +1960,58 @@ propertiesBar.innerHTML = `
         1000,
       );
     });
-    requestDraw()
+    requestDraw();
   }
-changeProperties(e) {
-  const name = e.target.name;
+  changeProperties(e) {
+    const name = e.target.name;
 
-  if (name === "angle") {
-    this.angle = radToDeg(Number(e.target.value) || 0, "rad");
-  }
-
-  if (name === "bgColor") {
-    this.color[0] = e.target.value;
-  }
-
-  if (name === "colorDeg" || name === "arcStart" || name === "arcEnd") {
-    this[name] = radToDeg(Number(e.target.value) || 0, "rad");
-  }
-
-  if (name === "outlineColor") {
-    this.outlineColor = e.target.value;
-  }
-
-  if (e.target.type === "number") {
-    const value = backValues(Number(e.target.value) || 0);
-
-    if (!isNaN(value) && value !== null) {
-
-      if (name === "x") {
-        this.x = value + this.radiusX;
-      }
-
-      if (name === "y") {
-        this.y = value + this.radiusY;
-      }
-
-      if (name === "opacity") {
-        this.opacity = Number(e.target.value) || 0;
-      }
-
-      if (name !== "x" && name !== "y" && name !== "opacity") {
-        this[name] = value;
-      }
-
+    if (name === "angle") {
+      this.angle = radToDeg(Number(e.target.value) || 0, "rad");
     }
+
+    if (name === "bgColor") {
+      this.color[0] = e.target.value;
+    }
+
+    if (name === "colorDeg" || name === "arcStart" || name === "arcEnd") {
+      this[name] = radToDeg(Number(e.target.value) || 0, "rad");
+    }
+
+    if (name === "outlineColor") {
+      this.outlineColor = e.target.value;
+    }
+
+    if (e.target.type === "number") {
+      const value = backValues(Number(e.target.value) || 0);
+
+      if (!isNaN(value) && value !== null) {
+        if (name === "x") {
+          this.x = value + this.radiusX;
+        }
+
+        if (name === "y") {
+          this.y = value + this.radiusY;
+        }
+
+        if (name === "opacity") {
+          this.opacity = Number(e.target.value) || 0;
+        }
+
+        if (name !== "x" && name !== "y" && name !== "opacity") {
+          this[name] = value;
+        }
+      }
+    }
+
+    if (this.outlineType.length !== 0) {
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+    }
+
+    requestDraw();
+
+    undoObject.push(cloneObject(objects));
+    undoText.push("object");
   }
-
-  if (this.outlineType.length !== 0) {
-    this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-  }
-
-  requestDraw();
-
-  undoObject.push(cloneObject(objects));
-  undoText.push("object");
-}
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.clips = this.clips.map((c) => c.showClone());
@@ -2021,8 +2037,12 @@ changeProperties(e) {
   changeLocation(value, type) {
     if (type === "x") {
       this.x = value + this.radiusX;
-    } else {
+    } else if (type === "y") {
       this.y = value + this.radiusY;
+    } else if (type === "scaleX") {
+      this.radiusX *= value;
+    } else if (type === "scaleY") {
+      this.radiusY *= value;
     }
   }
 }
@@ -2111,7 +2131,10 @@ class Polygon extends Formats {
       ctx.beginPath();
       ctx.lineWidth = thresholds.slineWidth();
       ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([thresholds.sLineDashWidth(), thresholds.sLineDashSpacing()]);
+      ctx.setLineDash([
+        thresholds.sLineDashWidth(),
+        thresholds.sLineDashSpacing(),
+      ]);
       ctx.strokeRect(
         this.minX,
         this.minY,
@@ -2121,7 +2144,12 @@ class Polygon extends Formats {
       if (this.mode === "normal") {
         ctx.beginPath();
         ctx.fillStyle = thresholds.normalModeColor;
-        ctx.fillRect(this.maxX - (thresholds.normalMode() /2), this.maxY - (thresholds.normalMode() /2), thresholds.normalMode(), thresholds.normalMode());
+        ctx.fillRect(
+          this.maxX - thresholds.normalMode() / 2,
+          this.maxY - thresholds.normalMode() / 2,
+          thresholds.normalMode(),
+          thresholds.normalMode(),
+        );
       }
     }
 
@@ -2220,45 +2248,45 @@ class Polygon extends Formats {
       return true;
     } else if (this.mode === "normal") {
       if (
-        Math.abs(localX - this.maxX) < (thresholds.normalMode()/2) &&
-        Math.abs(localY - this.maxY) < (thresholds.normalMode()/2)
+        Math.abs(localX - this.maxX) < thresholds.normalMode() / 2 &&
+        Math.abs(localY - this.maxY) < thresholds.normalMode() / 2
       ) {
         this.selectedArea = "scale";
 
         return true;
       }
-ctx.save();
+      ctx.save();
 
-ctx.translate(this.x, this.y);
-ctx.rotate(this.angle);
-ctx.scale(this.scaleX, this.scaleY);
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.scale(this.scaleX, this.scaleY);
 
-ctx.beginPath();
+      ctx.beginPath();
 
-let edgeCurve = false;
+      let edgeCurve = false;
 
-this.points.forEach((p) => {
-  if (p.edgeModes !== null) edgeCurve = true;
-});
+      this.points.forEach((p) => {
+        if (p.edgeModes !== null) edgeCurve = true;
+      });
 
-if (edgeCurve) {
-  LineUtils.drawSmartShape(this.points);
-} else {
-  LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+      if (edgeCurve) {
+        LineUtils.drawSmartShape(this.points);
+      } else {
+        LineUtils.drawRoundedShape(this.points, this.cornerRadius);
 
-  this.points.forEach((p) => {
-    p.cornerRadius = this.cornerRadius;
-  });
-}
+        this.points.forEach((p) => {
+          p.cornerRadius = this.cornerRadius;
+        });
+      }
 
-const worldMouse = {
-  x: (mouse.x - panX) / scale,
-  y: (mouse.y - panY) / scale
-};
+      const worldMouse = {
+        x: (mouse.x - panX) / scale,
+        y: (mouse.y - panY) / scale,
+      };
 
-const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
+      const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
 
-ctx.restore();
+      ctx.restore();
 
       if (isInside) {
         this.selectedArea = "Selected";
@@ -2320,7 +2348,7 @@ ctx.restore();
     }
   }
   formatProperties() {
-propertiesBar.innerHTML = `
+    propertiesBar.innerHTML = `
 <section class="coord-section">
   <h3>Coordinate</h3>
 
@@ -2441,98 +2469,98 @@ ${super.similarProptiesOutput()}
         1000,
       );
     });
-    requestDraw()
+    requestDraw();
   }
-changeProperties(e) {
-  const name = e.target.name;
+  changeProperties(e) {
+    const name = e.target.name;
 
-  if (name === "angle") {
-    this.angle = radToDeg(Number(e.target.value) || 0, "rad");
-  }
-
-  if (name === "bgColor") {
-    this.color[0] = e.target.value;
-  }
-
-  if (name === "colorDeg") {
-    this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
-  }
-
-  if (name === "outlineColor") {
-    this.outlineColor = e.target.value;
-  }
-
-  if (e.target.type === "number") {
-    const value = backValues(Number(e.target.value) || 0);
-
-    if (name === "x") {
-      this.x = value - this.minX;
+    if (name === "angle") {
+      this.angle = radToDeg(Number(e.target.value) || 0, "rad");
     }
 
-    if (name === "y") {
-      this.y = value - this.minY;
+    if (name === "bgColor") {
+      this.color[0] = e.target.value;
     }
 
-    if (name === "opacity") {
-      this.opacity = Number(e.target.value) || 0;
+    if (name === "colorDeg") {
+      this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
     }
 
-    if (name === "width") {
-      const scaleX = value / (this.maxX - this.minX || 1);
-
-      this.points.forEach((p) => {
-        p.points.x *= scaleX;
-        p.controls[0].x *= scaleX;
-        p.controls[1].x *= scaleX;
-      });
+    if (name === "outlineColor") {
+      this.outlineColor = e.target.value;
     }
 
-    if (name === "height") {
-      const scaleY = value / (this.maxY - this.minY || 1);
+    if (e.target.type === "number") {
+      const value = backValues(Number(e.target.value) || 0);
 
-      this.points.forEach((p) => {
-        p.points.y *= scaleY;
-        p.controls[0].y *= scaleY;
-        p.controls[1].y *= scaleY;
-      });
-    }
+      if (name === "x") {
+        this.x = value - this.minX;
+      }
 
-    if (name === "sides") {
-      this.sides = Number(e.target.value) || 0;
-      this.points = [];
-    }
+      if (name === "y") {
+        this.y = value - this.minY;
+      }
 
-    if (name === "cornerRadius") {
+      if (name === "opacity") {
+        this.opacity = Number(e.target.value) || 0;
+      }
+
+      if (name === "width") {
+        const scaleX = value / (this.maxX - this.minX || 1);
+
+        this.points.forEach((p) => {
+          p.points.x *= scaleX;
+          p.controls[0].x *= scaleX;
+          p.controls[1].x *= scaleX;
+        });
+      }
+
+      if (name === "height") {
+        const scaleY = value / (this.maxY - this.minY || 1);
+
+        this.points.forEach((p) => {
+          p.points.y *= scaleY;
+          p.controls[0].y *= scaleY;
+          p.controls[1].y *= scaleY;
+        });
+      }
+
+      if (name === "sides") {
+        this.sides = Number(e.target.value) || 0;
+        this.points = [];
+      }
+
+      if (name === "cornerRadius") {
+        if (
+          this.selectedArea === "pointIndex" &&
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+        ) {
+          this.points[this.selectedLineIndex].cornerRadius = value;
+        } else {
+          this.cornerRadius = value;
+        }
+      }
+
       if (
-        this.selectedArea === "pointIndex" &&
-        this.points[this.selectedLineIndex].edgeModes === "rounded"
+        name !== "x" &&
+        name !== "y" &&
+        name !== "opacity" &&
+        name !== "width" &&
+        name !== "height" &&
+        name !== "sides" &&
+        name !== "cornerRadius"
       ) {
-        this.points[this.selectedLineIndex].cornerRadius = value;
-      } else {
-        this.cornerRadius = value;
+        this[name] = value;
       }
     }
 
-    if (
-      name !== "x" &&
-      name !== "y" &&
-      name !== "opacity" &&
-      name !== "width" &&
-      name !== "height" &&
-      name !== "sides" &&
-      name !== "cornerRadius"
-    ) {
-      this[name] = value;
+    if (this.outlineType.length !== 0) {
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     }
-  }
 
-  if (this.outlineType.length !== 0) {
-    this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+    undoObject.push(cloneObject(objects));
+    requestDraw();
   }
-
-  undoObject.push(cloneObject(objects));
-  requestDraw();
-}
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.points = this.points.map((p) => ({
@@ -2564,37 +2592,33 @@ changeProperties(e) {
   }
   whereToSnap() {
     return {
-      x: [
-        this.centerX - this.radiusX,
-        this.centerX,
-        this.centerX + this.radiusX,
-      ],
-      y: [
-        this.centerY - this.radiusY,
-        this.centerY,
-        this.centerY + this.radiusY,
-      ],
+      x: [this.x - this.radiusX, this.x, this.x + this.radiusX],
+      y: [this.y - this.radiusY, this.y, this.y + this.radiusY],
       pos: {
-        x: this.centerX - this.radiusX,
-        y: this.centerY - this.radiusY,
+        x: this.x - this.radiusX,
+        y: this.y - this.radiusY,
         width: this.radiusX * 2,
         height: this.radiusY * 2,
       },
     };
   }
-  RectProperties() {
-    return {
-      x: this.centerX - this.radiusX,
-      y: this.centerY - this.radiusY,
-      width: this.radiusX * 2,
-      height: this.radiusY * 2,
-    };
-  }
   changeLocation(value, type) {
     if (type === "x") {
-      this.centerX = value + this.radiusX;
-    } else {
-      this.centerY = value + this.radiusY;
+      this.x = value + this.radiusX;
+    } else if (type === "y") {
+      this.y = value + this.radiusY;
+    } else if (type === "scaleX") {
+      this.points.forEach((p) => {
+        p.points.x = p.points.x * value;
+        p.controls[0].x = p.controls[0].x * value;
+        p.controls[1].x = p.controls[1].x * value;
+      });
+    } else if (type === "scaleY") {
+      this.points.forEach((p) => {
+        p.points.y = p.points.y * value;
+        p.controls[0].y = p.controls[0].y * value;
+        p.controls[1].y = p.controls[1].y * value;
+      });
     }
   }
 }
@@ -2609,7 +2633,7 @@ class Line extends Formats {
     this.isClosed = false;
     this.clipped = "none";
     this.clips = [];
-    this.type = "line"
+    this.type = "line";
   }
   addObject() {
     if (this.points.length > 0) {
@@ -2627,8 +2651,8 @@ class Line extends Formats {
       ctx.rotate(this.angle);
       ctx.scale(this.scaleX, this.scaleY);
       ctx.beginPath();
-LineUtils.drawSmartShape(this.points,this.isClosed)
-      
+      LineUtils.drawSmartShape(this.points, this.isClosed);
+
       if (this.colorFill !== "none") {
         ctx.fillStyle = this.colorType();
         ctx.fill();
@@ -2651,9 +2675,12 @@ LineUtils.drawSmartShape(this.points,this.isClosed)
         );
       if (selectedObj === this || multipleSelectArr.includes(this)) {
         ctx.beginPath();
-      ctx.lineWidth = thresholds.slineWidth();
-      ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([thresholds.sLineDashWidth(), thresholds.sLineDashSpacing()]);
+        ctx.lineWidth = thresholds.slineWidth();
+        ctx.strokeStyle = thresholds.sColor;
+        ctx.setLineDash([
+          thresholds.sLineDashWidth(),
+          thresholds.sLineDashSpacing(),
+        ]);
         ctx.strokeRect(
           this.minX,
           this.minY,
@@ -2663,7 +2690,12 @@ LineUtils.drawSmartShape(this.points,this.isClosed)
         if (this.mode === "normal") {
           ctx.beginPath();
           ctx.fillStyle = thresholds.normalModeColor;
-          ctx.fillRect(this.maxX - (thresholds.normalMode() / 2), this.maxY - (thresholds.normalMode() / 2), thresholds.normalMode(), thresholds.normalMode());
+          ctx.fillRect(
+            this.maxX - thresholds.normalMode() / 2,
+            this.maxY - thresholds.normalMode() / 2,
+            thresholds.normalMode(),
+            thresholds.normalMode(),
+          );
         }
       }
       ctx.restore();
@@ -2743,12 +2775,17 @@ LineUtils.drawSmartShape(this.points,this.isClosed)
       points: { x: mouse.x - this.x, y: mouse.y - this.y },
       edgeModes: null,
       controls: [
-        { x: mouse.x - this.x - thresholds.drawPenControls(), y: mouse.y - this.y },
-        { x: mouse.x - this.x + thresholds.drawPenControls(), y: mouse.y - this.y },
+        {
+          x: mouse.x - this.x - thresholds.drawPenControls(),
+          y: mouse.y - this.y,
+        },
+        {
+          x: mouse.x - this.x + thresholds.drawPenControls(),
+          y: mouse.y - this.y,
+        },
       ],
       cornerRadius: 0,
     });
-
   }
   whatSelected(mouse) {
     const dx = mouse.x - this.x;
@@ -2786,9 +2823,9 @@ LineUtils.drawSmartShape(this.points,this.isClosed)
       ctx.beginPath();
       LineUtils.drawSmartShape(this.points, this.close);
       const worldMouse = {
-  x: (mouse.x - panX) / scale,
-  y: (mouse.y - panY) / scale
-};
+        x: (mouse.x - panX) / scale,
+        y: (mouse.y - panY) / scale,
+      };
       const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
       ctx.restore();
       if (isInside) {
@@ -2875,7 +2912,7 @@ LineUtils.drawSmartShape(this.points,this.isClosed)
           </section>
       `;
     } else {
-propertiesBar.innerHTML = `
+      propertiesBar.innerHTML = `
   <section class="coord-section">
     <h3>Coordinate</h3>
 
@@ -2958,44 +2995,46 @@ propertiesBar.innerHTML = `
     if (pen) {
       document.querySelector(".done").addEventListener("click", () => {
         pen = null;
-        Tools("moveTool")
+        Tools("moveTool");
         selectedObj = this;
-        let minX = Infinity, minY = Infinity;
-let maxX = -Infinity, maxY = -Infinity;
+        let minX = Infinity,
+          minY = Infinity;
+        let maxX = -Infinity,
+          maxY = -Infinity;
 
-this.points.forEach(p => {
-  // anchor point
-  minX = Math.min(minX, p.points.x);
-  minY = Math.min(minY, p.points.y);
-  maxX = Math.max(maxX, p.points.x);
-  maxY = Math.max(maxY, p.points.y);
+        this.points.forEach((p) => {
+          // anchor point
+          minX = Math.min(minX, p.points.x);
+          minY = Math.min(minY, p.points.y);
+          maxX = Math.max(maxX, p.points.x);
+          maxY = Math.max(maxY, p.points.y);
 
-  // control points (IMPORTANT for curves)
-  p.controls.forEach(c => {
-    minX = Math.min(minX, c.x);
-    minY = Math.min(minY, c.y);
-    maxX = Math.max(maxX, c.x);
-    maxY = Math.max(maxY, c.y);
-  });
-});
-const centerX = (minX + maxX) / 2;
-const centerY = (minY + maxY) / 2;
-this.points.forEach(p => {
-  p.points.x -= centerX;
-  p.points.y -= centerY;
+          // control points (IMPORTANT for curves)
+          p.controls.forEach((c) => {
+            minX = Math.min(minX, c.x);
+            minY = Math.min(minY, c.y);
+            maxX = Math.max(maxX, c.x);
+            maxY = Math.max(maxY, c.y);
+          });
+        });
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        this.points.forEach((p) => {
+          p.points.x -= centerX;
+          p.points.y -= centerY;
 
-  p.controls.forEach(c => {
-    c.x -= centerX;
-    c.y -= centerY;
-  });
-});
-this.x += centerX;
-this.y += centerY;
+          p.controls.forEach((c) => {
+            c.x -= centerX;
+            c.y -= centerY;
+          });
+        });
+        this.x += centerX;
+        this.y += centerY;
         this.formatProperties();
       });
       document.querySelector(".close").addEventListener("click", () => {
-        this.isClosed = !this.isClosed
-      })
+        this.isClosed = !this.isClosed;
+      });
     } else {
       super.similarPropties();
       document.querySelector(".rounded-edge").addEventListener("click", () => {
@@ -3029,14 +3068,14 @@ this.y += centerY;
           1000,
         );
       });
-      requestDraw()
+      requestDraw();
     }
   }
   changeProperties(e) {
     const name = e.target.name;
     if (name === "angle") {
       this.angle = radToDeg(e.target.value, "rad");
-    } 
+    }
     if (name === "bgColor") {
       this.color[0] = e.target.value;
     }
@@ -3078,18 +3117,63 @@ this.y += centerY;
     }
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-    requestDraw()
+    requestDraw();
     undoObject.push(cloneObject(objects));
+  }
+  whereToSnap() {
+    return {
+      x: [
+        this.x - (this.maxX - this.minX) / 2,
+        this.x,
+        this.x + (this.maxX - this.minX) / 2,
+      ],
+      y: [
+        this.y - (this.maxY - this.minY) / 2,
+        this.y,
+        this.y + (this.maxY - this.minY) / 2,
+      ],
+      pos: {
+        x: this.x - (this.maxX - this.minX) / 2,
+        y: this.y - (this.maxY - this.minY) / 2,
+        width: this.maxX - this.minX,
+        height: this.maxY - this.minY,
+      },
+    };
+  }
+  changeLocation(value, type) {
+    if (type === "x") {
+      this.x = value - this.minX;
+    } else if (type === "y") {
+      this.y = value - this.minY;
+    } else if (type === "scaleX") {
+      this.points.forEach((p) => {
+        p.points.x = p.points.x * value;
+        p.controls[0].x = p.controls[0].x * value;
+        p.controls[1].x = p.controls[1].x * value;
+      });
+    } else if (type === "scaleY") {
+      this.points.forEach((p) => {
+        p.points.y = p.points.y * value;
+        p.controls[0].y = p.controls[0].y * value;
+        p.controls[1].y = p.controls[1].y * value;
+      });
+    }
+  }
+  moveClip(x, y) {
+    this.x += x;
+    this.y += y;
+    if (this.clips.length > 0)
+      this.clips.forEach((clip) => clip.moveClip(x, y));
   }
 }
 
-class TextBox extends Formats{
+class TextBox extends Formats {
   constructor(x, y) {
-    super()
+    super();
     this.text = "Add Textbox";
     this.fontSize = adapt(30);
     this.fontFamily = "Arial";
-
+    this.fonts = [];
     this.x = x;
     this.y = y;
     this.fontStyle = "bold";
@@ -3100,96 +3184,94 @@ class TextBox extends Formats{
     this.shadow = false;
     this.shadowStyle = { color: "#000000", blur: 10, offsetX: 5, offsetY: 5 };
     this.lineHeight = adapt(30);
-        this.textArea = "";
+    this.textArea = "";
     this.iterated = false;
-        this.clipped = "none";
-        this.outline = false
-        this.colorFill = "uniform";
+    this.clipped = "none";
+    this.outline = false;
+    this.colorFill = "uniform";
   }
-addObject() {
-  ctx.save();
+  addObject() {
+    ctx.save();
 
-  const lines = this.text.split("\n");
+    const lines = this.text.split("\n");
 
-  ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
-  ctx.textAlign = this.textAllign;
-  ctx.textBaseline = "alphabetic";
+    ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
+    ctx.textAlign = this.textAllign;
+    ctx.textBaseline = "alphabetic";
 
-  let maxWidth = 0;
-  let textHeight = 0;
+    let maxWidth = 0;
+    let textHeight = 0;
 
-  lines.forEach((line) => {
-    const metrics = ctx.measureText(line);
-    maxWidth = Math.max(maxWidth, metrics.width);
-    textHeight =
-      metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-  });
+    lines.forEach((line) => {
+      const metrics = ctx.measureText(line);
+      maxWidth = Math.max(maxWidth, metrics.width);
+      textHeight =
+        metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+    });
 
-  this.width = maxWidth;
-  this.height = textHeight + (lines.length - 1) * this.lineHeight;
+    this.width = maxWidth;
+    this.height = textHeight + (lines.length - 1) * this.lineHeight;
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
 
-  const centerX = this.x + this.width / 2;
-  const centerY = this.y + this.height / 2;
+    ctx.translate(centerX, centerY);
+    ctx.rotate(this.angle);
+    ctx.scale(this.scaleX, this.scaleY);
 
-  ctx.translate(centerX, centerY);
-  ctx.rotate(this.angle);
-  ctx.scale(this.scaleX, this.scaleY);
+    if (this.shadow) {
+      ctx.shadowColor = this.shadowStyle.color;
+      ctx.shadowBlur = this.shadowStyle.blur;
+      ctx.shadowOffsetX = this.shadowStyle.offsetX;
+      ctx.shadowOffsetY = this.shadowStyle.offsetY;
+    }
 
-  if (this.shadow) {
-    ctx.shadowColor = this.shadowStyle.color;
-    ctx.shadowBlur = this.shadowStyle.blur;
-    ctx.shadowOffsetX = this.shadowStyle.offsetX;
-    ctx.shadowOffsetY = this.shadowStyle.offsetY;
-  }
+    const startY = -this.height / 2 + textHeight;
 
-  const startY = -this.height / 2 + textHeight;
+    // ✅ FIX: Correct X position based on alignment
+    let drawX = -this.width / 2; // left default
+    if (this.textAllign === "center") drawX = 0;
+    if (this.textAllign === "right") drawX = this.width / 2;
 
-  // ✅ FIX: Correct X position based on alignment
-  let drawX = -this.width / 2; // left default
-  if (this.textAllign === "center") drawX = 0;
-  if (this.textAllign === "right") drawX = this.width / 2;
+    lines.forEach((line, index) => {
+      const y = startY + index * this.lineHeight;
 
-  lines.forEach((line, index) => {
-    const y = startY + index * this.lineHeight;
+      if (this.outline) {
+        ctx.beginPath();
+        ctx.lineWidth = this.outlineThickness;
+        ctx.strokeStyle = this.outlineColor;
+        ctx.setLineDash(this.outlineType);
+        ctx.strokeText(line, drawX, y);
+        ctx.closePath();
+      }
 
-    if (this.outline) {
+      if (this.colorFill !== "none") {
+        ctx.fillStyle = this.colorType();
+        ctx.fillText(line, drawX, y);
+      }
+    });
+
+    if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = this.outlineThickness;
-      ctx.strokeStyle = this.outlineColor;
-      ctx.setLineDash(this.outlineType);
-      ctx.strokeText(line, drawX, y);
+      ctx.lineWidth = adapt(1);
+      ctx.strokeStyle = "#0000ff";
+      ctx.setLineDash([adapt(5), adapt(3)]);
+      ctx.strokeRect(
+        -this.width / 2 - adapt(2),
+        -this.height / 2 - adapt(2),
+        this.width + adapt(4),
+        this.height + adapt(4),
+      );
       ctx.closePath();
     }
 
-    if (this.colorFill !== "none") {
-      ctx.fillStyle = this.colorType();
-      ctx.fillText(line, drawX, y);
-    }
-  });
-
-  if (selectedObj === this || multipleSelectArr.includes(this)) {
-    ctx.beginPath();
-    ctx.lineWidth = adapt(1);
-    ctx.strokeStyle = "#0000ff";
-    ctx.setLineDash([adapt(5), adapt(3)]);
-    ctx.strokeRect(
-      -this.width / 2 - adapt(2),
-      -this.height / 2 - adapt(2),
-      this.width + adapt(4),
-      this.height + adapt(4)
-    );
-    ctx.closePath();
+    ctx.restore();
   }
 
-  ctx.restore();
-
-}
-
-showClone(){
-      let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+  showClone() {
+    let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
 
     return clone;
-}
+  }
   colorType() {
     const colors = this.color.map((color) =>
       applyOpacityToHex(color, this.opacity),
@@ -3250,7 +3332,6 @@ showClone(){
     }
   }
   whatSelected(mouse) {
-    const threshold = adapt(10);
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
 
@@ -3285,8 +3366,8 @@ showClone(){
       this.y += mouse.y - lastMouseY;
     }
   }
-formatProperties() {
-  propertiesBar.innerHTML = `
+  formatProperties() {
+    propertiesBar.innerHTML = `
     <section class="coord-section">
       <h3>Coordinate</h3>
 
@@ -3343,12 +3424,11 @@ formatProperties() {
         </label>
       </div>
 
-      <label class="uniform-div">
+      <label class="uniform-div" style="position:relative">
         <span>Font Family</span>
-        <input type="text" list="fonts" name="fontFamily" value="${this.fontFamily}">
-        <datalist id="fonts" >
-        ${allFonts.map(font=>`<option value="${font}"></option>`).join("")}
-        </datalist>
+        <input class="fontInput"  type="text" list="fonts" name="fontFamily" value="${this.fontFamily}">
+        <div id="fonts" style="display:${this.fonts.length > 0 ? "flex" : "none"} ">
+        </div>
       </label>
 
       <label class="uniform-div">
@@ -3414,114 +3494,152 @@ formatProperties() {
     </section>
   `;
 
+    super.similarPropties();
+    // Bind inputs
+    propertiesBar
+      .querySelectorAll(
+        "input, textarea, select, button#shadowToggle,button#iterateToggle",
+      )
+      .forEach((el) => {
+        // Shadow toggle button
+        if (el.id === "shadowToggle") {
+          el.addEventListener("click", () => {
+            this.shadow = !this.shadow;
+            this.formatProperties();
+            requestDraw();
+          });
+          return;
+        }
+        if (el.id === "iterateToggle") {
+          el.addEventListener("click", () => {
+            this.iterated = !this.iterated;
+            this.formatProperties();
+            requestDraw();
+          });
+          return;
+        }
 
-super.similarPropties()
-  // Bind inputs
-  propertiesBar.querySelectorAll("input, textarea, select, button#shadowToggle,button#iterateToggle").forEach((el) => {
-    // Shadow toggle button
-    if (el.id === "shadowToggle") {
-      el.addEventListener("click", () => {
-        this.shadow = !this.shadow;
-        this.formatProperties();
-        requestDraw()
+        // Normal inputs/selects
+        el.addEventListener("input", (e) => {
+          this.changeProperties(e);
+        });
       });
-      return;
+    draw();
+    // Optional: outline toggle is inside similarProptiesOutput(), keep existing handler if you have one.
+  }
+
+  changeProperties(e) {
+    const name = e.target.name;
+
+    if (name === "text") this.text = e.target.value;
+
+    if (name === "x") this.x = backValues(Number(e.target.value) || 0);
+    if (name === "y") this.y = backValues(Number(e.target.value) || 0);
+
+    // Width/Height: if you want them editable, you can scale text box;
+    // for now we set the values directly (matches your existing props panel pattern).
+    if (name === "width"){
+const scale = this.fontSize * backValues(Number(e.target.value) || 0) / this.width;
+this.fontSize = scale >0 ? scale : 1
+
+    } 
+    if (name === "height"){
+      const scale = this.fontSize * backValues(Number(e.target.value) || 0) / this.height;
+      this.fontSize = scale >0 ? scale : 1
+
     }
-    if (el.id === "iterateToggle") {
-      el.addEventListener("click", () => {
-        this.iterated= !this.iterated;
-        this.formatProperties();
-        requestDraw()
-      });
-      return;
+
+    if (name === "angle") this.angle = degToRad(Number(e.target.value) || 0);
+    if (name === "opacity")
+      this.opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+
+    if (name === "fontSize") {
+      this.fontSize = backValues(Math.max(1, Number(e.target.value) || 1));
+      this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
+    }
+    if (name === "lineHeight")
+      this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
+    if (name === "textarea") {
+      this.textArea = e.target.value;
+    }
+    if (name === "fontFamily") {
+      this.fonts = allFonts.filter((font) =>
+        font.toLowerCase().includes(e.target.value.toLowerCase()),
+      );
+
+      if (this.fonts.length > 0) {
+         document.getElementById("fonts").style.display = "flex"
+              document.getElementById("fonts").innerHTML = this.fonts
+        .map(
+          (font) => `
+    <div class="dropdown-item">${font}</div>
+  `,
+        )
+        .join("");
+        document.querySelectorAll(".dropdown-item").forEach((div) => {
+          div.addEventListener("click", () => {
+            this.fontFamily = div.textContent;
+            if (!defaultFonts.includes(this.fontFamily)) {
+              const link = document.createElement("link");
+              link.rel = "stylesheet";
+              link.href = `https://fonts.googleapis.com/css2?family=${this.fontFamily.replace(
+                / /g,
+                "+",
+              )}&display=swap`;
+              document.head.appendChild(link);
+              defaultFonts.push(this.fontFamily);
+            }
+            requestDraw()
+            this.fonts = []
+            this.formatProperties()
+          });
+        });
+      }else  document.getElementById("fonts").style.display = "flex"
     }
 
-    // Normal inputs/selects
-    el.addEventListener("input", (e) => {
-      this.changeProperties(e);
-    });
-  });
-draw()
-  // Optional: outline toggle is inside similarProptiesOutput(), keep existing handler if you have one.
-}
-
-changeProperties(e) {
-  const name = e.target.name;
-
-  if (name === "text") this.text = e.target.value;
-
-  if (name === "x") this.x = backValues(Number(e.target.value) || 0);
-  if (name === "y") this.y = backValues(Number(e.target.value) || 0);
-
-  // Width/Height: if you want them editable, you can scale text box;
-  // for now we set the values directly (matches your existing props panel pattern).
-  if (name === "width") this.width = backValues(Number(e.target.value) || 0);
-  if (name === "height") this.height = backValues(Number(e.target.value) || 0);
-
-  if (name === "angle") this.angle = degToRad(Number(e.target.value) || 0);
-  if (name === "opacity") this.opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-
-  if (name === "fontSize"){
-this.fontSize = backValues(Math.max(1, Number(e.target.value) || 1));
-this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
-  } 
-  if (name === "lineHeight") this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
-if (name === "textarea") {
-        this.textArea = e.target.value;
-    }
-  if (name === "fontFamily"){
-this.fontFamily = e.target.value;
-if(!(defaultFonts.includes(this.fontFamily))){
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${this.fontFamily.replace(
-      / /g,
-      "+"
-    )}&display=swap`;
-    document.head.appendChild(link);
-    defaultFonts.push(this.fontFamily)
-}
-  } 
-  if (name === "outlineThickness") this.outlineThickness = backValues(Number(e.target.value) || 0)
-        if (name === "lineDashWidth") {
-      this.lineDashWidth =  backValues(Number(e.target.value) || 0);
+    if (name === "outlineThickness")
+      this.outlineThickness = backValues(Number(e.target.value) || 0);
+    if (name === "lineDashWidth") {
+      this.lineDashWidth = backValues(Number(e.target.value) || 0);
     }
 
     if (name === "lineDashSpacing") {
-      this.lineDashSpacing =  backValues(Number(e.target.value) || 0);
+      this.lineDashSpacing = backValues(Number(e.target.value) || 0);
     }
-  
 
-  if (this.outlineType.length !== 0) {
-    this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
-  }
-  if (name === "fontStyle") this.fontStyle = e.target.value;
-  if (name === "textAllign") this.textAllign = e.target.value;
-  if (name === "outlineColor") {
-    this.outlineColor = e.target.value;
-  }
+    if (this.outlineType.length !== 0) {
+      this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
+    }
+    if (name === "fontStyle") this.fontStyle = e.target.value;
+    if (name === "textAllign") this.textAllign = e.target.value;
+    if (name === "outlineColor") {
+      this.outlineColor = e.target.value;
+    }
     if (name === "bgColor") {
-    this.color[0] = e.target.value;
-  }
+      this.color[0] = e.target.value;
+    }
 
-  if (name === "colorDeg") {
-    this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
-  }
-  // Shadow fields
-  if (name === "shadowColor") this.shadowStyle.color = e.target.value;
-  if (name === "shadowBlur") this.shadowStyle.blur = Number(e.target.value) || 0;
-  if (name === "shadowOffsetX") this.shadowStyle.offsetX = Number(e.target.value) || 0;
-  if (name === "shadowOffsetY") this.shadowStyle.offsetY = Number(e.target.value) || 0;
+    if (name === "colorDeg") {
+      this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
+    }
+    // Shadow fields
+    if (name === "shadowColor") this.shadowStyle.color = e.target.value;
+    if (name === "shadowBlur")
+      this.shadowStyle.blur = Number(e.target.value) || 0;
+    if (name === "shadowOffsetX")
+      this.shadowStyle.offsetX = Number(e.target.value) || 0;
+    if (name === "shadowOffsetY")
+      this.shadowStyle.offsetY = Number(e.target.value) || 0;
 
-  requestDraw()
-}
+    requestDraw();
+  }
 
   doubleClicked(mouse) {
     this.doubleClicked = true;
   }
-  drawIteratedImage(i){
-    const texts = this.textArea.split("\n")
-    if(this.iterated && i < texts.length) this.text = texts[i]
+  drawIteratedImage(i) {
+    const texts = this.textArea.split("\n");
+    if (this.iterated && i < texts.length) this.text = texts[i];
   }
   whereToSnap() {
     return {
@@ -3533,18 +3651,20 @@ if(!(defaultFonts.includes(this.fontFamily))){
   changeLocation(value, type) {
     if (type === "x") {
       this.x = value;
-    } else {
+    } else if(type==="y") {
       this.y = value;
+    }else{
+      this.fontSize *=value
     }
   }
-    moveClip(x, y) {
+  moveClip(x, y) {
     this.x += x;
     this.y += y;
   }
 }
 
 class Images extends Formats {
-  constructor(x,y,image, width, aspectRatio, originalFile) {
+  constructor(x, y, image, width, aspectRatio, originalFile) {
     super();
     this.x = x;
     this.y = y;
@@ -3651,7 +3771,7 @@ class Images extends Formats {
     return clone;
   }
   formatProperties() {
-propertiesBar.innerHTML = `
+    propertiesBar.innerHTML = `
   <section class="coord-section">
     <h3>Coordinate</h3>
 
@@ -3730,10 +3850,9 @@ propertiesBar.innerHTML = `
     document.querySelectorAll(".iteratedsec > div").forEach((div, i) => {
       div.addEventListener("click", () => {
         this.imagePreview = this.iteratedFiles[i].src;
-        this.image = i
-                        requestDraw()
+        this.image = i;
+        requestDraw();
         this.formatProperties();
-
       });
       div.querySelector(".change").addEventListener("change", (e) => {
         const file = e.target.files[0];
@@ -3746,25 +3865,22 @@ propertiesBar.innerHTML = `
           this.originalFiles[i] = file;
         };
         this.imagePreview = img.src;
-                requestDraw()
+        requestDraw();
         this.formatProperties();
-
       });
-      div.querySelector(".del").addEventListener("click",()=>{
-        if(this.originalFiles.length > 1){
-        this.iteratedFiles.splice(i,1)
-        this.originalFiles.splice(i,1)
-                        requestDraw()
-        this.formatProperties();
+      div.querySelector(".del").addEventListener("click", () => {
+        if (this.originalFiles.length > 1) {
+          this.iteratedFiles.splice(i, 1);
+          this.originalFiles.splice(i, 1);
+          requestDraw();
+          this.formatProperties();
         }
-
-      })
-
+      });
     });
 
     document.getElementById("maintainAspect").addEventListener("click", () => {
       this.height = this.aspectRatio * this.width;
-      requestDraw()
+      requestDraw();
     });
     document.getElementById("removeBg").addEventListener("click", async () => {
       try {
@@ -3816,48 +3932,46 @@ propertiesBar.innerHTML = `
         1000,
       );
     });
-    requestDraw()
+    requestDraw();
   }
-changeProperties(e) {
-  const name = e.target.name;
+  changeProperties(e) {
+    const name = e.target.name;
 
-  if (name === "angle") {
-    this.angle = radToDeg(Number(e.target.value) || 0, "rad");
-  }
-
-  if (e.target.type === "number") {
-    const value = backValues(Number(e.target.value) || 0);
-
-    if (!isNaN(value) && value !== null) {
-
-      if (name === "opacity") {
-        this.opacity = Number(e.target.value) || 0;
-      }
-
-      if (name !== "opacity") {
-        this[name] = value;
-      }
-
+    if (name === "angle") {
+      this.angle = radToDeg(Number(e.target.value) || 0, "rad");
     }
+
+    if (e.target.type === "number") {
+      const value = backValues(Number(e.target.value) || 0);
+
+      if (!isNaN(value) && value !== null) {
+        if (name === "opacity") {
+          this.opacity = Number(e.target.value) || 0;
+        }
+
+        if (name !== "opacity") {
+          this[name] = value;
+        }
+      }
+    }
+
+    if (name === "iteratedFiles") {
+      Array.from(e.target.files).forEach((file) => {
+        const url = URL.createObjectURL(file);
+
+        const img = new Image();
+        img.src = url;
+
+        img.onload = () => {
+          this.iteratedFiles.push(img);
+          this.originalFiles.push(file);
+          this.formatProperties();
+        };
+      });
+    }
+
+    requestDraw();
   }
-
-  if (name === "iteratedFiles") {
-    Array.from(e.target.files).forEach((file) => {
-      const url = URL.createObjectURL(file);
-
-      const img = new Image();
-      img.src = url;
-
-      img.onload = () => {
-        this.iteratedFiles.push(img);
-        this.originalFiles.push(file);
-        this.formatProperties();
-      };
-    });
-  }
-
-  requestDraw();
-}
   drawIteratedImage(i) {
     if (this.iteratedFiles.length >= i) {
       this.image = i;
@@ -3887,12 +4001,17 @@ changeProperties(e) {
 }
 class Group extends Formats {
   constructor(list) {
-    super()
+    super();
     this.type = "group";
     this.list = list;
     this.isDoubleClicked = false;
     // this.angle = 0;
-    this.minX;this.maxX;this.minY;this.maxY;this.x;this.y;
+    this.minX;
+    this.maxX;
+    this.minY;
+    this.maxY;
+    this.x;
+    this.y;
   }
   addObject() {
     this.minX = Math.min(...this.list.map((l) => l.whereToSnap().x[0]));
@@ -3906,105 +4025,104 @@ class Group extends Formats {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
 
-
-
     this.list.forEach((obj) => {
       ctx.save();
       ctx.translate(-this.x, -this.y);
       obj.addObject();
       ctx.restore();
     });
-    if(selectedObj === this || multipleSelectArr.includes(this)){
-      ctx.beginPath()
-    ctx.lineWidth = adapt(1);
-    ctx.strokeStyle = "#0000ff";
-    ctx.setLineDash([adapt(5), adapt(3)]);
+    if (selectedObj === this || multipleSelectArr.includes(this)) {
+      ctx.beginPath();
+      ctx.lineWidth = adapt(1);
+      ctx.strokeStyle = "#0000ff";
+      ctx.setLineDash([adapt(5), adapt(3)]);
 
-    ctx.strokeRect(
-      this.minX - this.x,
-      this.minY - this.y,
-      this.maxX - this.minX,
-      this.maxY - this.minY,
-    );
-    ctx.closePath()
-    
-              ctx.beginPath();
-          ctx.fillStyle = "#0000ff88";
-          ctx.fillRect(this.maxX -this.x - adapt(10), this.maxY -this.y- adapt(10), adapt(20), adapt(20));
-          ctx.closePath();
+      ctx.strokeRect(
+        this.minX - this.x,
+        this.minY - this.y,
+        this.maxX - this.minX,
+        this.maxY - this.minY,
+      );
+      ctx.closePath();
+
+      ctx.beginPath();
+      ctx.fillStyle = "#0000ff88";
+      ctx.fillRect(
+        this.maxX - this.x - adapt(10),
+        this.maxY - this.y - adapt(10),
+        adapt(20),
+        adapt(20),
+      );
+      ctx.closePath();
     }
     ctx.restore();
   }
   whatSelected(mouse) {
-    this.selectedArea = null
+    this.selectedArea = null;
     const dx = mouse.x - this.x;
     const dy = mouse.y - this.y;
     const angle = -this.angle;
     const localX = dx * Math.cos(angle) - dy * Math.sin(angle);
     const localY = dx * Math.sin(angle) + dy * Math.cos(angle);
-    if(          Math.abs(localX - this.maxX + this.x) < adapt(10) &&
-          Math.abs(localY - this.maxY + this.y) < adapt(10)){
-            this.selectedArea = "scale"
-    }
-    else if (
+    if (
+      Math.abs(localX - this.maxX + this.x) < adapt(10) &&
+      Math.abs(localY - this.maxY + this.y) < adapt(10)
+    ) {
+      this.selectedArea = "scale";
+    } else if (
       localX >= this.minX - this.x &&
       localX <= this.maxX - this.x &&
       localY >= this.minY - this.y &&
       localY <= this.maxY - this.y
     ) {
-      this.selectedArea = "normal"
+      this.selectedArea = "normal";
     }
-    console.log(this.selectedArea)
-    return this.selectedArea !== null
+    console.log(this.selectedArea);
+    return this.selectedArea !== null;
   }
 
   formatSelected(mouse) {
     if (this.isDoubleClicked) {
-      this.angle =
-        Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
+      this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
     } else {
-      if(this.selectedArea === "normal"){
-      this.list.forEach((l) =>
-        l.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
-      );
-      }else{
+      if (this.selectedArea === "normal") {
+        this.list.forEach((l) =>
+          l.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
+        );
+      } else {
+        const lastWidth = lastMouseX - this.x;
+        const lastHeight = lastMouseY - this.y;
 
-const lastWidth = lastMouseX - this.x;
-const lastHeight = lastMouseY - this.y;
-
-const currentWidth = mouse.x - this.x;
-const currentHeight = mouse.y - this.y;
-    const cos = Math.cos(-this.angle);
-    const sin = Math.sin(-this.angle);
+        const currentWidth = mouse.x - this.x;
+        const currentHeight = mouse.y - this.y;
+        const cos = Math.cos(-this.angle);
+        const sin = Math.sin(-this.angle);
         const localMouseX = currentWidth * cos - currentHeight * sin;
-    const localMouseY = currentWidth * sin + currentHeight * cos;
-  
+        const localMouseY = currentWidth * sin + currentHeight * cos;
+
         const lastlocalMouseX = lastWidth * cos - lastHeight * sin;
-    const lastlocalMouseY = lastWidth * sin + lastHeight * cos;
-  
-const scaleX = localMouseX / lastlocalMouseX;
-const scaleY = localMouseY / lastlocalMouseY;
+        const lastlocalMouseY = lastWidth * sin + lastHeight * cos;
 
-this.list.forEach((l) => {
-  // 1. Get distance from center
-  const pos = l.whereToSnap().pos;
-  const dx = pos.x - this.x;
-  const dy = pos.y - this.y;
+        const scaleX = localMouseX / lastlocalMouseX;
+        const scaleY = localMouseY / lastlocalMouseY;
 
+        this.list.forEach((l) => {
+          // 1. Get distance from center
+          const pos = l.whereToSnap().pos;
+          const dx = pos.x - this.x;
+          const dy = pos.y - this.y;
 
-  l.changeLocation(this.x + dx * scaleX, "x");
-  l.changeLocation(this.y + dy * scaleY, "y");
-  l.changeLocation(scaleX, "scaleX");
-  l.changeLocation(scaleY, "scaleY");
-
-});
+          l.changeLocation(this.x + dx * scaleX, "x");
+          l.changeLocation(this.y + dy * scaleY, "y");
+          l.changeLocation(scaleX, "scaleX");
+          l.changeLocation(scaleY, "scaleY");
+        });
       }
-
     }
   }
-  showClone(){
-        let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-clone.list = this.list.map(obj => obj.showClone());
+  showClone() {
+    let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    clone.list = this.list.map((obj) => obj.showClone());
     return clone;
   }
   doubleClicked(mouse) {
@@ -4047,72 +4165,60 @@ clone.list = this.list.map(obj => obj.showClone());
         
   ${super.similarProptiesOutput()}
 
-    `
+    `;
     document.getElementById("ungroup-btn").addEventListener("click", () => {
-      this.list.forEach(l=> objects.push(l))
-      const index = objects.indexOf(this)
+      this.list.forEach((l) => objects.push(l));
+      const index = objects.indexOf(this);
       objects.splice(index, 1);
-      selectedObj = null
-      Tools("moveTool")
-    })
+      selectedObj = null;
+      Tools("moveTool");
+    });
     super.similarPropties();
-        propertiesBar
+    propertiesBar
       .querySelectorAll("input[type='text'],input[type='number']")
       .forEach((input) => {
-        input.addEventListener(
-          "input",
-          (e) => this.changeProperties(e)
-        );
+        input.addEventListener("input", (e) => this.changeProperties(e));
       });
     propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
-      input.addEventListener(
-        "change",
-       (e) => this.changeProperties(e)
-      );
+      input.addEventListener("change", (e) => this.changeProperties(e));
     });
-    requestDraw()
+    requestDraw();
   }
-  changeProperties(e){
+  changeProperties(e) {
     const name = e.target.name;
     if (name === "angle") {
       this.angle = degToRad(Number(e.target.value) || 0);
-    }
-    else if(name==="x"){
+    } else if (name === "x") {
       const value = backValues(Number(e.target.value) || 0);
       const diff = value - this.minX;
       // this.x = diff + this.x;
-      this.list.forEach(l=>l.moveClip(diff,0))
-    }
-    else if(name==="y"){
+      this.list.forEach((l) => l.moveClip(diff, 0));
+    } else if (name === "y") {
       const value = backValues(Number(e.target.value) || 0);
       const diff = value - this.minY;
       // this.y = diff + this.y;
-      this.list.forEach(l=>l.moveClip(0,diff))
-    }
-    else if(name==="width"){
+      this.list.forEach((l) => l.moveClip(0, diff));
+    } else if (name === "width") {
       const value = backValues(Number(e.target.value) || 0);
-      const diff = value/(this.maxX - this.minX);
-      this.list.forEach(l=>l.changeLocation(diff,"scaleX"))
-    }
-    else if(name==="height"){
+      const diff = value / (this.maxX - this.minX);
+      this.list.forEach((l) => l.changeLocation(diff, "scaleX"));
+    } else if (name === "height") {
       const value = backValues(Number(e.target.value) || 0);
-      const diff = value/(this.maxY - this.minY);
-      this.list.forEach(l=>l.changeLocation(diff,"scaleY"))
-    }
-    else if(name==="opacity"){
+      const diff = value / (this.maxY - this.minY);
+      this.list.forEach((l) => l.changeLocation(diff, "scaleY"));
+    } else if (name === "opacity") {
       const value = Number(e.target.value) || 0;
-      this.list.forEach(l=>l.opacity = value)
-      this.opacity= value
+      this.list.forEach((l) => (l.opacity = value));
+      this.opacity = value;
+    } else if (e.target.type === "number") {
+      const value = backValues(Number(e.target.value) || 0);
+      this.list.forEach((l) => (l[name] = value));
+      this[name] = value;
+    } else {
+      this.list.forEach((l) => (l[name] = e.target.value));
+      this[name] = e.target.value;
     }
-    else if(e.target.type === "number"){
-       const value = backValues(Number(e.target.value) || 0);
-        this.list.forEach(l=>l[name] = value)
-        this[name] = value
-    }else{
-      this.list.forEach(l=>l[name] = e.target.value)
-      this[name] = e.target.value
-    }
-    requestDraw()
+    requestDraw();
   }
 }
 function blobToBase64(blob) {
@@ -4130,12 +4236,10 @@ function undo() {
   if (undoObject.length > 1) {
     redoObject.push(undoObject.pop());
     objects = cloneObject(undoObject[undoObject.length - 1]);
-            if(pen !== null && objects[objects.length - 1].type === "line"){
+    if (pen !== null && objects[objects.length - 1].type === "line") {
       pen = objects[objects.length - 1];
-    }else selectedObj = objects[objects.length - 1];
-    requestDraw()
-
-
+    } else selectedObj = objects[objects.length - 1];
+    requestDraw();
   }
 }
 
@@ -4144,11 +4248,10 @@ function redo() {
     const redoState = redoObject.pop();
     undoObject.push(redoState);
     objects = cloneObject(redoState);
-            if(pen !== null && objects[objects.length - 1].type === "line"){
+    if (pen !== null && objects[objects.length - 1].type === "line") {
       pen = objects[objects.length - 1];
-    }else selectedObj = objects[objects.length - 1];
-    requestDraw()
-
+    } else selectedObj = objects[objects.length - 1];
+    requestDraw();
   }
 }
 
@@ -4188,7 +4291,7 @@ document.getElementById("measurement").addEventListener("change", (e) => {
   whatsMeasured = e.target.value;
   width.value = changeValues(canvassDiv.getBoundingClientRect().width);
   height.value = changeValues(canvassDiv.getBoundingClientRect().height);
-  requestDraw()
+  requestDraw();
   if (selectedObj) selectedObj.formatProperties();
 });
 document.getElementById("paperSize").addEventListener("change", (e) => {
@@ -4292,28 +4395,27 @@ function addImage(e) {
   const img = new Image();
   img.src = url;
   img.onload = () => {
-        drawingImage = {
-          image: img,
-          originalFile: file,
-          aspectRatio: img.height/img.width
-        }
-    isDrawing = "image"
-
+    drawingImage = {
+      image: img,
+      originalFile: file,
+      aspectRatio: img.height / img.width,
+    };
+    isDrawing = "image";
   };
 }
 function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
-    if(pen !== null){
-      if(button.id !== "addLine") button.classList.remove("active")
-      else button.classList.add("active")
-    }else{
-      if(button.id === tool) button.classList.add("active")
-      else button.classList.remove("active")
+    if (pen !== null) {
+      if (button.id !== "addLine") button.classList.remove("active");
+      else button.classList.add("active");
+    } else {
+      if (button.id === tool) button.classList.add("active");
+      else button.classList.remove("active");
     }
-});
-if(pen !== null) return
-      isDrawing = null;
-      multipleSelect = false;
+  });
+  if (pen !== null) return;
+  isDrawing = null;
+  multipleSelect = false;
   multipleSelectArr = [];
 
   duplicateClicked = false;
@@ -4321,41 +4423,41 @@ if(pen !== null) return
 
   switch (tool) {
     case "moveTool":
-        canvas.style.cursor = "default";
+      canvas.style.cursor = "default";
       break;
 
     case "multipleSelection":
-        selectedObj = null;
-       canvas.style.cursor = "default";
-  multipleSelect = true;
+      selectedObj = null;
+      canvas.style.cursor = "default";
+      multipleSelect = true;
       break;
 
     case "addRectangle":
-        canvas.style.cursor = "crosshair";
-  isDrawing = "rect";
+      canvas.style.cursor = "crosshair";
+      isDrawing = "rect";
       break;
 
     case "addEllipse":
-       canvas.style.cursor = "crosshair";
-  isDrawing = "ellipse";
+      canvas.style.cursor = "crosshair";
+      isDrawing = "ellipse";
       break;
 
     case "addLine":
-       canvas.style.cursor = "crosshair";
-  const line = new Line();
-  pen = line;
-  objects.push(line)
-  requestDraw()
+      canvas.style.cursor = "crosshair";
+      const line = new Line();
+      pen = line;
+      objects.push(line);
+      requestDraw();
       break;
 
     case "addPolygon":
-       canvas.style.cursor = "crosshair";
-  isDrawing = "polygon";
+      canvas.style.cursor = "crosshair";
+      isDrawing = "polygon";
       break;
 
     case "addTextbox":
-        canvas.style.cursor = "inherit";
-  isDrawing = "text";
+      canvas.style.cursor = "inherit";
+      isDrawing = "text";
       break;
 
     case "zoom":
@@ -4367,88 +4469,88 @@ if(pen !== null) return
   </div>
   `;
 
-  isDrawing = "zoom";
-  canvas.style.cursor = "zoom-in";
+      isDrawing = "zoom";
+      canvas.style.cursor = "zoom-in";
 
+      const zoomInBtn = propertiesBar.querySelector(".zoomin");
+      const zoomOutBtn = propertiesBar.querySelector(".zoomout");
+      const fitBtn = propertiesBar.querySelector(".fitToPage");
 
-  const zoomInBtn = propertiesBar.querySelector(".zoomin");
-  const zoomOutBtn = propertiesBar.querySelector(".zoomout");
-  const fitBtn = propertiesBar.querySelector(".fitToPage");
+      let zoomInterval;
 
-  let zoomInterval;
+      function zoomIn() {
+        scale = scale + scale * 0.05;
+        requestDraw();
+      }
 
-  function zoomIn() {
-    scale = scale + (scale*0.05);
-    requestDraw();
-  }
+      function zoomOut() {
+        scale = scale - scale * 0.05;
+        requestDraw();
+      }
 
-  function zoomOut() {
-    scale = scale - (scale*0.05);
-    requestDraw();
-  }
+      /* HOLD TO ZOOM IN */
+      zoomInBtn.addEventListener("mousedown", () => {
+        zoomIn();
+        zoomInterval = setInterval(zoomIn, 30);
+      });
 
-  /* HOLD TO ZOOM IN */
-  zoomInBtn.addEventListener("mousedown", () => {
-    zoomIn();
-    zoomInterval = setInterval(zoomIn, 30);
-  });
+      /* HOLD TO ZOOM OUT */
+      zoomOutBtn.addEventListener("mousedown", () => {
+        zoomOut();
+        zoomInterval = setInterval(zoomOut, 30);
+      });
 
-  /* HOLD TO ZOOM OUT */
-  zoomOutBtn.addEventListener("mousedown", () => {
-    zoomOut();
-    zoomInterval = setInterval(zoomOut, 30);
-  });
+      /* STOP WHEN RELEASED */
+      window.addEventListener("mouseup", () => {
+        clearInterval(zoomInterval);
+      });
 
-  /* STOP WHEN RELEASED */
-  window.addEventListener("mouseup", () => {
-    clearInterval(zoomInterval);
-  });
+      /* FIT TO PAGE */
+      fitBtn.addEventListener("click", () => {
+        scale = 1;
+        panX = 0;
+        panY = 0;
+        zoomToRect({
+          x: (canvas.width - measurement.width) / 2,
+          y: (canvas.height - measurement.height) / 2,
+          width: measurement.width,
+          height: measurement.height,
+        });
+        requestDraw();
+      });
 
-  /* FIT TO PAGE */
-  fitBtn.addEventListener("click", () => {
-    scale = 1;
-    panX = 0;
-    panY = 0;
-       zoomToRect({x:(canvas.width-measurement.width)/2,
-    y:(canvas.height-measurement.height)/2,
-    width:measurement.width,
-    height:measurement.height})
-    requestDraw();
-  });
-
-  requestDraw();
+      requestDraw();
       break;
 
     case "duplicate":
-       
-  duplicateClicked = !duplicateClicked;
-  if (duplicateClicked) {
-    if (selectedObj) {
-      cloneObj = selectedObj.showClone();
-      cloneObj.changeLocation(lastMouseX, "x");
-      cloneObj.changeLocation(lastMouseY, "y");
-    } else {
-      notify("Please Select An Object");
-      duplicateClicked = false;
-      document.getElementById("moveTool").classList.add("active");
-      document.getElementById("duplicate").classList.remove("active");
-    }
-  } else {
-    cloneObj = null;
-  }
+      duplicateClicked = !duplicateClicked;
+      if (duplicateClicked) {
+        if (selectedObj) {
+          cloneObj = selectedObj.showClone();
+          cloneObj.changeLocation(lastMouseX, "x");
+          cloneObj.changeLocation(lastMouseY, "y");
+        } else {
+          notify("Please Select An Object");
+          duplicateClicked = false;
+          document.getElementById("moveTool").classList.add("active");
+          document.getElementById("duplicate").classList.remove("active");
+        }
+      } else {
+        cloneObj = null;
+      }
       break;
 
     case "delete":
-        if (selectedObj) {
-    let index = objects.indexOf(selectedObj);
-    objects.splice(index, 1);
-    selectedObj = null;
-    propertiesBar.innerHTML = "";
-    requestDraw()
-  }
+      if (selectedObj) {
+        let index = objects.indexOf(selectedObj);
+        objects.splice(index, 1);
+        selectedObj = null;
+        propertiesBar.innerHTML = "";
+        requestDraw();
+      }
       break;
-case "add-image":
-  return
+    case "add-image":
+      return;
 
     case "pageTo":
       propertiesBar.innerHTML = `
@@ -4457,33 +4559,33 @@ case "add-image":
     <button class="sendBack">Send To Back</button>
   </div>
   `;
-  document.querySelector(".bringFront").addEventListener("click", () => {
-      if (selectedObj) {
-    let index = objects.indexOf(selectedObj);
-    if (index !== -1) {
-      objects.splice(index, 1);
-      objects.push(selectedObj);
-     requestDraw()
-    }
-  }
-  })
-  document.querySelector(".sendBack").addEventListener("click", () => {
-      if (selectedObj) {
-    let index = objects.indexOf(selectedObj);
-    if (index !== -1) {
-      objects.splice(index, 1);
-      objects.unshift(selectedObj);
-     requestDraw()
-    }
-  }
-  })
+      document.querySelector(".bringFront").addEventListener("click", () => {
+        if (selectedObj) {
+          let index = objects.indexOf(selectedObj);
+          if (index !== -1) {
+            objects.splice(index, 1);
+            objects.push(selectedObj);
+            requestDraw();
+          }
+        }
+      });
+      document.querySelector(".sendBack").addEventListener("click", () => {
+        if (selectedObj) {
+          let index = objects.indexOf(selectedObj);
+          if (index !== -1) {
+            objects.splice(index, 1);
+            objects.unshift(selectedObj);
+            requestDraw();
+          }
+        }
+      });
       break;
 
     default:
       console.log("Unknown tool:", tool);
       break;
   }
-  requestDraw()
+  requestDraw();
 }
 
 function flip(value) {
@@ -4492,7 +4594,7 @@ function flip(value) {
       selectedObj.scaleX *= -1;
     } else selectedObj.scaleY *= -1;
   }
-  requestDraw()
+  requestDraw();
 }
 document.querySelector(".generateButton").addEventListener("click", () => {
   document.querySelector(".generate").style.display = "flex";
@@ -4519,17 +4621,15 @@ document.getElementById("renderWidth").addEventListener("input", (e) => {
   renderPageSize.width = e.target.value;
 });
 
-
-
 let scaleRatio;
 let newWidth;
 let newHeight;
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
-  scale = 1
-  panX=0
-  panY=0
-  requestDraw()
+  scale = 1;
+  panX = 0;
+  panY = 0;
+  requestDraw();
   const canvassRect = canvas.getBoundingClientRect();
   width.value = changeValues(measurement.width);
   height.value = changeValues(measurement.height);
@@ -4546,15 +4646,17 @@ function canvasSize() {
     canvas.style.height = canvass.style.height = `${newHeight}px`;
     canvas.width = newWidth;
     canvas.height = newHeight;
-    canvass.style.transform = `scale(${ 1 / scaleRatio})`
-  }else{
-   zoomToRect({x:(canvas.width-measurement.width)/2,
-    y:(canvas.height-measurement.height)/2,
-    width:measurement.width,
-    height:measurement.height})
+    canvass.style.transform = `scale(${1 / scaleRatio})`;
+  } else {
+    zoomToRect({
+      x: (canvas.width - measurement.width) / 2,
+      y: (canvas.height - measurement.height) / 2,
+      width: measurement.width,
+      height: measurement.height,
+    });
   }
 
-  requestDraw()
+  requestDraw();
 }
 function applyOpacityToHex(hexColor, opacityPercent) {
   if (hexColor.length >= 9) hexColor = hexColor.slice(0, 7);
@@ -4615,17 +4717,15 @@ function drawingObject() {
       );
     case "image":
       return new Images(
-                start.x ,
-        start.y ,
+        start.x,
+        start.y,
         drawingImage.image,
         end.x - start.x,
         drawingImage.aspectRatio,
-        drawingImage.originalFile
-      )
+        drawingImage.originalFile,
+      );
   }
 }
-
-
 
 function backValues(x) {
   if (whatsMeasured === "px") {
@@ -4642,7 +4742,7 @@ function backValues(x) {
     return x * 3.78;
   }
 }
-function adapt(size){
+function adapt(size) {
   return size / scale;
 }
 let previousClip = null;
@@ -4794,83 +4894,81 @@ document
   .addEventListener("change", (e) => addImage(e));
 
 function align(arg) {
-  let last
-  let other
-  let value
-  let valid = false
+  let last;
+  let other;
+  let value;
+  let valid = false;
   if (multipleSelectArr.length > 1) {
     last = multipleSelectArr[multipleSelectArr.length - 1].whereToSnap();
     other = multipleSelectArr.slice(0, -1);
-    valid = true
-  }
-  else if(selectedObj){
-const offsetX = (canvas.width - measurement.width) / 2;
-const offsetY = (canvas.height - measurement.height) / 2;
+    valid = true;
+  } else if (selectedObj) {
+    const offsetX = (canvas.width - measurement.width) / 2;
+    const offsetY = (canvas.height - measurement.height) / 2;
 
-last = {
-  x: [
-    offsetX,
-    offsetX + measurement.width / 2,
-    offsetX + measurement.width
-  ],
-  y: [
-    offsetY,
-    offsetY + measurement.height / 2,
-    offsetY + measurement.height
-  ]
-};
-    other = [selectedObj]
-    valid = true
+    last = {
+      x: [
+        offsetX,
+        offsetX + measurement.width / 2,
+        offsetX + measurement.width,
+      ],
+      y: [
+        offsetY,
+        offsetY + measurement.height / 2,
+        offsetY + measurement.height,
+      ],
+    };
+    other = [selectedObj];
+    valid = true;
   }
-  if(!valid) return
+  if (!valid) return;
 
   switch (arg) {
+    case "left":
+      value = last.x[0];
+      break;
+    case "centerX":
+      value = last.x[1];
+      break;
+    case "right":
+      value = last.x[2];
+      break;
+    case "top":
+      value = last.y[0];
+      break;
+    case "centerY":
+      value = last.y[1];
+      break;
+    case "bottom":
+      value = last.y[2];
+      break;
+  }
+  for (let oth = 0; oth < other.length; oth++) {
+    const otherSnap = other[oth].whereToSnap().pos;
+    switch (arg) {
       case "left":
-        value = last.x[0];
+        other[oth].changeLocation(value, "x");
         break;
       case "centerX":
-        value = last.x[1];
+        other[oth].changeLocation(value - otherSnap.width / 2, "x");
         break;
       case "right":
-        value = last.x[2];
+        other[oth].changeLocation(value - otherSnap.width, "x");
         break;
       case "top":
-        value = last.y[0];
+        other[oth].changeLocation(value, "y");
         break;
       case "centerY":
-        value = last.y[1];
+        other[oth].changeLocation(value - otherSnap.height / 2, "y");
         break;
       case "bottom":
-        value = last.y[2];
-        break;
+        other[oth].changeLocation(value - otherSnap.height, "y");
     }
-    for(let oth=0;oth<other.length;oth++){
-      const otherSnap = other[oth].whereToSnap().pos;
-      switch (arg) {
-        case "left":
-          other[oth].changeLocation(value, "x");
-          break;
-        case "centerX":
-          other[oth].changeLocation(value - otherSnap.width / 2, "x");
-          break;
-        case "right":
-          other[oth].changeLocation(value - otherSnap.width, "x");
-          break;
-        case "top":
-          other[oth].changeLocation(value, "y");
-          break;
-        case "centerY":
-          other[oth].changeLocation(value - otherSnap.height / 2, "y");
-          break;
-        case "bottom":
-          other[oth].changeLocation(value - otherSnap.height, "y");
-      }
-    }
+  }
 
-    requestDraw()
-          undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
-
+  requestDraw();
+  undoObject.push(cloneObject(objects));
+  redoObject.length = 0;
 }
 function group() {
   if (multipleSelectArr.length > 1) {
@@ -4883,7 +4981,7 @@ function group() {
     multipleSelect = false;
     objects.push(newGroup);
     selectedObj = newGroup;
-    requestDraw()
+    requestDraw();
   }
 }
 function getMousePos(canvas, evt) {
@@ -4927,9 +5025,10 @@ function zoomToRect(rect) {
 }
 
 async function generateCard() {
-  scale = 1
-  panX=0;panY=0;
-  requestDraw()
+  scale = 1;
+  panX = 0;
+  panY = 0;
+  requestDraw();
   selectedObj = null;
   generationArea.innerHTML = "";
 
@@ -4963,27 +5062,29 @@ async function generateCard() {
 
   // scale for preview grid placement (DOM sizing)
   const paperRect0 = canvassDiv.getBoundingClientRect();
-  const localScale = Math.min(cellWidth / paperRect0.width, cellHeight / paperRect0.height);
+  const localScale = Math.min(
+    cellWidth / paperRect0.width,
+    cellHeight / paperRect0.height,
+  );
 
   let iterationLength = 1;
 
   if (textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...textBoxes.map((tb) => tb.textArea.split("\n").length)
+      ...textBoxes.map((tb) => tb.textArea.split("\n").length),
     );
   }
 
   const maxImageIterLength = Math.max(
     1,
-    ...images.map((imgObj) => imgObj.iteratedFiles.length
-        ? imgObj.iteratedFiles.length
-        : 1
-    )
+    ...images.map((imgObj) =>
+      imgObj.iteratedFiles.length ? imgObj.iteratedFiles.length : 1,
+    ),
   );
 
   iterationLength = Math.max(iterationLength, maxImageIterLength);
- console.log(maxImageIterLength)
+  console.log(maxImageIterLength);
   let boxCountInPage = 0;
 
   // Increase output resolution. You can change this to 1, 2, 3...
@@ -4991,7 +5092,7 @@ async function generateCard() {
 
   for (let i = 0; i < iterationLength; i++) {
     // 1) draw current iteration onto main canvas
-   
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     images.forEach((img) => img.drawIteratedImage(i));
     textBoxes.forEach((textBox) => textBox.drawIteratedImage(i));
@@ -5019,8 +5120,14 @@ async function generateCard() {
     cty.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
     cty.drawImage(
       canvas,
-      cropX, cropY, cropW, cropH,   // source (canvas pixels)
-      0, 0, cropW, cropH            // dest (before scaleFactor transform)
+      cropX,
+      cropY,
+      cropW,
+      cropH, // source (canvas pixels)
+      0,
+      0,
+      cropW,
+      cropH, // dest (before scaleFactor transform)
     );
 
     const canvasData = croppedCanvas.toDataURL();
@@ -5077,10 +5184,10 @@ function requestDraw() {
 
   requestAnimationFrame(() => {
     needsDraw = false;
-    draw()
+    draw();
   });
 }
-function cMousedown(event){
+function cMousedown(event) {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
   isDraggingObject = false;
   isPanning = false;
@@ -5097,7 +5204,7 @@ function cMousedown(event){
     }
   } else if (pen !== null) {
     pen.drawPen(pos);
-         undoObject.push(cloneObject(objects)); 
+    undoObject.push(cloneObject(objects));
     selectedObj = pen;
     selectedObj.formatProperties();
   } else if (clipped !== null) {
@@ -5115,12 +5222,12 @@ function cMousedown(event){
           clipped.changeLocation(
             objectsCoordinate.x +
               (objectsCoordinate.width - clippedCoordinate.width) / 2,
-            "x"
+            "x",
           );
           clipped.changeLocation(
             objectsCoordinate.y +
               (objectsCoordinate.height - clippedCoordinate.height) / 2,
-            "y"
+            "y",
           );
         }
 
@@ -5145,7 +5252,6 @@ function cMousedown(event){
     objects.push(cloned);
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;
-
   } else if (clippedObject !== null && previousClip !== null) {
     editclip.style.display = "block";
 
@@ -5160,22 +5266,47 @@ function cMousedown(event){
       }
     }
   } else if (multipleSelect) {
-    objects.forEach((obj) => {
-      if (obj.whatSelected(pos)) {
-        if (!measurementArr.includes(obj) && !multipleSelectArr.includes(obj)) {
-          multipleSelectArr.push(obj);
+    for (let i = objects.length - 1; i >= 0; i--) {
+      if (objects[i].whatSelected(pos)) {
+        if (!multipleSelectArr.includes(objects[i])) {
+          multipleSelectArr.push(objects[i]);
         }
+        break;
       }
-    });
-    if(multipleSelectArr.length > 0){
-      multipleSelectCoor.start.x = Math.min(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x));
-      multipleSelectCoor.start.y = Math.min(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y));
-      multipleSelectCoor.end.x = Math.max(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width));
-      multipleSelectCoor.end.y = Math.max(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height));
-      if(pos.x >= multipleSelectCoor.start.x && pos.x <= multipleSelectCoor.end.x && pos.y >= multipleSelectCoor.start.y && pos.y <= multipleSelectCoor.end.y){
+    }
+    if (multipleSelectArr.length === 0) {
+      isDrawing = "multipleSelect";
+      drawingStart = true;
+      drawingCoordinate.start = { x: pos.x, y: pos.y };
+      drawingCoordinate.end = { x: pos.x, y: pos.y };
+    }
+
+    if (multipleSelectArr.length > 0) {
+      multipleSelectCoor.start.x = Math.min(
+        ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
+      );
+      multipleSelectCoor.start.y = Math.min(
+        ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
+      );
+      multipleSelectCoor.end.x = Math.max(
+        ...multipleSelectArr.map(
+          (obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width,
+        ),
+      );
+      multipleSelectCoor.end.y = Math.max(
+        ...multipleSelectArr.map(
+          (obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height,
+        ),
+      );
+      if (
+        pos.x >= multipleSelectCoor.start.x &&
+        pos.x <= multipleSelectCoor.end.x &&
+        pos.y >= multipleSelectCoor.start.y &&
+        pos.y <= multipleSelectCoor.end.y
+      ) {
         isDraggingObject = true;
-        multipleSelectArr.forEach((obj) => obj.isDoubleClicked = false);
-        selectedObj = null
+        multipleSelectArr.forEach((obj) => (obj.isDoubleClicked = false));
+        selectedObj = null;
       }
     }
   } else {
@@ -5215,8 +5346,8 @@ function cMousedown(event){
   lastMouseY = pos.y;
   requestDraw();
 }
-function cDoubleClick(event){
-    const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
+function cDoubleClick(event) {
+  const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
 
   for (let i = objects.length - 1; i >= 0; i--) {
     if (objects[i].whatSelected(pos)) {
@@ -5227,25 +5358,43 @@ function cDoubleClick(event){
     }
   }
 }
-function wMouseUp(){
- if (drawingStart) {
+function wMouseUp() {
+  if (drawingStart) {
     drawingStart = false;
 
     if (isDrawing === "zoom") {
-              const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
-        const y = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
-        const w = Math.abs(drawingCoordinate.end.x - drawingCoordinate.start.x);
-        const h = Math.abs(drawingCoordinate.end.y - drawingCoordinate.start.y);
+      const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
+      const y = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
+      const w = Math.abs(drawingCoordinate.end.x - drawingCoordinate.start.x);
+      const h = Math.abs(drawingCoordinate.end.y - drawingCoordinate.start.y);
 
-      zoomToRect({x:x,y:y,width:w,height:h})
+      zoomToRect({ x: x, y: y, width: w, height: h });
+    } else if (isDrawing === "multipleSelect") {
+      const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
+      const y = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
+      const w = Math.abs(drawingCoordinate.end.x - drawingCoordinate.start.x);
+      const h = Math.abs(drawingCoordinate.end.y - drawingCoordinate.start.y);
+
+      objects.forEach((obj) => {
+        const coor = obj.whereToSnap().pos;
+        if (
+          coor.x >= x &&
+          coor.x + coor.width <= x + w &&
+          coor.y >= y &&
+          coor.y + coor.height <= y + h
+        ) {
+          multipleSelectArr.push(obj);
+        }
+      });
+      isDrawing = null;
+      multipleSelect = true;
     } else {
-      const drawedObject = drawingObject()
+      const drawedObject = drawingObject();
       objects.push(drawedObject);
-      if(isDrawing === "image"){
-        images.push(drawedObject)
-isDrawing = null
-canvas.style.cursor = "default"
-      } 
+      if (isDrawing === "image") {
+        images.push(drawedObject);
+        Tools("moveTool");
+      }
     }
   }
 
@@ -5258,22 +5407,20 @@ canvas.style.cursor = "default"
   isRotatingObject = false;
   isPanning = false;
 
-
-
   requestDraw();
 }
-function cMouseUp(){
+function cMouseUp() {
   if (selectedObj && !cloneObj && !pen) {
     selectedObj.formatProperties();
   }
   requestDraw();
 }
-function cMouseLeave(){
+function cMouseLeave() {
   if (!isDraggingObject && !drawingStart) {
     isPanning = false;
   }
 }
-function cMouseMove(event){
+function cMouseMove(event) {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
   let changed = false;
 
@@ -5289,23 +5436,38 @@ function cMouseMove(event){
   if (drawingStart) {
     drawingCoordinate.end = { x: pos.x, y: pos.y };
     changed = true;
-  } else if (cloneObj!== null) {
+  } else if (cloneObj !== null) {
     cloneObj.formatSelected(pos);
     changed = true;
-  }else if(isDraggingObject && multipleSelect && multipleSelectArr.length > 0){
+  } else if (
+    isDraggingObject &&
+    multipleSelect &&
+    multipleSelectArr.length > 0
+  ) {
     const deltaX = pos.x - lastMouseX;
     const deltaY = pos.y - lastMouseY;
 
     multipleSelectArr.forEach((obj) => {
-     obj.moveClip(deltaX, deltaY)
+      obj.moveClip(deltaX, deltaY);
     });
-              multipleSelectCoor.start.x = Math.min(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x));
-      multipleSelectCoor.start.y = Math.min(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y));
-      multipleSelectCoor.end.x = Math.max(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width));
-      multipleSelectCoor.end.y = Math.max(...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height));
+    multipleSelectCoor.start.x = Math.min(
+      ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
+    );
+    multipleSelectCoor.start.y = Math.min(
+      ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
+    );
+    multipleSelectCoor.end.x = Math.max(
+      ...multipleSelectArr.map(
+        (obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width,
+      ),
+    );
+    multipleSelectCoor.end.y = Math.max(
+      ...multipleSelectArr.map(
+        (obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height,
+      ),
+    );
 
-    changed = true
-
+    changed = true;
   } else if ((isDraggingObject || isRotatingObject) && selectedObj) {
     selectedObj.formatSelected(pos);
     changed = true;
@@ -5320,35 +5482,41 @@ function cMouseMove(event){
 }
 
 canvas.addEventListener("mousedown", (event) => {
-cMousedown(event)
+  cMousedown(event);
 });
 
 canvas.addEventListener("dblclick", (event) => {
-cDoubleClick(event)
+  cDoubleClick(event);
 });
 
-window.addEventListener("mouseup",wMouseUp);
-canvas.addEventListener("mouseup",cMouseUp)
-canvas.addEventListener("mouseleave",cMouseLeave);
+window.addEventListener("mouseup", wMouseUp);
+canvas.addEventListener("mouseup", cMouseUp);
+canvas.addEventListener("mouseleave", cMouseLeave);
 
 canvas.addEventListener("mousemove", (event) => {
-cMouseMove(event)
+  cMouseMove(event);
 });
-canvas.addEventListener("touchstart", (event) => {
-  event.preventDefault();
-  cMousedown(event.touches[0])
-},{passive:false})
-canvas.addEventListener("touchmove", (event) => {
-  event.preventDefault()
-  cMouseMove(event.touches[0])
-},{passive:false})
-canvas.addEventListener("touchend",()=>{
-cMouseUp()
-cMouseLeave()
-}
-)
-window.addEventListener("touchend",wMouseUp)
-
+canvas.addEventListener(
+  "touchstart",
+  (event) => {
+    event.preventDefault();
+    cMousedown(event.touches[0]);
+  },
+  { passive: false },
+);
+canvas.addEventListener(
+  "touchmove",
+  (event) => {
+    event.preventDefault();
+    cMouseMove(event.touches[0]);
+  },
+  { passive: false },
+);
+canvas.addEventListener("touchend", () => {
+  cMouseUp();
+  cMouseLeave();
+});
+window.addEventListener("touchend", wMouseUp);
 
 function draw() {
   try {
@@ -5357,15 +5525,15 @@ function draw() {
 
     ctx.setTransform(scale, 0, 0, scale, panX, panY);
 
-    ctx.beginPath()
-    ctx.fillStyle = "#ffffff"
+    ctx.beginPath();
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(
-      (canvas.width-measurement.width)/2,
-      (canvas.height-measurement.height)/2,
+      (canvas.width - measurement.width) / 2,
+      (canvas.height - measurement.height) / 2,
       measurement.width,
-      measurement.height
-    )
-    ctx.closePath()
+      measurement.height,
+    );
+    ctx.closePath();
 
     if (cloneObj) {
       cloneObj.addObject();
@@ -5376,9 +5544,9 @@ function draw() {
         obj.addObject();
       });
     }
-    if(multipleSelect && multipleSelectArr.length > 0){
+    if (multipleSelect && multipleSelectArr.length > 0) {
       ctx.save();
-            ctx.beginPath();
+      ctx.beginPath();
       ctx.lineWidth = adapt(1);
       ctx.strokeStyle = "#0000ff";
       ctx.setLineDash([adapt(5), adapt(3)]);
@@ -5386,12 +5554,12 @@ function draw() {
         multipleSelectCoor.start.x,
         multipleSelectCoor.start.y,
         multipleSelectCoor.end.x - multipleSelectCoor.start.x,
-        multipleSelectCoor.end.y - multipleSelectCoor.start.y
-      )
+        multipleSelectCoor.end.y - multipleSelectCoor.start.y,
+      );
       ctx.restore();
     }
     if (drawingStart) {
-      if (isDrawing === "zoom") {
+      if (isDrawing === "zoom" || isDrawing === "multipleSelect") {
         const x = Math.min(drawingCoordinate.start.x, drawingCoordinate.end.x);
         const y = Math.min(drawingCoordinate.start.y, drawingCoordinate.end.y);
         const w = Math.abs(drawingCoordinate.end.x - drawingCoordinate.start.x);
@@ -5401,7 +5569,7 @@ function draw() {
         ctx.globalAlpha = 0.25;
         ctx.fillRect(x, y, w, h);
         ctx.globalAlpha = 1;
-        ctx.lineWidth = adapt(2)
+        ctx.lineWidth = adapt(2);
         ctx.strokeRect(x, y, w, h);
         ctx.restore();
       } else {

@@ -340,7 +340,33 @@ main > section{
   width: 100%;
   color: var(--input-color);
 }
-
+.fontInput{
+  background-color: var(--input-img);
+  color: var(--input-color);
+  border: none;
+  outline: none;
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+}
+#fonts{
+  position: absolute;
+  max-height: 200px;
+  width: 100%;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  left: 50%;
+    background-color: var(--input-img);
+  color: var(--input-color);
+  top:55px;
+  display: flex;
+  flex-direction: column;
+}
+#fonts > div{
+  border-bottom: var(--border-bottom);
+  padding: 0.8rem;
+}
 /* Optional: label text span */
 .field-label{
   text-wrap: nowrap;
@@ -414,7 +440,14 @@ main > section{
   font-size: 0.7rem;
   gap: 1rem;
 }
-
+.color-sec >  label{
+  background-color: var(--input-img);
+  color: var(--input-color);
+  align-items: center;
+    padding: 0.5rem;
+      border: none;
+  border-radius: 0.2rem;
+}
 .color-sec div,
 .color-sec button{
   padding: 0.5rem;
@@ -697,12 +730,12 @@ img{
 }
 
 .dropdown::-webkit-scrollbar,
-.text::-webkit-scrollbar{
+.text::-webkit-scrollbar,#fonts::-webkit-scrollbar{
   width: 4px;
 }
 
 .dropdown::-webkit-scrollbar-thumb,
-.text::-webkit-scrollbar-thumb{
+.text::-webkit-scrollbar-thumb,#fonts::-webkit-scrollbar-thumb{
   background-color: var(--h3-fill);
   border-radius: 5px;
 }
