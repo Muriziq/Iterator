@@ -75,7 +75,6 @@ let thresholds = {
   drawPenControls: () => adapt(20),
   sColor: "#0000ff",
   normalModeColor: "#0000ff88",
-  clipColor: "#ff0000",
 };
 let defaultFonts = [
   "serif",
@@ -411,6 +410,7 @@ class LineUtils {
 }
 class Formats {
   constructor() {
+    this.clips = null
     this.scaleX = 1;
     this.scaleY = 1;
     this.color = ["#ff0000", "#0000ff"];
@@ -3252,15 +3252,18 @@ class TextBox extends Formats {
 
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = adapt(1);
-      ctx.strokeStyle = "#0000ff";
-      ctx.setLineDash([adapt(5), adapt(3)]);
+      ctx.lineWidth = thresholds.slineWidth();
+      ctx.strokeStyle = thresholds.sColor;
+      ctx.setLineDash([
+        thresholds.sLineDashWidth(),
+        thresholds.sLineDashSpacing(),
+      ]);
       ctx.strokeRect(
-        -this.width / 2 - adapt(2),
-        -this.height / 2 - adapt(2),
-        this.width + adapt(4),
-        this.height + adapt(4),
-      );
+          -this.width / 2 - thresholds.sWidth() / 2,
+          -this.height / 2 - thresholds.sWidth() / 2,
+          this.width + thresholds.sWidth(),
+          this.height + thresholds.sWidth(),
+        );
       ctx.closePath();
     }
 
@@ -3702,15 +3705,18 @@ class Images extends Formats {
 
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = adapt(1);
-      ctx.strokeStyle = "#0000ff";
-      ctx.setLineDash([adapt(5), adapt(3)]);
-      ctx.strokeRect(
-        -this.width / 2 - adapt(2),
-        -this.height / 2 - adapt(2),
-        this.width + adapt(4),
-        this.height + adapt(4),
-      );
+      ctx.lineWidth = thresholds.slineWidth();
+      ctx.strokeStyle = thresholds.sColor;
+      ctx.setLineDash([
+        thresholds.sLineDashWidth(),
+        thresholds.sLineDashSpacing(),
+      ]);
+        ctx.strokeRect(
+          -this.width / 2 - thresholds.sWidth() / 2,
+          -this.height / 2 - thresholds.sWidth() / 2,
+          this.width + thresholds.sWidth(),
+          this.height + thresholds.sWidth(),
+        );
       ctx.closePath();
     }
     ctx.restore();
@@ -3736,7 +3742,7 @@ class Images extends Formats {
       localY,
       this.width,
       this.height,
-      adapt(10),
+      thresholds.threshold(),
     );
 
     return this.selectedArea !== null;
@@ -3994,9 +4000,14 @@ class Images extends Formats {
   changeLocation(value, type) {
     if (type === "x") {
       this.x = value;
-    } else {
+    } else if(type==="y") {
       this.y = value;
+    }else if (type === "scaleX") {
+      this.width *= value;
+    } else if (type === "scaleY") {
+      this.height *= value;
     }
+
   }
 }
 class Group extends Formats {
@@ -5209,7 +5220,7 @@ function cMousedown(event) {
     selectedObj.formatProperties();
   } else if (clipped !== null) {
     for (let i = objects.length - 1; i >= 0; i--) {
-      if (objects[i].whatSelected(pos) && objects[i] !== clipped) {
+      if (objects[i].whatSelected(pos) && objects[i] !== clipped && objects[i].clips !== null ) {
         clipped.clipped = "clipped";
 
         const objectsCoordinate = objects[i].whereToSnap().pos;
@@ -5575,6 +5586,14 @@ function draw() {
       } else {
         drawingObject().addObject();
       }
+    }
+    if(previousClip !== null){
+      const clone = clippedObject.showClone()
+      clone.colorFill = "none"
+      clone.outline = true
+      clone.outlineThickness = adapt(5)
+      clone.outlineColor = "#ff0000"
+      clone.addObject()
     }
   } catch (err) {
     console.log(err);
