@@ -4145,7 +4145,7 @@ class Group extends Formats {
   }
   formatProperties() {
     propertiesBar.innerHTML = `
-    <button class="btn" id="ungroup-btn">UnGroup</button>
+    <button class="imageb" style="margin-top:1rem ;margin-left:0.5rem" id="ungroup-btn">UnGroup</button>
     <section class="coord-section">
           <h3>Coordinate</h3>
           <div class="two-grid coord-grid">
@@ -5617,6 +5617,22 @@ document.addEventListener("keydown",(e)=>{
   }
   if(e.key.toLowerCase() === "end"){
             if (selectedObj) sendToBack(selectedObj);
+  }
+  if(e.key.toLowerCase() === "l") align("left")
+  if(e.key.toLowerCase() === "c") align("centerX")
+  if(e.key.toLowerCase() === "r") align("right")
+  if(e.key.toLowerCase() === "t") align("top")
+  if(e.key.toLowerCase() === "e") align("centerY")
+  if(e.key.toLowerCase() === "b") align("bottom")
+  if(e.key.toLowerCase() === "q") flip("x")
+  if(e.key.toLowerCase() === "w") flip("y")
+  if(e.key.toLowerCase() === "z") {
+    Tools("zoom")
+    document.getElementById("zoom").classList.add("active")
+  }
+  if(e.key.toLowerCase() === "p") {
+    Tools("addLine")
+    document.getElementById("addLine").classList.add("active")
   }
 
   requestDraw()
