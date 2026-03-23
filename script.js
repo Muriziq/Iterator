@@ -73,6 +73,8 @@ let thresholds = {
   sWidth: () => adapt(4),
   clipWidth: () => adapt(4),
   drawPenControls: () => adapt(20),
+  arrowKeys: () => adapt(10),
+  zoomScroll: ()=> adapt(10),
   sColor: "#0000ff",
   normalModeColor: "#0000ff88",
 };
@@ -2010,7 +2012,6 @@ class Ellipse extends Formats {
     requestDraw();
 
     undoObject.push(cloneObject(objects));
-    undoText.push("object");
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -4023,6 +4024,7 @@ class Group extends Formats {
     this.maxY;
     this.x;
     this.y;
+    this.clipped = "none";
   }
   addObject() {
     this.minX = Math.min(...this.list.map((l) => l.whereToSnap().x[0]));
@@ -4106,6 +4108,7 @@ class Group extends Formats {
 
         const currentWidth = mouse.x - this.x;
         const currentHeight = mouse.y - this.y;
+        if(currentWidth <= 0 || currentHeight  <= 0 || lastWidth  <= 0|| lastHeight  <= 0) return
         const cos = Math.cos(-this.angle);
         const sin = Math.sin(-this.angle);
         const localMouseX = currentWidth * cos - currentHeight * sin;
@@ -4116,7 +4119,6 @@ class Group extends Formats {
 
         const scaleX = localMouseX / lastlocalMouseX;
         const scaleY = localMouseY / lastlocalMouseY;
-
         this.list.forEach((l) => {
           // 1. Get distance from center
           const pos = l.whereToSnap().pos;
@@ -4230,7 +4232,63 @@ class Group extends Formats {
       this[name] = e.target.value;
     }
     requestDraw();
+    undoObject.push(cloneObject(objects));
   }
+    moveClip(x, y) {
+    this.x += x;
+    this.y += y;
+    if (this.list.length > 0)
+      this.list.forEach((list) => list.moveClip(x, y));
+  }
+  whereToSnap(){
+    return {
+      x:[
+        this.minX,
+        this.x,
+        this.maxX
+      ],
+      y:[
+        this.minY,
+        this.y,
+        this.maxY
+      ],
+      pos:{
+        x: this.minX,
+        y:this.minY,
+        width: this.maxX-this.minX,
+        height: this.maxY - this.minY
+      }
+    }
+  }
+  changeLocation(value,type){
+    if (type === "x") {
+      const diff = value - this.minX;
+      this.list.forEach((l) => l.moveClip(diff, 0));
+    } else if (type === "y") {
+      const diff = value - this.minY;
+      this.list.forEach((l) => l.moveClip(0, diff));
+    } else if (type === "scaleX") {
+              this.list.forEach((l) => {
+          // 1. Get distance from center
+          const pos = l.whereToSnap().pos;
+          const dx = pos.x - this.x;
+
+          l.changeLocation(this.x + dx * value, "x");
+          l.changeLocation(value, "scaleX");
+        });
+    } else if (type === "scaleY") {
+              this.list.forEach((l) => {
+          // 1. Get distance from center
+          const pos = l.whereToSnap().pos;
+          const dy = pos.y - this.y;
+
+          l.changeLocation(this.y + dy * value, "y");
+          l.changeLocation(value, "scaleY");
+        });
+    }
+  }
+
+  
 }
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
@@ -4476,7 +4534,7 @@ function Tools(tool) {
   <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
     <button class="zoomin"><img src="images/Group 46.svg"></button>
     <button class="zoomout"><img src="images/Group 47.svg"></button>
-    <button class="fitToPage">Fit To Page</button>
+    <button class="fitToPage imageb">Fit To Page</button>
   </div>
   `;
 
@@ -4490,12 +4548,12 @@ function Tools(tool) {
       let zoomInterval;
 
       function zoomIn() {
-        scale = scale + scale * 0.05;
+        scale += thresholds.zoomScroll() ;
         requestDraw();
       }
 
       function zoomOut() {
-        scale = scale - scale * 0.05;
+        scale -= thresholds.zoomScroll();
         requestDraw();
       }
 
@@ -4565,31 +4623,26 @@ function Tools(tool) {
 
     case "pageTo":
       propertiesBar.innerHTML = `
-  <div style="display:flex;flex-direction:column;align-items:center; justify-content:center; gap:1rem;border:none">
-    <button class="bringFront">Bring To Front</button>
-    <button class="sendBack">Send To Back</button>
-  </div>
+  <section>
+    <button class="bringFront imageb">Bring To Front</button>
+    <button class="sendBack imageb">Send To Back</button>
+    <button class="pageUp imageb">Page Up</button>
+    <button class="pageDown imageb">Page Down</button>
+  </section>
   `;
       document.querySelector(".bringFront").addEventListener("click", () => {
-        if (selectedObj) {
-          let index = objects.indexOf(selectedObj);
-          if (index !== -1) {
-            objects.splice(index, 1);
-            objects.push(selectedObj);
-            requestDraw();
-          }
-        }
+        if (selectedObj) bringToFront(selectedObj);
       });
       document.querySelector(".sendBack").addEventListener("click", () => {
-        if (selectedObj) {
-          let index = objects.indexOf(selectedObj);
-          if (index !== -1) {
-            objects.splice(index, 1);
-            objects.unshift(selectedObj);
-            requestDraw();
-          }
-        }
+        if (selectedObj) sendToBack(selectedObj);
       });
+      document.querySelector(".pageUp").addEventListener("click", () => {
+        if (selectedObj) pageUp(selectedObj);
+      } );
+      document.querySelector(".pageDown").addEventListener("click", () => {
+        if (selectedObj) pageDown(selectedObj);
+      })
+
       break;
 
     default:
@@ -4737,7 +4790,38 @@ function drawingObject() {
       );
   }
 }
+function bringToFront(selected){
+          let index = objects.indexOf(selected);
+          if (index !== -1) {
+            objects.splice(index, 1);
+            objects.push(selected);
+            requestDraw();
+          }
+}
+function sendToBack(selected){
+          let index = objects.indexOf(selected);
+          if (index !== -1) {
+            objects.splice(index, 1);
+            objects.unshift(selected);
+            requestDraw();
+          }
+}
+function pageDown(selected) {
+  const i = objects.indexOf(selected);
+  if (i <= 0) return;
 
+  // swap with previous
+  [objects[i], objects[i - 1]] = 
+  [objects[i - 1], objects[i]];
+}
+function pageUp(selected) {
+  const i = objects.indexOf(selected);
+  if (i === -1 || i === objects.length - 1) return;
+
+  // swap with next
+  [objects[i], objects[i + 1]] = 
+  [objects[i + 1], objects[i]];
+}
 function backValues(x) {
   if (whatsMeasured === "px") {
     return x;
@@ -5491,7 +5575,52 @@ function cMouseMove(event) {
     requestDraw();
   }
 }
+document.addEventListener("keydown",(e)=>{
+    const tag = e.target.tagName;
 
+  const isTyping =
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    e.target.isContentEditable;
+
+  if (isTyping) return
+  console.log(e.code,e.key)
+  e.preventDefault()
+  if(e.code=== "ArrowUp"){
+    if(selectedObj !== null) selectedObj.moveClip(0,-thresholds.arrowKeys())
+    else panY += -thresholds.arrowKeys()
+  }
+  if(e.code=== "ArrowDown"){
+    if(selectedObj !== null) selectedObj.moveClip(0,thresholds.arrowKeys())
+    else panY += thresholds.arrowKeys()
+  }
+  if(e.code=== "ArrowLeft"){
+    if(selectedObj !== null) selectedObj.moveClip(-thresholds.arrowKeys(),0)
+    else panX += -thresholds.arrowKeys()
+  }
+  if(e.code=== "ArrowRight"){
+    if(selectedObj !== null) selectedObj.moveClip(thresholds.arrowKeys(),0)
+    else panX += thresholds.arrowKeys()
+  }
+  if(e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null){Tools("duplicate")}
+  if(e.ctrlKey && e.key.toLowerCase() === "g" && multipleSelectArr.length > 1){group()}
+  if(e.key.toLowerCase() === "delete" && selectedObj !== null){ Tools("delete")}
+  if(e.key.toLowerCase() === "pageup") {
+    if(selectedObj !== null) pageUp(selectedObj);
+  }
+  if(e.key.toLowerCase() === "pagedown") {
+    if(selectedObj !== null) pageDown(selectedObj);
+  }
+  if(e.key.toLowerCase() === "home"){
+            if (selectedObj) bringToFront(selectedObj);
+
+  }
+  if(e.key.toLowerCase() === "end"){
+            if (selectedObj) sendToBack(selectedObj);
+  }
+
+  requestDraw()
+})
 canvas.addEventListener("mousedown", (event) => {
   cMousedown(event);
 });
