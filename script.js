@@ -64,9 +64,9 @@ let selectedObj = null;
 let clipped = null;
 let thresholds = {
   selected: () => adapt(2),
-  normalMode: () => adapt(30),
+  normalMode: () => adapt(50),
   threshold: () => adapt(10),
-  pointHold: () => adapt(10),
+  pointHold: () => adapt(30),
   slineWidth: () => adapt(2),
   sLineDashWidth: () => adapt(5),
   sLineDashSpacing: () => adapt(3),
@@ -105,6 +105,14 @@ window.addEventListener("load", () => {
   width.value = measurement.width;
   height.value = measurement.height;
   canvasSize();
+  const mediaQuery = window.matchMedia('(max-width: 768px)');
+  if(mediaQuery.matches){
+    thresholds.pointHold = () => adapt(30)
+    thresholds.normalMode = () => adapt(50);
+  }else{
+    thresholds.pointHold = () => adapt(15)
+    thresholds.normalMode = () => adapt(30);
+  }
 });
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
@@ -1534,11 +1542,11 @@ class Rectangle extends Formats {
         if (this.roundedOrbeveled === "shaped") {
           const base = this.maxX - this.minX || 1;
           const scaleX = value / base;
-
+console.log(scaleX)
           this.points.forEach((p) => {
-            p.points.x *= scaleX;
-            p.controls[0].x *= scaleX;
-            p.controls[1].x *= scaleX;
+            p.points.x *= scaleX <=0 ? 0.01 : scaleX;
+            p.controls[0].x *= scaleX <=0 ? 0.01 : scaleX;
+            p.controls[1].x *= scaleX <=0 ? 0.01 : scaleX;
           });
         } else {
           this.width = value;
@@ -1551,9 +1559,9 @@ class Rectangle extends Formats {
           const scaleY = value / base;
 
           this.points.forEach((p) => {
-            p.points.y *= scaleY;
-            p.controls[0].y *= scaleY;
-            p.controls[1].y *= scaleY;
+            p.points.y *= scaleY <=0 ? 0.01 : scaleY;
+            p.controls[0].y *= scaleY <=0 ? 0.01 : scaleY;
+            p.controls[1].y *= scaleY <=0 ? 0.01 : scaleY;
           });
         } else {
           this.height = value;
@@ -2510,9 +2518,9 @@ ${super.similarProptiesOutput()}
         const scaleX = value / (this.maxX - this.minX || 1);
 
         this.points.forEach((p) => {
-          p.points.x *= scaleX;
-          p.controls[0].x *= scaleX;
-          p.controls[1].x *= scaleX;
+          p.points.x *=scaleX <=0 ? 0.01 : scaleX ;
+          p.controls[0].x *= scaleX <=0 ? 0.01 : scaleX ;
+          p.controls[1].x *= scaleX <=0 ? 0.01 : scaleX ;
         });
       }
 
@@ -2520,9 +2528,9 @@ ${super.similarProptiesOutput()}
         const scaleY = value / (this.maxY - this.minY || 1);
 
         this.points.forEach((p) => {
-          p.points.y *= scaleY;
-          p.controls[0].y *= scaleY;
-          p.controls[1].y *= scaleY;
+          p.points.y *= scaleY <=0 ? 0.01 : scaleY ;
+          p.controls[0].y *= scaleY <=0 ? 0.01 : scaleY ;
+          p.controls[1].y *= scaleY <=0 ? 0.01 : scaleY ;
         });
       }
 
@@ -3097,16 +3105,16 @@ class Line extends Formats {
       } else if (name === "width") {
         const scaleX = value / (this.maxX - this.minX);
         this.points.forEach((p) => {
-          p.points.x *= scaleX;
-          p.controls[0].x *= scaleX;
-          p.controls[1].x *= scaleX;
+          p.points.x *= scaleX <=0 ? 0.01 : scaleX;
+          p.controls[0].x *=  scaleX <=0 ? 0.01 : scaleX;
+          p.controls[1].x *= scaleX <=0 ? 0.01 : scaleX;
         });
       } else if (name === "height") {
         const scaleY = value / (this.maxY - this.minY);
         this.points.forEach((p) => {
-          p.points.y *= scaleY;
-          p.controls[0].y *= scaleY;
-          p.controls[1].y *= scaleY;
+          p.points.y *= scaleY <=0 ? 0.01 : scaleY;
+          p.controls[0].y *= scaleY <=0 ? 0.01 : scaleY;
+          p.controls[1].y *= scaleY <=0 ? 0.01 : scaleY;
         });
       } else if (name === "cornerRadius") {
         if (
@@ -4212,12 +4220,16 @@ class Group extends Formats {
       // this.y = diff + this.y;
       this.list.forEach((l) => l.moveClip(0, diff));
     } else if (name === "width") {
-      const value = backValues(Number(e.target.value) || 0);
-      const diff = value / (this.maxX - this.minX);
+      let value = backValues(Number(e.target.value) || 0);
+      
+      let diff = value / (this.maxX - this.minX);
+    diff = diff <= 0 ? 1 : diff
       this.list.forEach((l) => l.changeLocation(diff, "scaleX"));
     } else if (name === "height") {
-      const value = backValues(Number(e.target.value) || 0);
-      const diff = value / (this.maxY - this.minY);
+      let value = backValues(Number(e.target.value) || 0);
+        
+      let diff = value / (this.maxY - this.minY);
+      diff = diff <= 0 ? 1 : diff
       this.list.forEach((l) => l.changeLocation(diff, "scaleY"));
     } else if (name === "opacity") {
       const value = Number(e.target.value) || 0;
