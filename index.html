@@ -60,19 +60,19 @@
     <main>
 
       <aside class="leftSidebar">
-        <button id="moveTool" onclick="Tools('moveTool')"><img src="images/Vector 160.svg" alt=""></button>
-        <button id="multipleSelection" onclick="Tools('multipleSelection')"></button>
-        <button id="addRectangle" onclick="Tools('addRectangle')"><img src="images/Rectangle 86.svg" alt=""></button>
-        <button id="addEllipse" onclick="Tools('addEllipse')"><img src="images/Ellipse 11.svg" alt=""></button>
-        <button id="addLine" onclick="Tools('addLine')"><img src="images/Group 8.svg" alt=""></button>
-        <button id="addPolygon" onclick="Tools('addPolygon')"><img  src="images/Polygon 1.svg" alt=""></button>
-        <button class="add-image" onclick="Tools('add-image')"><input type="file" ><img src="images/Group 35.svg" alt=""></button>
-        <button id="addTextbox" onclick="Tools('addTextbox')"><img src="images/Vector 155.svg" alt=""></button>
+        <button id="moveTool" title="move tool" onclick="Tools('moveTool')"><img src="images/Vector 160.svg" alt=""></button>
+        <button id="multipleSelection" title="multiple select" onclick="Tools('multipleSelection')"></button>
+        <button id="addRectangle" title="add rectangle" onclick="Tools('addRectangle')"><img src="images/Rectangle 86.svg" alt=""></button>
+        <button id="addEllipse" title="add ellipse" onclick="Tools('addEllipse')"><img src="images/Ellipse 11.svg" alt=""></button>
+        <button id="addLine" title="add line" onclick="Tools('addLine')"><img src="images/Group 8.svg" alt=""></button>
+        <button id="addPolygon" title="add polygon" onclick="Tools('addPolygon')"><img  src="images/Polygon 1.svg" alt=""></button>
+        <button class="add-image" title="add image" onclick="Tools('add-image')"><input type="file" ><img src="images/Group 35.svg" alt=""></button>
+        <button id="addTextbox" title="addtext box" onclick="Tools('addTextbox')"><img src="images/Vector 155.svg" alt=""></button>
         <hr>
-        <button id="zoom" onclick="Tools('zoom')"><img src="images/Vector (3).svg" alt=""></button>
-        <button id="duplicate" onclick="Tools('duplicate')"><img src="images/Group 44.svg" alt=""></button>
-        <button id="delete" onclick="Tools('delete')"><img src="images/Group 45.svg" alt=""></button>
-        <button id="pageTo" onclick="Tools('pageTo')"><img src="images/Group 51.svg" alt=""></button>
+        <button id="zoom" title="zoom" onclick="Tools('zoom')"><img src="images/Vector (3).svg" alt=""></button>
+        <button id="duplicate" title="duplicate" onclick="Tools('duplicate')"><img src="images/Group 44.svg" alt=""></button>
+        <button id="delete" title="delete" onclick="Tools('delete')"><img src="images/Group 45.svg" alt=""></button>
+        <button id="pageTo" title="page to" onclick="Tools('pageTo')"><img src="images/Group 51.svg" alt=""></button>
 
       </aside>
       <section>
@@ -106,13 +106,19 @@
           <div>Col<input type="number" name="noPerColumn" id="noPerColumn"></div>
           
         </div>
+        <div>
+          <div>
+          Spacing: <input type="text" name="spacing" id="spacing">
+          </div>
+
+        </div>
           </div>
           <button onclick="generateCard()">Done</button>
         </div>
         <div class="notification"></div>
         <section class="upsec">
-          <div><button onclick="undo()"><img src="images/Vector.svg" alt=""></button><button onclick="redo()"><img src="images/Vector.svg" style="transform: scaleX(-1);" alt=""></button></div>
-          <div style="position: relative;"><button class="snip"></button><button onclick="group()"></button><button class="editclip">Edit Clip</button></div>
+          <div><button onclick="undo()" title="undo"><img src="images/Vector.svg" alt=""></button><button onclick="redo()" title="redo"><img src="images/Vector.svg" style="transform: scaleX(-1);" alt=""></button></div>
+          <div style="position: relative;"><button title="clip" class="snip"><img src="images/clip.png" alt=""></button><button onclick="group()" title="group"><img src="images/group.png" alt=""></button><button class="editclip" title="edit clip">Edit Clip</button></div>
         </section>
         <div class="canva" style="height: 100%;min-height: 0;width: 100%;overflow: hidden;">
         <div class="canvas">

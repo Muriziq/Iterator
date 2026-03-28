@@ -17,18 +17,11 @@ let whatsMeasured = "px";
 let measurement = { width: 817, height: 1055 };
 let renderPageResolution = "auto";
 let cloneObj = null;
-let renderPageRow = 1;
-let renderPageColumn = 1;
-let renderPageSize = "auto";
 let pen = null;
 let multipleSelect = false;
 let multipleSelectArr = [];
 let undoObject = [];
 let redoObject = [];
-let renderWidth;
-let renderHeight;
-let noPerRow = 1;
-let noPerColumn = 1;
 let isDrawing = null;
 let duplicateClicked = false;
 let drawingCoordinate = { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } };
@@ -66,6 +59,7 @@ let thresholds = {
   selected: () => adapt(2),
   normalMode: () => adapt(50),
   threshold: () => adapt(10),
+  maxCanvasSize: () => adapt(10000),
   pointHold: () => adapt(30),
   slineWidth: () => adapt(2),
   sLineDashWidth: () => adapt(5),
@@ -74,9 +68,17 @@ let thresholds = {
   clipWidth: () => adapt(4),
   drawPenControls: () => adapt(20),
   arrowKeys: () => adapt(10),
-  zoomScroll: ()=> adapt(10),
+  zoomScroll: () => adapt(10),
   sColor: "#0000ff",
   normalModeColor: "#0000ff88",
+};
+let generateInfo = {
+  renderPage: "auto",
+  renderWidth: 100,
+  renderHeight: 100,
+  noPerRow: 1,
+  noPerColumn: 1,
+  spacing: 30,
 };
 let defaultFonts = [
   "serif",
@@ -105,12 +107,12 @@ window.addEventListener("load", () => {
   width.value = measurement.width;
   height.value = measurement.height;
   canvasSize();
-  const mediaQuery = window.matchMedia('(max-width: 768px)');
-  if(mediaQuery.matches){
-    thresholds.pointHold = () => adapt(30)
+  const mediaQuery = window.matchMedia("(max-width: 768px)");
+  if (mediaQuery.matches) {
+    thresholds.pointHold = () => adapt(30);
     thresholds.normalMode = () => adapt(50);
-  }else{
-    thresholds.pointHold = () => adapt(15)
+  } else {
+    thresholds.pointHold = () => adapt(15);
     thresholds.normalMode = () => adapt(30);
   }
 });
@@ -420,7 +422,7 @@ class LineUtils {
 }
 class Formats {
   constructor() {
-    this.clips = null
+    this.clips = null;
     this.scaleX = 1;
     this.scaleY = 1;
     this.color = ["#ff0000", "#0000ff"];
@@ -1542,11 +1544,10 @@ class Rectangle extends Formats {
         if (this.roundedOrbeveled === "shaped") {
           const base = this.maxX - this.minX || 1;
           const scaleX = value / base;
-console.log(scaleX)
           this.points.forEach((p) => {
-            p.points.x *= scaleX <=0 ? 0.01 : scaleX;
-            p.controls[0].x *= scaleX <=0 ? 0.01 : scaleX;
-            p.controls[1].x *= scaleX <=0 ? 0.01 : scaleX;
+            p.points.x *= scaleX <= 0 ? 0.01 : scaleX;
+            p.controls[0].x *= scaleX <= 0 ? 0.01 : scaleX;
+            p.controls[1].x *= scaleX <= 0 ? 0.01 : scaleX;
           });
         } else {
           this.width = value;
@@ -1559,9 +1560,9 @@ console.log(scaleX)
           const scaleY = value / base;
 
           this.points.forEach((p) => {
-            p.points.y *= scaleY <=0 ? 0.01 : scaleY;
-            p.controls[0].y *= scaleY <=0 ? 0.01 : scaleY;
-            p.controls[1].y *= scaleY <=0 ? 0.01 : scaleY;
+            p.points.y *= scaleY <= 0 ? 0.01 : scaleY;
+            p.controls[0].y *= scaleY <= 0 ? 0.01 : scaleY;
+            p.controls[1].y *= scaleY <= 0 ? 0.01 : scaleY;
           });
         } else {
           this.height = value;
@@ -1583,6 +1584,7 @@ console.log(scaleX)
 
     requestDraw();
     undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
   }
 
   drawBeveledRect(x, y, width, height, bevel) {
@@ -2020,6 +2022,7 @@ class Ellipse extends Formats {
     requestDraw();
 
     undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
   }
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -2518,9 +2521,9 @@ ${super.similarProptiesOutput()}
         const scaleX = value / (this.maxX - this.minX || 1);
 
         this.points.forEach((p) => {
-          p.points.x *=scaleX <=0 ? 0.01 : scaleX ;
-          p.controls[0].x *= scaleX <=0 ? 0.01 : scaleX ;
-          p.controls[1].x *= scaleX <=0 ? 0.01 : scaleX ;
+          p.points.x *= scaleX <= 0 ? 0.01 : scaleX;
+          p.controls[0].x *= scaleX <= 0 ? 0.01 : scaleX;
+          p.controls[1].x *= scaleX <= 0 ? 0.01 : scaleX;
         });
       }
 
@@ -2528,9 +2531,9 @@ ${super.similarProptiesOutput()}
         const scaleY = value / (this.maxY - this.minY || 1);
 
         this.points.forEach((p) => {
-          p.points.y *= scaleY <=0 ? 0.01 : scaleY ;
-          p.controls[0].y *= scaleY <=0 ? 0.01 : scaleY ;
-          p.controls[1].y *= scaleY <=0 ? 0.01 : scaleY ;
+          p.points.y *= scaleY <= 0 ? 0.01 : scaleY;
+          p.controls[0].y *= scaleY <= 0 ? 0.01 : scaleY;
+          p.controls[1].y *= scaleY <= 0 ? 0.01 : scaleY;
         });
       }
 
@@ -2568,6 +2571,7 @@ ${super.similarProptiesOutput()}
     }
 
     undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
     requestDraw();
   }
   showClone() {
@@ -3105,16 +3109,16 @@ class Line extends Formats {
       } else if (name === "width") {
         const scaleX = value / (this.maxX - this.minX);
         this.points.forEach((p) => {
-          p.points.x *= scaleX <=0 ? 0.01 : scaleX;
-          p.controls[0].x *=  scaleX <=0 ? 0.01 : scaleX;
-          p.controls[1].x *= scaleX <=0 ? 0.01 : scaleX;
+          p.points.x *= scaleX <= 0 ? 0.01 : scaleX;
+          p.controls[0].x *= scaleX <= 0 ? 0.01 : scaleX;
+          p.controls[1].x *= scaleX <= 0 ? 0.01 : scaleX;
         });
       } else if (name === "height") {
         const scaleY = value / (this.maxY - this.minY);
         this.points.forEach((p) => {
-          p.points.y *= scaleY <=0 ? 0.01 : scaleY;
-          p.controls[0].y *= scaleY <=0 ? 0.01 : scaleY;
-          p.controls[1].y *= scaleY <=0 ? 0.01 : scaleY;
+          p.points.y *= scaleY <= 0 ? 0.01 : scaleY;
+          p.controls[0].y *= scaleY <= 0 ? 0.01 : scaleY;
+          p.controls[1].y *= scaleY <= 0 ? 0.01 : scaleY;
         });
       } else if (name === "cornerRadius") {
         if (
@@ -3128,6 +3132,7 @@ class Line extends Formats {
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     requestDraw();
     undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
   }
   whereToSnap() {
     return {
@@ -3268,11 +3273,11 @@ class TextBox extends Formats {
         thresholds.sLineDashSpacing(),
       ]);
       ctx.strokeRect(
-          -this.width / 2 - thresholds.sWidth() / 2,
-          -this.height / 2 - thresholds.sWidth() / 2,
-          this.width + thresholds.sWidth(),
-          this.height + thresholds.sWidth(),
-        );
+        -this.width / 2 - thresholds.sWidth() / 2,
+        -this.height / 2 - thresholds.sWidth() / 2,
+        this.width + thresholds.sWidth(),
+        this.height + thresholds.sWidth(),
+      );
       ctx.closePath();
     }
 
@@ -3550,15 +3555,15 @@ class TextBox extends Formats {
 
     // Width/Height: if you want them editable, you can scale text box;
     // for now we set the values directly (matches your existing props panel pattern).
-    if (name === "width"){
-const scale = this.fontSize * backValues(Number(e.target.value) || 0) / this.width;
-this.fontSize = scale >0 ? scale : 1
-
-    } 
-    if (name === "height"){
-      const scale = this.fontSize * backValues(Number(e.target.value) || 0) / this.height;
-      this.fontSize = scale >0 ? scale : 1
-
+    if (name === "width") {
+      const scale =
+        (this.fontSize * backValues(Number(e.target.value) || 0)) / this.width;
+      this.fontSize = scale > 0 ? scale : 1;
+    }
+    if (name === "height") {
+      const scale =
+        (this.fontSize * backValues(Number(e.target.value) || 0)) / this.height;
+      this.fontSize = scale > 0 ? scale : 1;
     }
 
     if (name === "angle") this.angle = degToRad(Number(e.target.value) || 0);
@@ -3580,14 +3585,14 @@ this.fontSize = scale >0 ? scale : 1
       );
 
       if (this.fonts.length > 0) {
-         document.getElementById("fonts").style.display = "flex"
-              document.getElementById("fonts").innerHTML = this.fonts
-        .map(
-          (font) => `
+        document.getElementById("fonts").style.display = "flex";
+        document.getElementById("fonts").innerHTML = this.fonts
+          .map(
+            (font) => `
     <div class="dropdown-item">${font}</div>
   `,
-        )
-        .join("");
+          )
+          .join("");
         document.querySelectorAll(".dropdown-item").forEach((div) => {
           div.addEventListener("click", () => {
             this.fontFamily = div.textContent;
@@ -3601,12 +3606,12 @@ this.fontSize = scale >0 ? scale : 1
               document.head.appendChild(link);
               defaultFonts.push(this.fontFamily);
             }
-            requestDraw()
-            this.fonts = []
-            this.formatProperties()
+            requestDraw();
+            this.fonts = [];
+            this.formatProperties();
           });
         });
-      }else  document.getElementById("fonts").style.display = "flex"
+      } else document.getElementById("fonts").style.display = "flex";
     }
 
     if (name === "outlineThickness")
@@ -3663,10 +3668,10 @@ this.fontSize = scale >0 ? scale : 1
   changeLocation(value, type) {
     if (type === "x") {
       this.x = value;
-    } else if(type==="y") {
+    } else if (type === "y") {
       this.y = value;
-    }else{
-      this.fontSize *=value
+    } else {
+      this.fontSize *= value;
     }
   }
   moveClip(x, y) {
@@ -3720,12 +3725,12 @@ class Images extends Formats {
         thresholds.sLineDashWidth(),
         thresholds.sLineDashSpacing(),
       ]);
-        ctx.strokeRect(
-          -this.width / 2 - thresholds.sWidth() / 2,
-          -this.height / 2 - thresholds.sWidth() / 2,
-          this.width + thresholds.sWidth(),
-          this.height + thresholds.sWidth(),
-        );
+      ctx.strokeRect(
+        -this.width / 2 - thresholds.sWidth() / 2,
+        -this.height / 2 - thresholds.sWidth() / 2,
+        this.width + thresholds.sWidth(),
+        this.height + thresholds.sWidth(),
+      );
       ctx.closePath();
     }
     ctx.restore();
@@ -4009,14 +4014,13 @@ class Images extends Formats {
   changeLocation(value, type) {
     if (type === "x") {
       this.x = value;
-    } else if(type==="y") {
+    } else if (type === "y") {
       this.y = value;
-    }else if (type === "scaleX") {
+    } else if (type === "scaleX") {
       this.width *= value;
     } else if (type === "scaleY") {
       this.height *= value;
     }
-
   }
 }
 class Group extends Formats {
@@ -4054,9 +4058,12 @@ class Group extends Formats {
     });
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
-      ctx.lineWidth = adapt(1);
-      ctx.strokeStyle = "#0000ff";
-      ctx.setLineDash([adapt(5), adapt(3)]);
+      ctx.lineWidth = thresholds.slineWidth();
+      ctx.strokeStyle = thresholds.sColor;
+      ctx.setLineDash([
+        thresholds.sLineDashWidth(),
+        thresholds.sLineDashSpacing(),
+      ]);
 
       ctx.strokeRect(
         this.minX - this.x,
@@ -4067,12 +4074,12 @@ class Group extends Formats {
       ctx.closePath();
 
       ctx.beginPath();
-      ctx.fillStyle = "#0000ff88";
+      ctx.fillStyle = thresholds.normalModeColor;
       ctx.fillRect(
-        this.maxX - this.x - adapt(10),
-        this.maxY - this.y - adapt(10),
-        adapt(20),
-        adapt(20),
+        this.maxX - this.x - thresholds.normalMode() / 2,
+        this.maxY - this.y - thresholds.normalMode() / 2,
+        thresholds.normalMode(),
+        thresholds.normalMode(),
       );
       ctx.closePath();
     }
@@ -4116,7 +4123,13 @@ class Group extends Formats {
 
         const currentWidth = mouse.x - this.x;
         const currentHeight = mouse.y - this.y;
-        if(currentWidth <= 0 || currentHeight  <= 0 || lastWidth  <= 0|| lastHeight  <= 0) return
+        if (
+          currentWidth <= 0 ||
+          currentHeight <= 0 ||
+          lastWidth <= 0 ||
+          lastHeight <= 0
+        )
+          return;
         const cos = Math.cos(-this.angle);
         const sin = Math.sin(-this.angle);
         const localMouseX = currentWidth * cos - currentHeight * sin;
@@ -4193,6 +4206,7 @@ class Group extends Formats {
       objects.splice(index, 1);
       selectedObj = null;
       Tools("moveTool");
+      document.getElementById("moveTool").classList.add("active");
     });
     super.similarPropties();
     propertiesBar
@@ -4221,15 +4235,15 @@ class Group extends Formats {
       this.list.forEach((l) => l.moveClip(0, diff));
     } else if (name === "width") {
       let value = backValues(Number(e.target.value) || 0);
-      
+
       let diff = value / (this.maxX - this.minX);
-    diff = diff <= 0 ? 1 : diff
+      diff = diff <= 0 ? 1 : diff;
       this.list.forEach((l) => l.changeLocation(diff, "scaleX"));
     } else if (name === "height") {
       let value = backValues(Number(e.target.value) || 0);
-        
+
       let diff = value / (this.maxY - this.minY);
-      diff = diff <= 0 ? 1 : diff
+      diff = diff <= 0 ? 1 : diff;
       this.list.forEach((l) => l.changeLocation(diff, "scaleY"));
     } else if (name === "opacity") {
       const value = Number(e.target.value) || 0;
@@ -4245,34 +4259,26 @@ class Group extends Formats {
     }
     requestDraw();
     undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
   }
-    moveClip(x, y) {
+  moveClip(x, y) {
     this.x += x;
     this.y += y;
-    if (this.list.length > 0)
-      this.list.forEach((list) => list.moveClip(x, y));
+    if (this.list.length > 0) this.list.forEach((list) => list.moveClip(x, y));
   }
-  whereToSnap(){
+  whereToSnap() {
     return {
-      x:[
-        this.minX,
-        this.x,
-        this.maxX
-      ],
-      y:[
-        this.minY,
-        this.y,
-        this.maxY
-      ],
-      pos:{
+      x: [this.minX, this.x, this.maxX],
+      y: [this.minY, this.y, this.maxY],
+      pos: {
         x: this.minX,
-        y:this.minY,
-        width: this.maxX-this.minX,
-        height: this.maxY - this.minY
-      }
-    }
+        y: this.minY,
+        width: this.maxX - this.minX,
+        height: this.maxY - this.minY,
+      },
+    };
   }
-  changeLocation(value,type){
+  changeLocation(value, type) {
     if (type === "x") {
       const diff = value - this.minX;
       this.list.forEach((l) => l.moveClip(diff, 0));
@@ -4280,27 +4286,25 @@ class Group extends Formats {
       const diff = value - this.minY;
       this.list.forEach((l) => l.moveClip(0, diff));
     } else if (type === "scaleX") {
-              this.list.forEach((l) => {
-          // 1. Get distance from center
-          const pos = l.whereToSnap().pos;
-          const dx = pos.x - this.x;
+      this.list.forEach((l) => {
+        // 1. Get distance from center
+        const pos = l.whereToSnap().pos;
+        const dx = pos.x - this.x;
 
-          l.changeLocation(this.x + dx * value, "x");
-          l.changeLocation(value, "scaleX");
-        });
+        l.changeLocation(this.x + dx * value, "x");
+        l.changeLocation(value, "scaleX");
+      });
     } else if (type === "scaleY") {
-              this.list.forEach((l) => {
-          // 1. Get distance from center
-          const pos = l.whereToSnap().pos;
-          const dy = pos.y - this.y;
+      this.list.forEach((l) => {
+        // 1. Get distance from center
+        const pos = l.whereToSnap().pos;
+        const dy = pos.y - this.y;
 
-          l.changeLocation(this.y + dy * value, "y");
-          l.changeLocation(value, "scaleY");
-        });
+        l.changeLocation(this.y + dy * value, "y");
+        l.changeLocation(value, "scaleY");
+      });
     }
   }
-
-  
 }
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
@@ -4560,7 +4564,7 @@ function Tools(tool) {
       let zoomInterval;
 
       function zoomIn() {
-        scale += thresholds.zoomScroll() ;
+        scale += thresholds.zoomScroll();
         requestDraw();
       }
 
@@ -4650,10 +4654,10 @@ function Tools(tool) {
       });
       document.querySelector(".pageUp").addEventListener("click", () => {
         if (selectedObj) pageUp(selectedObj);
-      } );
+      });
       document.querySelector(".pageDown").addEventListener("click", () => {
         if (selectedObj) pageDown(selectedObj);
-      })
+      });
 
       break;
 
@@ -4675,27 +4679,41 @@ function flip(value) {
 document.querySelector(".generateButton").addEventListener("click", () => {
   document.querySelector(".generate").style.display = "flex";
   const canvasDiv = canvassDiv.getBoundingClientRect();
-  document.getElementById("renderWidth").value = canvasDiv.width;
-  document.getElementById("renderHeight").value = canvasDiv.height;
-  document.getElementById("renderPage").value = "auto";
-  document.getElementById("noPerRow").value = 1;
-  document.getElementById("noPerColumn").value = 1;
+  generateInfo.renderWidth = canvasDiv.width;
+  generateInfo.renderHeight = canvasDiv.height;
+  document.getElementById("renderWidth").value = changeValues(
+    generateInfo.renderWidth,
+  );
+  document.getElementById("renderHeight").value = changeValues(
+    generateInfo.renderHeight,
+  );
+  document.getElementById("renderPage").value = generateInfo.renderPage;
+  document.getElementById("noPerRow").value = generateInfo.noPerRow;
+  document.getElementById("noPerColumn").value = generateInfo.noPerColumn;
+  document.getElementById("spacing").value = changeValues(generateInfo.spacing);
+  if (generateInfo.renderPage === "auto") {
+    document.getElementById("noPerRow").readOnly = true;
+    document.getElementById("noPerColumn").readOnly = true;
+    document.getElementById("renderWidth").readOnly = true;
+    document.getElementById("renderHeight").readOnly = true;
+  }
+  document.querySelectorAll(".generate input").forEach((input) => {
+    input.addEventListener("input", (e) => {
+      if (
+        e.target.id === "renderPage" ||
+        e.target.id === "noPerRow" ||
+        e.target.id === "noPerColumn"
+      ) {
+        generateInfo[e.target.id] = Number(e.target.value) || 0;
+      } else {
+        generateInfo[e.target.id] = backValues(Number(e.target.value) || 0);
+      }
+    });
+  });
 });
 function cancelGenerate() {
   document.querySelector(".generate").style.display = "none";
 }
-document.getElementById("noPerRow").addEventListener("input", (e) => {
-  renderPageRow = e.target.value;
-});
-document.getElementById("noPerColumn").addEventListener("input", (e) => {
-  renderPageColumn = e.target.value;
-});
-document.getElementById("renderHeight").addEventListener("input", (e) => {
-  renderPageSize.height = e.target.value;
-});
-document.getElementById("renderWidth").addEventListener("input", (e) => {
-  renderPageSize.width = e.target.value;
-});
 
 let scaleRatio;
 let newWidth;
@@ -4802,37 +4820,35 @@ function drawingObject() {
       );
   }
 }
-function bringToFront(selected){
-          let index = objects.indexOf(selected);
-          if (index !== -1) {
-            objects.splice(index, 1);
-            objects.push(selected);
-            requestDraw();
-          }
+function bringToFront(selected) {
+  let index = objects.indexOf(selected);
+  if (index !== -1) {
+    objects.splice(index, 1);
+    objects.push(selected);
+    requestDraw();
+  }
 }
-function sendToBack(selected){
-          let index = objects.indexOf(selected);
-          if (index !== -1) {
-            objects.splice(index, 1);
-            objects.unshift(selected);
-            requestDraw();
-          }
+function sendToBack(selected) {
+  let index = objects.indexOf(selected);
+  if (index !== -1) {
+    objects.splice(index, 1);
+    objects.unshift(selected);
+    requestDraw();
+  }
 }
 function pageDown(selected) {
   const i = objects.indexOf(selected);
   if (i <= 0) return;
 
   // swap with previous
-  [objects[i], objects[i - 1]] = 
-  [objects[i - 1], objects[i]];
+  [objects[i], objects[i - 1]] = [objects[i - 1], objects[i]];
 }
 function pageUp(selected) {
   const i = objects.indexOf(selected);
   if (i === -1 || i === objects.length - 1) return;
 
   // swap with next
-  [objects[i], objects[i + 1]] = 
-  [objects[i + 1], objects[i]];
+  [objects[i], objects[i + 1]] = [objects[i + 1], objects[i]];
 }
 function backValues(x) {
   if (whatsMeasured === "px") {
@@ -5135,25 +5151,28 @@ async function generateCard() {
   scale = 1;
   panX = 0;
   panY = 0;
+  generationArea.style.padding = generateInfo.spacing + "px";
+  generationArea.style.gap = generateInfo.spacing + "px";
   requestDraw();
   selectedObj = null;
   generationArea.innerHTML = "";
 
-  const boxesPerPage = renderPageColumn * renderPageRow;
+  const boxesPerPage = generateInfo.noPerColumn * generateInfo.noPerRow;
 
   const createNewPage = () => {
     const page = document.createElement("section");
     generationArea.append(page);
 
     page.style.width = "100%";
-    page.style.backgroundColor = "#00FF00";
+    page.style.backgroundColor = "#ffffff";
     page.style.display = "grid";
-    page.style.gridTemplateRows = `repeat(${renderPageColumn}, 1fr)`;
-    page.style.gridTemplateColumns = `repeat(${renderPageRow}, 1fr)`;
+    page.style.gridTemplateRows = `repeat(${generateInfo.noPerColumn}, 1fr)`;
+    page.style.gridTemplateColumns = `repeat(${generateInfo.noPerRow}, 1fr)`;
     page.style.placeItems = "center";
 
     const width = page.getBoundingClientRect().width;
-    const height = (width * renderPageSize.height) / renderPageSize.width;
+    const height =
+      (width * generateInfo.renderHeight) / generateInfo.renderWidth;
     page.style.height = `${height}px`;
 
     return page;
@@ -5161,11 +5180,13 @@ async function generateCard() {
 
   let currentPage = createNewPage();
 
-  const containerWidth = currentPage.getBoundingClientRect().width - 50;
-  const containerHeight = currentPage.getBoundingClientRect().height - 50;
+  const containerWidth =
+    currentPage.getBoundingClientRect().width - generateInfo.spacing;
+  const containerHeight =
+    currentPage.getBoundingClientRect().height - generateInfo.spacing;
 
-  const cellWidth = containerWidth / renderPageRow;
-  const cellHeight = containerHeight / renderPageColumn;
+  const cellWidth = containerWidth / generateInfo.noPerRow;
+  const cellHeight = containerHeight / generateInfo.noPerColumn;
 
   // scale for preview grid placement (DOM sizing)
   const paperRect0 = canvassDiv.getBoundingClientRect();
@@ -5173,7 +5194,7 @@ async function generateCard() {
     cellWidth / paperRect0.width,
     cellHeight / paperRect0.height,
   );
-
+  currentPage.style.display = "none";
   let iterationLength = 1;
 
   if (textBoxes.length > 0) {
@@ -5281,6 +5302,11 @@ async function generateCard() {
   }
 
   document.querySelector(".generate").style.display = "none";
+  const generationAreaPosition = generationArea.offsetTop;
+  window.scrollTo({
+    top: generationAreaPosition,
+    behavior: "smooth",
+  });
 }
 
 let needsDraw = false;
@@ -5316,7 +5342,11 @@ function cMousedown(event) {
     selectedObj.formatProperties();
   } else if (clipped !== null) {
     for (let i = objects.length - 1; i >= 0; i--) {
-      if (objects[i].whatSelected(pos) && objects[i] !== clipped && objects[i].clips !== null ) {
+      if (
+        objects[i].whatSelected(pos) &&
+        objects[i] !== clipped &&
+        objects[i].clips !== null
+      ) {
         clipped.clipped = "clipped";
 
         const objectsCoordinate = objects[i].whereToSnap().pos;
@@ -5505,7 +5535,7 @@ function wMouseUp() {
     }
   }
 
-  if (isDraggingObject || isRotatingObject) {
+  if (isDraggingObject || isRotatingObject || multipleSelect) {
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;
   }
@@ -5587,68 +5617,79 @@ function cMouseMove(event) {
     requestDraw();
   }
 }
-document.addEventListener("keydown",(e)=>{
-    const tag = e.target.tagName;
+// document.addEventListener("contextmenu", (e) => {
+//   e.preventDefault();
+// });
+document.addEventListener("keydown", (e) => {
+  const tag = e.target.tagName;
 
   const isTyping =
-    tag === "INPUT" ||
-    tag === "TEXTAREA" ||
-    e.target.isContentEditable;
+    tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
 
-  if (isTyping) return
-  console.log(e.code,e.key)
-  e.preventDefault()
-  if(e.code=== "ArrowUp"){
-    if(selectedObj !== null) selectedObj.moveClip(0,-thresholds.arrowKeys())
-    else panY += -thresholds.arrowKeys()
-  }
-  if(e.code=== "ArrowDown"){
-    if(selectedObj !== null) selectedObj.moveClip(0,thresholds.arrowKeys())
-    else panY += thresholds.arrowKeys()
-  }
-  if(e.code=== "ArrowLeft"){
-    if(selectedObj !== null) selectedObj.moveClip(-thresholds.arrowKeys(),0)
-    else panX += -thresholds.arrowKeys()
-  }
-  if(e.code=== "ArrowRight"){
-    if(selectedObj !== null) selectedObj.moveClip(thresholds.arrowKeys(),0)
-    else panX += thresholds.arrowKeys()
-  }
-  if(e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null){Tools("duplicate")}
-  if(e.ctrlKey && e.key.toLowerCase() === "g" && multipleSelectArr.length > 1){group()}
-  if(e.key.toLowerCase() === "delete" && selectedObj !== null){ Tools("delete")}
-  if(e.key.toLowerCase() === "pageup") {
-    if(selectedObj !== null) pageUp(selectedObj);
-  }
-  if(e.key.toLowerCase() === "pagedown") {
-    if(selectedObj !== null) pageDown(selectedObj);
-  }
-  if(e.key.toLowerCase() === "home"){
-            if (selectedObj) bringToFront(selectedObj);
+  if (isTyping) return;
+  if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "+")) return;
+  e.preventDefault();
 
+  if (e.code === "ArrowUp") {
+    if (selectedObj !== null) selectedObj.moveClip(0, -thresholds.arrowKeys());
+    else panY += -thresholds.arrowKeys();
   }
-  if(e.key.toLowerCase() === "end"){
-            if (selectedObj) sendToBack(selectedObj);
+  if (e.code === "ArrowDown") {
+    if (selectedObj !== null) selectedObj.moveClip(0, thresholds.arrowKeys());
+    else panY += thresholds.arrowKeys();
   }
-  if(e.key.toLowerCase() === "l") align("left")
-  if(e.key.toLowerCase() === "c") align("centerX")
-  if(e.key.toLowerCase() === "r") align("right")
-  if(e.key.toLowerCase() === "t") align("top")
-  if(e.key.toLowerCase() === "e") align("centerY")
-  if(e.key.toLowerCase() === "b") align("bottom")
-  if(e.key.toLowerCase() === "q") flip("x")
-  if(e.key.toLowerCase() === "w") flip("y")
-  if(e.key.toLowerCase() === "z") {
-    Tools("zoom")
-    document.getElementById("zoom").classList.add("active")
+  if (e.code === "ArrowLeft") {
+    if (selectedObj !== null) selectedObj.moveClip(-thresholds.arrowKeys(), 0);
+    else panX += -thresholds.arrowKeys();
   }
-  if(e.key.toLowerCase() === "p") {
-    Tools("addLine")
-    document.getElementById("addLine").classList.add("active")
+  if (e.code === "ArrowRight") {
+    if (selectedObj !== null) selectedObj.moveClip(thresholds.arrowKeys(), 0);
+    else panX += thresholds.arrowKeys();
+  }
+  if (e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null) {
+    Tools("duplicate");
+  }
+  if (
+    e.ctrlKey &&
+    e.key.toLowerCase() === "g" &&
+    multipleSelectArr.length > 1
+  ) {
+    group();
+  }
+  if (e.key.toLowerCase() === "delete" && selectedObj !== null) {
+    Tools("delete");
+  }
+  if (e.key.toLowerCase() === "pageup") {
+    if (selectedObj !== null) pageUp(selectedObj);
+  }
+  if (e.key.toLowerCase() === "pagedown") {
+    if (selectedObj !== null) pageDown(selectedObj);
+  }
+  if (e.key.toLowerCase() === "home") {
+    if (selectedObj) bringToFront(selectedObj);
+  }
+  if (e.key.toLowerCase() === "end") {
+    if (selectedObj) sendToBack(selectedObj);
+  }
+  if (e.key.toLowerCase() === "l") align("left");
+  if (e.key.toLowerCase() === "c") align("centerX");
+  if (e.key.toLowerCase() === "r") align("right");
+  if (e.key.toLowerCase() === "t") align("top");
+  if (e.key.toLowerCase() === "e") align("centerY");
+  if (e.key.toLowerCase() === "b") align("bottom");
+  if (e.key.toLowerCase() === "q") flip("x");
+  if (e.key.toLowerCase() === "w") flip("y");
+  if (e.key.toLowerCase() === "z") {
+    Tools("zoom");
+    document.getElementById("zoom").classList.add("active");
+  }
+  if (e.key.toLowerCase() === "p") {
+    Tools("addLine");
+    document.getElementById("addLine").classList.add("active");
   }
 
-  requestDraw()
-})
+  requestDraw();
+});
 canvas.addEventListener("mousedown", (event) => {
   cMousedown(event);
 });
@@ -5744,13 +5785,13 @@ function draw() {
         drawingObject().addObject();
       }
     }
-    if(previousClip !== null){
-      const clone = clippedObject.showClone()
-      clone.colorFill = "none"
-      clone.outline = true
-      clone.outlineThickness = adapt(5)
-      clone.outlineColor = "#ff0000"
-      clone.addObject()
+    if (previousClip !== null) {
+      const clone = clippedObject.showClone();
+      clone.colorFill = "none";
+      clone.outline = true;
+      clone.outlineThickness = adapt(5);
+      clone.outlineColor = "#ff0000";
+      clone.addObject();
     }
   } catch (err) {
     console.log(err);
