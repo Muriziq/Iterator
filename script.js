@@ -59,7 +59,7 @@ let thresholds = {
   selected: () => adapt(2),
   normalMode: () => adapt(50),
   threshold: () => adapt(10),
-  maxCanvasSize: () => adapt(10000),
+  maxCanvasSize: () => adapt(5000),
   pointHold: () => adapt(30),
   slineWidth: () => adapt(2),
   sLineDashWidth: () => adapt(5),
@@ -4724,11 +4724,14 @@ function canvasSize() {
   panX = 0;
   panY = 0;
   requestDraw();
-  const canvassRect = canvas.getBoundingClientRect();
+    const canvassRect = canvas.getBoundingClientRect();
+    measurement.width = Math.min(thresholds.maxCanvasSize(),measurement.width)
+    measurement.height = Math.min(thresholds.maxCanvasSize(),measurement.height)
   width.value = changeValues(measurement.width);
   height.value = changeValues(measurement.height);
   canvassDiv.style.width = measurement.width + "px";
   canvassDiv.style.height = measurement.height + "px";
+
   scaleRatio = Math.max(
     measurement.width / (canvassRect.width - 30),
     measurement.height / (canvassRect.height - 30),
@@ -4736,21 +4739,24 @@ function canvasSize() {
   if (scaleRatio > 1) {
     newWidth = canvassRect.width * scaleRatio;
     newHeight = canvassRect.height * scaleRatio;
+
     canvas.style.width = canvass.style.width = `${newWidth}px`;
     canvas.style.height = canvass.style.height = `${newHeight}px`;
     canvas.width = newWidth;
     canvas.height = newHeight;
     canvass.style.transform = `scale(${1 / scaleRatio})`;
-  } else {
-    zoomToRect({
-      x: (canvas.width - measurement.width) / 2,
-      y: (canvas.height - measurement.height) / 2,
-      width: measurement.width,
-      height: measurement.height,
-    });
-  }
+  } 
+  console.log(canvas.width, newWidth);
+requestAnimationFrame(() => {
+  zoomToRect({
+    x: (canvas.width - measurement.width) / 2,
+    y: (canvas.height - measurement.height) / 2,
+    width: measurement.width,
+    height: measurement.height,
+  });
 
   requestDraw();
+});
 }
 function applyOpacityToHex(hexColor, opacityPercent) {
   if (hexColor.length >= 9) hexColor = hexColor.slice(0, 7);
@@ -5622,10 +5628,9 @@ function cMouseMove(event) {
 // });
 document.addEventListener("keydown", (e) => {
   const tag = e.target.tagName;
-
   const isTyping =
     tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
-
+console.log(e.key)
   if (isTyping) return;
   if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "+")) return;
   e.preventDefault();
@@ -5649,6 +5654,9 @@ document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null) {
     Tools("duplicate");
   }
+  if(e.shiftKey && e.key === "@" && selectedObj !== null){
+    zoomToRect(selectedObj.whereToSnap().pos)
+  }
   if (
     e.ctrlKey &&
     e.key.toLowerCase() === "g" &&
@@ -5656,6 +5664,7 @@ document.addEventListener("keydown", (e) => {
   ) {
     group();
   }
+
   if (e.key.toLowerCase() === "delete" && selectedObj !== null) {
     Tools("delete");
   }
