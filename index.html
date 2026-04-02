@@ -62,6 +62,7 @@
       <aside class="leftSidebar">
         <button id="moveTool" title="move tool" onclick="Tools('moveTool')"><img src="images/Vector 160.svg" alt=""></button>
         <button id="multipleSelection" title="multiple select" onclick="Tools('multipleSelection')"><img src="images/Group 52.svg" alt=""></button>
+                    <button title="Pan Tool" id="panTool" onclick="Tools('panTool')"><img src="images/Vector (4).svg" alt=""></button>
         <button id="addRectangle" title="add rectangle" onclick="Tools('addRectangle')"><img src="images/Rectangle 86.svg" alt=""></button>
         <button id="addEllipse" title="add ellipse" onclick="Tools('addEllipse')"><img src="images/Ellipse 11.svg" alt=""></button>
         <button id="addLine" title="add line" onclick="Tools('addLine')"><img src="images/Group 8.svg" alt=""></button>
@@ -117,8 +118,14 @@
         </div>
         <div class="notification"></div>
         <section class="upsec">
-          <div><button onclick="undo()" title="undo"><img src="images/Vector.svg" alt=""></button><button onclick="redo()" title="redo"><img src="images/Vector.svg" style="transform: scaleX(-1);" alt=""></button></div>
-          <div style="position: relative;"><button title="clip" class="snip"><img src="images/clip.png" alt=""></button><button onclick="group()" title="group"><img src="images/group.png" alt=""></button><button class="editclip" title="edit clip">Edit Clip</button></div>
+          <div>
+            <button onclick="undo()" title="undo"><img src="images/Vector.svg" alt=""></button>
+            <button onclick="redo()" title="redo"><img src="images/Vector.svg" style="transform: scaleX(-1);" alt=""></button>
+          </div>
+          <div style="position: relative;">
+            <button title="clip" class="snip"><img src="images/clip.png" alt=""></button>
+            <button onclick="group()" title="group"><img src="images/group.png" alt=""></button>
+            <button class="editclip" title="edit clip">Edit Clip</button></div>
         </section>
         <div class="canva" style="height: 100%;min-height: 0;width: 100%;overflow: hidden;">
         <div class="canvas">

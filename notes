@@ -1,3 +1,44 @@
     <option ${this.formatIterated === "none" ? "selected" : ""}>None</option>
     <option ${this.formatIterated === "shrinkToFit" ? "selected" : ""}>Shrink To Fit</option>
     <option ${this.formatIterated === "createNewLine" ? "selected" : ""}>Create New Line</option>
+
+
+
+function stopPanning(){
+  const panningButton = document.getElementById("panning");
+  stopPan = !stopPan
+  if(stopPan){
+    lastPan = {x:panX,y:panY}
+    panningButton.classList.add("active")
+    return
+  }
+  panningButton.classList.remove("active")
+}
+      <select name="formatIterated" class="formatIterated">
+    <option value="none" ${this.formatIterated === "none" ? "selected" : ""}>None</option>
+    <option value="maintainHeight" ${this.formatIterated === "maintainHeight" ? "selected" : ""}>Maintain Height</option>
+    <option value="maintainWidth" ${this.formatIterated === "maintainWidth" ? "selected" : ""}>Maintain Width</option>
+    <option value="maintainSize" ${this.formatIterated === "maintainSize" ? "selected" : ""} >Maintain Size</option>
+  </select>
+
+
+function wrapTextToString(ctx, text, maxWidth) {
+  const words = text.split(" ");
+  let line = "";
+  let result = "";
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + " ";
+    const testWidth = ctx.measureText(testLine).width;
+
+    if (testWidth > maxWidth && i > 0) {
+      result += line.trim() + "\n";
+      line = words[i] + " ";
+    } else {
+      line = testLine;
+    }
+  }
+
+  result += line.trim(); // last line
+  return result;
+}
