@@ -3192,6 +3192,7 @@ class TextBox extends Formats {
     this.y = y;
     this.fontStyle = "bold";
     this.width = 0;
+    this.maintainedWidth = 0;
     this.height = 0;
     this.textAllign = "left";
     this.clipped = "none";
@@ -3203,6 +3204,7 @@ class TextBox extends Formats {
     this.clipped = "none";
     this.outline = false;
     this.colorFill = "uniform";
+    this.formatIterated = "none"
   }
   addObject() {
     ctx.save();
@@ -3505,9 +3507,20 @@ class TextBox extends Formats {
         <h3>Iterarate</h3>
         <button class="${this.iterated ? "outlinet" : "outlinef"}" id="iterateToggle"></button>
       </div>
-<textarea style="display:${
+      <div style="display:${
       this.iterated ? "block" : "none"
-    }" name="textarea" class="text">${this.textArea}</textarea>
+    }">
+      <textarea  name="textarea" class="text">${this.textArea}</textarea>
+  <label class="uniform-div" style="margin-top:1rem">
+  <span>Format Iterated</span>
+  <select name="formatIterated" class="formatIterated">
+    <option value="none" ${this.formatIterated === "none" ? "selected" : ""}>None</option>
+    <option value="shrinkToFit" ${this.formatIterated === "shrinkToFit" ? "selected" : ""}>Shrink To Fit</option>
+    <option value="createNewLine" ${this.formatIterated === "createNewLine" ? "selected" : ""}>Create New Line</option>
+  </select>
+  </label>      
+      </div>
+
     </section>
   `;
 
@@ -3578,6 +3591,9 @@ class TextBox extends Formats {
       this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
     if (name === "textarea") {
       this.textArea = e.target.value;
+    }
+    if(name=== "formatIterated"){
+      this.formatIterated = e.target.value;
     }
     if (name === "fontFamily") {
       this.fonts = allFonts.filter((font) =>
@@ -3655,8 +3671,46 @@ class TextBox extends Formats {
     this.doubleClicked = true;
   }
   drawIteratedImage(i) {
-    const texts = this.textArea.split("\n");
-    if (this.iterated && i < texts.length) this.text = texts[i];
+    const texts = this.textArea.split("\n").trim();
+    if(i===0){
+this.maintainedWidth = this.width;
+    } 
+    if (this.iterated && i < texts.length){
+          ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
+    ctx.textAlign = this.textAllign;
+    ctx.textBaseline = "alphabetic";
+      if(this.formatIterated === "shrinkToFit"){
+        const textWidth = ctx.measureText(texts[i]).width;
+        const scale = this.maintainedWidth / textWidth;
+        this.fontSize *= scale > 0 ? scale : 1;
+         this.text = texts[i];
+      }else if(this.formatIterated === "createNewLine"){
+  const words = texts[i].split("");
+
+  let line = "";
+  let result = "";
+
+  for (let t = 0; t < words.length; t++) {
+    const testLine = line + words[t];
+    const testWidth = ctx.measureText(testLine).width;
+    console.log(testLine)
+    if (testWidth > this.maintainedWidth && t > 0) {
+      result += line.trim() + "\n";
+      line = words[i];
+        console.log("yah")
+    } else {
+      line = testLine;
+    }
+  }
+  result += line.trim()
+  this.text = result;
+
+      }else{
+        this.text = texts[i];
+      }
+      console.log("text: " + this.text)
+
+    } 
   }
   whereToSnap() {
     return {

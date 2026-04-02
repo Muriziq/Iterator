@@ -1,0 +1,3 @@
+    <option ${this.formatIterated === "none" ? "selected" : ""}>None</option>
+    <option ${this.formatIterated === "shrinkToFit" ? "selected" : ""}>Shrink To Fit</option>
+    <option ${this.formatIterated === "createNewLine" ? "selected" : ""}>Create New Line</option>
