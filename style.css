@@ -529,8 +529,8 @@ main > section{
   padding: 0;
   outline: none;
   background-color: transparent; 
-  /* width:auto;
-  height:auto; */
+  width:auto;
+  height:auto;
 }
 
 img{

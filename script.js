@@ -3601,7 +3601,7 @@ class TextBox extends Formats {
       this.fontSize = scale > 0 ? scale : 1;
     }
 
-    if (name === "angle") this.angle = degToRad(Number(e.target.value) || 0);
+    if (name === "angle") this.angle = radToDeg(Number(e.target.value) || 0,"rad");
     if (name === "opacity")
       this.opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
 
@@ -3690,11 +3690,13 @@ class TextBox extends Formats {
   }
 
   doubleClicked(mouse) {
-
    const rect = reverseMousePos(canvas,{x:this.whereToSnap().pos.x,y:this.whereToSnap().pos.y})
+   console.log(this.width,this.height)
     this.isDoubleClicked = true;
     this.textPlace.value = this.text;
     this.textPlace.classList.add("textArea");
+             this.textPlace.style.width = `${(this.width * 1/scaleRatio) + adapt(10)}px`
+    this.textPlace.style.height = `${(this.height * 1/scaleRatio) + adapt(10)}px`
     this.textPlace.style.position = "absolute";
     this.textPlace.style.left = `${rect.x}px`;
     this.textPlace.style.top = `${rect.y}px`;
@@ -3709,8 +3711,7 @@ class TextBox extends Formats {
     this.textPlace.style.color = this.color[0];
 
      canvass.appendChild(this.textPlace);
-         this.textPlace.style.width = `${rect.width * 1/scaleRatio}px`
-    this.textPlace.style.height = `${rect.height * 1/scaleRatio}px`
+
     this.textPlace.focus();
     this.textPlace.select()
     this.textPlace.addEventListener("input",(e)=>{
@@ -5679,20 +5680,6 @@ function cMousedown(event) {
   lastMouseX = pos.x;
   lastMouseY = pos.y;
   requestDraw();
-}
-function worldToScreen(x, y, canvas) {
-  const canvasX = x * scale / scaleRatio + panX;
-  const canvasY = y * scale / scaleRatio + panY;
-  
-  // Convert canvas pixels to CSS pixels for DOM positioning
-  const rect = canvass.getBoundingClientRect();
-  const screenX = canvasX * (rect.width / canvas.width);
-  const screenY = canvasY * (rect.height / canvas.height);
-  
-  return {
-    x: rect.left + screenX,
-    y: rect.top + screenY
-  };
 }
 function cDoubleClick(event) {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
