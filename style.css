@@ -26,9 +26,13 @@ body{
 button{
   text-wrap: nowrap;
 }
+.main-div{
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
 
-
-body > header{
+.header{
   background-color: var(--side-color);
   padding: 0.5rem 2rem;
   display: flex;
@@ -154,7 +158,7 @@ main{
   display: grid;
   grid-template-columns: 55px 1fr 300px;
   max-width: 100vw;
-  height: 90vh;
+  flex: 1;
   overflow: hidden;
 }
 
@@ -725,6 +729,16 @@ img{
   color: var(--input-color);
 }
 
+.textarea{
+  position : absolute;
+   outline : none;
+   background-color : transparent;
+   border : none;
+   text-align : left;
+   resize: none;
+   /* white-space: pre;
+   overflow: hidden; */
+}
 .dropdown{
   position: absolute;
   top: 20px;
@@ -851,7 +865,6 @@ input[type=number]::-webkit-outer-spin-button{
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
-  display: flex;
   flex-direction: column;
   justify-content:flex-end;
   align-items: end;
@@ -959,6 +972,9 @@ footer{
     display: flex;
     flex-direction: column;
   }
+  .main-div{
+    height: auto;
+  }
   main > section{
     height: 60vh;
   }
@@ -969,7 +985,7 @@ footer{
     overflow-x: auto;
     gap: 0.5rem;
   }
-  body > header{
+  .header{
     overflow-x: auto;
     gap: 1.5rem;
     text-wrap: nowrap;
@@ -996,22 +1012,22 @@ footer{
   overflow-y: auto;
   width: 100vw;
   min-width: 100vw;
+  border: none;
 }
 #properties{
   display: flex;
   flex-direction: row;
+  height: 300px;
 }
 #properties > section{
   width: 100vw;
   min-width: 100vw;
+  overflow-y: auto;
   border-bottom: none;
 }
 .leftSidebar hr{
   width: 5px;
   height: 40px;
 }
-.generate{
-  padding:1rem;
-  
-}
+
 }

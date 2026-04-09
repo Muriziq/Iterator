@@ -444,7 +444,7 @@ class Formats {
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
       this.outlineType = [];
-      if ((this.type = "group")) {
+      if ((this.type === "group")) {
         this.list.forEach((l) => (l.outlineType = []));
       }
       this.formatProperties();
@@ -1693,6 +1693,7 @@ class Ellipse extends Formats {
     this.y = y;
     this.radiusX = radiusX;
     this.radiusY = radiusY;
+    this.type = "ellipse"
     this.isDashed = false;
     this.arcStart = 0;
     this.arcEnd = 2 * Math.PI;
@@ -2067,6 +2068,7 @@ class Polygon extends Formats {
     super();
     this.sides = 6;
     this.x = x;
+    this.type = "polygon"
     this.y = y;
     this.radiusX = radiusX;
     this.radiusY = radiusY;
@@ -3192,6 +3194,7 @@ class TextBox extends Formats {
     this.fontSize = adapt(30);
     this.fontFamily = "Arial";
     this.fonts = [];
+    this.type = "text"
     this.x = x;
     this.y = y;
     this.fontStyle = "bold";
@@ -3768,6 +3771,7 @@ class Images extends Formats {
   constructor(x, y, image, width, aspectRatio, originalFile) {
     super();
     this.x = x;
+    this.type = "image"
     this.y = y;
     this.width = width;
     this.aspectRatio = aspectRatio;
@@ -4594,6 +4598,7 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
 function addImage(e) {
   canvas.style.cursor = "crosshair";
   const file = e.target.files[0];
+  console.log(file)
   if (!file) return;
   const url = URL.createObjectURL(file);
   const img = new Image();
@@ -5277,6 +5282,7 @@ function zoomToRect(rect) {
 }
 
 async function generateCard() {
+  document.querySelector("footer").style.display = "block";
   scale = 1;
   panX = 0;
   panY = 0;
