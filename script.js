@@ -3195,11 +3195,11 @@ class Line extends Formats {
 class TextBox extends Formats {
   constructor(x, y) {
     super();
-    this.text = "Add Textbox";
+    this.text = "Add Text";
     this.fontSize = adapt(30);
     this.fontFamily = "Arial";
     this.fonts = [];
-    this.textArea = null
+    this.textPlace = document.createElement("textarea")
     this.type = "text"
     this.x = x;
     this.y = y;
@@ -3220,11 +3220,14 @@ class TextBox extends Formats {
     this.formatIterated = "none"
   }
   addObject() {
-//     if(this.isDoubleClicked && this.textArea !== null) return
-//   if(this.textArea !== null){
-// this.textArea.remove()
-// this.textArea = null
-//   } 
+
+  if(this.isDoubleClicked){
+    return
+  }
+  if(canvass.contains(this.textPlace)){
+    canvass.removeChild(this.textPlace)
+  }
+
     ctx.save();
 
     const lines = this.text.split("\n");
@@ -3687,30 +3690,33 @@ class TextBox extends Formats {
   }
 
   doubleClicked(mouse) {
-    this.doubleClicked = true;
-    this.textArea = document.createElement("textarea");
-    this.textArea.value = this.text;
-this.textArea.classList.add("textArea");
-    this.textArea.style.position = "absolute";
-    this.textArea.style.left = `${mouse.x}px`;
-    this.textArea.style.top = `${mouse.y}px`;
-    this.textArea.style.border  = `${thresholds.slineWidth()}px dashed ${thresholds.sColor}`;
-    this.textArea.style.fontSize = `${this.fontSize * 1/scaleRatio}px`;
-    this.textArea.style.fontFamily = this.fontFamily;
-    this.textArea.style.fontStyle = this.fontStyle;
-    this.textArea.style.fontWeight = this.fontStyle;
-    this.textArea.style.textAlign = this.textAllign;
-    this.textArea.style.lineHeight = `${this.lineHeight * 1/scaleRatio}px`;
-    this.textArea.style.color = this.color[0];
 
-     canvass.appendChild(this.textArea);
-    this.textArea.focus();
-    this.textArea.addEventListener("input",(e)=>{
+   const rect = reverseMousePos(canvas,{x:this.whereToSnap().pos.x,y:this.whereToSnap().pos.y})
+    this.isDoubleClicked = true;
+    this.textPlace.value = this.text;
+    this.textPlace.classList.add("textArea");
+    this.textPlace.style.position = "absolute";
+    this.textPlace.style.left = `${rect.x}px`;
+    this.textPlace.style.top = `${rect.y}px`;
+
+    this.textPlace.style.border  = `${thresholds.slineWidth() * 1/scaleRatio}px dashed ${thresholds.sColor}`;
+    this.textPlace.style.fontSize = `${this.fontSize * 1/scaleRatio}px`;
+    this.textPlace.style.fontFamily = this.fontFamily;
+    this.textPlace.style.fontStyle = this.fontStyle;
+    this.textPlace.style.fontWeight = this.fontStyle;
+    this.textPlace.style.textAlign = this.textAllign;
+    this.textPlace.style.lineHeight = `${this.lineHeight * 1/scaleRatio}px`;
+    this.textPlace.style.color = this.color[0];
+
+     canvass.appendChild(this.textPlace);
+         this.textPlace.style.width = `${rect.width * 1/scaleRatio}px`
+    this.textPlace.style.height = `${rect.height * 1/scaleRatio}px`
+    this.textPlace.focus();
+    this.textPlace.select()
+    this.textPlace.addEventListener("input",(e)=>{
       this.text = e.target.value
       requestDraw()
-    })
-        console.log(this.fontSize,this.textArea.style.fontSize)
-  }
+    })  }
   backToDefault(){
     this.fontSize = this.originalFontSize
     this.text = this.originalText
@@ -5289,6 +5295,18 @@ function getMousePos(canvas, evt) {
     y: (canvasY - panY) / scale,
   };
 }
+function reverseMousePos(canvas,evt){
+   const rect = canvas.getBoundingClientRect();
+   const screenX = (evt.x * scale) + panX 
+   const screenY = (evt.y * scale) + panY
+   const canvasX = screenX /  (canvas.width / rect.width)
+   const canvasY = screenY /  (canvas.height / rect.height)
+   return{
+    x: canvasX,
+    y:canvasY
+   }
+
+}
 
 function zoomToRect(rect) {
   if (rect.width <= 0 || rect.height <= 0) return;
@@ -5491,6 +5509,9 @@ function requestDraw() {
   });
 }
 function cMousedown(event) {
+  for (let i = objects.length - 1; i >= 0; i--) {
+    objects[i].isDoubleClicked = false
+  }
   if(startPanning){
     isPanning = true
         startX = event.clientX;
@@ -5505,6 +5526,8 @@ function cMousedown(event) {
       const text = new TextBox(pos.x, pos.y);
       objects.push(text);
       textBoxes.push(text);
+      // text.doubleClicked(pos)
+      // isDrawing = null
     } else {
       drawingStart = true;
       drawingCoordinate.start = { x: pos.x, y: pos.y };
@@ -5658,11 +5681,11 @@ function cMousedown(event) {
   requestDraw();
 }
 function worldToScreen(x, y, canvas) {
-  const canvasX = x * scale + panX;
-  const canvasY = y * scale + panY;
+  const canvasX = x * scale / scaleRatio + panX;
+  const canvasY = y * scale / scaleRatio + panY;
   
   // Convert canvas pixels to CSS pixels for DOM positioning
-  const rect = canvas.getBoundingClientRect();
+  const rect = canvass.getBoundingClientRect();
   const screenX = canvasX * (rect.width / canvas.width);
   const screenY = canvasY * (rect.height / canvas.height);
   
@@ -5677,11 +5700,8 @@ function cDoubleClick(event) {
   for (let i = objects.length - 1; i >= 0; i--) {
     if (objects[i].whatSelected(pos)) {
       selectedObj = objects[i];
-      if(selectedObj.type === "text"){
-        selectedObj.doubleClicked(worldToScreen(event.clientX,event.clientY,canvas));
-      }else{
+
       selectedObj.doubleClicked(pos);
-      }
 
       requestDraw();
       break;
@@ -5905,13 +5925,23 @@ canvas.addEventListener("mouseleave", cMouseLeave);
 canvas.addEventListener("mousemove", (event) => {
   cMouseMove(event);
 });
+let lastTouch = 0;
 canvas.addEventListener(
   "touchstart",
   (event) => {
+
     event.preventDefault();
+      const currentTime = new Date().getTime();
+  const touchLength = currentTime - lastTouch;
+  
+  if (touchLength < 300 && touchLength > 0) {
+    cDoubleClick(event.touches[0])
+  }else{
     cMousedown(event.touches[0]);
-  },
-  { passive: false },
+  }
+
+  lastTouch = currentTime;
+  }, { passive: false },
 );
 canvas.addEventListener(
   "touchmove",
