@@ -525,6 +525,11 @@ main > section{
   transform-origin: 0 0;
   z-index: 1;
 }
+.textArea{
+  padding: 0;
+  outline: none;
+  background-color: transparent; 
+}
 
 img{
   touch-action: none;

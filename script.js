@@ -23,6 +23,9 @@ let multipleSelectArr = [];
 let undoObject = [];
 let redoObject = [];
 let isDrawing = null;
+let scaleRatio = 1;
+let newWidth;
+let newHeight;
 let duplicateClicked = false;
 let drawingCoordinate = { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } };
 let drawingStart = false;
@@ -1160,11 +1163,11 @@ class Rectangle extends Formats {
         ctx.rotate(this.angle);
         ctx.scale(this.scaleX, this.scaleY);
         this.createPath();
-        const worldMouse = {
-          x: (mouse.x - panX) / scale,
-          y: (mouse.y - panY) / scale,
-        };
-        const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
+        // const worldMouse = {
+        //   x: (mouse.x - panX) / scale,
+        //   y: (mouse.y - panY) / scale,
+        // };
+        const isInside = ctx.isPointInPath(mouse.x, mouse.y);
         ctx.restore();
 
         if (isInside) {
@@ -2296,13 +2299,15 @@ class Polygon extends Formats {
           p.cornerRadius = this.cornerRadius;
         });
       }
+      if(scaleRatio > 1){
+        
+      }
+      // const worldMouse = {
+      //   x: (mouse.x - panX) / scale,
+      //   y: (mouse.y - panY) / scale,
+      // };
 
-      const worldMouse = {
-        x: (mouse.x - panX) / scale,
-        y: (mouse.y - panY) / scale,
-      };
-
-      const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
+      const isInside = ctx.isPointInPath(mouse.x, mouse.y);
 
       ctx.restore();
 
@@ -2841,11 +2846,11 @@ class Line extends Formats {
       ctx.scale(this.scaleX, this.scaleY);
       ctx.beginPath();
       LineUtils.drawSmartShape(this.points, this.close);
-      const worldMouse = {
-        x: (mouse.x - panX) / scale,
-        y: (mouse.y - panY) / scale,
-      };
-      const isInside = ctx.isPointInPath(worldMouse.x, worldMouse.y);
+      // const worldMouse = {
+      //   x: (mouse.x - panX) / scale,
+      //   y: (mouse.y - panY) / scale,
+      // };
+      const isInside = ctx.isPointInPath(mouse.x, mouse.y);
       ctx.restore();
       if (isInside) {
         this.selectedArea = "Selected";
@@ -3194,6 +3199,7 @@ class TextBox extends Formats {
     this.fontSize = adapt(30);
     this.fontFamily = "Arial";
     this.fonts = [];
+    this.textArea = null
     this.type = "text"
     this.x = x;
     this.y = y;
@@ -3214,6 +3220,11 @@ class TextBox extends Formats {
     this.formatIterated = "none"
   }
   addObject() {
+//     if(this.isDoubleClicked && this.textArea !== null) return
+//   if(this.textArea !== null){
+// this.textArea.remove()
+// this.textArea = null
+//   } 
     ctx.save();
 
     const lines = this.text.split("\n");
@@ -3677,6 +3688,28 @@ class TextBox extends Formats {
 
   doubleClicked(mouse) {
     this.doubleClicked = true;
+    this.textArea = document.createElement("textarea");
+    this.textArea.value = this.text;
+this.textArea.classList.add("textArea");
+    this.textArea.style.position = "absolute";
+    this.textArea.style.left = `${mouse.x}px`;
+    this.textArea.style.top = `${mouse.y}px`;
+    this.textArea.style.border  = `${thresholds.slineWidth()}px dashed ${thresholds.sColor}`;
+    this.textArea.style.fontSize = `${this.fontSize * 1/scaleRatio}px`;
+    this.textArea.style.fontFamily = this.fontFamily;
+    this.textArea.style.fontStyle = this.fontStyle;
+    this.textArea.style.fontWeight = this.fontStyle;
+    this.textArea.style.textAlign = this.textAllign;
+    this.textArea.style.lineHeight = `${this.lineHeight * 1/scaleRatio}px`;
+    this.textArea.style.color = this.color[0];
+
+     canvass.appendChild(this.textArea);
+    this.textArea.focus();
+    this.textArea.addEventListener("input",(e)=>{
+      this.text = e.target.value
+      requestDraw()
+    })
+        console.log(this.fontSize,this.textArea.style.fontSize)
   }
   backToDefault(){
     this.fontSize = this.originalFontSize
@@ -4614,7 +4647,7 @@ function addImage(e) {
 }
 function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
-    if (pen !== null) {
+    if (pen !== null && pen.points.length  > 0) {
       if (button.id !== "addLine") button.classList.remove("active");
       else button.classList.add("active");
     } else {
@@ -4622,13 +4655,14 @@ function Tools(tool) {
       else button.classList.remove("active");
     }
   });
-  if (pen !== null) return;
+  if (pen !== null && pen.points.length  > 0) return;
   isDrawing = null;
   multipleSelect = false;
   multipleSelectArr = [];
   startPanning = false
   duplicateClicked = false;
   cloneObj = null;
+  pen = null
 
   switch (tool) {
     case "moveTool":
@@ -4843,9 +4877,7 @@ function cancelGenerate() {
   document.querySelector(".generate").style.display = "none";
 }
 
-let scaleRatio;
-let newWidth;
-let newHeight;
+
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
   scale = 1;
@@ -4864,17 +4896,13 @@ function canvasSize() {
     measurement.width / (canvassRect.width - 30),
     measurement.height / (canvassRect.height - 30),
   );
+
   if (scaleRatio > 1) {
     newWidth = canvassRect.width * scaleRatio;
     newHeight = canvassRect.height * scaleRatio;
-
-    canvas.style.width = canvass.style.width = `${newWidth}px`;
-    canvas.style.height = canvass.style.height = `${newHeight}px`;
     canvas.width = newWidth;
     canvas.height = newHeight;
-    canvass.style.transform = `scale(${1 / scaleRatio})`;
   } 
-  console.log(canvas.width, newWidth);
 requestAnimationFrame(() => {
   zoomToRect({
     x: (canvas.width - measurement.width) / 2,
@@ -4882,9 +4910,9 @@ requestAnimationFrame(() => {
     width: measurement.width,
     height: measurement.height,
   });
-
   requestDraw();
 });
+console.log(scale,scaleRatio)
 }
 function applyOpacityToHex(hexColor, opacityPercent) {
   if (hexColor.length >= 9) hexColor = hexColor.slice(0, 7);
@@ -5000,7 +5028,10 @@ function backValues(x) {
   }
 }
 function adapt(size) {
-  return size / scale;
+  if(scaleRatio > 1){
+  return size / scale * scaleRatio
+  }
+   return size / scale 
 }
 let previousClip = null;
 let previousOpacity;
@@ -5626,13 +5657,32 @@ function cMousedown(event) {
   lastMouseY = pos.y;
   requestDraw();
 }
+function worldToScreen(x, y, canvas) {
+  const canvasX = x * scale + panX;
+  const canvasY = y * scale + panY;
+  
+  // Convert canvas pixels to CSS pixels for DOM positioning
+  const rect = canvas.getBoundingClientRect();
+  const screenX = canvasX * (rect.width / canvas.width);
+  const screenY = canvasY * (rect.height / canvas.height);
+  
+  return {
+    x: rect.left + screenX,
+    y: rect.top + screenY
+  };
+}
 function cDoubleClick(event) {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
 
   for (let i = objects.length - 1; i >= 0; i--) {
     if (objects[i].whatSelected(pos)) {
       selectedObj = objects[i];
+      if(selectedObj.type === "text"){
+        selectedObj.doubleClicked(worldToScreen(event.clientX,event.clientY,canvas));
+      }else{
       selectedObj.doubleClicked(pos);
+      }
+
       requestDraw();
       break;
     }
@@ -5767,7 +5817,7 @@ document.addEventListener("keydown", (e) => {
   const tag = e.target.tagName;
   const isTyping =
     tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
-console.log(e.key)
+// console.log(e.key)
   if (isTyping) return;
   if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "+")) return;
   e.preventDefault();
