@@ -3691,7 +3691,6 @@ class TextBox extends Formats {
 
   doubleClicked(mouse) {
    const rect = reverseMousePos(canvas,{x:this.whereToSnap().pos.x,y:this.whereToSnap().pos.y})
-   console.log(this.width,this.height)
     this.isDoubleClicked = true;
     this.textPlace.value = this.text;
     this.textPlace.classList.add("textArea");
@@ -3781,7 +3780,6 @@ this.originalFontSize = this.fontSize
       }else{
         this.text = texts[i];
       }
-      console.log("text: " + this.text)
 
     } 
   }
@@ -4267,7 +4265,6 @@ class Group extends Formats {
     ) {
       this.selectedArea = "normal";
     }
-    console.log(this.selectedArea);
     return this.selectedArea !== null;
   }
 
@@ -4638,7 +4635,6 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
 function addImage(e) {
   canvas.style.cursor = "crosshair";
   const file = e.target.files[0];
-  console.log(file)
   if (!file) return;
   const url = URL.createObjectURL(file);
   const img = new Image();
@@ -4652,6 +4648,61 @@ function addImage(e) {
     isDrawing = "image";
   };
 }
+// For Saving and Retrieving 
+function saveToFile() {
+  const data = JSON.stringify(objects);
+
+  const blob = new Blob([data], { type: "application/json" });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "project.json";
+  a.click();
+}
+function reviveObjects(objData) {
+      let instance
+    if(objData.type === "rectangle"){
+      instance = new Rectangle()
+    }
+    if(objData.type === "ellipse"){
+      instance = new Ellipse()
+    }
+    if(objData.type === "polygon"){
+      instance = new Polygon()
+    }
+    if(objData.type === "line"){
+      instance = new Line()
+    }
+    if(objData.type === "text"){
+      instance = new TextBox()
+    }
+    if(objData.type === "image"){
+      instance = new Images()
+    }
+    if(objData.type === "group"){
+      instance = new Group()
+    }
+    Object.assign(instance, objData);
+    if(objData.type === "group"){
+      instance.list = instance.list.map(list => reviveObjects(list))
+    }
+    if(objData.clips.length > 0){
+      instance.clips = instance.clips.map(clip=>reviveObjects(clip))
+    }
+    return instance
+}
+
+fetch("project.json")
+.then(data=> data.json())
+.then(ans=>{
+  ans.forEach(answer=>{
+    objects.push(reviveObjects(answer))
+  })
+console.log(objects)
+  requestDraw()
+})
+
+// End 
 function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
     if (pen !== null && pen.points.length  > 0) {
@@ -4919,7 +4970,6 @@ requestAnimationFrame(() => {
   });
   requestDraw();
 });
-console.log(scale,scaleRatio)
 }
 function applyOpacityToHex(hexColor, opacityPercent) {
   if (hexColor.length >= 9) hexColor = hexColor.slice(0, 7);
@@ -5055,7 +5105,6 @@ editclip.addEventListener("click", () => {
       previousOpacity = clippedObject.opacity;
       clippedObject.opacity = 80;
     }
-    console.log(clippedObject);
   } else {
     clippedObject.clipped = previousClip;
     clippedObject.opacity = previousOpacity;
@@ -5398,7 +5447,6 @@ async function generateCard() {
   );
 
   iterationLength = Math.max(iterationLength, maxImageIterLength);
-  console.log(maxImageIterLength);
   let boxCountInPage = 0;
 
   // Increase output resolution. You can change this to 1, 2, 3...
