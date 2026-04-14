@@ -39,6 +39,8 @@ button{
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+      overflow-x: auto;
+      gap: 1.5rem;
 }
 
 header > section{
@@ -993,7 +995,7 @@ footer{
     gap: 0.5rem;
   }
   .header{
-    overflow-x: auto;
+
     gap: 1.5rem;
     text-wrap: nowrap;
     padding: 0.5rem 1rem;

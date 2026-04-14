@@ -53,7 +53,7 @@ let multipleSelectCoor = {
   end: { x: 0, y: 0 },
 };
 let isPanning = false;
-let startPanning = false
+let startPanning = false;
 let startX = 0;
 let startY = 0;
 let drawingImage = null;
@@ -447,7 +447,7 @@ class Formats {
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
       this.outlineType = [];
-      if ((this.type === "group")) {
+      if (this.type === "group") {
         this.list.forEach((l) => (l.outlineType = []));
       }
       this.formatProperties();
@@ -1696,7 +1696,7 @@ class Ellipse extends Formats {
     this.y = y;
     this.radiusX = radiusX;
     this.radiusY = radiusY;
-    this.type = "ellipse"
+    this.type = "ellipse";
     this.isDashed = false;
     this.arcStart = 0;
     this.arcEnd = 2 * Math.PI;
@@ -1891,12 +1891,12 @@ class Ellipse extends Formats {
 
       <label class="field">
         <span class="field-label">W</span>
-        <input type="number" name="radiusX" value="${changeValues(this.radiusX*2)}">
+        <input type="number" name="radiusX" value="${changeValues(this.radiusX * 2)}">
       </label>
 
       <label class="field">
         <span class="field-label">H</span>
-        <input type="number" name="radiusY" value="${changeValues(this.radiusY*2)}">
+        <input type="number" name="radiusY" value="${changeValues(this.radiusY * 2)}">
       </label>
 
       <label class="field">
@@ -2013,11 +2013,17 @@ class Ellipse extends Formats {
         if (name === "opacity") {
           this.opacity = Number(e.target.value) || 0;
         }
-        if(name === "radiusX" || name === "radiusY" ){
-          this[name]= value / 2
+        if (name === "radiusX" || name === "radiusY") {
+          this[name] = value / 2;
         }
 
-        if (name !== "x" && name !== "y" && name !== "opacity" && name !== "radiusX" && name !== "radiusY") {
+        if (
+          name !== "x" &&
+          name !== "y" &&
+          name !== "opacity" &&
+          name !== "radiusX" &&
+          name !== "radiusY"
+        ) {
           this[name] = value;
         }
       }
@@ -2071,7 +2077,7 @@ class Polygon extends Formats {
     super();
     this.sides = 6;
     this.x = x;
-    this.type = "polygon"
+    this.type = "polygon";
     this.y = y;
     this.radiusX = radiusX;
     this.radiusY = radiusY;
@@ -2299,8 +2305,7 @@ class Polygon extends Formats {
           p.cornerRadius = this.cornerRadius;
         });
       }
-      if(scaleRatio > 1){
-        
+      if (scaleRatio > 1) {
       }
       // const worldMouse = {
       //   x: (mouse.x - panX) / scale,
@@ -3199,8 +3204,8 @@ class TextBox extends Formats {
     this.fontSize = adapt(30);
     this.fontFamily = "Arial";
     this.fonts = [];
-    this.textPlace = document.createElement("textarea")
-    this.type = "text"
+    this.textPlace = document.createElement("textarea");
+    this.type = "text";
     this.x = x;
     this.y = y;
     this.fontStyle = "bold";
@@ -3217,16 +3222,15 @@ class TextBox extends Formats {
     this.clipped = "none";
     this.outline = false;
     this.colorFill = "uniform";
-    this.formatIterated = "none"
+    this.formatIterated = "none";
   }
   addObject() {
-
-  if(this.isDoubleClicked){
-    return
-  }
-  if(canvass.contains(this.textPlace)){
-    canvass.removeChild(this.textPlace)
-  }
+    if (this.isDoubleClicked) {
+      return;
+    }
+    if (canvass.contains(this.textPlace)) {
+      canvass.removeChild(this.textPlace);
+    }
 
     ctx.save();
 
@@ -3528,9 +3532,7 @@ class TextBox extends Formats {
         <h3>Iterarate</h3>
         <button class="${this.iterated ? "outlinet" : "outlinef"}" id="iterateToggle"></button>
       </div>
-      <div style="display:${
-      this.iterated ? "block" : "none"
-    }">
+      <div style="display:${this.iterated ? "block" : "none"}">
       <textarea  name="textarea" class="text">${this.textArea}</textarea>
   <label class="uniform-div" style="margin-top:1rem">
   <span>Format Iterated</span>
@@ -3601,7 +3603,8 @@ class TextBox extends Formats {
       this.fontSize = scale > 0 ? scale : 1;
     }
 
-    if (name === "angle") this.angle = radToDeg(Number(e.target.value) || 0,"rad");
+    if (name === "angle")
+      this.angle = radToDeg(Number(e.target.value) || 0, "rad");
     if (name === "opacity")
       this.opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
 
@@ -3614,7 +3617,7 @@ class TextBox extends Formats {
     if (name === "textarea") {
       this.textArea = e.target.value;
     }
-    if(name=== "formatIterated"){
+    if (name === "formatIterated") {
       this.formatIterated = e.target.value;
     }
     if (name === "fontFamily") {
@@ -3690,98 +3693,102 @@ class TextBox extends Formats {
   }
 
   doubleClicked(mouse) {
-   const rect = reverseMousePos(canvas,{x:this.whereToSnap().pos.x,y:this.whereToSnap().pos.y})
+    const rect = reverseMousePos(canvas, {
+      x: this.whereToSnap().pos.x,
+      y: this.whereToSnap().pos.y,
+    });
     this.isDoubleClicked = true;
     this.textPlace.value = this.text;
     this.textPlace.classList.add("textArea");
-             this.textPlace.style.width = `${(this.width * 1/scaleRatio) + adapt(10)}px`
-    this.textPlace.style.height = `${(this.height * 1/scaleRatio) + adapt(10)}px`
+    this.textPlace.style.width = `${(this.width * 1) / scaleRatio + adapt(10)}px`;
+    this.textPlace.style.height = `${(this.height * 1) / scaleRatio + adapt(10)}px`;
     this.textPlace.style.position = "absolute";
     this.textPlace.style.left = `${rect.x}px`;
     this.textPlace.style.top = `${rect.y}px`;
 
-    this.textPlace.style.border  = `${thresholds.slineWidth() * 1/scaleRatio}px dashed ${thresholds.sColor}`;
-    this.textPlace.style.fontSize = `${this.fontSize * 1/scaleRatio}px`;
+    this.textPlace.style.border = `${(thresholds.slineWidth() * 1) / scaleRatio}px dashed ${thresholds.sColor}`;
+    this.textPlace.style.fontSize = `${(this.fontSize * 1) / scaleRatio}px`;
     this.textPlace.style.fontFamily = this.fontFamily;
     this.textPlace.style.fontStyle = this.fontStyle;
     this.textPlace.style.fontWeight = this.fontStyle;
     this.textPlace.style.textAlign = this.textAllign;
-    this.textPlace.style.lineHeight = `${this.lineHeight * 1/scaleRatio}px`;
+    this.textPlace.style.lineHeight = `${(this.lineHeight * 1) / scaleRatio}px`;
     this.textPlace.style.color = this.color[0];
 
-     canvass.appendChild(this.textPlace);
+    canvass.appendChild(this.textPlace);
 
     this.textPlace.focus();
-    this.textPlace.select()
-    this.textPlace.addEventListener("input",(e)=>{
-      this.text = e.target.value
-      requestDraw()
-    })  }
-  backToDefault(){
-    this.fontSize = this.originalFontSize
-    this.text = this.originalText
+    this.textPlace.select();
+    this.textPlace.addEventListener("input", (e) => {
+      this.text = e.target.value;
+      requestDraw();
+    });
+  }
+  backToDefault() {
+    this.fontSize = this.originalFontSize;
+    this.text = this.originalText;
   }
   drawIteratedImage(i) {
-    const texts = this.textArea.trim().split("\n").map(line => line.trim()).filter(line => line.length > 0);;
-    if(i===0){
-this.maintainedWidth = this.width;
-this.originalText = this.text
-this.originalFontSize = this.fontSize
-    } 
-    if (this.iterated && i < texts.length){
-          ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
-    ctx.textAlign = this.textAllign;
-    ctx.textBaseline = "alphabetic";
-      if(this.formatIterated === "shrinkToFit"){
+    const texts = this.textArea
+      .trim()
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    if (i === 0) {
+      this.maintainedWidth = this.width;
+      this.originalText = this.text;
+      this.originalFontSize = this.fontSize;
+    }
+    if (this.iterated && i < texts.length) {
+      ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
+      ctx.textAlign = this.textAllign;
+      ctx.textBaseline = "alphabetic";
+      if (this.formatIterated === "shrinkToFit") {
         const textWidth = ctx.measureText(texts[i]).width;
         const scale = this.maintainedWidth / textWidth;
         this.fontSize *= scale > 0 ? scale : 1;
-         this.text = texts[i];
-      }
-      else if(this.formatIterated === "atWhiteSpace"){
-          const words = texts[i].split(" ");
-  let line = "";
-  let result = "";
+        this.text = texts[i];
+      } else if (this.formatIterated === "atWhiteSpace") {
+        const words = texts[i].split(" ");
+        let line = "";
+        let result = "";
 
-  for (let t = 0; t < words.length; t++) {
-    const testLine = line + words[t] + " ";
-    const testWidth = ctx.measureText(testLine).width;
+        for (let t = 0; t < words.length; t++) {
+          const testLine = line + words[t] + " ";
+          const testWidth = ctx.measureText(testLine).width;
 
-    if (testWidth > this.maintainedWidth && t > 0) {
-      result += line.trim() + "\n";
-      line = words[t] + " ";
-    } else {
-      line = testLine;
-    }
-  }
+          if (testWidth > this.maintainedWidth && t > 0) {
+            result += line.trim() + "\n";
+            line = words[t] + " ";
+          } else {
+            line = testLine;
+          }
+        }
 
-  result += line.trim(); 
-  this.text = result
-      }
-      else if(this.formatIterated === "createNewLine"){
-  const words = texts[i].split("");
+        result += line.trim();
+        this.text = result;
+      } else if (this.formatIterated === "createNewLine") {
+        const words = texts[i].split("");
 
-  let line = "";
-  let result = "";
+        let line = "";
+        let result = "";
 
-  for (let t = 0; t < words.length; t++) {
-    const testLine = line + words[t];
-    const testWidth = ctx.measureText(testLine).width;
-    if (testWidth > this.maintainedWidth && t > 0) {
-      result += line.trim() + "\n";
-      line = words[t];
-    } else {
-      line = testLine;
-    }
-  }
-  result += line.trim()
-  this.text = result;
-
-      }else{
+        for (let t = 0; t < words.length; t++) {
+          const testLine = line + words[t];
+          const testWidth = ctx.measureText(testLine).width;
+          if (testWidth > this.maintainedWidth && t > 0) {
+            result += line.trim() + "\n";
+            line = words[t];
+          } else {
+            line = testLine;
+          }
+        }
+        result += line.trim();
+        this.text = result;
+      } else {
         this.text = texts[i];
       }
-
-    } 
+    }
   }
   whereToSnap() {
     return {
@@ -3806,12 +3813,13 @@ this.originalFontSize = this.fontSize
 }
 
 class Images extends Formats {
-  constructor(x, y, image, width, aspectRatio, originalFile) {
+  constructor(x, y, image, width, aspectRatio, originalFile, fileName) {
     super();
     this.x = x;
-    this.type = "image"
+    this.type = "image";
     this.y = y;
     this.width = width;
+    this.fileName = [fileName];
     this.aspectRatio = aspectRatio;
     this.height = this.width * this.aspectRatio;
     this.image = 0;
@@ -3820,8 +3828,8 @@ class Images extends Formats {
     this.iteratedFiles = [image];
     this.maintainApect = false;
     this.clipped = "none";
-    this.imagePreview = image.src;
-      this.formatIterated = "maintainSize"
+    this.imagePreview = image?.src || null;
+    this.formatIterated = "maintainSize";
   }
   addObject() {
     ctx.save();
@@ -3842,7 +3850,6 @@ class Images extends Formats {
     );
     ctx.closePath();
     ctx.restore();
-
     if (selectedObj === this || multipleSelectArr.includes(this)) {
       ctx.beginPath();
       ctx.lineWidth = thresholds.slineWidth();
@@ -3954,7 +3961,6 @@ class Images extends Formats {
     </div>
 
     <div  style=" display:flex;flex-direction:column; gap:1rem">
-      <button class="imageb" id="removeBg">Remove Background</button>
       <button class="imageb" id="maintainAspect">Aspect Ratio</button>
     </div>
   </section>
@@ -3967,7 +3973,7 @@ class Images extends Formats {
     </div>
 
     <section class="iteratedsec">
-      ${this.originalFiles
+      ${this.iteratedFiles
         .map(
           (file, i) => `
             <div ${
@@ -3975,7 +3981,7 @@ class Images extends Formats {
                 ? "class='selected'"
                 : ""
             }>
-              <p>${file.name}</p>
+              <p>${this.fileName[i]}</p>
               <button class="change">
                 Change
                 <input type="file">
@@ -4001,10 +4007,12 @@ class Images extends Formats {
 
   </section>
 `;
-    document.querySelector(".formatIterated").addEventListener("change",(e)=>{
-      this.formatIterated = e.target.value;
-      this.formatProperties()
-    })
+    document
+      .querySelector(".formatIterated")
+      .addEventListener("change", (e) => {
+        this.formatIterated = e.target.value;
+        this.formatProperties();
+      });
     document.querySelectorAll(".iteratedsec > div").forEach((div, i) => {
       div.addEventListener("click", () => {
         this.imagePreview = this.iteratedFiles[i].src;
@@ -4020,11 +4028,16 @@ class Images extends Formats {
         img.src = url;
         img.onload = () => {
           this.iteratedFiles[i] = img;
-          this.originalFiles[i] = file;
+          this.fileName[i] = file.name;
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => {
+            this.originalFiles[i] = file;
+            this.imagePreview = img.src;
+            requestDraw();
+            this.formatProperties();
+          };
         };
-        this.imagePreview = img.src;
-        requestDraw();
-        this.formatProperties();
       });
       div.querySelector(".del").addEventListener("click", () => {
         if (this.originalFiles.length > 1) {
@@ -4039,48 +4052,6 @@ class Images extends Formats {
     document.getElementById("maintainAspect").addEventListener("click", () => {
       this.height = this.aspectRatio * this.width;
       requestDraw();
-    });
-    document.getElementById("removeBg").addEventListener("click", async () => {
-      try {
-        const formData = new FormData();
-        let files = null;
-        this.iteratedFiles.forEach((file, i) => {
-          if (file.src === this.imagePreview) files = i;
-        });
-        if (files === null) {
-          alert("Original image file not available for background removal.");
-          return;
-        }
-        formData.append("image_file", this.originalFiles[files]);
-        formData.append("size", "auto");
-        const response = await fetch("https://api.remove.bg/v1.0/removebg", {
-          method: "POST",
-          headers: {
-            "X-Api-Key": "qYJAiV6LvvHifoPU12kRt8T5",
-          },
-          body: formData,
-        });
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.errors ? err.errors[0].title : "Unknown error");
-        }
-
-        const blob = await response.blob();
-        const base64 = await blobToBase64(blob);
-        const newImage = new Image();
-        newImage.src = base64;
-
-        newImage.onload = () => {
-          this.iteratedFiles[files] = newImage;
-          const name = this.originalFiles[files].name;
-          this.originalFiles[files] = blob;
-          this.originalFiles[files].name = name;
-          this.imagePreview = base64;
-          this.formatProperties();
-        };
-      } catch (err) {
-        console.log(err);
-      }
     });
 
     propertiesBar.querySelectorAll("input").forEach((input) => {
@@ -4122,39 +4093,44 @@ class Images extends Formats {
 
         img.onload = () => {
           this.iteratedFiles.push(img);
-          this.originalFiles.push(file);
-          this.formatProperties();
+          this.fileName.push(file.name);
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => {
+            this.originalFiles.push(file);
+            this.formatProperties();
+          };
         };
       });
     }
 
     requestDraw();
   }
-  backToDefault(){
-    this.image = 0
-    this.width = this.originalWidth
-    this.height = this.originalHeight
+  backToDefault() {
+    this.image = 0;
+    this.width = this.originalWidth;
+    this.height = this.originalHeight;
   }
   drawIteratedImage(i) {
     if (this.iteratedFiles.length >= i) {
-    if(i===0){
-      this.mainTainedWidth = this.iteratedFiles[i].width;
-      this.mainTainedHeight = this.iteratedFiles[i].height;
-      this.originalWidth = this.width
-      this.originalHeight = this.height
-
-    }
-    if(this.formatIterated === "maintainHeight"){
-    const originalHeight = this.iteratedFiles[i].height
-    this.width = this.originalWidth * (this.mainTainedHeight/originalHeight)
-    this.height = this.originalHeight
-    }else if(this.formatIterated === "maintainWidth"){
-        const originalWidth = this.iteratedFiles[i].width
-    this.height = this.originalHeight / (this.mainTainedWidth/originalWidth)
-    this.width = this.originalWidth
-    }
-              this.image = i;
-
+      if (i === 0) {
+        this.mainTainedWidth = this.iteratedFiles[i].width;
+        this.mainTainedHeight = this.iteratedFiles[i].height;
+        this.originalWidth = this.width;
+        this.originalHeight = this.height;
+      }
+      if (this.formatIterated === "maintainHeight") {
+        const originalHeight = this.iteratedFiles[i].height;
+        this.width =
+          this.originalWidth * (this.mainTainedHeight / originalHeight);
+        this.height = this.originalHeight;
+      } else if (this.formatIterated === "maintainWidth") {
+        const originalWidth = this.iteratedFiles[i].width;
+        this.height =
+          this.originalHeight / (this.mainTainedWidth / originalWidth);
+        this.width = this.originalWidth;
+      }
+      this.image = i;
     } else {
       this.image = 0;
     }
@@ -4499,7 +4475,6 @@ function redo() {
   }
 }
 
-
 function rgbToHex(rgb) {
   const result = rgb.match(/\d+/g);
   if (!result) return rgb;
@@ -4632,23 +4607,46 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
     columns.value = 1;
   }
 });
-function addImage(e) {
-  canvas.style.cursor = "crosshair";
+async function addImage(e) {
+  canvas.style.cursor = "wait";
   const file = e.target.files[0];
   if (!file) return;
+
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.src = url;
-  img.onload = () => {
-    drawingImage = {
-      image: img,
-      originalFile: file,
-      aspectRatio: img.height / img.width,
+  await new Promise((resolve) => {
+    img.onload = () => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.addEventListener("load", () => {
+        drawingImage = {
+          image: img,
+          originalFile: reader.result,
+          aspectRatio: img.height / img.width,
+          fileName: file.name,
+        };
+        resolve(true);
+      });
     };
-    isDrawing = "image";
-  };
+  });
+
+  canvas.style.cursor = "crosshair";
+  isDrawing = "image";
 }
-// For Saving and Retrieving 
+// For Saving and Retrieving
+document.getElementById("retrieve-file").addEventListener("change",(e)=>retrieveFile(e))
+async function retrieveFile(e){
+  const file = e.target.files[0];
+  const reader = new FileReader()
+  reader.readAsText(file)
+  reader.onload = async()=>{
+    const jsonData = JSON.parse(reader.result)
+    const revived = await Promise.all( jsonData.map(item => reviveObjects(item)))
+    objects.push(...revived);
+    requestDraw()
+  }
+}
 function saveToFile() {
   const data = JSON.stringify(objects);
 
@@ -4659,53 +4657,83 @@ function saveToFile() {
   a.download = "project.json";
   a.click();
 }
-function reviveObjects(objData) {
-      let instance
-    if(objData.type === "rectangle"){
-      instance = new Rectangle()
-    }
-    if(objData.type === "ellipse"){
-      instance = new Ellipse()
-    }
-    if(objData.type === "polygon"){
-      instance = new Polygon()
-    }
-    if(objData.type === "line"){
-      instance = new Line()
-    }
-    if(objData.type === "text"){
-      instance = new TextBox()
-    }
-    if(objData.type === "image"){
-      instance = new Images()
-    }
-    if(objData.type === "group"){
-      instance = new Group()
-    }
-    Object.assign(instance, objData);
-    if(objData.type === "group"){
-      instance.list = instance.list.map(list => reviveObjects(list))
-    }
-    if(objData.clips.length > 0){
-      instance.clips = instance.clips.map(clip=>reviveObjects(clip))
-    }
-    return instance
+async function reviveObjects(objData) {
+  let instance;
+
+  switch (objData.type) {
+    case "rectangle":
+      instance = new Rectangle();
+      break;
+    case "ellipse":
+      instance = new Ellipse();
+      break;
+    case "polygon":
+      instance = new Polygon();
+      break;
+    case "line":
+      instance = new Line();
+      break;
+    case "text":
+      instance = new TextBox();
+      break;
+    case "image":
+      instance = new Images();
+      break;
+    case "group":
+      instance = new Group();
+      break;
+    default:
+      console.warn(`Unknown type: ${objData.type}`);
+      return null;
+  }
+
+  // ✅ Handle group children
+  if (objData.type === "group" && objData.list) {
+    objData.list = await Promise.all(
+      objData.list.map((item) => reviveObjects(item)),
+    );
+  }
+
+  // ✅ Handle clips
+  if (objData.clips && objData.clips.length > 0) {
+    objData.clips = await Promise.all(
+      objData.clips.map((clip) => reviveObjects(clip)),
+    );
+  }
+
+  // ✅ Handle images properly
+  if (objData.type === "image" && objData.originalFiles?.length) {
+    const loadedImages = await Promise.all(
+      objData.originalFiles.map((src) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = () => resolve(img);
+        });
+      }),
+    );
+
+    objData.iteratedFiles = loadedImages;
+    objData.imagePreview = loadedImages[0]?.src || "";
+  }
+
+  Object.assign(instance, objData);
+  return instance;
 }
+// fetch("project.json")
+//   .then(res => res.json())
+//   .then(async data => {
+//     const revived = await Promise.all(
+//       data.map(item => reviveObjects(item))
+//     );
 
-fetch("project.json")
-.then(data=> data.json())
-.then(ans=>{
-  ans.forEach(answer=>{
-    objects.push(reviveObjects(answer))
-  })
-console.log(objects)
-  requestDraw()
-})
-
-// End 
+//     objects.push(...revived);
+//     requestDraw();
+//   });
+// End
 function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
-    if (pen !== null && pen.points.length  > 0) {
+    if (pen !== null && pen.points.length > 0) {
       if (button.id !== "addLine") button.classList.remove("active");
       else button.classList.add("active");
     } else {
@@ -4713,14 +4741,14 @@ function Tools(tool) {
       else button.classList.remove("active");
     }
   });
-  if (pen !== null && pen.points.length  > 0) return;
+  if (pen !== null && pen.points.length > 0) return;
   isDrawing = null;
   multipleSelect = false;
   multipleSelectArr = [];
-  startPanning = false
+  startPanning = false;
   duplicateClicked = false;
   cloneObj = null;
-  pen = null
+  pen = null;
 
   switch (tool) {
     case "moveTool":
@@ -4734,9 +4762,9 @@ function Tools(tool) {
       break;
     case "panTool":
       canvas.style.cursor = "grab";
-      startPanning = !startPanning
+      startPanning = !startPanning;
 
-      break
+      break;
     case "addRectangle":
       canvas.style.cursor = "crosshair";
       isDrawing = "rect";
@@ -4935,16 +4963,15 @@ function cancelGenerate() {
   document.querySelector(".generate").style.display = "none";
 }
 
-
 document.querySelector(".saveAsImage").addEventListener("click", saveAsImage);
 function canvasSize() {
   scale = 1;
   panX = 0;
   panY = 0;
   requestDraw();
-    const canvassRect = canvas.getBoundingClientRect();
-    measurement.width = Math.min(thresholds.maxCanvasSize(),measurement.width)
-    measurement.height = Math.min(thresholds.maxCanvasSize(),measurement.height)
+  const canvassRect = canvas.getBoundingClientRect();
+  measurement.width = Math.min(thresholds.maxCanvasSize(), measurement.width);
+  measurement.height = Math.min(thresholds.maxCanvasSize(), measurement.height);
   width.value = changeValues(measurement.width);
   height.value = changeValues(measurement.height);
   canvassDiv.style.width = measurement.width + "px";
@@ -4960,16 +4987,16 @@ function canvasSize() {
     newHeight = canvassRect.height * scaleRatio;
     canvas.width = newWidth;
     canvas.height = newHeight;
-  } 
-requestAnimationFrame(() => {
-  zoomToRect({
-    x: (canvas.width - measurement.width) / 2,
-    y: (canvas.height - measurement.height) / 2,
-    width: measurement.width,
-    height: measurement.height,
+  }
+  requestAnimationFrame(() => {
+    zoomToRect({
+      x: (canvas.width - measurement.width) / 2,
+      y: (canvas.height - measurement.height) / 2,
+      width: measurement.width,
+      height: measurement.height,
+    });
+    requestDraw();
   });
-  requestDraw();
-});
 }
 function applyOpacityToHex(hexColor, opacityPercent) {
   if (hexColor.length >= 9) hexColor = hexColor.slice(0, 7);
@@ -5004,7 +5031,7 @@ function changeValues(x) {
   }
   return parseFloat(parseFloat(value).toFixed(2));
 }
-function drawingObject() {
+function drawingObject(original = false) {
   const start = drawingCoordinate.start;
   if (drawingCoordinate.end.x - start.x < 1)
     drawingCoordinate.end.x = start.x + 1;
@@ -5029,13 +5056,25 @@ function drawingObject() {
         (end.y - start.y) / 2,
       );
     case "image":
+      if (original) {
+        return new Images(
+          start.x,
+          start.y,
+          drawingImage.image,
+          end.x - start.x,
+          drawingImage.aspectRatio,
+          drawingImage.originalFile,
+          drawingImage.fileName,
+        );
+      }
       return new Images(
         start.x,
         start.y,
         drawingImage.image,
         end.x - start.x,
         drawingImage.aspectRatio,
-        drawingImage.originalFile,
+        null,
+        drawingImage.fileName,
       );
   }
 }
@@ -5085,10 +5124,10 @@ function backValues(x) {
   }
 }
 function adapt(size) {
-  if(scaleRatio > 1){
-  return size / scale * scaleRatio
+  if (scaleRatio > 1) {
+    return (size / scale) * scaleRatio;
   }
-   return size / scale 
+  return size / scale;
 }
 let previousClip = null;
 let previousOpacity;
@@ -5345,17 +5384,16 @@ function getMousePos(canvas, evt) {
     y: (canvasY - panY) / scale,
   };
 }
-function reverseMousePos(canvas,evt){
-   const rect = canvas.getBoundingClientRect();
-   const screenX = (evt.x * scale) + panX 
-   const screenY = (evt.y * scale) + panY
-   const canvasX = screenX /  (canvas.width / rect.width)
-   const canvasY = screenY /  (canvas.height / rect.height)
-   return{
+function reverseMousePos(canvas, evt) {
+  const rect = canvas.getBoundingClientRect();
+  const screenX = evt.x * scale + panX;
+  const screenY = evt.y * scale + panY;
+  const canvasX = screenX / (canvas.width / rect.width);
+  const canvasY = screenY / (canvas.height / rect.height);
+  return {
     x: canvasX,
-    y:canvasY
-   }
-
+    y: canvasY,
+  };
 }
 
 function zoomToRect(rect) {
@@ -5388,7 +5426,7 @@ async function generateCard() {
   generationArea.style.padding = generateInfo.spacing + "px";
   generationArea.style.gap = generateInfo.spacing + "px";
   requestDraw();
-  let previouslySelectedObj = selectedObj
+  let previouslySelectedObj = selectedObj;
   selectedObj = null;
   generationArea.innerHTML = "";
 
@@ -5464,14 +5502,17 @@ async function generateCard() {
     const canvasRect = canvas.getBoundingClientRect();
     const paperRect = canvassDiv.getBoundingClientRect();
 
-    const sx = canvas.width / canvasRect.width;
-    const sy = canvas.height / canvasRect.height;
+    // const sx = canvas.width / canvasRect.width;
+    // const sy = canvas.height / canvasRect.height;
 
-    const cropX = (paperRect.left - canvasRect.left) * sx;
-    const cropY = (paperRect.top - canvasRect.top) * sy;
-    const cropW = paperRect.width * sx;
-    const cropH = paperRect.height * sy;
-
+    // const cropX = (paperRect.left - canvasRect.left) * sx;
+    // const cropY = (paperRect.top - canvasRect.top) * sy;
+    // const cropW = paperRect.width * sx;
+    // const cropH = paperRect.height * sy;
+    const cropX = (canvas.width - measurement.width) / 2;
+    const cropY = (canvas.height - measurement.height) / 2;
+    const cropW = measurement.width;
+    const cropH = measurement.height;
     // 3) copy cropped area to an offscreen canvas
     const croppedCanvas = document.createElement("canvas");
     const cty = croppedCanvas.getContext("2d");
@@ -5534,16 +5575,16 @@ async function generateCard() {
       boxCountInPage++;
     }
   }
-  images.forEach(img=>img.backToDefault())
-  textBoxes.forEach(textBox=>textBox.backToDefault())
+  images.forEach((img) => img.backToDefault());
+  textBoxes.forEach((textBox) => textBox.backToDefault());
   document.querySelector(".generate").style.display = "none";
   const generationAreaPosition = generationArea.offsetTop;
   window.scrollTo({
     top: generationAreaPosition,
     behavior: "smooth",
   });
-  selectedObj = previouslySelectedObj
-  requestDraw()
+  selectedObj = previouslySelectedObj;
+  requestDraw();
 }
 
 let needsDraw = false;
@@ -5559,13 +5600,13 @@ function requestDraw() {
 }
 function cMousedown(event) {
   for (let i = objects.length - 1; i >= 0; i--) {
-    objects[i].isDoubleClicked = false
+    objects[i].isDoubleClicked = false;
   }
-  if(startPanning){
-    isPanning = true
-        startX = event.clientX;
+  if (startPanning) {
+    isPanning = true;
+    startX = event.clientX;
     startY = event.clientY;
-    return
+    return;
   }
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
   isDraggingObject = false;
@@ -5774,7 +5815,7 @@ function wMouseUp() {
       isDrawing = null;
       multipleSelect = true;
     } else {
-      const drawedObject = drawingObject();
+      const drawedObject = drawingObject(true);
       objects.push(drawedObject);
       if (isDrawing === "image") {
         images.push(drawedObject);
@@ -5872,9 +5913,9 @@ document.addEventListener("keydown", (e) => {
   const tag = e.target.tagName;
   const isTyping =
     tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
-// console.log(e.key)
+  // console.log(e.key)
   if (isTyping) return;
-  if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "+")) return;
+  if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "=")) return;
   e.preventDefault();
 
   if (e.code === "ArrowUp") {
@@ -5896,8 +5937,8 @@ document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null) {
     Tools("duplicate");
   }
-  if(e.shiftKey && e.key === "@" && selectedObj !== null){
-    zoomToRect(selectedObj.whereToSnap().pos)
+  if (e.shiftKey && e.key === "@" && selectedObj !== null) {
+    zoomToRect(selectedObj.whereToSnap().pos);
   }
   if (
     e.ctrlKey &&
@@ -5930,9 +5971,9 @@ document.addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() === "b") align("bottom");
   if (e.key.toLowerCase() === "q") flip("x");
   if (e.key.toLowerCase() === "w") flip("y");
-  if(e.key.toLowerCase() === "h"){
-    Tools("panTool")
-    document.getElementById("panTool").classList.add("active")
+  if (e.key.toLowerCase() === "h") {
+    Tools("panTool");
+    document.getElementById("panTool").classList.add("active");
   }
   if (e.key.toLowerCase() === "z") {
     Tools("zoom");
@@ -5964,19 +6005,19 @@ let lastTouch = 0;
 canvas.addEventListener(
   "touchstart",
   (event) => {
-
     event.preventDefault();
-      const currentTime = new Date().getTime();
-  const touchLength = currentTime - lastTouch;
-  
-  if (touchLength < 300 && touchLength > 0) {
-    cDoubleClick(event.touches[0])
-  }else{
-    cMousedown(event.touches[0]);
-  }
+    const currentTime = new Date().getTime();
+    const touchLength = currentTime - lastTouch;
 
-  lastTouch = currentTime;
-  }, { passive: false },
+    if (touchLength < 300 && touchLength > 0) {
+      cDoubleClick(event.touches[0]);
+    } else {
+      cMousedown(event.touches[0]);
+    }
+
+    lastTouch = currentTime;
+  },
+  { passive: false },
 );
 canvas.addEventListener(
   "touchmove",
@@ -6009,14 +6050,12 @@ function draw() {
     );
     ctx.closePath();
 
-
-
     if (objects.length > 0) {
       objects.forEach((obj) => {
         obj.addObject();
       });
     }
-        if (cloneObj) {
+    if (cloneObj) {
       cloneObj.addObject();
     }
     if (multipleSelect && multipleSelectArr.length > 0) {

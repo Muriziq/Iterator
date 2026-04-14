@@ -1,102 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <style>
-        .dropdown {
-  position: relative;
-  width: 200px;
-}
-
-.dropdown-input {
-  width: 100%;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-.dropdown-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  max-height: 150px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  background: white;
-  display: none;
-  z-index: 1000;
-}
-
-.dropdown-item {
-  padding: 8px;
-  cursor: pointer;
-}
-
-.dropdown-item:hover {
-  background: #eee;
-}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
 </head>
 <body>
-    <div class="dropdown">
-  <input 
-    type="text" 
-    class="dropdown-input" 
-    placeholder="Select font..." 
-  />
-  <div class="dropdown-list"></div>
-</div>
-<script>
-    const allFonts = [
-  "Arial",
-  "Verdana",
-  "Times New Roman",
-  "Courier New",
-  "Georgia",
-  "Poppins",
-  "Roboto"
-];
+  <img src="" alt="" width="500px" height="500px">
+  <script>
+async function life(){
+  console.log("first")
+  await new Promise((resolve)=>{
+  setTimeout(()=>{
+    console.log('second')
+  },2000)
+  })
 
-const input = document.querySelector(".dropdown-input");
-const list = document.querySelector(".dropdown-list");
-
-function renderList(items) {
-  list.innerHTML = items.map(font => `
-    <div class="dropdown-item">${font}</div>
-  `).join("");
+  console.log('third')
 }
-
-// Show dropdown on focus
-input.addEventListener("focus", () => {
-  list.style.display = "block";
-  renderList(allFonts);
-});
-
-// Filter on typing
-input.addEventListener("input", () => {
-  const value = input.value.toLowerCase();
-  const filtered = allFonts.filter(font =>
-    font.toLowerCase().includes(value)
-  );
-  renderList(filtered);
-});
-
-// Select item
-list.addEventListener("click", (e) => {
-  if (e.target.classList.contains("dropdown-item")) {
-    input.value = e.target.textContent;
-    list.style.display = "none";
-  }
-});
-
-// Hide when clicking outside
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".dropdown")) {
-    list.style.display = "none";
-  }
-});
-</script>
+life()
+  </script>
 </body>
 </html>

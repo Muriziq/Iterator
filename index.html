@@ -52,11 +52,12 @@
             </select>
           </div>
       </section>
-      <div>
-        <button class="save" onclick="saveToFile()">Save</button>
+      <div style="display:flex;flex-direction: row;align-items: center;gap: 1rem;">
                 <button class="generateButton">
           Generate Button
         </button>
+                <button class="save" onclick="saveToFile()">Save</button>
+        <input type="file" name="" id="retrieve-file" accept=".json">
       </div>
     </header>
     <main>
@@ -184,6 +185,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dom-to-image@2.6.0/src/dom-to-image.min.js"></script>
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
   </body>
 </html>

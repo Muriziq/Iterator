@@ -1,0 +1,83 @@
+async function reviveObjects(objData) {
+    // Process group children first
+    if (objData.type === "group") {
+        objData.list = await Promise.all(objData.list.map(list => reviveObjects(list)));
+    }
+    
+    // Process clips
+    if (objData.clips && objData.clips.length > 0) {
+        objData.clips = await Promise.all(objData.clips.map(clip => reviveObjects(clip)));
+    }
+    
+    // Create the instance
+    let instance;
+    switch(objData.type) {
+        case "rectangle":
+            instance = new Rectangle();
+            break;
+        case "ellipse":
+            instance = new Ellipse();
+            break;
+        case "polygon":
+            instance = new Polygon();
+            break;
+        case "line":
+            instance = new Line();
+            break;
+        case "text":
+            instance = new TextBox();
+            break;
+        case "image":
+            instance = new Images();
+            break;
+        case "group":
+            instance = new Group();
+            break;
+        default:
+            console.warn(`Unknown type: ${objData.type}`);
+            return null;
+    }
+    
+    // Handle image loading specially
+    if (objData.type === "image" && objData.originalFiles && objData.originalFiles.length > 0) {
+        try {
+            const iteratedFiles = await loadImages(objData.originalFiles);
+            objData.iteratedFiles = iteratedFiles;
+            objData.imagePreview = iteratedFiles[0]?.src || '';
+        } catch (error) {
+            console.error('Failed to load images:', error);
+        }
+    }
+    
+    // Assign all properties to the instance
+    Object.assign(instance, objData);
+    return instance;
+}
+
+// Helper function to load images
+function loadImages(imageSources) {
+    return new Promise((resolve, reject) => {
+        const loadedImages = [];
+        let completedCount = 0;
+        
+        if (imageSources.length === 0) {
+            resolve(loadedImages);
+            return;
+        }
+        
+        imageSources.forEach((src, index) => {
+            const img = new Image();
+            img.onload = () => {
+                loadedImages[index] = img;
+                completedCount++;
+                if (completedCount === imageSources.length) {
+                    resolve(loadedImages);
+                }
+            };
+            img.onerror = (error) => {
+                reject(new Error(`Failed to load image: ${src}`));
+            };
+            img.src = src;
+        });
+    });
+}
