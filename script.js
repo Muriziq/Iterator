@@ -61,18 +61,18 @@ let selectedObj = null;
 let clipped = null;
 let thresholds = {
   selected: () => adapt(2),
-  normalMode: () => adapt(50),
-  threshold: () => adapt(10),
+  normalMode: () => adapt(25),
+  threshold: () => adapt(5),
   maxCanvasSize: () => adapt(5000),
-  pointHold: () => adapt(30),
-  slineWidth: () => adapt(2),
-  sLineDashWidth: () => adapt(5),
-  sLineDashSpacing: () => adapt(3),
-  sWidth: () => adapt(4),
-  clipWidth: () => adapt(4),
-  drawPenControls: () => adapt(20),
-  arrowKeys: () => adapt(10),
-  zoomScroll: () => adapt(10),
+  pointHold: () => adapt(15),
+  slineWidth: () => adapt(1),
+  sLineDashWidth: () => adapt(2.5),
+  sLineDashSpacing: () => adapt(1.5),
+  sWidth: () => adapt(2),
+  clipWidth: () => adapt(2),
+  drawPenControls: () => adapt(10),
+  arrowKeys: () => adapt(5),
+  zoomScroll: () => adapt(5),
   sColor: "#0000ff",
   normalModeColor: "#0000ff88",
 };
@@ -113,11 +113,11 @@ window.addEventListener("load", () => {
   canvasSize();
   const mediaQuery = window.matchMedia("(max-width: 768px)");
   if (mediaQuery.matches) {
-    thresholds.pointHold = () => adapt(30);
-    thresholds.normalMode = () => adapt(50);
-  } else {
     thresholds.pointHold = () => adapt(15);
-    thresholds.normalMode = () => adapt(30);
+    thresholds.normalMode = () => adapt(25);
+  } else {
+    thresholds.pointHold = () => adapt(7.5);
+    thresholds.normalMode = () => adapt(15);
   }
 });
 class LineUtils {
@@ -5131,6 +5131,7 @@ function backValues(x) {
   }
 }
 function adapt(size) {
+  console.log(scaleRatio)
   if (scaleRatio > 1) {
     return (size / scale) * scaleRatio;
   }
