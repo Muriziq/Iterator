@@ -63,27 +63,27 @@
     <main>
 
       <aside class="leftSidebar">
-        <button id="moveTool" title="move tool" onclick="Tools('moveTool')"><img src="images/Vector 160.svg" alt=""></button>
-        <button id="multipleSelection" title="multiple select" onclick="Tools('multipleSelection')"><img src="images/Group 52.svg" alt=""></button>
-                    <button title="Pan Tool" id="panTool" onclick="Tools('panTool')"><img src="images/Vector (4).svg" alt=""></button>
-        <button id="addRectangle" title="add rectangle" onclick="Tools('addRectangle')"><img src="images/Rectangle 86.svg" alt=""></button>
-        <button id="addEllipse" title="add ellipse" onclick="Tools('addEllipse')"><img src="images/Ellipse 11.svg" alt=""></button>
-        <button id="addLine" title="add line" onclick="Tools('addLine')"><img src="images/Group 8.svg" alt=""></button>
-        <button id="addPolygon" title="add polygon" onclick="Tools('addPolygon')"><img  src="images/Polygon 1.svg" alt=""></button>
-        <button class="add-image" title="add image" onclick="Tools('add-image')"><input type="file" ><img src="images/Group 35.svg" alt=""></button>
-        <button id="addTextbox" title="addtext box" onclick="Tools('addTextbox')"><img src="images/Vector 155.svg" alt=""></button>
+        <button id="moveTool" title="move tool" onclick="Tools('moveTool')"><img src="imagess/mouse-pointer-2.svg" alt=""></button>
+        <button id="multipleSelection" title="multiple select" onclick="Tools('multipleSelection')"><img src="imagess/multiple-select.svg" alt=""></button>
+                    <button title="Pan Tool" id="panTool" onclick="Tools('panTool')"><img src="imagess/hand.svg" alt=""></button>
+        <button id="addRectangle" title="add rectangle" onclick="Tools('addRectangle')"><img src="imagess/rectangle-horizontal.svg" alt=""></button>
+        <button id="addEllipse" title="add ellipse" onclick="Tools('addEllipse')"><img src="imagess/circle.svg" alt=""></button>
+        <button id="addLine" title="add line" onclick="Tools('addLine')"><img src="imagess/pen-tool.svg" alt=""></button>
+        <button id="addPolygon" title="add polygon" onclick="Tools('addPolygon')"><img  src="imagess/hexagon.svg" alt=""></button>
+        <button class="add-image" title="add image" onclick="Tools('add-image')"><input type="file" ><img src="imagess/book-image.svg" alt=""></button>
+        <button id="addTextbox" title="addtext box" onclick="Tools('addTextbox')"><img src="imagess/type.svg" alt=""></button>
         <hr>
-        <button id="zoom" title="zoom" onclick="Tools('zoom')"><img src="images/Vector (3).svg" alt=""></button>
-        <button id="duplicate" title="duplicate" onclick="Tools('duplicate')"><img src="images/Group 44.svg" alt=""></button>
-        <button id="delete" title="delete" onclick="Tools('delete')"><img src="images/Group 45.svg" alt=""></button>
-        <button id="pageTo" title="page to" onclick="Tools('pageTo')"><img src="images/Group 51.svg" alt=""></button>
+        <button id="zoom" title="zoom" onclick="Tools('zoom')"><img src="imagess/zoom.svg" alt=""></button>
+        <button id="duplicate" title="duplicate" onclick="Tools('duplicate')"><img src="imagess/copy.svg" alt=""></button>
+        <button id="delete" title="delete" onclick="Tools('delete')"><img src="imagess/trash.svg" alt=""></button>
+        <button id="pageTo" title="page to" onclick="Tools('pageTo')"><img src="imagess/bring-to-front.svg" alt=""></button>
 
       </aside>
       <section>
         <div class="generate">
           <div>
             <h3>RENDER</h3>
-            <button onclick="cancelGenerate()"><img src="images/Vector (2).svg" alt=""></button>
+            <button onclick="cancelGenerate()"><img src="imagess/circle-x.svg" alt=""></button>
           </div>
           <div class="generate1">
         <select name="renderPage" id="renderPage">
@@ -122,12 +122,12 @@
         <div class="notification"></div>
         <section class="upsec">
           <div>
-            <button onclick="undo()" title="undo"><img src="images/Vector.svg" alt=""></button>
-            <button onclick="redo()" title="redo"><img src="images/Vector.svg" style="transform: scaleX(-1);" alt=""></button>
+            <button onclick="undo()" title="undo"><img src="imagess/undo-2.svg" alt=""></button>
+            <button onclick="redo()" title="redo"><img style="transform: scaleX(1);" src="imagess/redo-2.svg" alt=""></button>
           </div>
           <div style="position: relative;">
-            <button title="clip" class="snip"><img src="images/clip.png" alt=""></button>
-            <button onclick="group()" title="group"><img src="images/group.png" alt=""></button>
+            <button title="clip" class="snip"><img src="imagess/paperclip.svg" alt=""></button>
+            <button onclick="group()" title="group"><img src="imagess/users.svg" alt=""></button>
             <button class="editclip" title="edit clip">Edit Clip</button></div>
         </section>
         <div class="canva" style="height: 100%;min-height: 0;width: 100%;overflow: hidden;">
@@ -147,19 +147,19 @@
           </div>
 <section class="properties-align">
   <div>
-    <button onclick="align('left')"><img src="images/Group 1.svg" alt=""></button>
-    <button onclick="align('centerX')"><img src="images/Group 2.svg" alt=""></button>
-    <button onclick="align('right')"><img src="images/Group 3.svg" alt=""></button>
+    <button onclick="align('left')"><img src="imagess/align-start-horizontal.svg" alt=""></button>
+    <button onclick="align('centerX')"><img src="imagess/align-center-horizontal.svg" alt=""></button>
+    <button onclick="align('right')"><img src="imagess/align-end-horizontal.svg" alt=""></button>
   </div>
   <div>
-    <button onclick="align('top')"><img src="images/Group 4.svg" alt=""></button>
-    <button onclick="align('centerY')"><img src="images/Group 5.svg" alt=""></button>
-    <button onclick="align('bottom')"><img src="images/Group 6.svg" alt=""></button>
+    <button onclick="align('top')"><img src="imagess/align-start-vertical.svg" alt=""></button>
+    <button onclick="align('centerY')"><img src="imagess/align-center-vertical.svg" alt=""></button>
+    <button onclick="align('bottom')"><img src="imagess/align-end-vertical.svg" alt=""></button>
   </div>
 </section>
 <section class="flip" style="gap: 0.5rem;">
-  <button onclick="flip('x')"><img src="images/flipx.png" alt=""></button>
-  <button onclick="flip('y')"><img src="images/flipy.png" alt=""></button>
+  <button onclick="flip('x')"><img src="imagess/flip-horizontal-2.svg" alt=""></button>
+  <button onclick="flip('y')"><img src="imagess/flip-vertical-2.svg" alt=""></button>
 </section>
         </div>
 

@@ -585,7 +585,7 @@ class Formats {
           .join("")}
 
         <section class="color-sec">
-          <button class="addColor">Add Color <img src="images/Group 27.svg"></button>
+          <button class="addColor">Add Color <img src="imagess/plus.svg"></button>
 
           <label  style="display:${this.colorFill === "linear" ? "flex" : "none"}">
             Rotation
@@ -1323,13 +1323,13 @@ class Rectangle extends Formats {
   <section class="shape">
     <div class="shape-row">
       <button class="beveled ${this.roundedOrbeveled === "beveled" ? "selected" : ""}">
-        <img src="images/Vector 169.svg" alt="Beveled">
+        <img src="imagess/Vector 169.svg" alt="Beveled">
       </button>
       <button class="rounded ${this.roundedOrbeveled === "rounded" ? "selected" : ""}">
-        <img src="images/Rectangle 128.svg" alt="Rounded">
+        <img src="imagess/Rectangle 128.svg" alt="Rounded">
       </button>
       <button class="shapetool ${this.roundedOrbeveled === "shaped" ? "selected" : ""}">
-        <img src="images/Group 33.svg" alt="Shape tool">
+        <img src="imagess/vector-square.svg" alt="Shape tool">
       </button>
     </div>
 
@@ -1340,7 +1340,7 @@ class Rectangle extends Formats {
           ? "selected"
           : ""
       }">
-        <img src="images/Group 34.svg" alt="Convert">
+        <img src="imagess/spline-pointer.svg" alt="Convert">
       </button>
       <button class="rounded-edge ${
         this.selectedArea === "pointIndex" &&
@@ -1348,7 +1348,7 @@ class Rectangle extends Formats {
           ? "selected"
           : ""
       }" >
-        <img src="images/Group 32.svg" alt="Rounded edge">
+        <img src="imagess/square-round-corner.svg" alt="Rounded edge">
       </button>
     </div>
 
@@ -1872,8 +1872,8 @@ class Ellipse extends Formats {
     super.circFormat(mouse, x, y);
   }
   formatProperties() {
-    const pie = "images/pie.png";
-    const curveEnd = "images/curveEnd.png";
+    const pie = "imagess/chart-pie.svg";
+    const curveEnd = "imagess/loader-circle.svg";
     propertiesBar.innerHTML = `
   <section class="coord-section">
     <h3>Coordinate</h3>
@@ -1915,7 +1915,7 @@ class Ellipse extends Formats {
   <section class="shape">
     <div class="shape-row">
       <button class="fill ${this.mode === "fill" ? "selected" : ""}">
-        <img src="images/Ellipse 11.svg" alt="Fill">
+        <img src="imagess/circle.svg" alt="Fill">
       </button>
 
       <button class="pie ${this.mode === "pie" ? "selected" : ""}">
@@ -1932,13 +1932,13 @@ class Ellipse extends Formats {
       style="display:${this.mode === "fill" ? "none" : "grid"}"
     >
       <label class="field">
-        <span class="field-label"><img style="transform: rotate(-90deg)" src="images/curveEnd.png" alt="Arc start"></span>
+        <span class="field-label"><img style="transform: rotate(-90deg)" src="${curveEnd}" alt="Arc start"></span>
                   <input type="number" name="arcStart" value="${radToDeg(this.arcStart, "deg")}">
 
       </label>
 
       <label class="field">
-        <span class="field-label"><img src="images/curveEnd.png" alt="Arc end"></span>
+        <span class="field-label"><img src="${curveEnd}" alt="Arc end"></span>
           <input type="number" name="arcEnd" value="${radToDeg(this.arcEnd, "deg")}">
       </label>
     </div>
@@ -2429,7 +2429,7 @@ ${super.similarProptiesOutput()}
           ? "selected"
           : ""
       }">
-        <img src="images/Group 34.svg" alt="Convert">
+        <img src="imagess/spline-pointer.svg" alt="Convert">
       </button>
       <button class="rounded-edge ${
         this.selectedArea === "pointIndex" &&
@@ -2437,7 +2437,7 @@ ${super.similarProptiesOutput()}
           ? "selected"
           : ""
       }" >
-        <img src="images/Group 32.svg" alt="Rounded edge">
+        <img src="imagess/square-round-corner.svg" alt="Rounded edge">
       </button>
   </div>
 
@@ -2983,11 +2983,11 @@ class Line extends Formats {
   <section class="shape">
     <div class="shape-row">
       <button class="convert">
-        <img src="images/Group 34.svg" alt="Convert">
+        <img src="imagess/spline-pointer.svg" alt="Convert">
       </button>
 
       <button class="rounded-edge">
-        <img src="images/Group 32.svg" alt="Rounded edge">
+        <img src="imagess/square-round-corner.svg" alt="Rounded edge">
       </button>
     </div>
 
@@ -3698,21 +3698,21 @@ class TextBox extends Formats {
       y: this.whereToSnap().pos.y,
     });
     this.isDoubleClicked = true;
-    this.textPlace.value = this.text;
+    this.textPlace.value = this.text.trim();
     this.textPlace.classList.add("textArea");
-    this.textPlace.style.width = `${(this.width * 1) / scaleRatio + adapt(10)}px`;
-    this.textPlace.style.height = `${(this.height * 1) / scaleRatio + adapt(10)}px`;
+    // this.textPlace.style.width = `${(this.width)  / scaleRatio + adapt(2)}px`;
+    // this.textPlace.style.height = `${(this.height) / scaleRatio + adapt(2)}px`;
     this.textPlace.style.position = "absolute";
     this.textPlace.style.left = `${rect.x}px`;
     this.textPlace.style.top = `${rect.y}px`;
 
-    this.textPlace.style.border = `${(thresholds.slineWidth() * 1) / scaleRatio}px dashed ${thresholds.sColor}`;
-    this.textPlace.style.fontSize = `${(this.fontSize * 1) / scaleRatio}px`;
+    this.textPlace.style.border = `${(thresholds.slineWidth()) / scaleRatio}px dashed ${thresholds.sColor}`;
+    this.textPlace.style.fontSize = `${(this.fontSize) / scaleRatio}px`;
     this.textPlace.style.fontFamily = this.fontFamily;
     this.textPlace.style.fontStyle = this.fontStyle;
     this.textPlace.style.fontWeight = this.fontStyle;
     this.textPlace.style.textAlign = this.textAllign;
-    this.textPlace.style.lineHeight = `${(this.lineHeight * 1) / scaleRatio}px`;
+    this.textPlace.style.lineHeight = `${(this.lineHeight) / scaleRatio}px`;
     this.textPlace.style.color = this.color[0];
 
     canvass.appendChild(this.textPlace);
@@ -3721,6 +3721,10 @@ class TextBox extends Formats {
     this.textPlace.select();
     this.textPlace.addEventListener("input", (e) => {
       this.text = e.target.value;
+      this.textPlace.style.width = "auto"; // reset
+      this.textPlace.style.height = "auto"; // reset
+  this.textPlace.style.width = this.textPlace.scrollWidth + "px"; // expand
+  this.textPlace.style.height = this.textPlace.scrollHeight + "px"; // expand
       requestDraw();
     });
   }
@@ -4693,6 +4697,9 @@ async function reviveObjects(objData) {
       objData.list.map((item) => reviveObjects(item)),
     );
   }
+  if(objData.type === "text"){
+    objData.textPlace = document.createElement("textarea")
+  }
 
   // ✅ Handle clips
   if (objData.clips && objData.clips.length > 0) {
@@ -4796,8 +4803,8 @@ function Tools(tool) {
     case "zoom":
       propertiesBar.innerHTML = `
   <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
-    <button class="zoomin"><img src="images/Group 46.svg"></button>
-    <button class="zoomout"><img src="images/Group 47.svg"></button>
+    <button class="zoomin"><img src="imagess/zoom-in.svg"></button>
+    <button class="zoomout"><img src="imagess/zoom-out.svg"></button>
     <button class="fitToPage imageb">Fit To Page</button>
   </div>
   `;
@@ -5674,6 +5681,8 @@ function cMousedown(event) {
     }
   } else if (cloneObj !== null) {
     const cloned = cloneObj.showClone();
+              cloned.changeLocation(pos.x, "x");
+          cloned.changeLocation(pos.y, "y");
     objects.push(cloned);
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;

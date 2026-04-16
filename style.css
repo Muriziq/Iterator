@@ -533,6 +533,9 @@ main > section{
   background-color: transparent; 
   width:auto;
   height:auto;
+    white-space: nowrap;   /* prevents wrapping */
+  overflow: hidden;    /* hide scroll */
+  resize: none;          /* optional */
 }
 
 img{
@@ -914,8 +917,8 @@ input[type=number]::-webkit-outer-spin-button{
 .generate > div:first-child button{
   background-color: transparent;
   border: none;
-  height: 15px;
-  width: 15px;
+  height: 30px;
+  width:30px;
 }
 
 .generate1 select{
