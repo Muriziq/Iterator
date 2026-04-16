@@ -529,6 +529,7 @@ main > section{
 }
 .textArea{
   padding: 0;
+  z-index: 99;
   outline: none;
   background-color: transparent; 
   width:auto;

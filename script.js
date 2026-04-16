@@ -4646,13 +4646,34 @@ async function retrieveFile(e){
   reader.readAsText(file)
   reader.onload = async()=>{
     const jsonData = JSON.parse(reader.result)
-    const revived = await Promise.all( jsonData.map(item => reviveObjects(item)))
+  const canvasData = jsonData.filter(data=>{
+    if(data.type==="canvas") return data})
+      if(canvasData.length > 0){
+  measurement = canvasData[0].measurement
+  whatsMeasured = canvasData[0].whatsMeasured
+      }
+
+    const revivableObjects = jsonData.filter(data=> {
+      
+      if(data.type !== "canvas") return data
+
+    })
+    const revived = await Promise.all( revivableObjects.map(item => reviveObjects(item)))
     objects.push(...revived);
     requestDraw()
   }
 }
 function saveToFile() {
-  const data = JSON.stringify(objects);
+  const allData = [
+    {
+      type:"canvas",
+      measurement: measurement,
+      whatsMeasured: whatsMeasured,
+
+
+    },...objects
+  ]
+  const data = JSON.stringify(allData);
 
   const blob = new Blob([data], { type: "application/json" });
 
@@ -5131,7 +5152,6 @@ function backValues(x) {
   }
 }
 function adapt(size) {
-  console.log(scaleRatio)
   if (scaleRatio > 1) {
     return (size / scale) * scaleRatio;
   }
@@ -5431,9 +5451,10 @@ async function generateCard() {
   scale = 1;
   panX = 0;
   panY = 0;
+  requestDraw();
   generationArea.style.padding = generateInfo.spacing + "px";
   generationArea.style.gap = generateInfo.spacing + "px";
-  requestDraw();
+
   let previouslySelectedObj = selectedObj;
   selectedObj = null;
   generationArea.innerHTML = "";
