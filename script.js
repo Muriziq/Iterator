@@ -96,7 +96,7 @@ let defaultFonts = [
   "fangsong",
 ];
 let allFonts = [...defaultFonts];
-
+ let db = new Localbase('db')
 fetch(
   "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8",
 )
@@ -108,6 +108,21 @@ fetch(
   .catch(console.error);
 
 const projectName = document.getElementById("project-name")
+let formerName = ""
+projectName.addEventListener("input",async (e)=>{
+    const dbName = `${e.target.value.trim()}.json`
+  const names = localStorage.getItem("project-names") !== "undefined" ? JSON.parse(localStorage.getItem("project-names")): [];
+  if(names.includes(formerName)){
+    await db.collection("projects").doc({name:formerName}).update({
+      name:dbName,
+      entryDate: (new Date()).getTime()
+    })
+    const formerIndex = names.indexOf(formerName)
+    names[formerIndex] = dbName
+    localStorage.setItem("project-names",JSON.stringify([...names]))
+  }
+  formerName = dbName
+})
 window.addEventListener("load", async () => {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -115,9 +130,9 @@ window.addEventListener("load", async () => {
     if (data) {
         const decoded = decodeURIComponent(data);
 
-            let db = new Localbase('db')
             const objectsData = await  db.collection("projects").doc({name:data}).get()
                     projectName.value = objectsData.name.replace(/\.json$/i,"")
+                    formerName = objectsData.name
             importLoaded(objectsData.object)      
     }
     else{
@@ -4761,7 +4776,7 @@ async function retrieveFile(e){
 
   }
 }
-function saveToFile() {
+async function saveToFile() {
   const allData = [
     {
       type:"canvas",
@@ -4772,14 +4787,31 @@ function saveToFile() {
 
     },...objects
   ]
-  const data = JSON.stringify(allData);
+  const names = localStorage.getItem("project-names") !== "undefined" ? JSON.parse(localStorage.getItem("project-names")): [];
+  if(names.includes(formerName)){
+    await db.collection("projects").doc({name:formerName}).update({
+      object:allData,
+      entryDate: (new Date()).getTime()
+    })
+  }else{
+     await db.collection("projects").add({
+       name: formerName,
+        object: allData,
+        entryDate: (new Date()).getTime()
+     })
+     localStorage.setItem("project-names",JSON.stringify([...names,formerName]))
+  }
+  notify("Saved")
 
-  const blob = new Blob([data], { type: "application/json" });
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `${projectName.value}.json`;
-  a.click();
+  // const data = JSON.stringify(allData);
+
+  // const blob = new Blob([data], { type: "application/json" });
+
+  // const a = document.createElement("a");
+  // a.href = URL.createObjectURL(blob);
+  // a.download = `${projectName.value}.json`;
+  // a.click();
 }
 
 // fetch("project.json")

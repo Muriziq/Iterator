@@ -4,10 +4,15 @@ const orderProjects = document.querySelector(".order-projects")
 let data
 window.addEventListener("load", async () => {
         let db = new Localbase('db')
-    if(localStorage.getItem("project-names") === "undefined"){
-        localStorage.setItem("project-names",JSON.stringify([]))
+            const datas = await db.collection("projects").orderBy('entryDate', 'desc').get()
+                    
+    if(localStorage.getItem("project-names") === "undefined" || localStorage.getItem("project-names") === "" ){
+        let projectNames = []
+        datas.forEach(data => projectNames.push(data.name))
+        localStorage.setItem("project-names",JSON.stringify(projectNames))
     }
-    const datas = await db.collection("projects").get()
+
+
     orderProjects.innerHTML =  `
     ${datas.map(dat =>{
         return `
@@ -80,7 +85,7 @@ async function saveAndSend(name,data){
     await db.collection("projects").add({
         name: name,
         object: data,
-        entryDate: new Date()
+        entryDate: (new Date()).getTime()
     })
     try {
         const encoded = encodeURIComponent(name);
