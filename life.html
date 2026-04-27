@@ -1,24 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-  <img src="" alt="" width="500px" height="500px">
-  <script>
-async function life(){
-  console.log("first")
-  await new Promise((resolve)=>{
-  setTimeout(()=>{
-    console.log('second')
-  },2000)
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://unpkg.com/localbase/dist/localbase.min.js"></script>
+  </head>
+  <body>
+    <img src="" alt="" width="500px" height="500px" />
+    <script>
+  let db = new Localbase('db')
+  db.collection("user").add({
+    id: 1,
+    name: "killer"
   })
-
-  console.log('third')
-}
-life()
-  </script>
-</body>
+    </script>
+  </body>
 </html>

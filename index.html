@@ -8,6 +8,17 @@
   <link rel="stylesheet" href="style.css">
 </head>
   <body>
+    <section class="menu-sec">
+            <div class="home">
+      <button id="home-button">
+        <img src="imagess/house.svg" alt="">
+      </button>
+      <div id="home-menu">
+
+      </div>
+      </div>
+      <input id="project-name" value="New Project" />
+    </section>
     <div class="main-div">
     <header class="header">
       <section>
@@ -70,7 +81,7 @@
         <button id="addEllipse" title="add ellipse" onclick="Tools('addEllipse')"><img src="imagess/circle.svg" alt=""></button>
         <button id="addLine" title="add line" onclick="Tools('addLine')"><img src="imagess/pen-tool.svg" alt=""></button>
         <button id="addPolygon" title="add polygon" onclick="Tools('addPolygon')"><img  src="imagess/hexagon.svg" alt=""></button>
-        <button class="add-image" title="add image" onclick="Tools('add-image')"><input type="file" ><img src="imagess/book-image.svg" alt=""></button>
+        <button class="add-image" title="add image" onclick="Tools('add-image')"><input type="file" accept=".png,.jpeg,.jpg,.svg" ><img src="imagess/book-image.svg" alt=""></button>
         <button id="addTextbox" title="addtext box" onclick="Tools('addTextbox')"><img src="imagess/type.svg" alt=""></button>
         <hr>
         <button id="zoom" title="zoom" onclick="Tools('zoom')"><img src="imagess/zoom.svg" alt=""></button>
@@ -184,6 +195,7 @@
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/localbase/dist/localbase.dev.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dom-to-image@2.6.0/src/dom-to-image.min.js"></script>
     <script src="script.js"></script>
   </body>

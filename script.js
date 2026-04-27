@@ -107,7 +107,30 @@ fetch(
   })
   .catch(console.error);
 
-window.addEventListener("load", () => {
+const projectName = document.getElementById("project-name")
+window.addEventListener("load", async () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get('data');
+    if (data) {
+        const decoded = decodeURIComponent(data);
+
+            let db = new Localbase('db')
+            const objectsData = await  db.collection("projects").doc({name:data}).get()
+                    projectName.value = objectsData.name.replace(/\.json$/i,"")
+            importLoaded(objectsData.object)      
+    }
+    else{
+      const names = JSON.parse(localStorage.getItem("project-names"))
+      const newProjectCount = names.filter(project => 
+  /^new project(\s+\d+)?$/i.test(project)
+).length;
+  projectName.value = `new project ${newProjectCount === 0 ? "" : newProjectCount}` 
+    }
+} catch (error) {
+    console.log("Error processing data") ;
+}
+
   width.value = measurement.width;
   height.value = measurement.height;
   canvasSize();
@@ -3211,6 +3234,8 @@ class TextBox extends Formats {
     this.fontStyle = "bold";
     this.width = 0;
     this.maintainedWidth = 0;
+    this.originalText = ""
+    this.originalFontSize = ""
     this.height = 0;
     this.textAllign = "left";
     this.clipped = "none";
@@ -3997,7 +4022,7 @@ class Images extends Formats {
         .join("")}
     </section>
     <button class="image-file">
-      Add Images
+      <p>Add Images</p>
       <input type="file" multiple accept=".jpg,.png,.svg" name="iteratedFiles">
     </button>
     <label class="uniform-div" style="margin-top:1rem">
@@ -4639,48 +4664,25 @@ async function addImage(e) {
   isDrawing = "image";
 }
 // For Saving and Retrieving
-document.getElementById("retrieve-file").addEventListener("change",(e)=>retrieveFile(e))
-async function retrieveFile(e){
-  const file = e.target.files[0];
-  const reader = new FileReader()
-  reader.readAsText(file)
-  reader.onload = async()=>{
-    const jsonData = JSON.parse(reader.result)
-  const canvasData = jsonData.filter(data=>{
-    if(data.type==="canvas") return data})
-      if(canvasData.length > 0){
-  measurement = canvasData[0].measurement
-  whatsMeasured = canvasData[0].whatsMeasured
-      }
+async function importLoaded(jsonData){
+const { canvasItems, revivableItems } = jsonData.reduce((acc, data) => {
+  if (data.type === "canvas") {
+    acc.canvasItems.push(data);
+  } else {
+    acc.revivableItems.push(data);
+  }
+  return acc;
+}, { canvasItems: [], revivableItems: [] });
 
-    const revivableObjects = jsonData.filter(data=> {
-      
-      if(data.type !== "canvas") return data
+if (canvasItems.length > 0) {
+  measurement = canvasItems[0].measurement;
+  whatsMeasured = canvasItems[0].whatsMeasured;
+  canvasSize();
+}
 
-    })
-    const revived = await Promise.all( revivableObjects.map(item => reviveObjects(item)))
+const revived = await Promise.all(revivableItems.map(item => reviveObjects(item)));
     objects.push(...revived);
     requestDraw()
-  }
-}
-function saveToFile() {
-  const allData = [
-    {
-      type:"canvas",
-      measurement: measurement,
-      whatsMeasured: whatsMeasured,
-
-
-    },...objects
-  ]
-  const data = JSON.stringify(allData);
-
-  const blob = new Blob([data], { type: "application/json" });
-
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "project.json";
-  a.click();
 }
 async function reviveObjects(objData) {
   let instance;
@@ -4748,6 +4750,38 @@ async function reviveObjects(objData) {
   Object.assign(instance, objData);
   return instance;
 }
+document.getElementById("retrieve-file").addEventListener("change",(e)=>retrieveFile(e))
+async function retrieveFile(e){
+  const file = e.target.files[0];
+  const reader = new FileReader()
+  reader.readAsText(file)
+  reader.onload = async()=>{
+    const jsonData = JSON.parse(reader.result)
+    importLoaded(jsonData)
+
+  }
+}
+function saveToFile() {
+  const allData = [
+    {
+      type:"canvas",
+      measurement: measurement,
+      whatsMeasured: whatsMeasured,
+      backgroundImage: canvas.toDataURL()
+
+
+    },...objects
+  ]
+  const data = JSON.stringify(allData);
+
+  const blob = new Blob([data], { type: "application/json" });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${projectName.value}.json`;
+  a.click();
+}
+
 // fetch("project.json")
 //   .then(res => res.json())
 //   .then(async data => {
@@ -4763,9 +4797,14 @@ function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
     if (pen !== null && pen.points.length > 0) {
       if (button.id !== "addLine") button.classList.remove("active");
-      else button.classList.add("active");
+      else{
+button.classList.add("active");
+      } 
     } else {
-      if (button.id === tool) button.classList.add("active");
+      if (button.id === tool){
+button.classList.add("active");
+notify(button.title)
+      } 
       else button.classList.remove("active");
     }
   });

@@ -42,7 +42,47 @@ button{
       overflow-x: auto;
       gap: 1.5rem;
 }
-
+.menu-sec{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  color: var(--h3-fill);
+  background-color: var(--side-color);
+  border-bottom: var(--border-bottom);
+}
+.home{
+position: relative;
+}
+.home > div{
+  position: absolute;
+}
+#project-name{
+  outline: none;
+  border: none;
+  background-color: transparent;
+  color: var(--h3-fill);
+  font-size: 1.1rem;
+}
+#home-button{
+  min-height: 45px;
+  min-width: 45px;
+  height: 45px;
+  width: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+    background-color: var(--input-img);
+    border: none;
+    border-radius: 0.5rem;
+}
+#home-button img{
+  width: 50%;
+  height: 50%;
+  object-fit: contain;
+}
 header > section{
   display: flex;
   flex-direction: row;
@@ -252,6 +292,9 @@ main > section{
   display: none;
   opacity: 1;
   z-index: 5;
+  width: auto;
+  max-width: 95%;
+  text-wrap: nowrap;
 }
 .upsec{
   pointer-events: none;
@@ -633,12 +676,13 @@ img{
   height: auto;
 }
 
-.add-image,
-.image-file{
+.add-image{
   position: relative;
   overflow: hidden;
 }
-
+.image-file{
+    position: relative;
+}
 .add-image input,
 #font-import input,
 .iteratedsec input,
@@ -660,9 +704,12 @@ img{
   display: none;
 }
 
+
 .preview{
-  width: 150px;
+  width: 170px;
   height: 150px;
+  min-width: 170px;
+  min-height: 150px;
   border: var(--border-bottom);
   border-radius: 0.5rem;
   margin: 0 auto;
