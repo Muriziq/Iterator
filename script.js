@@ -62,7 +62,7 @@ let clipped = null;
 let thresholds = {
   selected: () => adapt(2),
   normalMode: () => adapt(25),
-  threshold: () => adapt(5),
+  threshold: () => adapt(10),
   maxCanvasSize: () => adapt(5000),
   pointHold: () => adapt(15),
   slineWidth: () => adapt(1),
@@ -673,6 +673,68 @@ class Formats {
     </section>
   `;
   }
+    getWorldPoints(){
+    if(this.type === "ellipse"){
+    return [
+      {x:this.x-this.radiusX,y: this.y - this.radiusY},
+      {x:this.x,y: this.y},
+      {x:this.radiusX*2,y: this.radiusY*2}
+
+    ]
+    }
+    return this.points.map(point=> this.pointToWorld(point.points))
+  }
+    pointToWorld(point){
+        let  centerX ;
+        let  centerY ;
+        if(this.type === "rectangle"){
+          centerX = this.x + this.width / 2;
+          centerY = this.y + this.height / 2;
+        }
+        else{
+          centerX = this.x
+          centerY = this.y
+        }
+     const scaledX = point.x * this.scaleX;
+        const scaledY = point.y * this.scaleY;
+        
+        const rotatedX = scaledX * Math.cos(this.angle) - scaledY * Math.sin(this.angle);
+        const rotatedY = scaledX * Math.sin(this.angle) + scaledY * Math.cos(this.angle);
+        
+        // Step 2: Translate to world position
+        const worldX = centerX + rotatedX;
+        const worldY = centerY + rotatedY;
+        return {x:worldX,y:worldY}
+  }
+  worldToPoint(point){
+        let  centerX ;
+        let  centerY ;
+        if(this.type === "rectangle"){
+          centerX = this.x + this.width / 2;
+          centerY = this.y + this.height / 2;
+        }
+        else{
+          centerX = this.x
+          centerY = this.y
+        }
+        const cos = Math.cos(-this.angle);
+        const sin = Math.sin(-this.angle);
+        
+        // Remove translation
+        const translatedX = point.x - centerX;
+        const translatedY = point.y - centerY;
+        
+        // Remove rotation
+        const rotatedX = translatedX * cos - translatedY * sin;
+        const rotatedY = translatedX * sin + translatedY * cos;
+        
+        // Remove scale
+        return {
+            x: rotatedX / this.scaleX,
+            y: rotatedY / this.scaleY
+        };
+  }
+
 
   lineFormat(localMouseX, localMouseY, localDeltaX, localDeltaY) {
     if (this.selectedArea === "lineIndex") {
@@ -697,27 +759,101 @@ class Formats {
       this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
       this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
 
-      for (let i = 0; i < this.points.length; i++) {
-        if (i === this.selectedLineIndex) continue;
-        const nextPoint = this.points[i].points;
-        if (
-          Math.abs(nextPoint.x - this.points[this.selectedLineIndex].points.x) <
-          adapt(10)
-        ) {
-          this.points[this.selectedLineIndex].points.x = nextPoint.x;
-        }
-        if (
-          Math.abs(nextPoint.y - this.points[this.selectedLineIndex].points.y) <
-          adapt(10)
-        ) {
-          this.points[this.selectedLineIndex].points.y = nextPoint.y;
-        }
-      }
+
     } else if (this.selectedArea === "curveIndex") {
       const { curveIndex, controlIndex } = this.selectedLineIndex;
       this.points[curveIndex].controls[controlIndex].x = localMouseX;
       this.points[curveIndex].controls[controlIndex].y = localMouseY;
     }
+// Store current local position
+const currentLocalPoint = this.points[this.selectedLineIndex].points;
+const currentWorldPoint = this.pointToWorld(currentLocalPoint);
+
+let pointXfound = false;
+let pointYfound = false;
+
+// 1. Check internal points (in local space for X)
+for (let i = 0; i < this.points.length; i++) {
+    if (i === this.selectedLineIndex) continue;
+    
+    // For X snapping - compare world X coordinates
+    const otherWorldPoint = this.pointToWorld(this.points[i].points);
+    if (Math.abs(otherWorldPoint.x - currentWorldPoint.x) < thresholds.threshold()) {
+        // Create new world point with snapped X, keep original Y
+        const snappedWorldPoint = {
+            x: otherWorldPoint.x,
+            y: currentWorldPoint.y
+        };
+        const newLocalPoint = this.worldToPoint(snappedWorldPoint);
+        this.points[this.selectedLineIndex].points.x = newLocalPoint.x;
+        pointXfound = true;
+        break;
+    }
+}
+
+// 2. Check other objects for X snapping
+if (!pointXfound) {
+    for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue; // Skip self
+        
+        const worldPoints = objects[i].getWorldPoints(); // You need this method
+        for (let e = worldPoints.length - 1; e >= 0; e--) {
+            if (Math.abs(worldPoints[e].x - currentWorldPoint.x) < thresholds.threshold()) {
+                // Snap X only, keep current Y in world space
+                const snappedWorldPoint = {
+                    x: worldPoints[e].x,
+                    y: currentWorldPoint.y
+                };
+                const newLocalPoint = this.worldToPoint(snappedWorldPoint);
+                this.points[this.selectedLineIndex].points.x = newLocalPoint.x;
+                pointXfound = true;
+                break;
+            }
+        }
+        if (pointXfound) break;
+    }
+}
+
+// 3. Check internal points for Y snapping
+for (let i = 0; i < this.points.length; i++) {
+    if (i === this.selectedLineIndex) continue;
+    
+    const otherWorldPoint = this.pointToWorld(this.points[i].points);
+    if (Math.abs(otherWorldPoint.y - currentWorldPoint.y) < thresholds.threshold()) {
+        const snappedWorldPoint = {
+            x: currentWorldPoint.x,
+            y: otherWorldPoint.y
+        };
+        const newLocalPoint = this.worldToPoint(snappedWorldPoint);
+        this.points[this.selectedLineIndex].points.y = newLocalPoint.y;
+        pointYfound = true;
+        break;
+    }
+}
+
+// 4. Check other objects for Y snapping
+if (!pointYfound) {
+    for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        
+        const worldPoints = objects[i].getWorldPoints();
+        for (let e = worldPoints.length - 1; e >= 0; e--) {
+            if (Math.abs(worldPoints[e].y - currentWorldPoint.y) < thresholds.threshold()) {
+                const snappedWorldPoint = {
+                    x: currentWorldPoint.x,
+                    y: worldPoints[e].y
+                };
+                const newLocalPoint = this.worldToPoint(snappedWorldPoint);
+                this.points[this.selectedLineIndex].points.y = newLocalPoint.y;
+                pointYfound = true;
+                break;
+            }
+        }
+        if (pointYfound) break;
+    }
+}
+
+
   }
   pointDblClick(localMouseX, localMouseY) {
     if (this.selectedArea === "pointIndex") {
@@ -1682,6 +1818,7 @@ class Rectangle extends Formats {
     };
   }
 
+
   changeLocation(value, type) {
     if (type === "x") {
       this.clips.forEach((clip) => {
@@ -2098,6 +2235,7 @@ class Ellipse extends Formats {
       },
     };
   }
+
   changeLocation(value, type) {
     if (type === "x") {
       this.x = value + this.radiusX;
@@ -2669,6 +2807,7 @@ ${super.similarProptiesOutput()}
       },
     };
   }
+
   changeLocation(value, type) {
     if (type === "x") {
       this.x = value + this.radiusX;

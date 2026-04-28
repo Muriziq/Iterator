@@ -1,4 +1,4 @@
-const nameDiv = document.querySelector("name")
+const nameDiv = document.querySelector(".name")
 const already = document.querySelector(".already")
 const orderProjects = document.querySelector(".order-projects")
 let data
@@ -40,7 +40,7 @@ window.addEventListener("load", async () => {
 
 document.getElementById("new-project").addEventListener("click",()=>{
 data = []
-nameDiv.display = "flex"
+nameDiv.style.display = "flex"
 })
 document.querySelector("#upload-project input").addEventListener("change",async (e)=>{
   const file = e.target.files[0];
@@ -48,12 +48,12 @@ document.querySelector("#upload-project input").addEventListener("change",async 
   reader.readAsText(file)
   reader.onload = async()=>{
     const jsonData = JSON.parse(reader.result)
-        const projectName = file.name.trim()
+        const projectName = `${file.name.trim()}.json`
         const names = JSON.parse(localStorage.getItem("project-names"))
 
-    if(projectName === "" || names.includes(projectName)){
+    if(projectName.replace(/\.json$/i,"") === "" || names.includes(projectName)){
      data = jsonData
-nameDiv.display = "flex" 
+nameDiv.style.display = "flex" 
 nameInput = document.getElementById("name").value = projectName
 already.textContent = "Invalid Name Input Another"
 return  
@@ -65,8 +65,8 @@ return
 
 })
 async function proceed(){
-    const nameInput = document.getElementById("name").value.trim()
-    if(nameInput === ""){
+    const nameInput = `${document.getElementById("name").value.trim().json}`
+    if(nameInput.replace(/\.json$/i,"") === ""){
         already.textContent = "Input Name"
         return
     }
