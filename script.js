@@ -62,7 +62,7 @@ let clipped = null;
 let thresholds = {
   selected: () => adapt(2),
   normalMode: () => adapt(25),
-  threshold: () => adapt(10),
+  threshold: () => adapt(5),
   maxCanvasSize: () => adapt(5000),
   pointHold: () => adapt(15),
   slineWidth: () => adapt(1),
@@ -96,7 +96,7 @@ let defaultFonts = [
   "fangsong",
 ];
 let allFonts = [...defaultFonts];
- let db = new Localbase('db')
+ let db = new Localbase('db') || []
 fetch(
   "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8",
 )
@@ -479,7 +479,7 @@ class Formats {
     this.colorFill = "none";
     this.colorDeg = 0.2;
     this.colorStop = [];
-
+    this.selectedArea = null
     this.angle = 0;
   }
   similarPropties() {
@@ -679,6 +679,22 @@ class Formats {
       {x:this.x-this.radiusX,y: this.y - this.radiusY},
       {x:this.x,y: this.y},
       {x:this.radiusX*2,y: this.radiusY*2}
+
+    ]
+    }
+    if(this.type === "image"){
+        return [
+      {x:this.x,y: this.y},
+      {x:this.x + this.width / 2,y: this.y + this.height / 2},
+      {x:this.width,y: this.height}
+
+    ]
+    }
+    if(this.type === "group"){
+              return [
+      {x:this.minX,y: this.minY},
+      {x:this.x ,y: this.y },
+      {x: this.maxX - this.minX,y: this.maxY - this.minY}
 
     ]
     }
@@ -891,115 +907,561 @@ if (!pointYfound) {
       return true;
     }
   }
-  rectFormat(mouse) {
+rectFormat(mouse) {
+  if (this.selectedArea === "Left") {
+    let snap = false;
+    const newWidth = this.width + (this.x - mouse.x);
+    if (newWidth > 0) {
+      let newX = mouse.x;
+      let newWidthCalc = newWidth;
+      
+      // Snap logic for Left
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const xCoor = objects[i].whereToSnap().x;
+        for (let e = 0; e < xCoor.length; e++) {
+          if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+            const difference = xCoor[e] - newX;
+            newX = xCoor[e];
+            newWidthCalc = newWidth - difference; // Adjust width when snapping
+            snap = true;
+            break;
+          }
+        }
+        if (snap) break;
+      }
+      
+      this.x = newX;
+      this.width = newWidthCalc;
+    }
+  } 
+  else if (this.selectedArea === "Right") {
+    let snap = false;
+    const newWidth = mouse.x - this.x;
+    if (newWidth > 0) {
+      let newWidthCalc = newWidth;
+      
+      // Snap logic for Right
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const xCoor = objects[i].whereToSnap().x;
+        for (let e = 0; e < xCoor.length; e++) {
+          if (Math.abs(xCoor[e] - (this.x + newWidthCalc)) < thresholds.threshold()) {
+            newWidthCalc = xCoor[e] - this.x;
+            snap = true;
+            break;
+          }
+        }
+        if (snap) break;
+      }
+      
+      this.width = newWidthCalc;
+    }
+  } 
+  else if (this.selectedArea === "Top") {
+    let snap = false;
+    const newHeight = this.height + (this.y - mouse.y);
+    if (newHeight > 0) {
+      let newY = mouse.y;
+      let newHeightCalc = newHeight;
+      
+      // Snap logic for Top
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const yCoor = objects[i].whereToSnap().y;
+        for (let e = 0; e < yCoor.length; e++) {
+          if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+            const difference = yCoor[e] - newY;
+            newY = yCoor[e];
+            newHeightCalc = newHeight - difference;
+            snap = true;
+            break;
+          }
+        }
+        if (snap) break;
+      }
+      
+      this.y = newY;
+      this.height = newHeightCalc;
+    }
+  } 
+  else if (this.selectedArea === "Bottom") {
+    let snap = false;
+    const newHeight = mouse.y - this.y;
+    if (newHeight > 0) {
+      let newHeightCalc = newHeight;
+      
+      // Snap logic for Bottom
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const yCoor = objects[i].whereToSnap().y;
+        for (let e = 0; e < yCoor.length; e++) {
+          if (Math.abs(yCoor[e] - (this.y + newHeightCalc)) < thresholds.threshold()) {
+            newHeightCalc = yCoor[e] - this.y;
+            snap = true;
+            break;
+          }
+        }
+        if (snap) break;
+      }
+      
+      this.height = newHeightCalc;
+    }
+  } 
+  else if (this.selectedArea === "TopLeft") {
+    let snapX = false, snapY = false;
+    let newX = mouse.x;
+    let newY = mouse.y;
+    let newWidth = this.width + (this.x - mouse.x);
+    let newHeight = this.height + (this.y - mouse.y);
+    
+    if (newWidth > 0) {
+      // Snap X
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const xCoor = objects[i].whereToSnap().x;
+        for (let e = 0; e < xCoor.length; e++) {
+          if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+            const difference = xCoor[e] - newX;
+            newX = xCoor[e];
+            newWidth = newWidth - difference;
+            snapX = true;
+            break;
+          }
+        }
+        if (snapX) break;
+      }
+      
+      // Snap Y
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const yCoor = objects[i].whereToSnap().y;
+        for (let e = 0; e < yCoor.length; e++) {
+          if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+            const difference = yCoor[e] - newY;
+            newY = yCoor[e];
+            newHeight = newHeight - difference;
+            snapY = true;
+            break;
+          }
+        }
+        if (snapY) break;
+      }
+      
+      this.x = newX;
+      this.y = newY;
+      this.width = newWidth;
+      this.height = newHeight;
+    }
+  } 
+  else if (this.selectedArea === "TopRight") {
+    let snapY = false;
+    let newY = mouse.y;
+    let newWidth = mouse.x - this.x;
+    let newHeight = this.height + (this.y - mouse.y);
+    
+    if (newWidth > 0 && newHeight > 0) {
+      // Snap Y (Top side)
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const yCoor = objects[i].whereToSnap().y;
+        for (let e = 0; e < yCoor.length; e++) {
+          if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+            const difference = yCoor[e] - newY;
+            newY = yCoor[e];
+            newHeight = newHeight - difference;
+            snapY = true;
+            break;
+          }
+        }
+        if (snapY) break;
+      }
+      
+      // Snap X (Right side)
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const xCoor = objects[i].whereToSnap().x;
+        for (let e = 0; e < xCoor.length; e++) {
+          if (Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.threshold()) {
+            newWidth = xCoor[e] - this.x;
+            break;
+          }
+        }
+      }
+      
+      this.y = newY;
+      this.width = newWidth;
+      this.height = newHeight;
+    }
+  } 
+  else if (this.selectedArea === "BottomLeft") {
+    let snapX = false;
+    let newX = mouse.x;
+    let newWidth = this.width + (this.x - mouse.x);
+    let newHeight = mouse.y - this.y;
+    
+    if (newWidth > 0 && newHeight > 0) {
+      // Snap X (Left side)
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const xCoor = objects[i].whereToSnap().x;
+        for (let e = 0; e < xCoor.length; e++) {
+          if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+            const difference = xCoor[e] - newX;
+            newX = xCoor[e];
+            newWidth = newWidth - difference;
+            snapX = true;
+            break;
+          }
+        }
+        if (snapX) break;
+      }
+      
+      // Snap Y (Bottom side)
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const yCoor = objects[i].whereToSnap().y;
+        for (let e = 0; e < yCoor.length; e++) {
+          if (Math.abs(yCoor[e] - (this.y + newHeight)) < thresholds.threshold()) {
+            newHeight = yCoor[e] - this.y;
+            break;
+          }
+        }
+      }
+      
+      this.x = newX;
+      this.width = newWidth;
+      this.height = newHeight;
+    }
+  } 
+  else if (this.selectedArea === "BottomRight") {
+    let newWidth = mouse.x - this.x;
+    let newHeight = mouse.y - this.y;
+    
+    if (newWidth > 0 && newHeight > 0) {
+      // Snap X (Right side)
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const xCoor = objects[i].whereToSnap().x;
+        for (let e = 0; e < xCoor.length; e++) {
+          if (Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.threshold()) {
+            newWidth = xCoor[e] - this.x;
+            break;
+          }
+        }
+      }
+      
+      // Snap Y (Bottom side)
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i] === this) continue;
+        const yCoor = objects[i].whereToSnap().y;
+        for (let e = 0; e < yCoor.length; e++) {
+          if (Math.abs(yCoor[e] - (this.y + newHeight)) < thresholds.threshold()) {
+            newHeight = yCoor[e] - this.y;
+            break;
+          }
+        }
+      }
+      
+      this.width = newWidth;
+      this.height = newHeight;
+    }
+  }
+
+  // Ensure positive dimensions
+  this.width = this.width <= 0 ? 0 : this.width;
+  this.height = this.height <= 0 ? 0 : this.height;
+}
+circFormat(mouse, x, y) {
+  if (this.isDoubleClicked) {
+    this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
+  } else {
     if (this.selectedArea === "Left") {
-      const newWidth = this.width + (this.x - mouse.x);
-      if (newWidth > 0) {
-        this.x = mouse.x;
-        this.width = newWidth;
+      let snap = false;
+      const newRadiusX = this.radiusX + (x - mouse.x);
+      if (newRadiusX > 0) {
+        this.radiusX = newRadiusX;
+        let newX = mouse.x;
+        let newWidthCalc = this.radiusX;
+        
+        // Snap logic for Left
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const xCoor = objects[i].whereToSnap().x;
+          for (let e = 0; e < xCoor.length; e++) {
+            if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+              const difference = xCoor[e] - newX;
+              newX = xCoor[e];
+              newWidthCalc = newRadiusX - difference;
+              snap = true;
+              break;
+            }
+          }
+          if (snap) break;
+        }
+        this.radiusX = newWidthCalc;
       }
-    } else if (this.selectedArea === "Right") {
-      this.width = mouse.x - this.x;
-    } else if (this.selectedArea === "Top") {
-      const newHeight = this.height + (this.y - mouse.y);
-      if (newHeight > 0) {
-        this.y = mouse.y;
-        this.height = newHeight;
+    } 
+    else if (this.selectedArea === "Right") {
+      let snap = false;
+      const newRadiusX = mouse.x - this.x;
+      if (newRadiusX > 0) {
+        let newRadiusCalc = newRadiusX;
+        
+        // Snap logic for Right
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const xCoor = objects[i].whereToSnap().x;
+          for (let e = 0; e < xCoor.length; e++) {
+            if (Math.abs(xCoor[e] - (this.x + newRadiusCalc)) < thresholds.threshold()) {
+              newRadiusCalc = xCoor[e] - this.x;
+              snap = true;
+              break;
+            }
+          }
+          if (snap) break;
+        }
+        this.radiusX = newRadiusCalc;
       }
-    } else if (this.selectedArea === "Bottom") {
-      this.height = mouse.y - this.y;
-    } else if (this.selectedArea === "TopLeft") {
-      const newWidth = this.width + (this.x - mouse.x);
-      if (newWidth > 0) {
-        this.x = mouse.x;
-        this.width = newWidth;
+    } 
+    else if (this.selectedArea === "Top") {
+      let snap = false;
+      const newRadiusY = this.radiusY + (y - mouse.y);
+      if (newRadiusY > 0) {
+        this.radiusY = newRadiusY;
+        let newY = mouse.y;
+        let newHeightCalc = this.radiusY;
+        
+        // Snap logic for Top
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const yCoor = objects[i].whereToSnap().y;
+          for (let e = 0; e < yCoor.length; e++) {
+            if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+              const difference = yCoor[e] - newY;
+              newY = yCoor[e];
+              newHeightCalc = newRadiusY - difference;
+              snap = true;
+              break;
+            }
+          }
+          if (snap) break;
+        }
+        this.radiusY = newHeightCalc;
       }
-      const newHeight = this.height + (this.y - mouse.y);
-      if (newHeight > 0) {
-        this.y = mouse.y;
-        this.height = newHeight;
+    } 
+    else if (this.selectedArea === "Bottom") {
+      let snap = false;
+      const newRadiusY = mouse.y - this.y;
+      if (newRadiusY > 0) {
+        let newRadiusCalc = newRadiusY;
+        
+        // Snap logic for Bottom
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const yCoor = objects[i].whereToSnap().y;
+          for (let e = 0; e < yCoor.length; e++) {
+            if (Math.abs(yCoor[e] - (this.y + newRadiusCalc)) < thresholds.threshold()) {
+              newRadiusCalc = yCoor[e] - this.y;
+              snap = true;
+              break;
+            }
+          }
+          if (snap) break;
+        }
+        this.radiusY = newRadiusCalc;
       }
-    } else if (this.selectedArea === "TopRight") {
-      this.width = mouse.x - this.x;
-      const newHeight = this.height + (this.y - mouse.y);
-      if (newHeight > 0) {
-        this.y = mouse.y;
-        this.height = newHeight;
+    } 
+    else if (this.selectedArea === "TopLeft") {
+      let snapX = false, snapY = false;
+      const newRadiusX = this.radiusX + (x - mouse.x);
+      const newRadiusY = this.radiusY + (y - mouse.y);
+      
+      if (newRadiusX > 0 && newRadiusY > 0) {
+        let newX = mouse.x;
+        let newY = mouse.y;
+        let newRadiusXCalc = newRadiusX;
+        let newRadiusYCalc = newRadiusY;
+        
+        // Snap X (Left)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const xCoor = objects[i].whereToSnap().x;
+          for (let e = 0; e < xCoor.length; e++) {
+            if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+              const difference = xCoor[e] - newX;
+              newX = xCoor[e];
+              newRadiusXCalc = newRadiusX - difference;
+              snapX = true;
+              break;
+            }
+          }
+          if (snapX) break;
+        }
+        
+        // Snap Y (Top)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const yCoor = objects[i].whereToSnap().y;
+          for (let e = 0; e < yCoor.length; e++) {
+            if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+              const difference = yCoor[e] - newY;
+              newY = yCoor[e];
+              newRadiusYCalc = newRadiusY - difference;
+              snapY = true;
+              break;
+            }
+          }
+          if (snapY) break;
+        }
+        
+        this.radiusX = newRadiusXCalc;
+        this.radiusY = newRadiusYCalc;
       }
-    } else if (this.selectedArea === "BottomLeft") {
-      const newWidth = this.width + (this.x - mouse.x);
-      if (newWidth > 0) {
-        this.x = mouse.x;
-        this.width = newWidth;
+    } 
+    else if (this.selectedArea === "TopRight") {
+      let snapY = false;
+      const newRadiusX = mouse.x - this.x;
+      const newRadiusY = this.radiusY + (y - mouse.y);
+      
+      if (newRadiusX > 0 && newRadiusY > 0) {
+        let newY = mouse.y;
+        let newRadiusXCalc = newRadiusX;
+        let newRadiusYCalc = newRadiusY;
+        
+        // Snap X (Right)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const xCoor = objects[i].whereToSnap().x;
+          for (let e = 0; e < xCoor.length; e++) {
+            if (Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) < thresholds.threshold()) {
+              newRadiusXCalc = xCoor[e] - this.x;
+              snapY = true;
+              break;
+            }
+          }
+          if (snapY) break;
+        }
+        
+        // Snap Y (Top)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const yCoor = objects[i].whereToSnap().y;
+          for (let e = 0; e < yCoor.length; e++) {
+            if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+              const difference = yCoor[e] - newY;
+              newY = yCoor[e];
+              newRadiusYCalc = newRadiusY - difference;
+              snapY = true;
+              break;
+            }
+          }
+          if (snapY) break;
+        }
+        
+        this.radiusX = newRadiusXCalc;
+        this.radiusY = newRadiusYCalc;
       }
-      this.height = mouse.y - this.y;
-    } else if (this.selectedArea === "BottomRight") {
-      this.width = mouse.x - this.x;
-      this.height = mouse.y - this.y;
+    } 
+    else if (this.selectedArea === "BottomLeft") {
+      let snapX = false;
+      const newRadiusX = this.radiusX + (x - mouse.x);
+      const newRadiusY = mouse.y - this.y;
+      
+      if (newRadiusX > 0 && newRadiusY > 0) {
+        let newX = mouse.x;
+        let newRadiusXCalc = newRadiusX;
+        let newRadiusYCalc = newRadiusY;
+        
+        // Snap X (Left)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const xCoor = objects[i].whereToSnap().x;
+          for (let e = 0; e < xCoor.length; e++) {
+            if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+              const difference = xCoor[e] - newX;
+              newX = xCoor[e];
+              newRadiusXCalc = newRadiusX - difference;
+              snapX = true;
+              break;
+            }
+          }
+          if (snapX) break;
+        }
+        
+        // Snap Y (Bottom)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const yCoor = objects[i].whereToSnap().y;
+          for (let e = 0; e < yCoor.length; e++) {
+            if (Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) < thresholds.threshold()) {
+              newRadiusYCalc = yCoor[e] - this.y;
+              snapX = true;
+              break;
+            }
+          }
+          if (snapX) break;
+        }
+        
+        this.radiusX = newRadiusXCalc;
+        this.radiusY = newRadiusYCalc;
+      }
+    } 
+    else if (this.selectedArea === "BottomRight") {
+      let snapX = false, snapY = false;
+      const newRadiusX = mouse.x - this.x;
+      const newRadiusY = mouse.y - this.y;
+      
+      if (newRadiusX > 0 && newRadiusY > 0) {
+        let newRadiusXCalc = newRadiusX;
+        let newRadiusYCalc = newRadiusY;
+        
+        // Snap X (Right)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const xCoor = objects[i].whereToSnap().x;
+          for (let e = 0; e < xCoor.length; e++) {
+            if (Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) < thresholds.threshold()) {
+              newRadiusXCalc = xCoor[e] - this.x;
+              snapX = true;
+              break;
+            }
+          }
+          if (snapX) break;
+        }
+        
+        // Snap Y (Bottom)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const yCoor = objects[i].whereToSnap().y;
+          for (let e = 0; e < yCoor.length; e++) {
+            if (Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) < thresholds.threshold()) {
+              newRadiusYCalc = yCoor[e] - this.y;
+              snapY = true;
+              break;
+            }
+          }
+          if (snapY) break;
+        }
+        
+        this.radiusX = newRadiusXCalc;
+        this.radiusY = newRadiusYCalc;
+      }
+    } 
+    else if (this.selectedArea === "Selected") {
+      this.x += mouse.x - lastMouseX;
+      this.y += mouse.y - lastMouseY;
+      if (this.clips.length > 0) {
+        this.clips.forEach((clip) =>
+          clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
+        );
+      }
     }
+    
+    this.radiusX = this.radiusX <= 0 ? 0 : this.radiusX;
+    this.radiusY = this.radiusY <= 0 ? 0 : this.radiusY;
   }
-  circFormat(mouse, x, y) {
-    if (this.isDoubleClicked) {
-      this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
-    } else {
-      if (this.selectedArea === "Left") {
-        const newRadiusX = this.radiusX + (x - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "Right") {
-        this.radiusX = mouse.x - this.x;
-      } else if (this.selectedArea === "Top") {
-        const newRadiusY = this.radiusY + (y - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-      } else if (this.selectedArea === "Bottom") {
-        const newRadiusY = mouse.y - this.y;
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-      } else if (this.selectedArea === "TopLeft") {
-        const newRadiusY = this.radiusY + (y - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        const newRadiusX = this.radiusX + (x - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "TopRight") {
-        const newRadiusY = this.radiusY + (y - mouse.y);
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        this.radiusX = mouse.x - this.x;
-      } else if (this.selectedArea === "BottomLeft") {
-        const newRadiusY = mouse.y - this.y;
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        const newRadiusX = this.radiusX + (x - mouse.x);
-        if (newRadiusX > 0) {
-          this.radiusX = newRadiusX;
-        }
-      } else if (this.selectedArea === "BottomRight") {
-        const newRadiusY = mouse.y - this.y;
-        if (newRadiusY > 0) {
-          this.radiusY = newRadiusY;
-        }
-        this.radiusX = mouse.x - this.x;
-      } else if (this.selectedArea === "Selected") {
-        this.x += mouse.x - lastMouseX;
-        this.y += mouse.y - lastMouseY;
-        if (this.clips.length > 0) {
-          this.clips.forEach((clip) =>
-            clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
-          );
-        }
-      }
-    }
-  }
+}
 }
 class Rectangle extends Formats {
   constructor(x, y, width, height) {
@@ -1070,6 +1532,7 @@ class Rectangle extends Formats {
     ];
     this.selectedLineIndex = null;
     this.mode = "edit";
+    this.previousSnap = {x:null,y:null}
   }
   addObject() {
     const xs = this.points.map((p) => p.points.x);
@@ -1329,6 +1792,14 @@ class Rectangle extends Formats {
 
           return true;
         }
+        if(Math.abs(localMouseX- this.maxX) < thresholds.threshold()){
+          this.selectedArea = "scaleR"
+          return true
+        }
+        if(Math.abs(localMouseY- this.maxY) < thresholds.threshold()){
+          this.selectedArea = "scaleB"
+          return true
+        }
         ctx.save();
         ctx.setTransform(scale, 0, 0, scale, panX, panY);
         const centerX = this.x + this.width / 2;
@@ -1364,6 +1835,7 @@ class Rectangle extends Formats {
 
       return this.selectedArea !== null;
     }
+    return false 
   }
   moveClip(x, y) {
     this.x += x;
@@ -1409,7 +1881,24 @@ class Rectangle extends Formats {
           p.controls[1].x = p.controls[1].x * scaleX;
           p.controls[1].y = p.controls[1].y * scaleY;
         });
-      } else {
+      }else if(this.selectedArea === "scaleR"){
+        const lastWidth = lastMouseX - this.x;
+        const currentWidth = mouse.x - this.x;
+        const scaleX = currentWidth / lastWidth;
+        this.points.forEach((p) => {
+          p.points.x = p.points.x * scaleX;
+          p.controls[0].x = p.controls[0].x * scaleX;
+          p.controls[1].x = p.controls[1].x * scaleX;
+        });
+      } else if(this.selectedArea === "scaleB"){
+        const lastHeight = lastMouseY - this.y;
+        const currentHeight = mouse.y - this.y;
+        const scaleY = currentHeight / lastHeight;
+        this.points.forEach((p) => {
+          p.points.y = p.points.y * scaleY;
+        });
+      }
+       else {
         if (this.roundedOrbeveled !== "shaped") {
           super.rectFormat(mouse);
         }
@@ -1418,7 +1907,7 @@ class Rectangle extends Formats {
           this.y += mouse.y - lastMouseY;
           if (this.clips.length > 0) {
             this.clips.forEach((clip) =>
-              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
+              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY)
             );
           }
         }
@@ -1686,7 +2175,8 @@ class Rectangle extends Formats {
     }
 
     if (e.target.type === "number") {
-      const value = backValues(Number(e.target.value) || 0);
+      let value = backValues(Number(e.target.value) || 0);
+      value= value <= 0 ? 0 : value 
       if (name === "outlineThickness") this.outlineThickness = value;
 
       if (name === "x") {
@@ -2034,6 +2524,7 @@ class Ellipse extends Formats {
       thresholds.threshold(),
     );
     return this.selectedArea !== null;
+
   }
   moveClip(x, y) {
     this.x += x;
@@ -2174,8 +2665,8 @@ class Ellipse extends Formats {
     }
 
     if (e.target.type === "number") {
-      const value = backValues(Number(e.target.value) || 0);
-
+      let value = backValues(Number(e.target.value) || 0);
+      value= value <= 0 ? 0 : value 
       if (!isNaN(value) && value !== null) {
         if (name === "x") {
           this.x = value + this.radiusX;
@@ -2455,8 +2946,15 @@ class Polygon extends Formats {
         Math.abs(localY - this.maxY) < thresholds.normalMode() / 2
       ) {
         this.selectedArea = "scale";
-
         return true;
+      }
+      if(Math.abs(localX- this.maxX) < thresholds.threshold()){
+        this.selectedArea = "scaleR"
+        return true
+      }
+      if(Math.abs(localY- this.maxY) < thresholds.threshold()){
+        this.selectedArea = "scaleB"
+        return true
       }
       ctx.save();
 
@@ -2548,6 +3046,23 @@ class Polygon extends Formats {
         p.controls[0].y = p.controls[0].y * scaleY;
         p.controls[1].x = p.controls[1].x * scaleX;
         p.controls[1].y = p.controls[1].y * scaleY;
+      });
+    }
+    else if(this.selectedArea === "scaleR"){
+      const lastWidth = lastMouseX - this.x;
+      const currentWidth = mouse.x - this.x;
+      const scaleX = currentWidth / lastWidth;
+      this.points.forEach((p) => {
+        p.points.x = p.points.x * scaleX;
+        p.controls[0].x = p.controls[0].x * scaleX;
+        p.controls[1].x = p.controls[1].x * scaleX;
+      });
+    } else if(this.selectedArea === "scaleB"){
+      const lastHeight = lastMouseY - this.y;
+      const currentHeight = mouse.y - this.y;
+      const scaleY = currentHeight / lastHeight;
+      this.points.forEach((p) => {
+        p.points.y = p.points.y * scaleY;
       });
     }
   }
@@ -2695,8 +3210,8 @@ ${super.similarProptiesOutput()}
     }
 
     if (e.target.type === "number") {
-      const value = backValues(Number(e.target.value) || 0);
-
+      let value = backValues(Number(e.target.value) || 0);
+value= value <= 0 ? 0 : value 
       if (name === "x") {
         this.x = value - this.minX;
       }
@@ -3022,6 +3537,14 @@ class Line extends Formats {
 
         return true;
       }
+      if(Math.abs(localX- this.maxX) < thresholds.threshold()){
+        this.selectedArea = "scaleR"
+        return true
+      }
+      if(Math.abs(localY- this.maxY) < thresholds.threshold()){
+        this.selectedArea = "scaleB"
+        return true
+      }
       ctx.save();
       ctx.translate(this.x, this.y);
       ctx.rotate(this.angle);
@@ -3105,6 +3628,22 @@ class Line extends Formats {
           p.controls[0].y = p.controls[0].y * scaleY;
           p.controls[1].x = p.controls[1].x * scaleX;
           p.controls[1].y = p.controls[1].y * scaleY;
+        });
+      }else if(this.selectedArea === "scaleR"){
+        const lastWidth = lastMouseX - this.x;
+        const currentWidth = mouse.x - this.x;
+        const scaleX = currentWidth / lastWidth;
+        this.points.forEach((p) => {
+          p.points.x = p.points.x * scaleX;
+          p.controls[0].x = p.controls[0].x * scaleX;
+          p.controls[1].x = p.controls[1].x * scaleX;
+        });
+      } else if(this.selectedArea === "scaleB"){
+        const lastHeight = lastMouseY - this.y;
+        const currentHeight = mouse.y - this.y;
+        const scaleY = currentHeight / lastHeight;
+        this.points.forEach((p) => {
+          p.points.y = p.points.y * scaleY;
         });
       }
     }
@@ -3292,7 +3831,8 @@ class Line extends Formats {
       this.outlineColor = e.target.value;
     }
     if (e.target.type === "number") {
-      const value = backValues(parseFloat(e.target.value));
+      let value = backValues(parseFloat(e.target.value));
+      value= value <= 0 ? 0 : value 
       if (name === "x") {
         this.x = value - this.minX;
       } else if (name === "y") {
@@ -3377,7 +3917,7 @@ class Line extends Formats {
 class TextBox extends Formats {
   constructor(x, y) {
     super();
-    this.text = "Add Text";
+    this.text = "";
     this.fontSize = adapt(30);
     this.fontFamily = "Arial";
     this.fonts = [];
@@ -3760,7 +4300,6 @@ class TextBox extends Formats {
     draw();
     // Optional: outline toggle is inside similarProptiesOutput(), keep existing handler if you have one.
   }
-
   changeProperties(e) {
     const name = e.target.name;
 
@@ -3871,42 +4410,93 @@ class TextBox extends Formats {
     requestDraw();
   }
 
-  doubleClicked(mouse) {
+doubleClicked(mouse) {
     const rect = reverseMousePos(canvas, {
-      x: this.whereToSnap().pos.x,
-      y: this.whereToSnap().pos.y,
+        x: this.whereToSnap().pos.x,
+        y: this.whereToSnap().pos.y,
     });
+    
     this.isDoubleClicked = true;
+    
+    // Create or reuse a hidden measuring element
+    if (!this.measurer) {
+        this.measurer = document.createElement('div');
+        this.measurer.style.position = 'absolute';
+        this.measurer.style.visibility = 'hidden';
+        this.measurer.style.height = 'auto';
+        this.measurer.style.width = 'auto';
+        this.measurer.style.whiteSpace = 'pre-wrap';
+        this.measurer.style.wordWrap = 'break-word';
+        document.body.appendChild(this.measurer);
+    }
+    
+    // Copy all text styles to measurer
+    this.measurer.style.fontSize = `${(this.fontSize) / scaleRatio}px`;
+    this.measurer.style.fontFamily = this.fontFamily;
+    this.measurer.style.fontStyle = this.fontStyle;
+    this.measurer.style.fontWeight = this.fontWeight;
+    this.measurer.style.lineHeight = `${(this.lineHeight) / scaleRatio}px`;
+    this.measurer.style.padding = `${adapt(5)}px`;
+    this.measurer.style.boxSizing = 'border-box';
+    
+    // Measure text
+    this.measurer.textContent = this.text || ' ';
+    const measuredWidth = this.measurer.offsetWidth;
+    const measuredHeight = this.measurer.offsetHeight;
+    
+    // Setup textarea
     this.textPlace.value = this.text.trim();
     this.textPlace.classList.add("textArea");
-    // this.textPlace.style.width = `${(this.width)  / scaleRatio + adapt(2)}px`;
-    // this.textPlace.style.height = `${(this.height) / scaleRatio + adapt(2)}px`;
     this.textPlace.style.position = "absolute";
     this.textPlace.style.left = `${rect.x}px`;
     this.textPlace.style.top = `${rect.y}px`;
-
     this.textPlace.style.border = `${(thresholds.slineWidth()) / scaleRatio}px dashed ${thresholds.sColor}`;
     this.textPlace.style.fontSize = `${(this.fontSize) / scaleRatio}px`;
     this.textPlace.style.fontFamily = this.fontFamily;
     this.textPlace.style.fontStyle = this.fontStyle;
-    this.textPlace.style.fontWeight = this.fontStyle;
+    this.textPlace.style.fontWeight = this.fontWeight;
     this.textPlace.style.textAlign = this.textAllign;
     this.textPlace.style.lineHeight = `${(this.lineHeight) / scaleRatio}px`;
     this.textPlace.style.color = this.color[0];
-
+    this.textPlace.style.boxSizing = 'border-box';
+    this.textPlace.style.padding = `${adapt(5)}px`;
+    this.textPlace.style.overflow = 'hidden';
+    this.textPlace.style.resize = 'none';
+    this.textPlace.style.whiteSpace = 'pre-wrap';
+    this.textPlace.style.wordWrap = 'break-word';
+    
+    // Set exact width based on measurement
+    this.textPlace.style.width = `${Math.max(measuredWidth, adapt(10)) + adapt(2)}px`;
+    this.textPlace.style.height = `${Math.max(measuredHeight, adapt(5)) + adapt(2)}px`;
+    
     canvass.appendChild(this.textPlace);
-
     this.textPlace.focus();
     this.textPlace.select();
-    this.textPlace.addEventListener("input", (e) => {
-      this.text = e.target.value;
-      this.textPlace.style.width = "auto"; // reset
-      this.textPlace.style.height = "auto"; // reset
-  this.textPlace.style.width = this.textPlace.scrollWidth + "px"; // expand
-  this.textPlace.style.height = this.textPlace.scrollHeight + "px"; // expand
-      requestDraw();
-    });
-  }
+    
+    // Input handler using measurer
+    if (this.inputHandler) {
+        this.textPlace.removeEventListener('input', this.inputHandler);
+    }
+    
+    this.inputHandler = (e) => {
+        this.text = e.target.value;
+        
+        // Update measurer with new text
+        this.measurer.textContent = this.text || ' ';
+        
+        // Get dimensions from measurer (not the textarea)
+        const newWidth = this.measurer.offsetWidth;
+        const newHeight = this.measurer.offsetHeight;
+        
+        // Apply to textarea
+        this.textPlace.style.width = `${Math.max(newWidth, adapt(10)) + adapt(2)}px`;
+        this.textPlace.style.height = `${Math.max(newHeight, adapt(5)) + adapt(2)}px`;
+        
+        requestDraw();
+    };
+    
+    this.textPlace.addEventListener("input", this.inputHandler);
+}
   backToDefault() {
     this.fontSize = this.originalFontSize;
     this.text = this.originalText;
@@ -4006,7 +4596,7 @@ class Images extends Formats {
     this.aspectRatio = aspectRatio;
     this.height = this.width * this.aspectRatio;
     this.image = 0;
-    this.selectedArea;
+    this.selectedArea = null;
     this.originalFiles = [originalFile];
     this.iteratedFiles = [image];
     this.maintainApect = false;
@@ -4254,8 +4844,8 @@ class Images extends Formats {
     }
 
     if (e.target.type === "number") {
-      const value = backValues(Number(e.target.value) || 0);
-
+      let value = backValues(Number(e.target.value) || 0);
+value= value <= 0 ? 0 : value 
       if (!isNaN(value) && value !== null) {
         if (name === "opacity") {
           this.opacity = Number(e.target.value) || 0;
@@ -4974,7 +5564,6 @@ button.classList.add("active");
     } else {
       if (button.id === tool){
 button.classList.add("active");
-notify(button.title)
       } 
       else button.classList.remove("active");
     }
@@ -5855,8 +6444,10 @@ function cMousedown(event) {
       const text = new TextBox(pos.x, pos.y);
       objects.push(text);
       textBoxes.push(text);
-      // text.doubleClicked(pos)
-      // isDrawing = null
+      text.doubleClicked(pos)
+      isDrawing = null
+      selectedObj = text
+      Tools("moveTool")
     } else {
       drawingStart = true;
       drawingCoordinate.start = { x: pos.x, y: pos.y };
@@ -6060,8 +6651,8 @@ function wMouseUp() {
       objects.push(drawedObject);
       if (isDrawing === "image") {
         images.push(drawedObject);
-        Tools("moveTool");
       }
+      Tools("moveTool");
     }
   }
 

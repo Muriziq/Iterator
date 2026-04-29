@@ -582,7 +582,7 @@ main > section{
   resize: none;          /* optional */
 }
 
-img{
+img,.notification{
   touch-action: none;
   user-select: none;
   pointer-events: none;
@@ -796,6 +796,7 @@ img{
    border : none;
    text-align : left;
    resize: none;
+
    /* white-space: pre;
    overflow: hidden; */
 }
@@ -813,9 +814,14 @@ img{
 .text::-webkit-scrollbar,#fonts::-webkit-scrollbar{
   width: 4px;
 }
-
+.header::-webkit-scrollbar{
+  height: 4px;
+}
 .dropdown::-webkit-scrollbar-thumb,
-.text::-webkit-scrollbar-thumb,#fonts::-webkit-scrollbar-thumb{
+.text::-webkit-scrollbar-thumb,
+#fonts::-webkit-scrollbar-thumb,
+.header::-webkit-scrollbar-thumb
+{
   background-color: var(--h3-fill);
   border-radius: 5px;
 }
