@@ -11,6 +11,9 @@ body{
     background-color: #101010;
     padding: 0 4rem;
 }
+main{
+    position: relative;
+}
 .header-nav{
     display: flex;
     justify-content: space-between;
@@ -50,11 +53,15 @@ body{
     justify-content: center;
 
 }
+.opt .order-projects{
+    justify-content: start;
+}
 .option button,.order-projects button{
     height:250px;
     width: 320px;
     background-color: transparent;
 border: 2px solid #616161;
+border-radius: 0.5rem;
 
 }
 .order-projects button{
@@ -106,5 +113,71 @@ padding-bottom: 1rem;
 
 .name{
     display: none;
-    
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    background-color: #101010;
+    padding: 2rem;
+    border-radius: 1rem;
+    border: 2px solid #616161;
+    z-index: 1000;
+    width: 70%;
+    height: auto;
+    flex-direction: column;
+    gap: 1rem;
+    font-size: 1.1rem;
+}
+.name .cancel{
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    border-radius: 50%;
+    padding: 0;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: transparent;
+
+}
+.cancel svg{
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+}
+.name input{
+    background-color: transparent;
+    border: 2px solid #616161;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    color: #ffffff;
+    font-size: 1.1rem;
+    outline: none;
+    width: 100%;
+    font-weight: 500;
+    font-family: "Inter", sans-serif;
+}
+.name label{
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+.already{
+    color: #ff0000;
+    display: none;
+}
+
+.name button{
+    align-self: flex-end;
+    background-color: #181818;
+    border: 1px solid #616161;
+    padding: 0.7rem 1.5rem;
+    border-radius: 0.2rem;
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 500;
+    font-family: "Inter", sans-serif;
+    cursor: pointer;
 }

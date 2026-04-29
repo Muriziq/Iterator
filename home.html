@@ -10,16 +10,19 @@
 <body>
         <nav class="header-nav">
                     <a href="#">Home</a>
-                    <a href="#">About</a>
+                    <a href="#">Preferences</a>
                     <a href="#">About</a>
                     <a href="#">Contact</a>
         </nav>
     <main>
         <div class="name">
-            <p>Name</p>
+            <button class="cancel" onclick="cancel()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#616161" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x-icon lucide-circle-x"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+            </button>
+            <label for="name">Name</label>
             <input type="text" name="" id="name" placeholder="name">
             <p class="already">Already Exists</p>
-            <button onclick="proceed()"></button>
+            <button onclick="proceed()">Proceed</button>
         </div>
         <div class="intro">
             <h1>CREATE, <br> DESIGN  &ITERATE</h1>

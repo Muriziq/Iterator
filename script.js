@@ -3925,7 +3925,7 @@ class TextBox extends Formats {
     this.type = "text";
     this.x = x;
     this.y = y;
-    this.fontStyle = "bold";
+    this.fontStyle = "normal";
     this.width = 0;
     this.maintainedWidth = 0;
     this.originalText = ""
@@ -4434,7 +4434,7 @@ doubleClicked(mouse) {
     this.measurer.style.fontSize = `${(this.fontSize) / scaleRatio}px`;
     this.measurer.style.fontFamily = this.fontFamily;
     this.measurer.style.fontStyle = this.fontStyle;
-    this.measurer.style.fontWeight = this.fontWeight;
+    this.measurer.style.fontWeight = this.fontStyle;
     this.measurer.style.lineHeight = `${(this.lineHeight) / scaleRatio}px`;
     this.measurer.style.padding = `${adapt(5)}px`;
     this.measurer.style.boxSizing = 'border-box';
@@ -5408,7 +5408,7 @@ async function addImage(e) {
   isDrawing = "image";
 }
 // For Saving and Retrieving
-async function importLoaded(jsonData){
+async function importLoaded(jsonData,shouldCanvas=true){
 const { canvasItems, revivableItems } = jsonData.reduce((acc, data) => {
   if (data.type === "canvas") {
     acc.canvasItems.push(data);
@@ -5418,7 +5418,7 @@ const { canvasItems, revivableItems } = jsonData.reduce((acc, data) => {
   return acc;
 }, { canvasItems: [], revivableItems: [] });
 
-if (canvasItems.length > 0) {
+if (canvasItems.length > 0 && shouldCanvas) {
   measurement = canvasItems[0].measurement;
   whatsMeasured = canvasItems[0].whatsMeasured;
   canvasSize();
@@ -5501,7 +5501,7 @@ async function retrieveFile(e){
   reader.readAsText(file)
   reader.onload = async()=>{
     const jsonData = JSON.parse(reader.result)
-    importLoaded(jsonData)
+    importLoaded(jsonData,false)
 
   }
 }
@@ -5996,6 +5996,12 @@ function radToDeg(val, type) {
     return parseFloat(((val * 180) / Math.PI).toFixed(2));
   }
 }
+let toggleHome = "flex"
+
+document.getElementById("home-button").addEventListener("click",()=>{
+  document.getElementById("home-menu").style.display = toggleHome
+  toggleHome = toggleHome === "flex" ? "none" : "flex"
+})
 
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");

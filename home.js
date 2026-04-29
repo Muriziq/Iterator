@@ -5,14 +5,14 @@ let data
 window.addEventListener("load", async () => {
         let db = new Localbase('db')
             const datas = await db.collection("projects").orderBy('entryDate', 'desc').get()
-                    
-    if(localStorage.getItem("project-names") === "undefined" || localStorage.getItem("project-names") === "" ){
+            const projects = localStorage.getItem("project-names");
+            if (!projects || projects === "undefined") {
         let projectNames = []
         datas.forEach(data => projectNames.push(data.name))
-        localStorage.setItem("project-names",JSON.stringify(projectNames))
+        localStorage.setItem("project-names",JSON.stringify([...projectNames]))
     }
 
-
+if(datas.length <= 0) return 
     orderProjects.innerHTML =  `
     ${datas.map(dat =>{
         return `
@@ -64,15 +64,22 @@ return
 
 
 })
+function cancel(){
+    nameDiv.style.display = "none"
+}
 async function proceed(){
-    const nameInput = `${document.getElementById("name").value.trim().json}`
-    if(nameInput.replace(/\.json$/i,"") === ""){
+    let nameInput = document.getElementById("name").value.trim()
+    if(nameInput === "undefined" || !nameInput){
         already.textContent = "Input Name"
+        already.style.display = "flex"
         return
     }
+    nameInput  += ".json"
+    console.log(nameInput)
     const names = JSON.parse(localStorage.getItem("project-names"))
     if(names.includes(nameInput)){
         already.textContent = "Name Already Exists"
+         already.style.display = "flex"
         return
     }
     saveAndSend(nameInput,data)
