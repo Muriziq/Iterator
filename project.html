@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="project.css">
+</head>
+  <body>
+    <section class="menu-sec">
+            <div class="home">
+      <button id="home-button">
+        <img src="imagess/house.svg" alt="">
+      </button>
+      <div id="home-menu" class="home-menu">
+        <button>Import File <input type="file" name="" id="retrieve-file" accept=".json"></button>
+        <button class="save" onclick="saveToFile()">Save</button>
+      </div>
+      </div>
+      <input id="project-name" value="New Project" />
+    </section>
+    <div class="main-div">
+    <header class="header">
+      <section>
+           <div class="first-header">
+            Size: <div>
+              <div>
+                Width:
+<input type="text" id="width" />
+              </div>
+              <div>
+                Height:
+<input
+              type="text"
+              id="height"
+            />
+              </div>
+
+            </div>
+          </div>
+          <div class="second-header">
+            <button onclick="changeOrientation('potrait')"></button>
+            <button onclick="changeOrientation('landscape')"></button>
+          </div>
+          <div class="third-header">
+            <select name="measurement" id="measurement">
+              <option value="px" selected>Pixels</option>
+              <option value="pt">Points</option>
+              <option value="in">Inches</option>
+              <option value="m">Meters</option>
+              <option value="cm">Centimeters</option>
+              <option value="mm">Millimeters</option>
+            </select>
+            <select name="paperSize" id="paperSize">
+              <option value="a1">A1</option>
+              <option value="a2">A2</option>
+              <option value="a3">A3</option>
+              <option value="a4">A4</option>
+              <option value="a5">A5</option>
+              <option value="a6">A6</option>
+              <option value="business-card">Business Card</option>
+              <option value="letter" selected>Letter</option>
+            </select>
+          </div>
+      </section>
+      <div style="display:flex;flex-direction: row;align-items: center;gap: 1rem;">
+                <button class="generateButton">
+          Generate Button
+        </button>
+                
+        
+      </div>
+    </header>
+    <main>
+
+      <aside class="leftSidebar">
+        <button id="moveTool" title="move tool" onclick="Tools('moveTool')"><img src="imagess/mouse-pointer-2.svg" alt=""></button>
+        <button id="multipleSelection" title="multiple select" onclick="Tools('multipleSelection')"><img src="imagess/multiple-select.svg" alt=""></button>
+                    <button title="Pan Tool" id="panTool" onclick="Tools('panTool')"><img src="imagess/hand.svg" alt=""></button>
+        <button id="addRectangle" title="add rectangle" onclick="Tools('addRectangle')"><img src="imagess/rectangle-horizontal.svg" alt=""></button>
+        <button id="addEllipse" title="add ellipse" onclick="Tools('addEllipse')"><img src="imagess/circle.svg" alt=""></button>
+        <button id="addLine" title="add line" onclick="Tools('addLine')"><img src="imagess/pen-tool.svg" alt=""></button>
+        <button id="addPolygon" title="add polygon" onclick="Tools('addPolygon')"><img  src="imagess/hexagon.svg" alt=""></button>
+        <button class="add-image" title="add image" onclick="Tools('add-image')"><input type="file" accept=".png,.jpeg,.jpg,.svg" ><img src="imagess/book-image.svg" alt=""></button>
+        <button id="addTextbox" title="addtext box" onclick="Tools('addTextbox')"><img src="imagess/type.svg" alt=""></button>
+        <hr>
+        <button id="zoom" title="zoom" onclick="Tools('zoom')"><img src="imagess/zoom.svg" alt=""></button>
+        <button id="duplicate" title="duplicate" onclick="Tools('duplicate')"><img src="imagess/copy.svg" alt=""></button>
+        <button id="delete" title="delete" onclick="Tools('delete')"><img src="imagess/trash.svg" alt=""></button>
+        <button id="pageTo" title="page to" onclick="Tools('pageTo')"><img src="imagess/bring-to-front.svg" alt=""></button>
+
+      </aside>
+      <section>
+        <div class="generate">
+          <div>
+            <h3>RENDER</h3>
+            <button onclick="cancelGenerate()"><img src="imagess/circle-x.svg" alt=""></button>
+          </div>
+          <div class="generate1">
+            <div>
+              <select name="renderPage" id="renderPage">
+                <option value="auto">Per Page</option>
+                <option value="custom">Custom</option>
+                <option value="a0">A0</option>
+                <option value="a1">A1</option>
+                <option value="a2">A2</option>
+                <option value="a3">A3</option>
+                <option value="a4">A4</option>
+                <option value="a5">A5</option>
+                <option value="legal">Legal</option>
+                <option value="letter">Letter</option>
+              </select>
+      
+              <div class="generate1f" >
+                  <div class="generate1d">Width<input type="number" name="renderWidth" id="renderWidth"></div>
+                  <div class="generate1d">Height<input type="number" name="renderHeight" id="renderHeight"></div>
+                
+              </div>
+            </div>
+            <div>
+              <div class="perRow generate1f">
+                No Per:
+                <div class="generate1d">Row<input type="number" name="noPerRow" id="noPerRow"></div>
+                <div class="generate1d">Col<input type="number" name="noPerColumn" id="noPerColumn"></div>
+                
+              </div>
+              <div>
+                <div class="generate1d">
+                Spacing: <input type="text" name="spacing" id="spacing">
+                </div>
+            </div>
+        
+
+
+        </div>
+          </div>
+          <button onclick="generateCard()">Done</button>
+        </div>
+        <div class="notification"></div>
+        <section class="upsec">
+          <div>
+            <button onclick="undo()" title="undo"><img src="imagess/undo-2.svg" alt=""></button>
+            <button onclick="redo()" title="redo"><img style="transform: scaleX(1);" src="imagess/redo-2.svg" alt=""></button>
+          </div>
+          <div style="position: relative;">
+            <button title="clip" class="snip"><img src="imagess/paperclip.svg" alt=""></button>
+            <button onclick="group()" title="group"><img src="imagess/users.svg" alt=""></button>
+            <button class="editclip" title="edit clip">Edit Clip</button></div>
+        </section>
+        <div class="canva" style="height: 100%;min-height: 0;width: 100%;overflow: hidden;">
+        <div class="canvas">
+          <div style="opacity: 0;"></div>
+          <canvas id="canvas"></canvas>
+        </div>
+        </div>
+
+
+      </section>
+      <aside id="propertiesTab">
+        <div>
+          <div>
+        <h3>Properties</h3>
+        <button style="display: none;"></button>
+          </div>
+<section class="properties-align">
+  <div>
+    <button onclick="align('left')"><img src="imagess/align-start-horizontal.svg" alt=""></button>
+    <button onclick="align('centerX')"><img src="imagess/align-center-horizontal.svg" alt=""></button>
+    <button onclick="align('right')"><img src="imagess/align-end-horizontal.svg" alt=""></button>
+  </div>
+  <div>
+    <button onclick="align('top')"><img src="imagess/align-start-vertical.svg" alt=""></button>
+    <button onclick="align('centerY')"><img src="imagess/align-center-vertical.svg" alt=""></button>
+    <button onclick="align('bottom')"><img src="imagess/align-end-vertical.svg" alt=""></button>
+  </div>
+</section>
+<section class="flip" style="gap: 0.5rem;">
+  <button onclick="flip('x')"><img src="imagess/flip-horizontal-2.svg" alt=""></button>
+  <button onclick="flip('y')"><img src="imagess/flip-vertical-2.svg" alt=""></button>
+</section>
+        </div>
+
+        <section id="properties">
+          <p style='color: var(--h3-fill);'>No object selected</p>
+        </section>
+      </aside>
+    </main>
+    </div>
+
+    <footer style="display: none;">
+            <div class="buttonSide">
+
+        <button class="saveAsPdf">Save As Pdf</button>
+        <button class="saveAsImage">Save As Image</button>
+
+
+
+      </div>
+      <article id="generationArea"></article>
+
+    </footer>
+
+    <script src="node_modules/jspdf/dist/jspdf.umd.min.js"></script>
+    <script src="node_modules/localbase/dist/localbase.min.js"></script>
+    <script src="project.js"></script>
+  </body>
+</html>

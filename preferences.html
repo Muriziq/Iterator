@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Storage Space Circle Loader</title>
+    <link rel="stylesheet" href="preferences.css">
+</head>
+<body>
+            <nav class="header-nav">
+                    <a href="index.html">Home</a>
+                    <a href="#">Preferences</a>
+                    <a href="#">About</a>
+                    <a href="#">Contact</a>
+        </nav>
+    <div class="card">
+        <div class="progress-circle">
+            <svg viewBox="0 0 100 100">
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#667eea" />
+                        <stop offset="100%" style="stop-color:#764ba2" />
+                    </linearGradient>
+                </defs>
+                <circle class="circle-bg" cx="50" cy="50" r="42" />
+                <circle class="circle-fill" cx="50" cy="50" r="42" 
+                        stroke-dasharray="263.89" stroke-dashoffset="263.89" />
+            </svg>
+            <div class="center-text">
+                <div class="percentage" id="percentageDisplay">0%</div>
+                <div class="percentage-label">used</div>
+            </div>
+        </div>
+
+        <div class="card2">
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Used</div>
+                <div class="stat-value" id="usedDisplay">0 MB</div>
+                <div class="stat-sub">actual data</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Quota</div>
+                <div class="stat-value" id="quotaDisplay">0 MB</div>
+                <div class="stat-sub">available to use</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Remaining</div>
+                <div class="stat-value" id="remainingDisplay">0 MB</div>
+                <div class="stat-sub">free space</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Storage Type</div>
+                <div class="stat-value" id="storageType">Checking...</div>
+                <div class="stat-sub">persistence status</div>
+            </div>
+        </div>
+
+        <!-- Status Message -->
+        <div class="status" id="statusMessage">
+            📡 Loading storage information...
+        </div>
+
+        <!-- Refresh Button -->
+        <button onclick="updateStorageInfo()">
+            🔄 Refresh Storage Info
+        </button>
+        <div class="refresh-note">
+            This includes IndexedDB, Cache API, and local storage
+        </div>
+        </div>
+
+    </div>
+    <div class="order-projects">
+
+    </div>
+    <script src="node_modules/localbase/dist/localbase.min.js"></script>
+    <script src="preferences.js"></script>
+
+
+</body>
+</html>
