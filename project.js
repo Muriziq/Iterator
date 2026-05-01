@@ -95,23 +95,15 @@ let defaultFonts = [
   "math",
   "fangsong",
 ];
-let allFonts = [...defaultFonts];
+const newFonts = JSON.parse(localStorage.getItem("fontNames")) || [];
+let allFonts = [...defaultFonts, ...newFonts];
  let db = new Localbase('db') || []
-fetch(
-  "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyDRS1aSfDb6lfNx2ORZ118ZTasvu0KNni8",
-)
-  .then((res) => res.json())
-  .then((data) => {
-    const newFonts = data.items.map((item) => item.family);
-    allFonts.push(...newFonts);
-  })
-  .catch(console.error);
 
 const projectName = document.getElementById("project-name")
 let formerName = ""
 projectName.addEventListener("input",async (e)=>{
     const dbName = `${e.target.value.trim()}.json`
-  const names = localStorage.getItem("project-names") !== "undefined" ? JSON.parse(localStorage.getItem("project-names")): [];
+  const names =  JSON.parse(localStorage.getItem("project-names")) || [];
   if(names.includes(formerName)){
     await db.collection("projects").doc({name:formerName}).update({
       name:dbName,
@@ -136,7 +128,7 @@ window.addEventListener("load", async () => {
             importLoaded(objectsData.object)      
     }
     else{
-      const names = JSON.parse(localStorage.getItem("project-names"))
+      const names = JSON.parse(localStorage.getItem("project-names")) || [];
       const newProjectCount = names.filter(project => 
   /^new project(\s+\d+)?$/i.test(project)
 ).length;
@@ -3919,7 +3911,7 @@ class TextBox extends Formats {
     super();
     this.text = "";
     this.fontSize = adapt(30);
-    this.fontFamily = "Arial";
+    this.fontFamily = "sans-serif";
     this.fonts = [];
     this.textPlace = document.createElement("textarea");
     this.type = "text";
@@ -3930,6 +3922,7 @@ class TextBox extends Formats {
     this.maintainedWidth = 0;
     this.originalText = ""
     this.originalFontSize = ""
+    this.originalPosition = { x: this.x, y: this.y };
     this.height = 0;
     this.textAllign = "left";
     this.clipped = "none";
@@ -3942,6 +3935,7 @@ class TextBox extends Formats {
     this.outline = false;
     this.colorFill = "uniform";
     this.formatIterated = "none";
+    this.iterateAllign = "left"
   }
   addObject() {
     if (this.isDoubleClicked) {
@@ -4032,7 +4026,7 @@ class TextBox extends Formats {
 
   showClone() {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-
+    clone.textPlace = document.createElement("textarea");
     return clone;
   }
   colorType() {
@@ -4192,6 +4186,7 @@ class TextBox extends Formats {
         <input class="fontInput"  type="text" list="fonts" name="fontFamily" value="${this.fontFamily}">
         <div id="fonts" style="display:${this.fonts.length > 0 ? "flex" : "none"} ">
         </div>
+        <button class="font-imports"><input type="file" accept=".ttf,.otf,.woff,.woff2"/><img src="imagess/upload.svg" /></button>
       </label>
 
       <label class="uniform-div">
@@ -4261,11 +4256,82 @@ class TextBox extends Formats {
     <option value="createNewLine" ${this.formatIterated === "createNewLine" ? "selected" : ""}>Create New Line</option>
     <option value="atWhiteSpace" ${this.formatIterated === "atWhiteSpace" ? "selected" : ""}>At White Space</option>
   </select>
-  </label>      
+  </label> 
+
+  <label class="uniform-div" style="margin-top:1rem">
+  <span>Iterate Align</span>
+  <select name="iterateAllign" class="iterateAllign">
+    <option value="left" ${this.iterateAllign === "left" ? "selected" : ""}>Left</option>
+    <option value="center" ${this.iterateAllign === "center" ? "selected" : ""}>Center</option>
+    <option value="right" ${this.iterateAllign === "right" ? "selected" : ""}>Right</option>
+  </select>
+  </label>     
       </div>
 
     </section>
   `;
+  document.querySelector(".font-imports input").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if(!file) return
+
+      try {
+    // Get font name from file
+    const fileName = file.name;
+    const fontNames = JSON.parse(localStorage.getItem("fontNames")) || [];
+      if(fontNames.includes(fileName)){
+        notify("Font already imported");
+return
+      } 
+
+    const fileExt = fileName.substring(fileName.lastIndexOf('.'));
+    const fontFamily = null || fileName.replace(fileExt, '');
+    
+    // Read file directly (no fetch needed!)
+    const reader = new FileReader();
+    const fontData = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file); // Direct file read, not fetch
+    });
+    const fontFormat = getFormatFromExtension(fileExt);
+ // Set the font family to the newly imported font
+    
+    // Store in IndexedDB
+    await db.collection('fonts').add({
+      id: fontFamily,
+      fontFamily: fontFamily,
+      fontData: fontData,  // Complete font data from file
+      fontFormat: fontFormat,
+      timestamp: (new Date()).getTime(),
+      fileName: fileName,   // Store original filename
+      fileSize: file.size   // Store size for info
+    });
+    
+    console.log(`Font ${fontFamily} stored successfully from uploaded file`);
+    localStorage.setItem("fontNames", JSON.stringify([...fontNames, fontFamily]));
+
+          const style = document.createElement('style');
+      const fontCSS = `
+        @font-face {
+          font-family: '${fontFamily}';
+          src: url('${fontData}') format('${fontFormat}');
+          font-display: swap;
+        }
+      `;
+      style.textContent = fontCSS;
+      document.head.appendChild(style);
+      this.fontFamily = fontFamily;  
+      defaultFonts.push(fontFamily);
+                  this.fonts = [];
+            this.formatProperties();
+         requestDraw();
+
+
+  } catch (error) {
+    console.error('Error storing font:', error);
+  }
+
+  })
 
     super.similarPropties();
     // Bind inputs
@@ -4315,6 +4381,9 @@ class TextBox extends Formats {
         (this.fontSize * backValues(Number(e.target.value) || 0)) / this.width;
       this.fontSize = scale > 0 ? scale : 1;
     }
+    if (name === "iterateAllign") {
+      this.iterateAllign = e.target.value;
+    }
     if (name === "height") {
       const scale =
         (this.fontSize * backValues(Number(e.target.value) || 0)) / this.height;
@@ -4353,16 +4422,32 @@ class TextBox extends Formats {
           )
           .join("");
         document.querySelectorAll(".dropdown-item").forEach((div) => {
-          div.addEventListener("click", () => {
+          div.addEventListener("click", async () => {
             this.fontFamily = div.textContent;
             if (!defaultFonts.includes(this.fontFamily)) {
-              const link = document.createElement("link");
-              link.rel = "stylesheet";
-              link.href = `https://fonts.googleapis.com/css2?family=${this.fontFamily.replace(
-                / /g,
-                "+",
-              )}&display=swap`;
-              document.head.appendChild(link);
+              
+    const result = await db.collection('fonts')
+      .doc({ id: this.fontFamily })
+      .get();
+        if (result && result.fontData) {
+      // Create dynamic @font-face rule
+      const style = document.createElement('style');
+      const fontCSS = `
+        @font-face {
+          font-family: '${result.fontFamily}';
+          src: url('${result.fontData}') format('${result.fontFormat}');
+          font-display: swap;
+        }
+      `;
+      style.textContent = fontCSS;
+      document.head.appendChild(style);
+      
+      console.log(`Font ${fontFamily} loaded from IndexedDB`);
+    }
+    else{
+      notify("Font not found in database");
+      this.fontFamily = "sans-serif";
+    }
               defaultFonts.push(this.fontFamily);
             }
             requestDraw();
@@ -4411,9 +4496,10 @@ class TextBox extends Formats {
   }
 
 doubleClicked(mouse) {
+  const padding = () => adapt(5)
     const rect = reverseMousePos(canvas, {
-        x: this.whereToSnap().pos.x,
-        y: this.whereToSnap().pos.y,
+        x: this.whereToSnap().pos.x - (padding() * 2),
+        y: this.whereToSnap().pos.y - (padding() * 2),
     });
     
     this.isDoubleClicked = true;
@@ -4459,7 +4545,7 @@ doubleClicked(mouse) {
     this.textPlace.style.lineHeight = `${(this.lineHeight) / scaleRatio}px`;
     this.textPlace.style.color = this.color[0];
     this.textPlace.style.boxSizing = 'border-box';
-    this.textPlace.style.padding = `${adapt(5)}px`;
+    this.textPlace.style.padding = `${padding()}px`;
     this.textPlace.style.overflow = 'hidden';
     this.textPlace.style.resize = 'none';
     this.textPlace.style.whiteSpace = 'pre-wrap';
@@ -4491,7 +4577,7 @@ doubleClicked(mouse) {
         // Apply to textarea
         this.textPlace.style.width = `${Math.max(newWidth, adapt(10)) + adapt(2)}px`;
         this.textPlace.style.height = `${Math.max(newHeight, adapt(5)) + adapt(2)}px`;
-        
+        this.formatProperties()
         requestDraw();
     };
     
@@ -4500,6 +4586,8 @@ doubleClicked(mouse) {
   backToDefault() {
     this.fontSize = this.originalFontSize;
     this.text = this.originalText;
+    this.x = this.originalPosition.x;
+    this.y = this.originalPosition.y;
   }
   drawIteratedImage(i) {
     const texts = this.textArea
@@ -4511,6 +4599,7 @@ doubleClicked(mouse) {
       this.maintainedWidth = this.width;
       this.originalText = this.text;
       this.originalFontSize = this.fontSize;
+      this.originalPosition = { x: this.x, y: this.y };
     }
     if (this.iterated && i < texts.length) {
       ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
@@ -4561,6 +4650,16 @@ doubleClicked(mouse) {
       } else {
         this.text = texts[i];
       }
+
+      if (this.iterateAllign === "center") {
+        this.x = this.originalPosition.x + this.maintainedWidth / 2 - ctx.measureText(this.text).width / 2;
+      }
+      else if(this.iterateAllign === "right"){
+        this.x = this.originalPosition.x + this.maintainedWidth - ctx.measureText(this.text).width;
+      }
+    else{
+      this.x = this.originalPosition.x;
+    }
     }
   }
   whereToSnap() {
@@ -4584,6 +4683,23 @@ doubleClicked(mouse) {
     this.y += y;
   }
 }
+function getFormatFromExtension(ext) {
+  const formats = {
+    '.ttf': 'truetype',
+    '.otf': 'opentype',
+    '.woff': 'woff',
+    '.woff2': 'woff2'
+  };
+  return formats[ext.toLowerCase()] || 'truetype';
+}
+function getFontFormat(url) {
+  if (url.endsWith('.woff2')) return 'woff2';
+  if (url.endsWith('.woff')) return 'woff';
+  if (url.endsWith('.ttf')) return 'truetype';
+  if (url.endsWith('.otf')) return 'opentype';
+  return 'truetype';
+}
+
 
 class Images extends Formats {
   constructor(x, y, image, width, aspectRatio, originalFile, fileName) {
@@ -5466,6 +5582,30 @@ async function reviveObjects(objData) {
   }
   if(objData.type === "text"){
     objData.textPlace = document.createElement("textarea")
+    if(!(defaultFonts.includes(objData.fontFamily))){
+      if(newFonts.includes(objData.fontFamily)){
+            const result = await db.collection('fonts')
+      .doc({ id: this.fontFamily })
+      .get();
+        if (result && result.fontData) {
+      // Create dynamic @font-face rule
+      const style = document.createElement('style');
+      const fontCSS = `
+        @font-face {
+          font-family: '${result.fontFamily}';
+          src: url('${result.fontData}') format('${result.fontFormat}');
+          font-display: swap;
+        }
+      `;
+      style.textContent = fontCSS;
+      document.head.appendChild(style);
+      
+      }
+    }else{
+      objData.fontFamily = "sans-serif";
+    }
+
+    }
   }
 
   // ✅ Handle clips
@@ -5506,7 +5646,7 @@ async function retrieveFile(e){
   }
 }
 async function saveToFile() {
-  const allData = [
+  let allData = [
     {
       type:"canvas",
       measurement: measurement,
@@ -5516,13 +5656,18 @@ async function saveToFile() {
 
     },...objects
   ]
-  const names = localStorage.getItem("project-names") !== "undefined" ? JSON.parse(localStorage.getItem("project-names")): [];
+  allData = JSON.parse(JSON.stringify(allData));
+
+  const names =  JSON.parse(localStorage.getItem("project-names")) || [];
+  try{
   if(names.includes(formerName)){
-    await db.collection("projects").doc({name:formerName}).update({
+    await db.collection("projects").doc({name:formerName}).set({
+      name: formerName,
       object:allData,
       entryDate: (new Date()).getTime()
     })
   }else{
+
      await db.collection("projects").add({
        name: formerName,
         object: allData,
@@ -5531,6 +5676,12 @@ async function saveToFile() {
      localStorage.setItem("project-names",JSON.stringify([...names,formerName]))
   }
   notify("Saved")
+  }
+  catch(err){
+    console.log(err)
+    notify("Error Saving")
+  }
+
 
 
   // const data = JSON.stringify(allData);
@@ -6453,6 +6604,7 @@ function cMousedown(event) {
       text.doubleClicked(pos)
       isDrawing = null
       selectedObj = text
+      selectedObj.formatProperties();
       Tools("moveTool")
     } else {
       drawingStart = true;
@@ -6658,6 +6810,8 @@ function wMouseUp() {
       if (isDrawing === "image") {
         images.push(drawedObject);
       }
+      selectedObj = drawedObject;
+      selectedObj.formatProperties();
       Tools("moveTool");
     }
   }

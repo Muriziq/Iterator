@@ -155,7 +155,7 @@ svg {
     color: #e4e4e4;
 }
 
-button {
+.card button {
     background: #2c2c2c ;
     color: white;
     border: none;
@@ -168,12 +168,12 @@ button {
     width: 100%;
 }
 
-button:hover {
+.card button:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-button:active {
+.card button:active {
     transform: translateY(0);
 }
 
@@ -232,4 +232,73 @@ border-radius: 0.5rem;
 }
 .objects2 button{
     border-radius: 0.5rem;
+     background: #2c2c2c ;
+    color: white;
+     padding: 12px 24px;;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
+    border: none;
+}
+.objects2 button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+.select{
+    display: flex;
+    flex-direction: row;
+    border-radius: 2rem;
+    width: 100%;
+    overflow: hidden;
+    
+}
+.select > div{
+    height: 100%;
+    width: 20px;
+        background: #101010 ;
+}
+.select button{
+    flex: 1;
+    border: none;
+    text-align: center;
+    padding: 1rem;
+    background-color: #2c2c2c;
+    font-size: 1.1rem;
+    color: #e4e4e4;
+
+}
+.select button.active{
+    background-color: #616161;
+    color: #e4e4e4;
+}
+
+.font-project{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.font-project > div{
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background-color: #2c2c2c;
+    color: #e4e4e4;
+    border-radius: 0.5rem;
+}
+.font-project > div button{
+    border-radius: 0.5rem;
+     background: #101010 ;
+    color: white;
+     padding: 12px 24px;;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: auto;
+    border: none;
 }

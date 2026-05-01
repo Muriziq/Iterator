@@ -5,6 +5,9 @@ const quotaDisplay = document.getElementById('quotaDisplay');
 const remainingDisplay = document.getElementById('remainingDisplay');
 const storageTypeSpan = document.getElementById('storageType');
 const statusDiv = document.getElementById('statusMessage');
+        const orderProjects = document.querySelector(".order-projects")
+
+    const fontProject = document.querySelector(".font-project")
             let db = new Localbase('db')
 // Helper: Convert bytes to human readable format
 function formatBytes(bytes) {
@@ -119,20 +122,23 @@ updateStorageInfo();
 
 // Optional: Auto-refresh every 10 seconds (can be removed if not needed)
 setInterval(updateStorageInfo, 10000); // Refreshes every 10 seconds
+document.getElementById("showProjects").addEventListener("click",(e)=>{
+    importData()
+    e.target.classList.add("active")
+    document.getElementById("showFonts").classList.remove("active")
 
+})
+document.getElementById("showFonts").addEventListener("click",(e)=>{
+    importFonts()
+    e.target.classList.add("active")
+    document.getElementById("showProjects").classList.remove("active")
+
+})
 
 async function importData(){
 try{
-
+    fontProject.innerHTML = ""
             const datas = await db.collection("projects").orderBy('entryDate', 'desc').get()
-            const projects = localStorage.getItem("project-names");
-            if (!projects || projects === "undefined") {
-        let projectNames = []
-        datas.forEach(data => projectNames.push(data.name))
-        localStorage.setItem("project-names",JSON.stringify([...projectNames]))
-    }
-
-    const orderProjects = document.querySelector(".order-projects")
 if(datas.length <= 0) return 
 
     orderProjects.innerHTML =  `${datas.map(dat =>{
@@ -148,6 +154,7 @@ if(datas.length <= 0) return
         `
     }).join("")
 }`
+
 document.querySelectorAll(".objects").forEach(button=>{
     const name = button.querySelector("p").textContent
     button.querySelector(".export").addEventListener("click",async ()=>{
@@ -163,7 +170,7 @@ document.querySelectorAll(".objects").forEach(button=>{
 })
 button.querySelector(".delete").addEventListener("click",async()=>{
     await db.collection("projects").doc({name:name}).delete()
-    let projects = JSON.parse(localStorage.getItem("project-names"));
+    let projects = JSON.parse(localStorage.getItem("project-names")) || [];
     let index = projects.indexOf(name);
     if (index > -1) {
         projects.splice(index, 1);
@@ -171,7 +178,7 @@ button.querySelector(".delete").addEventListener("click",async()=>{
     localStorage.setItem("project-names", JSON.stringify(projects));
     alert(`${name} has been deleted`)
 })
-button.addEventListener("click",async()=>{
+button.querySelector(".objects1").addEventListener("click",async()=>{
         try {
         const encoded = encodeURIComponent(name);
         window.location.href = `project.html?data=${encoded}`;
@@ -185,4 +192,42 @@ catch(error){
     console.error("Error importing data:", error);
 }
 }
-importData()
+
+async function importFonts(){
+        orderProjects.innerHTML = ""
+    try {
+        const fonts = await db.collection("fonts").orderBy("id").get();
+
+        fontProject.innerHTML =  `${fonts.map(font =>{
+            return `
+            <div>
+            <p>${font.id}</p>
+            <button>Delete</button>
+            </div>
+            `
+        }).join("")}`
+        
+        fontProject.querySelectorAll("div").forEach(div=>{
+            const name = div.querySelector("p").textContent
+            const button = div.querySelector("button")
+            button.addEventListener("click",async()=>{
+                await db.collection("fonts").doc({id:name}).delete()
+                const fonts = JSON.parse(localStorage.getItem("fontNames")) || [];
+
+                    let index = fonts.indexOf(name);
+    if (index > -1) {
+        fonts.splice(index, 1);
+    }
+    localStorage.setItem("fontNames", JSON.stringify(fonts));
+                alert(`${name} has been deleted`)
+            })
+        })
+
+    }
+    catch(error){
+        console.error("Error importing fonts:", error);
+    }
+}
+window.onload = function() {
+    importData()
+}

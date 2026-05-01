@@ -720,7 +720,9 @@ img,.notification{
 .home-menu button input,
 #font-import input,
 .iteratedsec input,
-.image-file input{
+.image-file input,
+.font-imports input
+{
   position: absolute;
   width: 100%;
   height: 100%;
@@ -735,10 +737,27 @@ img,.notification{
 .home-menu button input::file-selector-button,
 #font-import input::file-selector-button,
 .iteratedsec input::file-selector-button,
-.image-file input::file-selector-button{
+.image-file input::file-selector-button,
+.font-imports input::file-selector-button{
   display: none;
 }
-
+.font-imports{
+  min-height: 30px;
+  min-width: 35px;
+  max-height: 30px;
+  max-width: 35px;
+  height: 30px;
+  width: 35px;
+  background-color: var(--input-img);
+  border-radius: 0.3rem;
+  border: none;
+  position: relative;
+}
+.font-imports img{
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
 
 .preview{
   width: 170px;
