@@ -456,6 +456,7 @@ class LineUtils {
 }
 class Formats {
   constructor() {
+    this.id = crypto.randomUUID()
     this.clips = null;
     this.scaleX = 1;
     this.scaleY = 1;
@@ -473,6 +474,7 @@ class Formats {
     this.colorStop = [];
     this.selectedArea = null
     this.angle = 0;
+    this.clipper = null
   }
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
@@ -5610,9 +5612,13 @@ async function reviveObjects(objData) {
 
   // ✅ Handle clips
   if (objData.clips && objData.clips.length > 0) {
-    objData.clips = await Promise.all(
-      objData.clips.map((clip) => reviveObjects(clip)),
-    );
+objData.clips = await Promise.all(
+  objData.clips.map(async (clip) => {  // ← Add async
+    const reviveClip = await reviveObjects(clip);  // ← Add await
+    reviveClip.clipper = objData.id;
+    return reviveClip;
+  })
+);
   }
 
   // ✅ Handle images properly
@@ -5872,6 +5878,14 @@ button.classList.add("active");
       if (selectedObj) {
         let index = objects.indexOf(selectedObj);
         objects.splice(index, 1);
+        if(selectedObj.clipped ==="clipped"){
+const clipIndex = objects.find(obj => obj.id === selectedObj.clipper);
+      if(clipIndex){
+        const selectedIndex = clipIndex.clips.indexOf(selectedObj)
+        clipIndex.clips.splice(selectedIndex,1)
+      }
+
+        }
         selectedObj = null;
         propertiesBar.innerHTML = "";
         requestDraw();
@@ -6074,6 +6088,16 @@ function drawingObject(original = false) {
   }
 }
 function bringToFront(selected) {
+  if(selected.clipped === "clipped"){
+    const clipIndex = objects.find(obj => obj.id === selected.clipper);
+      if(clipIndex){
+
+        const selectedIndex = clipIndex.clips.indexOf(selected)
+        clipIndex.clips.splice(selectedIndex,1)
+       clipIndex.clips.push(selected)
+       requestDraw()
+      }
+  }
   let index = objects.indexOf(selected);
   if (index !== -1) {
     objects.splice(index, 1);
@@ -6082,6 +6106,15 @@ function bringToFront(selected) {
   }
 }
 function sendToBack(selected) {
+  if(selected.clipped === "clipped"){
+    const clipIndex = objects.find(obj => obj.id === selected.clipper);
+      if(clipIndex){
+        const selectedIndex = clipIndex.clips.indexOf(selected)
+        clipIndex.clips.splice(selectedIndex,1)
+       clipIndex.clips.unshift(selected)
+       requestDraw()
+      }
+  }
   let index = objects.indexOf(selected);
   if (index !== -1) {
     objects.splice(index, 1);
@@ -6089,19 +6122,49 @@ function sendToBack(selected) {
     requestDraw();
   }
 }
-function pageDown(selected) {
-  const i = objects.indexOf(selected);
-  if (i <= 0) return;
-
-  // swap with previous
-  [objects[i], objects[i - 1]] = [objects[i - 1], objects[i]];
-}
 function pageUp(selected) {
-  const i = objects.indexOf(selected);
-  if (i === -1 || i === objects.length - 1) return;
+  // Handle clipping reorder FIRST if selected is clipped
+  if (selected.clipped === "clipped") {
+    const clipParent = objects.find(obj => obj.id === selected.clipper);
+    if (clipParent) {
+      const selectedIndex = clipParent.clips.indexOf(selected);
+      if (selectedIndex === -1 || selectedIndex >= clipParent.clips.length - 1) return;
+      
+      [clipParent.clips[selectedIndex], clipParent.clips[selectedIndex + 1]] = [clipParent.clips[selectedIndex + 1], clipParent.clips[selectedIndex]];
 
+      requestDraw();
+    }
+  }
+  
+  // Reorder in main objects array (for non-clipped or root objects)
+  const i = objects.indexOf(selected);
+  if (i === -1 || i >= objects.length - 1) return;
+  
   // swap with next
   [objects[i], objects[i + 1]] = [objects[i + 1], objects[i]];
+  requestDraw();
+}
+
+function pageDown(selected) {
+  // Handle clipping reorder FIRST if selected is clipped
+  if (selected.clipped === "clipped") {
+    const clipParent = objects.find(obj => obj.id === selected.clipper);
+    if (clipParent) {
+      const selectedIndex = clipParent.clips.indexOf(selected);
+      if (selectedIndex === -1 || selectedIndex === 0) return;
+
+      [clipParent.clips[selectedIndex], clipParent.clips[selectedIndex - 1]] = [clipParent.clips[selectedIndex - 1], clipParent.clips[selectedIndex]];
+      requestDraw();
+    }
+  }
+  
+  // Reorder in main objects array (for non-clipped or root objects)
+  const i = objects.indexOf(selected);
+  if (i === -1 || i === 0) return;
+  
+  // swap with previous
+  [objects[i], objects[i - 1]] = [objects[i - 1], objects[i]];
+  requestDraw();
 }
 function backValues(x) {
   if (whatsMeasured === "px") {
@@ -6660,7 +6723,7 @@ function cMousedown(event) {
             "y",
           );
         }
-
+        clipped.clipper = objects[i].id;
         objects[i].clips.push(clipped);
 
         const index = objects.indexOf(clipped);
@@ -7113,4 +7176,4 @@ function draw() {
 }
 
 requestDraw();
-autoSave()
+// autoSave()
