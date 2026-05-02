@@ -102,7 +102,7 @@ let allFonts = [...defaultFonts, ...newFonts];
 const projectName = document.getElementById("project-name")
 let formerName = ""
 projectName.addEventListener("input",async (e)=>{
-    const dbName = `${e.target.value.trim()}.json`
+    const dbName = `${e.target.value.trim().toLowerCase()}.json`
   const names =  JSON.parse(localStorage.getItem("project-names")) || [];
   if(names.includes(formerName)){
     await db.collection("projects").doc({name:formerName}).update({
@@ -5645,6 +5645,23 @@ async function retrieveFile(e){
 
   }
 }
+let saveTimeout;
+
+function autoSave() {
+    // Clear previous timeout to avoid multiple saves
+    clearTimeout(saveTimeout);
+    
+    // Save after 2 seconds of no changes (debouncing)
+    saveTimeout = setTimeout(async () => {
+        await saveToFile();
+        console.log("✅ Autosaved at:", new Date().toLocaleTimeString());
+        autoSave()
+    }, 2000);
+}
+document.querySelector(".save").addEventListener("click", async () => {
+  saveToFile();
+    notify("Saved")
+})
 async function saveToFile() {
   let allData = [
     {
@@ -5675,7 +5692,7 @@ async function saveToFile() {
      })
      localStorage.setItem("project-names",JSON.stringify([...names,formerName]))
   }
-  notify("Saved")
+
   }
   catch(err){
     console.log(err)
@@ -7096,3 +7113,4 @@ function draw() {
 }
 
 requestDraw();
+autoSave()

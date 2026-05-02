@@ -6,7 +6,7 @@ const remainingDisplay = document.getElementById('remainingDisplay');
 const storageTypeSpan = document.getElementById('storageType');
 const statusDiv = document.getElementById('statusMessage');
         const orderProjects = document.querySelector(".order-projects")
-
+const incessive = document.querySelector(".incessive")
     const fontProject = document.querySelector(".font-project")
             let db = new Localbase('db')
 // Helper: Convert bytes to human readable format
@@ -134,14 +134,19 @@ document.getElementById("showFonts").addEventListener("click",(e)=>{
     document.getElementById("showProjects").classList.remove("active")
 
 })
+async function renderData(search = ""){
+    try{
+        let allData = ""
+                let datas = await db.collection("projects").orderBy('entryDate', 'desc').get()
+                                if(datas.length <= 0){
+            orderProjects.innerHTML = `<p style="text-align:center;margin-top:2rem;">No projects saved yet.</p>`
+            return 
+                                } 
+if(search === "") allData = datas
+else allData = datas.filter(dat=>dat.name.toLowerCase().includes(search.toLowerCase()))
 
-async function importData(){
-try{
-    fontProject.innerHTML = ""
-            const datas = await db.collection("projects").orderBy('entryDate', 'desc').get()
-if(datas.length <= 0) return 
 
-    orderProjects.innerHTML =  `${datas.map(dat =>{
+    orderProjects.innerHTML =  `${allData.map(dat =>{
         return `
         <div class="objects">
             <div class="objects1"><img src=${dat?.object?.[0]?.backgroundImage || ""} alt="Image Not Found"></div>
@@ -159,7 +164,7 @@ document.querySelectorAll(".objects").forEach(button=>{
     const name = button.querySelector("p").textContent
     button.querySelector(".export").addEventListener("click",async ()=>{
     const data = await db.collection("projects").doc({name:name}).get()
-    const stringFied = JSON.stringify(data);
+    const stringFied = JSON.stringify(data.object);
     
   const blob = new Blob([stringFied], { type: "application/json" });
 
@@ -177,6 +182,7 @@ button.querySelector(".delete").addEventListener("click",async()=>{
     }
     localStorage.setItem("project-names", JSON.stringify(projects));
     alert(`${name} has been deleted`)
+    await renderData()
 })
 button.querySelector(".objects1").addEventListener("click",async()=>{
         try {
@@ -187,22 +193,110 @@ button.querySelector(".objects1").addEventListener("click",async()=>{
     }
 })
 })
+    }catch(error){
+        console.error("Error rendering data:", error);
+    }
+}
+
+async function importData(){
+try{
+    fontProject.innerHTML = ""
+    orderProjects.innerHTML = `<p style="text-align:center;margin-top:2rem;">Loading...</p>`
+            incessive.innerHTML = `
+        <div><input class="search" placeholder="Search fonts..."/></div>
+        <div>
+        <button>Import<input type="file" multiple class="import" accept=".json"/></button>
+        <button class="export-all">Export All</button>
+        <button class="delete-all">Delete All</button>        
+        </div>
+        `
+                document.querySelector(".delete-all").addEventListener("click",async()=>{
+            if(confirm("Are you sure you want to delete all projects? This action cannot be undone.")){
+                await db.collection("projects").delete()
+                localStorage.removeItem("project-names")
+                alert("All projects have been deleted")
+                await renderData()
+    }})
+
+      document.querySelector(".import").addEventListener("change",async (e)=>{
+        const files = e.target.files;
+        if(files.length <= 0) return
+        try{
+        for(const file of files){
+               const reader = new FileReader();
+               const read = new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsText(file); 
+            })
+            const result = await read;
+            const jsonData = JSON.parse(result);
+                  const names = JSON.parse(localStorage.getItem("project-names")) || [];
+                  const fileName = file.name.trim().toLowerCase()
+        if(names.includes(fileName)){
+            alert(`Project with name ${fileName} already exists. Please rename the file and try again.`)
+            continue
+        }
+        await db.collection("projects").add({
+            name: fileName,
+            object: jsonData || [],
+            entryDate: (new Date()).getTime()
+        })
+
+        }  
+        await renderData()
+
+}catch(error){
+            console.error("Error reading files:", error);
+      }})
+
+      document.querySelector(".export-all").addEventListener("click",async()=>{
+        const datas = await db.collection("projects").orderBy("entryDate", "desc").get();
+        if(datas.length <= 0){
+            alert("No projects to export")
+            return
+        }
+         const zip = new JSZip();
+        datas.forEach(dat=>{
+            const stringFied = JSON.stringify(dat.object);
+            zip.file(`${dat.name}.json`, stringFied);
+        })
+         const content = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(content);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = "allProjects.zip";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+      })
+
+    await renderData()
+    
 }
 catch(error){
     console.error("Error importing data:", error);
 }
 }
 
-async function importFonts(){
-        orderProjects.innerHTML = ""
-    try {
-        const fonts = await db.collection("fonts").orderBy("id").get();
-
-        fontProject.innerHTML =  `${fonts.map(font =>{
+async function renderFonts(search = ""){
+    try{
+   
+    let allFonts = ""
+    let fonts = await db.collection("fonts").orderBy("id").get();
+    if(fonts.length <= 0){
+        fontProject.innerHTML = `<p style="text-align:center;margin-top:2rem;">No fonts imported yet.</p>`
+return
+    } 
+    if(search === "") allFonts = fonts
+    else allFonts = fonts.filter(font=>font.id.toLowerCase().includes(search.toLowerCase()))
+        fontProject.innerHTML =  `${allFonts.map(font =>{
             return `
             <div>
             <p>${font.id}</p>
-            <button>Delete</button>
+            <button class="delete">Delete</button>
             </div>
             `
         }).join("")}`
@@ -220,14 +314,116 @@ async function importFonts(){
     }
     localStorage.setItem("fontNames", JSON.stringify(fonts));
                 alert(`${name} has been deleted`)
+                await renderFonts()
             })
         })
+    }catch(error){
+console.error("Error rendering fonts:", error);
+    };
+ 
+}
+async function importFonts(){
+        orderProjects.innerHTML = ""
+        fontProject.innerHTML = `<p style="text-align:center;margin-top:2rem;">Loading...</p>`
+
+    try {
+        incessive.innerHTML = `
+        <div><input class="search" placeholder="Search fonts..."/></div>
+        <div>
+        <button>Import<input type="file" multiple class="import" accept=".ttf,.otf,.woff,.woff2"/></button>
+        <button class="delete-all">Delete All</button>        
+        </div>
+
+
+        `
+        document.querySelector(".delete-all").addEventListener("click",async()=>{
+            if(confirm("Are you sure you want to delete all fonts? This action cannot be undone.")){
+                await db.collection("fonts").delete()
+                localStorage.removeItem("fontNames")
+                alert("All fonts have been deleted")
+                await renderFonts()
+    }})
+
+
+      document.querySelector(".import").addEventListener("change",async (e)=>{
+        const files = e.target.files;
+        if(files.length <= 0) return
+        try{
+        for(const file of files){
+            const fileName = file.name;
+    const fontNames = JSON.parse(localStorage.getItem("fontNames")) || [];
+      if(fontNames.includes(fileName)){
+        alert("Font already imported");
+continue
+      } 
+
+    const fileExt = fileName.substring(fileName.lastIndexOf('.'));
+    const fontFamily = null || fileName.replace(fileExt, '');
+    
+    // Read file directly (no fetch needed!)
+    const reader = new FileReader();
+    const fontData = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file); // Direct file read, not fetch
+    });
+    const fontFormat = getFormatFromExtension(fileExt);
+ // Set the font family to the newly imported font
+    
+    // Store in IndexedDB
+    await db.collection('fonts').add({
+      id: fontFamily,
+      fontFamily: fontFamily,
+      fontData: fontData,  // Complete font data from file
+      fontFormat: fontFormat,
+      timestamp: (new Date()).getTime(),
+      fileName: fileName,   // Store original filename
+      fileSize: file.size   // Store size for info
+    });
+    
+    console.log(`Font ${fontFamily} stored successfully from uploaded file`);
+    localStorage.setItem("fontNames", JSON.stringify([...fontNames, fontFamily]));
+
+        }
+        }catch(error){
+            console.error("Error reading files:", error);
+        }
+            await renderFonts()
+            })
+        
+        
+
+        document.querySelector(".search").addEventListener("input",async (e)=>{
+            const searchTerm = e.target.value.trim().toLowerCase();
+            await renderFonts(searchTerm)
+        })
+
+        await renderFonts()
+
+
 
     }
     catch(error){
         console.error("Error importing fonts:", error);
     }
 }
+function getFormatFromExtension(ext) {
+  const formats = {
+    '.ttf': 'truetype',
+    '.otf': 'opentype',
+    '.woff': 'woff',
+    '.woff2': 'woff2'
+  };
+  return formats[ext.toLowerCase()] || 'truetype';
+}
+function getFontFormat(url) {
+  if (url.endsWith('.woff2')) return 'woff2';
+  if (url.endsWith('.woff')) return 'woff';
+  if (url.endsWith('.ttf')) return 'truetype';
+  if (url.endsWith('.otf')) return 'opentype';
+  return 'truetype';
+}
+
 window.onload = function() {
     importData()
 }

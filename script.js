@@ -1,21 +1,29 @@
 const nameDiv = document.querySelector(".name");
 const already = document.querySelector(".already");
 const orderProjects = document.querySelector(".order-projects");
+const nameInput = document.getElementById("name");
+  let db = new Localbase("db");
 let data;
 window.addEventListener("load", async () => {
-  let db = new Localbase("db");
+
   const fonts = await db.collection("fonts").get();
-  if (fonts.length > 0) {
-    let fontNames = fonts.map((font) => font.fontFamily);
-    localStorage.setItem("fontNames", JSON.stringify([...fontNames]));
+  let fontNames = []
+  if(fonts.length > 0){
+     fontNames = fonts.map((font) => font.fontFamily);
   }
+ 
+    localStorage.setItem("fontNames", JSON.stringify([...fontNames]));
   const datas = await db
     .collection("projects")
     .orderBy("entryDate", "desc")
     .get();
-  if (datas.length <= 0) return;
-  let projectNames = datas.map((project) => project.name);
+    let projectNames = []
+  if(datas.length > 0){
+     projectNames = datas.map((project) => project.name);
+  }
   localStorage.setItem("project-names", JSON.stringify([...projectNames]));
+  if (datas.length <= 0) return;
+
 
   orderProjects.innerHTML = `
     ${datas
@@ -31,7 +39,7 @@ window.addEventListener("load", async () => {
     `;
   orderProjects.querySelectorAll("button").forEach((button) => {
     button.addEventListener("click", () => {
-      const name = button.querySelector("p").textContent;
+      const name = button.querySelector("p").textContent.toLowerCase();
       try {
         const encoded = encodeURIComponent(name);
         window.location.href = `project.html?data=${encoded}`;
@@ -41,10 +49,23 @@ window.addEventListener("load", async () => {
     });
   });
 });
-
+nameInput.addEventListener("input", (e) => {
+  const value = e.target.value.trim().toLowerCase();
+  const availableNames = JSON.parse(localStorage.getItem("project-names")) || [];
+  if (availableNames.includes(`${value}.json`)) {
+    already.textContent = "Name Already Exists";
+    already.style.display = "flex";
+  } else {
+    already.style.display = "none";
+  }
+})
 document.getElementById("new-project").addEventListener("click", () => {
   data = [];
   nameDiv.style.display = "flex";
+  nameInput.value = "";
+  nameInput.focus();
+  already.style.display = "none";
+
 });
 document
   .querySelector("#upload-project input")
@@ -54,7 +75,7 @@ document
     reader.readAsText(file);
     reader.onload = async () => {
       const jsonData = JSON.parse(reader.result);
-      const projectName = `${file.name.trim()}.json`;
+      const projectName = `${file.name.trim().toLowerCase()}.json`;
       const names = JSON.parse(localStorage.getItem("project-names")) || [];
 
       if (
@@ -63,7 +84,7 @@ document
       ) {
         data = jsonData;
         nameDiv.style.display = "flex";
-        nameInput = document.getElementById("name").value = projectName;
+        nameInput.value = projectName;
         already.textContent = "Invalid Name Input Another";
         return;
       }
@@ -74,33 +95,32 @@ function cancel() {
   nameDiv.style.display = "none";
 }
 async function proceed() {
-  let nameInput = document.getElementById("name").value.trim();
-  if (nameInput === "undefined" || !nameInput) {
+  let nameInputs = nameInput.value.trim().toLowerCase();
+  if (nameInputs === "undefined" || !nameInput) {
     already.textContent = "Input Name";
     already.style.display = "flex";
     return;
   }
-  nameInput += ".json";
-  console.log(nameInput);
+  nameInputs += ".json";
+  console.log(nameInputs);
   const names = JSON.parse(localStorage.getItem("project-names")) || [];
-  if (names.includes(nameInput)) {
+  if (names.includes(nameInputs)) {
     already.textContent = "Name Already Exists";
     already.style.display = "flex";
     return;
   }
-  saveAndSend(nameInput, data);
+  saveAndSend(nameInputs, data);
 }
-async function saveAndSend(name, data) {
+async function saveAndSend(namer, data) {
   const names = JSON.parse(localStorage.getItem("project-names")) || [];
-  localStorage.setItem("project-names", JSON.stringify([...names, name]));
-  let db = new Localbase("db");
+  localStorage.setItem("project-names", JSON.stringify([...names, namer]));
   await db.collection("projects").add({
-    name: name,
+    name: namer,
     object: data,
     entryDate: new Date().getTime(),
   });
   try {
-    const encoded = encodeURIComponent(name);
+    const encoded = encodeURIComponent(namer);
     window.location.href = `project.html?data=${encoded}`;
   } catch (error) {
     console.error("Failed to encode data:", error);
