@@ -4888,7 +4888,7 @@ class Images extends Formats {
     </section>
     <button class="image-file">
       <p>Add Images</p>
-      <input type="file" multiple accept=".jpg,.png,.svg" name="iteratedFiles">
+      <input type="file" multiple accept=".png,.jpeg,.jpg,.svg,.jfif" name="iteratedFiles">
     </button>
     <label class="uniform-div" style="margin-top:1rem">
       <span>Format Iterated</span>
