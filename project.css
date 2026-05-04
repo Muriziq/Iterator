@@ -55,8 +55,7 @@ button{
   gap: 1rem;
   padding: 0.5rem 1rem;
   color: var(--h3-fill);
-  background-color: var(--side-color);
-  border-bottom: var(--border-bottom);
+  background-color: var(--aligin-sec);
   height: auto;
 }
 .home{

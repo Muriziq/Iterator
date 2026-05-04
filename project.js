@@ -15,7 +15,6 @@ const width = document.getElementById("width");
 const height = document.getElementById("height");
 let whatsMeasured = "px";
 let measurement = { width: 817, height: 1055 };
-let renderPageResolution = "auto";
 let cloneObj = null;
 let pen = null;
 let multipleSelect = false;
@@ -62,7 +61,7 @@ let clipped = null;
 let thresholds = {
   selected: () => adapt(2),
   normalMode: () => adapt(25),
-  threshold: () => adapt(5),
+  threshold: () => adapt(2),
   maxCanvasSize: () => adapt(5000),
   pointHold: () => adapt(15),
   slineWidth: () => adapt(1),
@@ -114,6 +113,9 @@ projectName.addEventListener("input",async (e)=>{
     localStorage.setItem("project-names",JSON.stringify([...names]))
   }
   formerName = dbName
+})
+window.addEventListener("resize",()=>{
+  canvasSize()
 })
 window.addEventListener("load", async () => {
   try {
@@ -676,7 +678,7 @@ class Formats {
 
     ]
     }
-    if(this.type === "image"){
+    if(this.type === "image" || this.type === "text"){
         return [
       {x:this.x,y: this.y},
       {x:this.x + this.width / 2,y: this.y + this.height / 2},
@@ -692,6 +694,7 @@ class Formats {
 
     ]
     }
+
     return this.points.map(point=> this.pointToWorld(point.points))
   }
     pointToWorld(point){
@@ -4505,9 +4508,9 @@ doubleClicked(mouse) {
     });
     
     this.isDoubleClicked = true;
-    
     // Create or reuse a hidden measuring element
     if (!this.measurer) {
+
         this.measurer = document.createElement('div');
         this.measurer.style.position = 'absolute';
         this.measurer.style.visibility = 'hidden';
@@ -5232,7 +5235,6 @@ class Group extends Formats {
       objects.splice(index, 1);
       selectedObj = null;
       Tools("moveTool");
-      document.getElementById("moveTool").classList.add("active");
     });
     super.similarPropties();
     propertiesBar
@@ -5440,8 +5442,8 @@ height.addEventListener("input", (e) => {
   canvasSize();
 });
 document.getElementById("renderPage").addEventListener("change", (e) => {
-  renderPageResolution = e.target.value;
-  switch (renderPageResolution) {
+  generateInfo.renderPage = e.target.value;
+  switch (generateInfo.renderPage) {
     case "a0":
       renderPageSize = measurementArr[9];
       break;
@@ -5472,7 +5474,7 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
       break;
     case "custom":
       renderPageSize = { width: renderWidth, height: renderHeight };
-      renderPageResolution = "custom";
+      generateInfo.renderPage = "custom";
       break;
   }
   const rows = document.getElementById("noPerRow");
@@ -5484,7 +5486,7 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
     const width = document.getElementById("renderWidth");
     width.value = renderPageSize.width;
     height.value = renderPageSize.height;
-    if (renderPageResolution === "custom") {
+    if (generateInfo.renderPage === "custom") {
       height.readOnly = false;
       width.readOnly = false;
     } else {
@@ -5584,6 +5586,7 @@ async function reviveObjects(objData) {
   }
   if(objData.type === "text"){
     objData.textPlace = document.createElement("textarea")
+    objData.measurer = false
     if(!(defaultFonts.includes(objData.fontFamily))){
       if(newFonts.includes(objData.fontFamily)){
             const result = await db.collection('fonts')
@@ -5638,6 +5641,8 @@ objData.clips = await Promise.all(
   }
 
   Object.assign(instance, objData);
+  if(objData.type === "text") textBoxes.push(instance)
+  if(objData.type === "image") images.push(instance)
   return instance;
 }
 document.getElementById("retrieve-file").addEventListener("change",(e)=>retrieveFile(e))
@@ -5750,7 +5755,7 @@ button.classList.add("active");
   duplicateClicked = false;
   cloneObj = null;
   pen = null;
-
+  propertiesBar.innerHTML = "";
   switch (tool) {
     case "moveTool":
       canvas.style.cursor = "default";
@@ -5763,20 +5768,24 @@ button.classList.add("active");
       break;
     case "panTool":
       canvas.style.cursor = "grab";
+      selectedObj = null;
       startPanning = !startPanning;
 
       break;
     case "addRectangle":
       canvas.style.cursor = "crosshair";
+      selectedObj = null;
       isDrawing = "rect";
       break;
 
     case "addEllipse":
       canvas.style.cursor = "crosshair";
+      selectedObj = null;
       isDrawing = "ellipse";
       break;
 
     case "addLine":
+      selectedObj = null;
       canvas.style.cursor = "crosshair";
       const line = new Line();
       pen = line;
@@ -5785,16 +5794,20 @@ button.classList.add("active");
       break;
 
     case "addPolygon":
+      selectedObj = null;
       canvas.style.cursor = "crosshair";
+      selectedObj = null;
       isDrawing = "polygon";
       break;
 
     case "addTextbox":
+      selectedObj = null;
       canvas.style.cursor = "inherit";
       isDrawing = "text";
       break;
 
     case "zoom":
+      selectedObj = null;
       propertiesBar.innerHTML = `
   <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
     <button class="zoomin"><img src="imagess/zoom-in.svg"></button>
@@ -5813,12 +5826,12 @@ button.classList.add("active");
       let zoomInterval;
 
       function zoomIn() {
-        scale += thresholds.zoomScroll();
+        scale += 0.01 * 0.9 ** (scale * 10 - 10);
         requestDraw();
       }
 
       function zoomOut() {
-        scale -= thresholds.zoomScroll();
+        scale -= 0.01 * 0.9 ** (scale * 10 - 10);
         requestDraw();
       }
 
@@ -5851,6 +5864,7 @@ button.classList.add("active");
           height: measurement.height,
         });
         requestDraw();
+        Tools("zoom")
       });
 
       requestDraw();
@@ -5866,8 +5880,7 @@ button.classList.add("active");
         } else {
           notify("Please Select An Object");
           duplicateClicked = false;
-          document.getElementById("moveTool").classList.add("active");
-          document.getElementById("duplicate").classList.remove("active");
+          Tools("moveTool");
         }
       } else {
         cloneObj = null;
@@ -5930,8 +5943,22 @@ function flip(value) {
     if (value === "x") {
       selectedObj.scaleX *= -1;
     } else selectedObj.scaleY *= -1;
+    undoObject.push(cloneObject(objects));
+  redoObject.length = 0;
+    requestDraw();
   }
-  requestDraw();
+  if(multipleSelect && multipleSelectArr.length > 0){
+    if(value === "x"){
+      multipleSelectArr.forEach(obj => obj.scaleX *= -1);
+    }else {
+      multipleSelectArr.forEach(obj => obj.scaleY *= -1);
+    } 
+        undoObject.push(cloneObject(objects));
+  redoObject.length = 0;
+    requestDraw();
+
+  }
+
 }
 document.querySelector(".generateButton").addEventListener("click", () => {
   document.querySelector(".generate").style.display = "flex";
@@ -6099,11 +6126,12 @@ function bringToFront(selected) {
       }
   }
   let index = objects.indexOf(selected);
-  if (index !== -1) {
-    objects.splice(index, 1);
+  if(index === -1) return 
+      objects.splice(index, 1);
     objects.push(selected);
     requestDraw();
-  }
+  undoObject.push(cloneObject(objects));
+  redoObject.length = 0;
 }
 function sendToBack(selected) {
   if(selected.clipped === "clipped"){
@@ -6116,11 +6144,12 @@ function sendToBack(selected) {
       }
   }
   let index = objects.indexOf(selected);
-  if (index !== -1) {
-    objects.splice(index, 1);
+  if(index === -1) return
+      objects.splice(index, 1);
     objects.unshift(selected);
     requestDraw();
-  }
+undoObject.push(cloneObject(objects));
+  redoObject.length = 0;
 }
 function pageUp(selected) {
   // Handle clipping reorder FIRST if selected is clipped
@@ -6143,6 +6172,8 @@ function pageUp(selected) {
   // swap with next
   [objects[i], objects[i + 1]] = [objects[i + 1], objects[i]];
   requestDraw();
+  undoObject.push(cloneObject(objects));
+  redoObject.length = 0;
 }
 
 function pageDown(selected) {
@@ -6165,6 +6196,8 @@ function pageDown(selected) {
   // swap with previous
   [objects[i], objects[i - 1]] = [objects[i - 1], objects[i]];
   requestDraw();
+  undoObject.push(cloneObject(objects));
+  redoObject.length = 0;
 }
 function backValues(x) {
   if (whatsMeasured === "px") {
@@ -6237,11 +6270,11 @@ document.getElementById("home-button").addEventListener("click",()=>{
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");
 
-  if (renderPageResolution === "auto") {
+  if (generateInfo.renderPage === "auto") {
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const dataUrl = await domtoimage.toPng(container);
+      const dataUrl = await html2canvas(container);
       const { jsPDF } = window.jspdf;
 
       const rect = container.getBoundingClientRect();
@@ -6254,7 +6287,7 @@ async function saveAsPDF() {
         format: [pdfWidth, pdfHeight],
       });
 
-      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(dataUrl.toDataURL('image/png'), "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save("content.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -6266,7 +6299,7 @@ async function saveAsPDF() {
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "pt",
-      format: renderPageResolution.toLowerCase(),
+      format: generateInfo.renderPage.toLowerCase(),
     });
 
     for (let i = 0; i < sections.length; i++) {
@@ -6306,7 +6339,7 @@ async function saveAsPDF() {
 async function saveAsImage() {
   const element = document.getElementById("generationArea");
   let images;
-  if (renderPageResolution === "auto") {
+  if (generateInfo.renderPage === "auto") {
     images = element.querySelectorAll("div");
   } else {
     images = element.querySelectorAll("section");
@@ -6315,10 +6348,10 @@ async function saveAsImage() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const dataUrl = await domtoimage.toPng(element);
+      const dataUrl = await html2canvas(images[i]);
       const link = document.createElement("a");
-      link.download = `content${i}.png`;
-      link.href = dataUrl;
+      link.download = `${formerName.replace(/\.json$/i,"")}${i}.png`;
+      link.href =  dataUrl.toDataURL('image/png');
       link.click();
     } catch (error) {
       console.error("Failed to save as image:", error);
@@ -6412,7 +6445,7 @@ function align(arg) {
         other[oth].changeLocation(value - otherSnap.height, "y");
     }
   }
-
+    if (multipleSelectArr.length > 1) multipleSelectFunction();
   requestDraw();
   undoObject.push(cloneObject(objects));
   redoObject.length = 0;
@@ -6611,7 +6644,7 @@ async function generateCard() {
     div.style.alignItems = "center";
     div.style.justifyContent = "center";
 
-    if (renderPageResolution === "auto") {
+    if (generateInfo.renderPage === "auto") {
       div.style.width = "100%";
       img.style.width = "100%";
       img.style.height = "100%";
@@ -6662,6 +6695,24 @@ function requestDraw() {
     needsDraw = false;
     draw();
   });
+}
+function multipleSelectFunction() {
+      multipleSelectCoor.start.x = Math.min(
+        ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
+      );
+      multipleSelectCoor.start.y = Math.min(
+        ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
+      );
+      multipleSelectCoor.end.x = Math.max(
+        ...multipleSelectArr.map(
+          (obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width,
+        ),
+      );
+      multipleSelectCoor.end.y = Math.max(
+        ...multipleSelectArr.map(
+          (obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height,
+        ),
+      );
 }
 function cMousedown(event) {
   for (let i = objects.length - 1; i >= 0; i--) {
@@ -6736,7 +6787,10 @@ function cMousedown(event) {
 
     if (clipped === null) {
       notify("Clipped");
-      canvas.style.cursor = "default";
+      Tools("moveTool");
+      undoObject.push(cloneObject(objects));
+      redoObject.length = 0;
+      return
     } else {
       notify("Select An Object");
     }
@@ -6747,6 +6801,7 @@ function cMousedown(event) {
     objects.push(cloned);
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;
+    return
   } else if (clippedObject !== null && previousClip !== null) {
     editclip.style.display = "block";
 
@@ -6758,6 +6813,7 @@ function cMousedown(event) {
         selectedObj.isDoubleClicked = false;
         selectedObj.formatProperties();
         break;
+        return
       }
     }
   } else if (multipleSelect) {
@@ -6765,8 +6821,9 @@ function cMousedown(event) {
       if (objects[i].whatSelected(pos)) {
         if (!multipleSelectArr.includes(objects[i])) {
           multipleSelectArr.push(objects[i]);
+                  break;
         }
-        break;
+
       }
     }
     if (multipleSelectArr.length === 0) {
@@ -6777,22 +6834,7 @@ function cMousedown(event) {
     }
 
     if (multipleSelectArr.length > 0) {
-      multipleSelectCoor.start.x = Math.min(
-        ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
-      );
-      multipleSelectCoor.start.y = Math.min(
-        ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
-      );
-      multipleSelectCoor.end.x = Math.max(
-        ...multipleSelectArr.map(
-          (obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width,
-        ),
-      );
-      multipleSelectCoor.end.y = Math.max(
-        ...multipleSelectArr.map(
-          (obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height,
-        ),
-      );
+        multipleSelectFunction()
       if (
         pos.x >= multipleSelectCoor.start.x &&
         pos.x <= multipleSelectCoor.end.x &&
@@ -6810,11 +6852,11 @@ function cMousedown(event) {
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].whatSelected(pos)) {
         hitObject = objects[i];
-        break;
+        break
       }
     }
 
-    if (hitObject) {
+    if (hitObject !== null) {
       selectedObj = hitObject;
 
       if (selectedObj.clips && selectedObj.clips.length > 0) {
@@ -6834,7 +6876,9 @@ function cMousedown(event) {
       startX = event.clientX;
       startY = event.clientY;
     }
+
   }
+
 
   lastMouseX = pos.x;
   lastMouseY = pos.y;
@@ -6893,6 +6937,8 @@ function wMouseUp() {
       selectedObj = drawedObject;
       selectedObj.formatProperties();
       Tools("moveTool");
+      undoObject.push(cloneObject(objects));
+      redoObject.length = 0;
     }
   }
 
@@ -6948,22 +6994,7 @@ function cMouseMove(event) {
     multipleSelectArr.forEach((obj) => {
       obj.moveClip(deltaX, deltaY);
     });
-    multipleSelectCoor.start.x = Math.min(
-      ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
-    );
-    multipleSelectCoor.start.y = Math.min(
-      ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
-    );
-    multipleSelectCoor.end.x = Math.max(
-      ...multipleSelectArr.map(
-        (obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width,
-      ),
-    );
-    multipleSelectCoor.end.y = Math.max(
-      ...multipleSelectArr.map(
-        (obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height,
-      ),
-    );
+    multipleSelectFunction();
 
     changed = true;
   } else if ((isDraggingObject || isRotatingObject) && selectedObj) {
@@ -6987,23 +7018,36 @@ document.addEventListener("keydown", (e) => {
     tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
   // console.log(e.key)
   if (isTyping) return;
-  if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "=")) return;
+  
   e.preventDefault();
-
+if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "=")) return;
   if (e.code === "ArrowUp") {
     if (selectedObj !== null) selectedObj.moveClip(0, -thresholds.arrowKeys());
-    else panY += -thresholds.arrowKeys();
+    else if (multipleSelect && multipleSelectArr.length > 0) {
+      multipleSelectArr.forEach((obj) => obj.moveClip(0, -thresholds.arrowKeys()));
+    } else {
+      panY += -thresholds.arrowKeys();
+    }
   }
   if (e.code === "ArrowDown") {
     if (selectedObj !== null) selectedObj.moveClip(0, thresholds.arrowKeys());
+    else if (multipleSelect && multipleSelectArr.length > 0) {
+      multipleSelectArr.forEach((obj) => obj.moveClip(0, thresholds.arrowKeys()));
+    }
     else panY += thresholds.arrowKeys();
   }
   if (e.code === "ArrowLeft") {
     if (selectedObj !== null) selectedObj.moveClip(-thresholds.arrowKeys(), 0);
+    else if (multipleSelect && multipleSelectArr.length > 0) {
+      multipleSelectArr.forEach((obj) => obj.moveClip(-thresholds.arrowKeys(), 0));
+    }
     else panX += -thresholds.arrowKeys();
   }
   if (e.code === "ArrowRight") {
     if (selectedObj !== null) selectedObj.moveClip(thresholds.arrowKeys(), 0);
+    else if (multipleSelect && multipleSelectArr.length > 0) {
+      multipleSelectArr.forEach((obj) => obj.moveClip(thresholds.arrowKeys(), 0));
+    }
     else panX += thresholds.arrowKeys();
   }
   if (e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null) {
@@ -7019,6 +7063,14 @@ document.addEventListener("keydown", (e) => {
   ) {
     group();
   }
+  if(    e.ctrlKey &&
+    e.key.toLowerCase() === "u" && selectedObj !== null && selectedObj.type === "group"){
+            selectedObj.list.forEach((l) => objects.push(l));
+      const index = objects.indexOf(this);
+      objects.splice(index, 1);
+      selectedObj = null;
+      Tools("moveTool");
+    }
 
   if (e.key.toLowerCase() === "delete" && selectedObj !== null) {
     Tools("delete");
@@ -7043,17 +7095,28 @@ document.addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() === "b") align("bottom");
   if (e.key.toLowerCase() === "q") flip("x");
   if (e.key.toLowerCase() === "w") flip("y");
+  if (e.key.toLowerCase() === "m"){
+    Tools("moveTool");
+  }
+  if (e.key.toLowerCase() === "s"){
+    Tools('multipleSelection')
+  }
   if (e.key.toLowerCase() === "h") {
     Tools("panTool");
-    document.getElementById("panTool").classList.add("active");
   }
+  if(e.ctrlKey && e.key.toLowerCase() === "z"){
+    undo();
+    return
+  }
+  if(e.ctrlKey && e.key.toLowerCase() === "y"){
+    redo();
+  }
+
   if (e.key.toLowerCase() === "z") {
     Tools("zoom");
-    document.getElementById("zoom").classList.add("active");
   }
   if (e.key.toLowerCase() === "p") {
     Tools("addLine");
-    document.getElementById("addLine").classList.add("active");
   }
 
   requestDraw();
@@ -7166,7 +7229,7 @@ function draw() {
       const clone = clippedObject.showClone();
       clone.colorFill = "none";
       clone.outline = true;
-      clone.outlineThickness = adapt(5);
+      clone.outlineThickness = adapt(3);
       clone.outlineColor = "#ff0000";
       clone.addObject();
     }
