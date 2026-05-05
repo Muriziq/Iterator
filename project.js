@@ -456,6 +456,92 @@ class LineUtils {
     return { x, y };
   }
 }
+class LoaderManager {
+  constructor(maxItems = 10) {
+    this.maxItems = maxItems;
+    this.currentIndex = 0;
+    this.loaderContainer = null;
+  }
+
+  // Create the loader UI container
+  createLoader(containerId = 'loader-container') {
+    // Create container if it doesn't exist
+    let container = document.getElementById(containerId);
+    if (!container) {
+      container = document.createElement('div');
+      container.id = containerId;
+      container.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 9999;
+        min-width: 300px;
+        display: none;
+      `;
+      document.body.appendChild(container);
+    }
+    this.loaderContainer = container;
+        this.loaderContainer.style.display = 'block';
+    return container;
+  }
+
+  // Increment and show progress
+  incrementOriginalState() {
+    this.currentIndex++;
+    this.showProgress();
+    
+    // Auto-hide when complete
+    if (this.currentIndex >= this.maxItems) {
+      setTimeout(() => this.reset(), 500);
+    }
+  }
+
+  // Update the display
+  showProgress() {
+    if (!this.loaderContainer) return;
+    
+    const percentage = (this.currentIndex / this.maxItems) * 100;
+    
+    this.loaderContainer.style.display = 'block';
+    this.loaderContainer.innerHTML = `
+      <div style="text-align: center;">
+        <div style="margin-bottom: 10px;">Loading Images...</div>
+        <div style="
+          background: #f0f0f0;
+          border-radius: 4px;
+          overflow: hidden;
+          height: 20px;
+        ">
+          <div style="
+            width: ${percentage}%;
+            background: #4caf50;
+            height: 100%;
+            transition: width 0.3s ease;
+          "></div>
+        </div>
+        <div style="margin-top: 10px; font-size: 12px;">
+          ${this.currentIndex} / ${this.maxItems}
+        </div>
+      </div>
+    `;
+  }
+
+  hide() {
+    if (this.loaderContainer) {
+      this.loaderContainer.style.display = 'none';
+    }
+  }
+
+  reset() {
+    this.currentIndex = 0;
+    this.hide();
+  }
+}
 class Formats {
   constructor() {
     this.id = crypto.randomUUID()
@@ -4914,7 +5000,10 @@ class Images extends Formats {
         requestDraw();
         this.formatProperties();
       });
+
       div.querySelector(".change").addEventListener("change", (e) => {
+              const loader = new LoaderManager(1); // Set max items to 10
+loader.createLoader();
         const file = e.target.files[0];
         if (!file) return;
         const url = URL.createObjectURL(file);
@@ -4928,6 +5017,7 @@ class Images extends Formats {
           reader.onload = () => {
             this.originalFiles[i] = file;
             this.imagePreview = img.src;
+             loader.incrementOriginalState();
             requestDraw();
             this.formatProperties();
           };
@@ -4979,6 +5069,8 @@ value= value <= 0 ? 0 : value
     }
 
     if (name === "iteratedFiles") {
+      const loader = new LoaderManager(e.target.files.length); // Set max items to the number of selected files
+loader.createLoader();
       Array.from(e.target.files).forEach((file) => {
         const url = URL.createObjectURL(file);
 
@@ -4992,6 +5084,7 @@ value= value <= 0 ? 0 : value
           reader.readAsDataURL(file);
           reader.onload = () => {
             this.originalFiles.push(file);
+            loader.incrementOriginalState();
             this.formatProperties();
           };
         };
@@ -5504,7 +5597,8 @@ async function addImage(e) {
   canvas.style.cursor = "wait";
   const file = e.target.files[0];
   if (!file) return;
-
+      const loader = new LoaderManager(1); // Set max items to the number of selected files
+loader.createLoader();
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.src = url;
@@ -5523,7 +5617,7 @@ async function addImage(e) {
       });
     };
   });
-
+loader.incrementOriginalState();
   canvas.style.cursor = "crosshair";
   isDrawing = "image";
 }
@@ -5995,6 +6089,15 @@ document.querySelector(".generateButton").addEventListener("click", () => {
     });
   });
 });
+function requestGenerateCard(){
+  cancelGenerate()
+  requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+      generateCard()
+  });
+});
+
+}
 function cancelGenerate() {
   document.querySelector(".generate").style.display = "none";
 }
@@ -6514,8 +6617,7 @@ function zoomToRect(rect) {
 
   requestDraw();
 }
-
-async function generateCard() {
+function generateCard() {
   document.querySelector("footer").style.display = "block";
   scale = 1;
   panX = 0;
@@ -6587,7 +6689,8 @@ async function generateCard() {
 
   // Increase output resolution. You can change this to 1, 2, 3...
   const scaleFactor = 2;
-
+      const loader = new LoaderManager(iterationLength); // Set max items to the number of selected files
+loader.createLoader();
   for (let i = 0; i < iterationLength; i++) {
     // 1) draw current iteration onto main canvas
 
@@ -6672,10 +6775,11 @@ async function generateCard() {
 
       boxCountInPage++;
     }
+    loader.incrementOriginalState();
   }
   images.forEach((img) => img.backToDefault());
   textBoxes.forEach((textBox) => textBox.backToDefault());
-  document.querySelector(".generate").style.display = "none";
+
   const generationAreaPosition = generationArea.offsetTop;
   window.scrollTo({
     top: generationAreaPosition,
