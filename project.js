@@ -127,7 +127,7 @@ window.addEventListener("load", async () => {
             const objectsData = await  db.collection("projects").doc({name:data}).get()
                     projectName.value = objectsData.name.replace(/\.json$/i,"")
                     formerName = objectsData.name
-            importLoaded(objectsData.object)      
+            await importLoaded(objectsData.object)     
     }
     else{
       const names = JSON.parse(localStorage.getItem("project-names")) || [];
@@ -465,29 +465,13 @@ class LoaderManager {
 
   // Create the loader UI container
   createLoader(containerId = 'loader-container') {
-    // Create container if it doesn't exist
-    let container = document.getElementById(containerId);
-    if (!container) {
-      container = document.createElement('div');
+
+   let container = document.createElement('div');
       container.id = containerId;
-      container.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        z-index: 9999;
-        min-width: 300px;
-        display: none;
-      `;
+      container.classList.add('loader-container');
       document.body.appendChild(container);
-    }
     this.loaderContainer = container;
         this.loaderContainer.style.display = 'block';
-    return container;
   }
 
   // Increment and show progress
@@ -531,15 +515,10 @@ class LoaderManager {
     `;
   }
 
-  hide() {
-    if (this.loaderContainer) {
-      this.loaderContainer.style.display = 'none';
-    }
-  }
 
   reset() {
     this.currentIndex = 0;
-    this.hide();
+    document.body.removeChild(this.loaderContainer)
   }
 }
 class Formats {
@@ -2364,30 +2343,43 @@ class Rectangle extends Formats {
     ctx.closePath();
   }
   whereToSnap() {
+
     if (this.roundedOrbeveled === "shaped") {
-      return {
-        x: [
-          this.minX + this.x + this.width / 2,
-          this.minX + this.x + this.width,
-          this.minX + this.x + (3 * this.width) / 2,
-        ],
-        y: [
-          this.minY + this.y + this.height / 2,
-          this.minY + this.y + this.height,
-          this.minY + this.y + (3 * this.height) / 2,
-        ],
-        pos: {
-          x: this.minX + this.x + this.width / 2,
-          y: this.minY + this.y + this.height / 2,
-          width: this.maxX - this.minX,
-          height: this.maxY - this.minY,
-        },
-      };
+let minX = Infinity, maxX = -Infinity;
+let minY = Infinity, maxY = -Infinity;
+const worldPoints = this.points.map(p => this.pointToWorld(p.points));
+worldPoints.forEach(p => {
+  if (p.x < minX) minX = p.x;
+  if (p.x > maxX) maxX = p.x;
+  if (p.y < minY) minY = p.y;
+  if (p.y > maxY) maxY = p.y;
+});
+let newWidth = maxX - minX;
+let newHeight = maxY - minY;
+
+return {
+  x: [minX, minX + newWidth / 2, maxX],
+  y: [minY, minY + newHeight / 2, maxY],
+  pos: {
+    x: minX,
+    y: minY,
+    width: newWidth,
+    height: newHeight,
+  },
+};
     }
+        let cos = Math.cos(this.angle);
+let sin = Math.sin(this.angle);
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
+let newWidth  = Math.abs(this.width * cos) + Math.abs(this.height * sin);
+let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
+let rectx = centerX - newWidth / 2;
+let recty = centerY - newHeight /2 
     return {
-      x: [this.x, this.x + this.width / 2, this.x + this.width],
-      y: [this.y, this.y + this.height / 2, this.y + this.height],
-      pos: { x: this.x, y: this.y, width: this.width, height: this.height },
+      x: [rectx, rectx + newWidth / 2, rectx + newWidth],
+      y: [recty, recty + newHeight / 2, recty + newHeight],
+      pos: { x: rectx, y: recty, width: newWidth, height: newHeight },
     };
   }
 
@@ -2798,15 +2790,23 @@ class Ellipse extends Formats {
     return true;
   }
   whereToSnap() {
+let cos = Math.cos(this.angle);
+let sin = Math.sin(this.angle);
+
+let rx = this.radiusX;
+let ry = this.radiusY;
+
+let newWidth  = 2 * Math.sqrt((rx * cos) ** 2 + (ry * sin) ** 2);
+let newHeight = 2 * Math.sqrt((rx * sin) ** 2 + (ry * cos) ** 2);
+let centerX = this.x ;
+let centerY = this.y ;
+
+let rectx = centerX - newWidth / 2;
+let recty = centerY - newHeight / 2;
     return {
-      x: [this.x - this.radiusX, this.x, this.x + this.radiusX],
-      y: [this.y - this.radiusY, this.y, this.y + this.radiusY],
-      pos: {
-        x: this.x - this.radiusX,
-        y: this.y - this.radiusY,
-        width: this.radiusX * 2,
-        height: this.radiusY * 2,
-      },
+      x: [rectx, rectx + newWidth / 2, rectx + newWidth],
+      y: [recty, recty + newHeight / 2, recty + newHeight],
+      pos: { x: rectx, y: recty, width: newWidth, height: newHeight },
     };
   }
 
@@ -3394,16 +3394,28 @@ value= value <= 0 ? 0 : value
     }
   }
   whereToSnap() {
-    return {
-      x: [this.x - this.radiusX, this.x, this.x + this.radiusX],
-      y: [this.y - this.radiusY, this.y, this.y + this.radiusY],
-      pos: {
-        x: this.x - this.radiusX,
-        y: this.y - this.radiusY,
-        width: this.radiusX * 2,
-        height: this.radiusY * 2,
-      },
-    };
+let minX = Infinity, maxX = -Infinity;
+let minY = Infinity, maxY = -Infinity;
+const worldPoints = this.points.map(p => this.pointToWorld(p.points));
+worldPoints.forEach(p => {
+  if (p.x < minX) minX = p.x;
+  if (p.x > maxX) maxX = p.x;
+  if (p.y < minY) minY = p.y;
+  if (p.y > maxY) maxY = p.y;
+});
+let newWidth = maxX - minX;
+let newHeight = maxY - minY;
+
+return {
+  x: [minX, minX + newWidth / 2, maxX],
+  y: [minY, minY + newHeight / 2, maxY],
+  pos: {
+    x: minX,
+    y: minY,
+    width: newWidth,
+    height: newHeight,
+  },
+};
   }
 
   changeLocation(value, type) {
@@ -3951,24 +3963,28 @@ class Line extends Formats {
     redoObject.length = 0;
   }
   whereToSnap() {
-    return {
-      x: [
-        this.x - (this.maxX - this.minX) / 2,
-        this.x,
-        this.x + (this.maxX - this.minX) / 2,
-      ],
-      y: [
-        this.y - (this.maxY - this.minY) / 2,
-        this.y,
-        this.y + (this.maxY - this.minY) / 2,
-      ],
-      pos: {
-        x: this.x - (this.maxX - this.minX) / 2,
-        y: this.y - (this.maxY - this.minY) / 2,
-        width: this.maxX - this.minX,
-        height: this.maxY - this.minY,
-      },
-    };
+ let minX = Infinity, maxX = -Infinity;
+let minY = Infinity, maxY = -Infinity;
+const worldPoints = this.points.map(p => this.pointToWorld(p.points));
+worldPoints.forEach(p => {
+  if (p.x < minX) minX = p.x;
+  if (p.x > maxX) maxX = p.x;
+  if (p.y < minY) minY = p.y;
+  if (p.y > maxY) maxY = p.y;
+});
+let newWidth = maxX - minX;
+let newHeight = maxY - minY;
+
+return {
+  x: [minX, minX + newWidth / 2, maxX],
+  y: [minY, minY + newHeight / 2, maxY],
+  pos: {
+    x: minX,
+    y: minY,
+    width: newWidth,
+    height: newHeight,
+  },
+};
   }
   changeLocation(value, type) {
     if (type === "x") {
@@ -4343,6 +4359,7 @@ class TextBox extends Formats {
   <span>Format Iterated</span>
   <select name="formatIterated" class="formatIterated">
     <option value="none" ${this.formatIterated === "none" ? "selected" : ""}>None</option>
+    <option value="Fit" ${this.formatIterated === "Fit" ? "selected" : ""}>Fit</option>
     <option value="shrinkToFit" ${this.formatIterated === "shrinkToFit" ? "selected" : ""}>Shrink To Fit</option>
     <option value="createNewLine" ${this.formatIterated === "createNewLine" ? "selected" : ""}>Create New Line</option>
     <option value="atWhiteSpace" ${this.formatIterated === "atWhiteSpace" ? "selected" : ""}>At White Space</option>
@@ -4356,7 +4373,7 @@ class TextBox extends Formats {
     <option value="center" ${this.iterateAllign === "center" ? "selected" : ""}>Center</option>
     <option value="right" ${this.iterateAllign === "right" ? "selected" : ""}>Right</option>
   </select>
-  </label>     
+  </label>        
       </div>
 
     </section>
@@ -4697,6 +4714,13 @@ doubleClicked(mouse) {
       ctx.textAlign = this.textAllign;
       ctx.textBaseline = "alphabetic";
       if (this.formatIterated === "shrinkToFit") {
+  const textWidth = ctx.measureText(texts[i]).width;
+  if (textWidth > this.maintainedWidth) {
+    const scale = this.maintainedWidth / textWidth;
+    this.fontSize *= scale;
+    this.text = texts[i];
+  }}
+      else if (this.formatIterated === "Fit") {
         const textWidth = ctx.measureText(texts[i]).width;
         const scale = this.maintainedWidth / textWidth;
         this.fontSize *= scale > 0 ? scale : 1;
@@ -4754,10 +4778,18 @@ doubleClicked(mouse) {
     }
   }
   whereToSnap() {
+        let cos = Math.cos(this.angle);
+let sin = Math.sin(this.angle);
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
+let newWidth  = Math.abs(this.width * cos) + Math.abs(this.height * sin);
+let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
+let rectx = centerX - newWidth / 2;
+let recty = centerY - newHeight /2 
     return {
-      x: [this.x, this.x + this.width / 2, this.x + this.width],
-      y: [this.y, this.y + this.height / 2, this.y + this.height],
-      pos: { x: this.x, y: this.y, width: this.width, height: this.height },
+      x: [rectx, rectx + newWidth / 2, rectx + newWidth],
+      y: [recty, recty + newHeight / 2, recty + newHeight],
+      pos: { x: rectx, y: recty, width: newWidth, height: newHeight },
     };
   }
   changeLocation(value, type) {
@@ -5015,7 +5047,7 @@ loader.createLoader();
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = () => {
-            this.originalFiles[i] = file;
+            this.originalFiles[i] = reader.result;
             this.imagePreview = img.src;
              loader.incrementOriginalState();
             requestDraw();
@@ -5083,7 +5115,7 @@ loader.createLoader();
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = () => {
-            this.originalFiles.push(file);
+            this.originalFiles.push(reader.result);
             loader.incrementOriginalState();
             this.formatProperties();
           };
@@ -5128,10 +5160,18 @@ loader.createLoader();
     return true;
   }
   whereToSnap() {
+       let cos = Math.cos(this.angle);
+let sin = Math.sin(this.angle);
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
+let newWidth  = Math.abs(this.width * cos) + Math.abs(this.height * sin);
+let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
+let rectx = centerX - newWidth / 2;
+let recty = centerY - newHeight /2 
     return {
-      x: [this.x, this.x + this.width / 2, this.x + this.width],
-      y: [this.y, this.y + this.height / 2, this.y + this.height],
-      pos: { x: this.x, y: this.y, width: this.width, height: this.height },
+      x: [rectx, rectx + newWidth / 2, rectx + newWidth],
+      y: [recty, recty + newHeight / 2, recty + newHeight],
+      pos: { x: rectx, y: recty, width: newWidth, height: newHeight },
     };
   }
   changeLocation(value, type) {
@@ -5343,7 +5383,7 @@ class Group extends Formats {
   changeProperties(e) {
     const name = e.target.name;
     if (name === "angle") {
-      this.angle = degToRad(Number(e.target.value) || 0);
+      this.angle = radToDeg(Number(e.target.value) || 0, "rad");
     } else if (name === "x") {
       const value = backValues(Number(e.target.value) || 0);
       const diff = value - this.minX;
@@ -5388,15 +5428,18 @@ class Group extends Formats {
     if (this.list.length > 0) this.list.forEach((list) => list.moveClip(x, y));
   }
   whereToSnap() {
+        let cos = Math.cos(this.angle);
+let sin = Math.sin(this.angle);
+let formerWidth = this.maxX - this.minX;
+let formerHeight = this.maxY - this.minY
+let newWidth  = Math.abs(formerWidth * cos) + Math.abs(formerHeight * sin);
+let newHeight = Math.abs(formerWidth * sin) + Math.abs(formerHeight * cos);
+let rectx = this.x - newWidth / 2;
+let recty = this.y - newHeight /2
     return {
-      x: [this.minX, this.x, this.maxX],
-      y: [this.minY, this.y, this.maxY],
-      pos: {
-        x: this.minX,
-        y: this.minY,
-        width: this.maxX - this.minX,
-        height: this.maxY - this.minY,
-      },
+      x: [rectx, rectx + newWidth / 2, rectx + newWidth],
+      y: [recty, recty + newHeight / 2, recty + newHeight],
+      pos: { x: rectx, y: recty, width: newWidth, height: newHeight },
     };
   }
   changeLocation(value, type) {
@@ -5764,7 +5807,7 @@ function autoSave() {
     }, 2000);
 }
 document.querySelector(".save").addEventListener("click", async () => {
-  saveToFile();
+  await saveToFile();
     notify("Saved")
 })
 async function saveToFile() {
@@ -6089,15 +6132,8 @@ document.querySelector(".generateButton").addEventListener("click", () => {
     });
   });
 });
-function requestGenerateCard(){
-  cancelGenerate()
-  requestAnimationFrame(() => {
-  requestAnimationFrame(() => {
-      generateCard()
-  });
-});
 
-}
+
 function cancelGenerate() {
   document.querySelector(".generate").style.display = "none";
 }
@@ -6565,6 +6601,7 @@ function group() {
     objects.push(newGroup);
     selectedObj = newGroup;
     requestDraw();
+    Tools("moveTool");
   }
 }
 function getMousePos(canvas, evt) {
@@ -6617,8 +6654,10 @@ function zoomToRect(rect) {
 
   requestDraw();
 }
-function generateCard() {
+async function generateCard() {
   document.querySelector("footer").style.display = "block";
+    cancelGenerate()
+    await new Promise(resolve => setTimeout(resolve, 50));
   scale = 1;
   panX = 0;
   panY = 0;
@@ -6691,6 +6730,7 @@ function generateCard() {
   const scaleFactor = 2;
       const loader = new LoaderManager(iterationLength); // Set max items to the number of selected files
 loader.createLoader();
+  await new Promise(resolve => setTimeout(resolve, 50));
   for (let i = 0; i < iterationLength; i++) {
     // 1) draw current iteration onto main canvas
 
@@ -6775,7 +6815,9 @@ loader.createLoader();
 
       boxCountInPage++;
     }
-    loader.incrementOriginalState();
+          loader.incrementOriginalState();
+              await new Promise(resolve => setTimeout(resolve, 50));
+
   }
   images.forEach((img) => img.backToDefault());
   textBoxes.forEach((textBox) => textBox.backToDefault());
@@ -7116,7 +7158,7 @@ function cMouseMove(event) {
 // document.addEventListener("contextmenu", (e) => {
 //   e.preventDefault();
 // });
-document.addEventListener("keydown", (e) => {
+document.addEventListener("keydown", async (e) => {
   const tag = e.target.tagName;
   const isTyping =
     tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
@@ -7133,93 +7175,97 @@ if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "=")) return;
       panY += -thresholds.arrowKeys();
     }
   }
-  if (e.code === "ArrowDown") {
+ else  if (e.code === "ArrowDown") {
     if (selectedObj !== null) selectedObj.moveClip(0, thresholds.arrowKeys());
     else if (multipleSelect && multipleSelectArr.length > 0) {
       multipleSelectArr.forEach((obj) => obj.moveClip(0, thresholds.arrowKeys()));
     }
     else panY += thresholds.arrowKeys();
   }
-  if (e.code === "ArrowLeft") {
+  else if (e.code === "ArrowLeft") {
     if (selectedObj !== null) selectedObj.moveClip(-thresholds.arrowKeys(), 0);
     else if (multipleSelect && multipleSelectArr.length > 0) {
       multipleSelectArr.forEach((obj) => obj.moveClip(-thresholds.arrowKeys(), 0));
     }
     else panX += -thresholds.arrowKeys();
   }
-  if (e.code === "ArrowRight") {
+  else if (e.code === "ArrowRight") {
     if (selectedObj !== null) selectedObj.moveClip(thresholds.arrowKeys(), 0);
     else if (multipleSelect && multipleSelectArr.length > 0) {
       multipleSelectArr.forEach((obj) => obj.moveClip(thresholds.arrowKeys(), 0));
     }
     else panX += thresholds.arrowKeys();
   }
-  if (e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null) {
+  else if (e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null) {
     Tools("duplicate");
   }
-  if (e.shiftKey && e.key === "@" && selectedObj !== null) {
+  else if (e.shiftKey && e.key === "@" && selectedObj !== null) {
     zoomToRect(selectedObj.whereToSnap().pos);
   }
-  if (
+  else if (
     e.ctrlKey &&
     e.key.toLowerCase() === "g" &&
     multipleSelectArr.length > 1
   ) {
     group();
   }
-  if(    e.ctrlKey &&
+  else if(e.ctrlKey && e.key.toLowerCase() === 's'){
+    await saveToFile()
+    notify("Saved")
+  }
+  else if(    e.ctrlKey &&
     e.key.toLowerCase() === "u" && selectedObj !== null && selectedObj.type === "group"){
             selectedObj.list.forEach((l) => objects.push(l));
-      const index = objects.indexOf(this);
+      const index = objects.indexOf(selectedObj);
       objects.splice(index, 1);
       selectedObj = null;
       Tools("moveTool");
     }
 
-  if (e.key.toLowerCase() === "delete" && selectedObj !== null) {
+  else if (e.key.toLowerCase() === "delete" && selectedObj !== null) {
     Tools("delete");
   }
-  if (e.key.toLowerCase() === "pageup") {
+  else if (e.key.toLowerCase() === "pageup") {
     if (selectedObj !== null) pageUp(selectedObj);
   }
-  if (e.key.toLowerCase() === "pagedown") {
+  else if (e.key.toLowerCase() === "pagedown") {
     if (selectedObj !== null) pageDown(selectedObj);
   }
-  if (e.key.toLowerCase() === "home") {
+  else if (e.key.toLowerCase() === "home") {
     if (selectedObj) bringToFront(selectedObj);
   }
-  if (e.key.toLowerCase() === "end") {
+  else if (e.key.toLowerCase() === "end") {
     if (selectedObj) sendToBack(selectedObj);
   }
-  if (e.key.toLowerCase() === "l") align("left");
-  if (e.key.toLowerCase() === "c") align("centerX");
-  if (e.key.toLowerCase() === "r") align("right");
-  if (e.key.toLowerCase() === "t") align("top");
-  if (e.key.toLowerCase() === "e") align("centerY");
-  if (e.key.toLowerCase() === "b") align("bottom");
-  if (e.key.toLowerCase() === "q") flip("x");
-  if (e.key.toLowerCase() === "w") flip("y");
-  if (e.key.toLowerCase() === "m"){
+  else if (e.key.toLowerCase() === "l") align("left");
+  else if (e.key.toLowerCase() === "c") align("centerX");
+  else if (e.key.toLowerCase() === "r") align("right");
+  else if (e.key.toLowerCase() === "t") align("top");
+  else if (e.key.toLowerCase() === "e") align("centerY");
+  else if (e.key.toLowerCase() === "b") align("bottom");
+  else if (e.key.toLowerCase() === "q") flip("x");
+  else if (e.key.toLowerCase() === "w") flip("y");
+  else if (e.key.toLowerCase() === "m"){
     Tools("moveTool");
   }
-  if (e.key.toLowerCase() === "s"){
+  else if (e.key.toLowerCase() === "s"){
     Tools('multipleSelection')
   }
-  if (e.key.toLowerCase() === "h") {
+  else if (e.key.toLowerCase() === "h") {
     Tools("panTool");
   }
-  if(e.ctrlKey && e.key.toLowerCase() === "z"){
+  else if(e.ctrlKey && e.key.toLowerCase() === "z"){
     undo();
     return
   }
-  if(e.ctrlKey && e.key.toLowerCase() === "y"){
+  else if(e.ctrlKey && e.key.toLowerCase() === "y"){
     redo();
   }
 
-  if (e.key.toLowerCase() === "z") {
+  else if (e.key.toLowerCase() === "z") {
     Tools("zoom");
   }
-  if (e.key.toLowerCase() === "p") {
+  else if (e.key.toLowerCase() === "p") {
     Tools("addLine");
   }
 
