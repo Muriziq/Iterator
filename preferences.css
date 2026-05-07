@@ -199,8 +199,13 @@ svg {
     animation: fadeIn 0.5s ease-out;
 }
 
+.font-project > div > p{
+    flex: 1;
+    overflow: hidden;
+}
+
 .objects{
-    height:auto;
+    height:300px;
     width: 320px;
     background-color: transparent;
 border: 2px solid #616161;
@@ -353,4 +358,172 @@ border-radius: 0.5rem;
     display: flex;
     flex-direction: row;
     gap: 1rem;
+}
+
+
+/* Media Queries for Responsiveness */
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+        gap: 0.5rem;
+    }
+
+    .header-nav {
+        padding: 0.5rem 1rem;
+        flex-wrap:wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .header-nav a {
+        font-size: 0.95rem;
+    }
+
+    .card {
+        flex-direction: column;
+        padding: 20px 15px;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card2 {
+        width: 100%;
+    }
+
+    .progress-circle {
+        width: 80vw;
+        height: 80vw;
+        max-width: 250px;
+        max-height: 250px;
+    }
+
+    .percentage {
+        font-size: 32px;
+    }
+
+    .percentage-label {
+        font-size: 12px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin: 20px 0;
+    }
+
+    .stat-card {
+        padding: 12px;
+        border-radius: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .stat-sub {
+        font-size: 10px;
+    }
+
+    .status {
+        padding: 10px;
+        font-size: 12px;
+        margin: 15px 0;
+        border-radius: 0.5rem;
+    }
+
+    .card button {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .refresh-note {
+        font-size: 11px;
+    }
+    body .incessive{
+        flex-direction: column;
+        margin: 1rem 0;
+        gap: 0.7rem;
+    }
+    body .incessive >div:first-of-type{
+        width: 90%;
+    }
+    body .incessive button{
+        font-size: 0.9rem;
+    }
+    body .select > div{
+        width: 7px;
+    }
+    body .objects{
+        max-height: 300px;
+        flex: 1;
+    }
+    body .order-projects{
+        /* flex-direction: column; */
+        flex-wrap: wrap;
+        padding: 0.5rem;
+        align-items: center;
+        padding-top: 0;
+    }
+    
+.font-project > div{
+    padding: 0.7rem;
+}
+.font-project > div > p{
+    font-size: 0.9rem;
+}
+
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .header-nav {
+        padding: 0.5rem 2rem;
+    }
+
+    .card {
+        padding: 30px 20px;
+    }
+
+    .progress-circle {
+        width: 25vw;
+        height: 25vw;
+        max-width: 300px;
+        max-height: 300px;
+    }
+
+    .percentage {
+        font-size: 40px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (min-width: 1025px) {
+    .header-nav {
+        padding: 0.5rem 4rem;
+    }
+
+    .card {
+        padding: 40px 30px;
+    }
+
+    .progress-circle {
+        width: 35vw;
+        height: 35vw;
+    }
+
+    .percentage {
+        font-size: 48px;
+    }
+}
+@media (max-width: 500px){
+    body .order-projects{
+        flex-direction: column;
+    }
 }

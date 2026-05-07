@@ -62,6 +62,7 @@ let thresholds = {
   selected: () => adapt(2),
   normalMode: () => adapt(25),
   threshold: () => adapt(2),
+  pthreshold: () => adapt(5),
   maxCanvasSize: () => adapt(5000),
   pointHold: () => adapt(15),
   slineWidth: () => adapt(1),
@@ -108,11 +109,17 @@ projectName.addEventListener("input",async (e)=>{
       name:dbName,
       entryDate: (new Date()).getTime()
     })
+    const imageDatas = await db.collection(`img${formerName}`).get();
+    for(imageFiles of imageDatas){
+      await db.collection(`img${dbName}`).add(imageFiles)
+    }
+    await db.collection(`img${formerName}`).delete()
     const formerIndex = names.indexOf(formerName)
     names[formerIndex] = dbName
     localStorage.setItem("project-names",JSON.stringify([...names]))
   }
   formerName = dbName
+  notify("changed")
 })
 window.addEventListener("resize",()=>{
   canvasSize()
@@ -137,7 +144,7 @@ window.addEventListener("load", async () => {
   projectName.value = `new project ${newProjectCount === 0 ? "" : newProjectCount}` 
     }
 } catch (error) {
-    console.log("Error processing data") ;
+    console.log(error) ;
 }
 
   width.value = measurement.width;
@@ -735,27 +742,21 @@ class Formats {
   `;
   }
     getWorldPoints(){
-    if(this.type === "ellipse"){
+      if(this.type === "ellipse" || this.type === "text" || this.type === "image" || this.type === "group"){
+      let ellipseW = this.whereToSnap()
     return [
-      {x:this.x-this.radiusX,y: this.y - this.radiusY},
-      {x:this.x,y: this.y},
-      {x:this.radiusX*2,y: this.radiusY*2}
+      {x: ellipseW.x[0], y: ellipseW.y[0]},
+      {x: ellipseW.x[1], y: ellipseW.y[1]},
+      {x: ellipseW.x[2], y: ellipseW.y[2]}
 
     ]
-    }
-    if(this.type === "image" || this.type === "text"){
-        return [
-      {x:this.x,y: this.y},
-      {x:this.x + this.width / 2,y: this.y + this.height / 2},
-      {x:this.width,y: this.height}
-
-    ]
-    }
-    if(this.type === "group"){
-              return [
-      {x:this.minX,y: this.minY},
-      {x:this.x ,y: this.y },
-      {x: this.maxX - this.minX,y: this.maxY - this.minY}
+  }
+    if(this.type === "rectangle" && this.roundedOrbeveled !== "shaped"){
+                    let rectW = this.whereToSnap()
+    return [
+      {x: rectW.x[0], y: rectW.y[0]},
+      {x: rectW.x[1], y: rectW.y[1]},
+      {x: rectW.x[2], y: rectW.y[2]}
 
     ]
     }
@@ -856,7 +857,7 @@ for (let i = 0; i < this.points.length; i++) {
     
     // For X snapping - compare world X coordinates
     const otherWorldPoint = this.pointToWorld(this.points[i].points);
-    if (Math.abs(otherWorldPoint.x - currentWorldPoint.x) < thresholds.threshold()) {
+    if (Math.abs(otherWorldPoint.x - currentWorldPoint.x) < thresholds.pthreshold()) {
         // Create new world point with snapped X, keep original Y
         const snappedWorldPoint = {
             x: otherWorldPoint.x,
@@ -876,7 +877,7 @@ if (!pointXfound) {
         
         const worldPoints = objects[i].getWorldPoints(); // You need this method
         for (let e = worldPoints.length - 1; e >= 0; e--) {
-            if (Math.abs(worldPoints[e].x - currentWorldPoint.x) < thresholds.threshold()) {
+            if (Math.abs(worldPoints[e].x - currentWorldPoint.x) < thresholds.pthreshold()) {
                 // Snap X only, keep current Y in world space
                 const snappedWorldPoint = {
                     x: worldPoints[e].x,
@@ -897,7 +898,7 @@ for (let i = 0; i < this.points.length; i++) {
     if (i === this.selectedLineIndex) continue;
     
     const otherWorldPoint = this.pointToWorld(this.points[i].points);
-    if (Math.abs(otherWorldPoint.y - currentWorldPoint.y) < thresholds.threshold()) {
+    if (Math.abs(otherWorldPoint.y - currentWorldPoint.y) < thresholds.pthreshold()) {
         const snappedWorldPoint = {
             x: currentWorldPoint.x,
             y: otherWorldPoint.y
@@ -916,7 +917,7 @@ if (!pointYfound) {
         
         const worldPoints = objects[i].getWorldPoints();
         for (let e = worldPoints.length - 1; e >= 0; e--) {
-            if (Math.abs(worldPoints[e].y - currentWorldPoint.y) < thresholds.threshold()) {
+            if (Math.abs(worldPoints[e].y - currentWorldPoint.y) < thresholds.pthreshold()) {
                 const snappedWorldPoint = {
                     x: currentWorldPoint.x,
                     y: worldPoints[e].y
@@ -982,7 +983,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const xCoor = objects[i].whereToSnap().x;
         for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+          if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
             const difference = xCoor[e] - newX;
             newX = xCoor[e];
             newWidthCalc = newWidth - difference; // Adjust width when snapping
@@ -1008,7 +1009,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const xCoor = objects[i].whereToSnap().x;
         for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - (this.x + newWidthCalc)) < thresholds.threshold()) {
+          if (Math.abs(xCoor[e] - (this.x + newWidthCalc)) < thresholds.pthreshold()) {
             newWidthCalc = xCoor[e] - this.x;
             snap = true;
             break;
@@ -1032,7 +1033,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const yCoor = objects[i].whereToSnap().y;
         for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+          if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
             const difference = yCoor[e] - newY;
             newY = yCoor[e];
             newHeightCalc = newHeight - difference;
@@ -1058,7 +1059,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const yCoor = objects[i].whereToSnap().y;
         for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - (this.y + newHeightCalc)) < thresholds.threshold()) {
+          if (Math.abs(yCoor[e] - (this.y + newHeightCalc)) < thresholds.pthreshold()) {
             newHeightCalc = yCoor[e] - this.y;
             snap = true;
             break;
@@ -1083,7 +1084,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const xCoor = objects[i].whereToSnap().x;
         for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+          if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
             const difference = xCoor[e] - newX;
             newX = xCoor[e];
             newWidth = newWidth - difference;
@@ -1099,7 +1100,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const yCoor = objects[i].whereToSnap().y;
         for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+          if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
             const difference = yCoor[e] - newY;
             newY = yCoor[e];
             newHeight = newHeight - difference;
@@ -1128,7 +1129,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const yCoor = objects[i].whereToSnap().y;
         for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+          if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
             const difference = yCoor[e] - newY;
             newY = yCoor[e];
             newHeight = newHeight - difference;
@@ -1144,7 +1145,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const xCoor = objects[i].whereToSnap().x;
         for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.threshold()) {
+          if (Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.pthreshold()) {
             newWidth = xCoor[e] - this.x;
             break;
           }
@@ -1168,7 +1169,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const xCoor = objects[i].whereToSnap().x;
         for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+          if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
             const difference = xCoor[e] - newX;
             newX = xCoor[e];
             newWidth = newWidth - difference;
@@ -1184,7 +1185,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const yCoor = objects[i].whereToSnap().y;
         for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - (this.y + newHeight)) < thresholds.threshold()) {
+          if (Math.abs(yCoor[e] - (this.y + newHeight)) < thresholds.pthreshold()) {
             newHeight = yCoor[e] - this.y;
             break;
           }
@@ -1206,7 +1207,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const xCoor = objects[i].whereToSnap().x;
         for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.threshold()) {
+          if (Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.pthreshold()) {
             newWidth = xCoor[e] - this.x;
             break;
           }
@@ -1218,7 +1219,7 @@ rectFormat(mouse) {
         if (objects[i] === this) continue;
         const yCoor = objects[i].whereToSnap().y;
         for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - (this.y + newHeight)) < thresholds.threshold()) {
+          if (Math.abs(yCoor[e] - (this.y + newHeight)) < thresholds.pthreshold()) {
             newHeight = yCoor[e] - this.y;
             break;
           }
@@ -1251,7 +1252,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
           for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+            if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
               const difference = xCoor[e] - newX;
               newX = xCoor[e];
               newWidthCalc = newRadiusX - difference;
@@ -1275,7 +1276,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
           for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - (this.x + newRadiusCalc)) < thresholds.threshold()) {
+            if (Math.abs(xCoor[e] - (this.x + newRadiusCalc)) < thresholds.pthreshold()) {
               newRadiusCalc = xCoor[e] - this.x;
               snap = true;
               break;
@@ -1299,7 +1300,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+            if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
               const difference = yCoor[e] - newY;
               newY = yCoor[e];
               newHeightCalc = newRadiusY - difference;
@@ -1323,7 +1324,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - (this.y + newRadiusCalc)) < thresholds.threshold()) {
+            if (Math.abs(yCoor[e] - (this.y + newRadiusCalc)) < thresholds.pthreshold()) {
               newRadiusCalc = yCoor[e] - this.y;
               snap = true;
               break;
@@ -1350,7 +1351,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
           for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+            if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
               const difference = xCoor[e] - newX;
               newX = xCoor[e];
               newRadiusXCalc = newRadiusX - difference;
@@ -1366,7 +1367,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+            if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
               const difference = yCoor[e] - newY;
               newY = yCoor[e];
               newRadiusYCalc = newRadiusY - difference;
@@ -1396,7 +1397,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
           for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) < thresholds.threshold()) {
+            if (Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) < thresholds.pthreshold()) {
               newRadiusXCalc = xCoor[e] - this.x;
               snapY = true;
               break;
@@ -1410,7 +1411,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - newY) < thresholds.threshold()) {
+            if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
               const difference = yCoor[e] - newY;
               newY = yCoor[e];
               newRadiusYCalc = newRadiusY - difference;
@@ -1440,7 +1441,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
           for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - newX) < thresholds.threshold()) {
+            if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
               const difference = xCoor[e] - newX;
               newX = xCoor[e];
               newRadiusXCalc = newRadiusX - difference;
@@ -1456,7 +1457,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) < thresholds.threshold()) {
+            if (Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) < thresholds.pthreshold()) {
               newRadiusYCalc = yCoor[e] - this.y;
               snapX = true;
               break;
@@ -1483,7 +1484,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
           for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) < thresholds.threshold()) {
+            if (Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) < thresholds.pthreshold()) {
               newRadiusXCalc = xCoor[e] - this.x;
               snapX = true;
               break;
@@ -1497,7 +1498,7 @@ circFormat(mouse, x, y) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) < thresholds.threshold()) {
+            if (Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) < thresholds.pthreshold()) {
               newRadiusYCalc = yCoor[e] - this.y;
               snapY = true;
               break;
@@ -4767,6 +4768,7 @@ doubleClicked(mouse) {
       }
 
       if (this.iterateAllign === "center") {
+
         this.x = this.originalPosition.x + this.maintainedWidth / 2 - ctx.measureText(this.text).width / 2;
       }
       else if(this.iterateAllign === "right"){
@@ -4834,13 +4836,12 @@ class Images extends Formats {
     this.fileName = [fileName];
     this.aspectRatio = aspectRatio;
     this.height = this.width * this.aspectRatio;
-    this.image = 0;
+    this.image = image;
     this.selectedArea = null;
     this.originalFiles = [originalFile];
-    this.iteratedFiles = [image];
+    this.selectedFile= originalFile;
     this.maintainApect = false;
     this.clipped = "none";
-    this.imagePreview = image?.src || null;
     this.formatIterated = "maintainSize";
   }
   addObject() {
@@ -4854,7 +4855,7 @@ class Images extends Formats {
     ctx.beginPath();
     ctx.globalAlpha = this.opacity / 100;
     ctx.drawImage(
-      this.iteratedFiles[this.image],
+      this.image,
       -this.width / 2,
       -this.height / 2,
       this.width,
@@ -4927,12 +4928,6 @@ class Images extends Formats {
       Object.create(Object.getPrototypeOf(this)),
       this,
     );
-    clone.originalFiles = [...this.originalFiles];
-    clone.iteratedFiles = this.iteratedFiles.map((img) => {
-      const newImg = new Image();
-      newImg.src = img.src;
-      return newImg;
-    });
     return clone;
   }
   formatProperties() {
@@ -4981,15 +4976,15 @@ class Images extends Formats {
     <h3>All Images</h3>
 
     <div class="preview">
-      <img src="${this.imagePreview}" alt="Selected preview">
+      <img src="${this.image.src}" alt="Selected preview">
     </div>
 
     <section class="iteratedsec">
-      ${this.iteratedFiles
+      ${this.originalFiles
         .map(
           (file, i) => `
             <div ${
-              this.imagePreview === this.iteratedFiles[i].src
+              this.selectedFile === this.originalFiles[i]
                 ? "class='selected'"
                 : ""
             }>
@@ -5026,14 +5021,24 @@ class Images extends Formats {
         this.formatProperties();
       });
     document.querySelectorAll(".iteratedsec > div").forEach((div, i) => {
-      div.addEventListener("click", () => {
-        this.imagePreview = this.iteratedFiles[i].src;
-        this.image = i;
+      div.addEventListener("click", async () => {
+      const imageFiles = await db.collection(`img${formerName}`).doc({id:this.originalFiles[i]}).get()
+      const imageP  = imageFiles.image
+      URL.revokeObjectURL(this.image.url);
+      let newImg = new Image()
+      newImg.src = imageP
+      await new Promise((resolve,reject)=>{
+        newImg.onload = () =>{
+          this.image = newImg
+          this.selectedFile = this.originalFiles[i]
+          resolve(true)
+        }
+      })
         requestDraw();
         this.formatProperties();
       });
 
-      div.querySelector(".change").addEventListener("change", (e) => {
+      div.querySelector(".change").addEventListener("change", async (e) => {
               const loader = new LoaderManager(1); // Set max items to 10
 loader.createLoader();
         const file = e.target.files[0];
@@ -5042,23 +5047,49 @@ loader.createLoader();
         const img = new Image();
         img.src = url;
         img.onload = () => {
-          this.iteratedFiles[i] = img;
           this.fileName[i] = file.name;
           const reader = new FileReader();
           reader.readAsDataURL(file);
-          reader.onload = () => {
-            this.originalFiles[i] = reader.result;
-            this.imagePreview = img.src;
+          reader.onload = async () => {
+            await  db.collection(`img${formerName}`).doc({id:this.originalFiles[i]}).update({
+              image: reader.result,
+              entryDate: (new Date()).getTime()
+            })
+            if(this.selectedFile === this.originalFiles[i]){
+              this.image = img
+            }
              loader.incrementOriginalState();
             requestDraw();
             this.formatProperties();
+
+                    if(this.selectedFile !== this.originalFiles[i]){
+        URL.revokeObjectURL(url)
+      }
           };
         };
+
       });
-      div.querySelector(".del").addEventListener("click", () => {
+      div.querySelector(".del").addEventListener("click", async () => {
         if (this.originalFiles.length > 1) {
-          this.iteratedFiles.splice(i, 1);
+        const deleteImage = this.originalFiles[i]
+        await db.collection(`img${formerName}`).doc({id:deleteImage}).delete()
           this.originalFiles.splice(i, 1);
+        if(deleteImage === this.selectedFile){
+        URL.revokeObjectURL(this.image.url)
+        const newIndex = i >= this.originalFiles.length ? this.originalFiles.length - 1 :i;
+        const newImageFiles = await  db.collection(`img${formerName}`).doc({id:this.originalFiles[newIndex]}).get()
+        const newImage = newImageFiles.image
+        await new Promise((resolve,reject)=>{
+        const img = new Image()
+        img.src = newImage
+        img.onload = ()=>{
+          this.image = img
+          this.selectedFile = this.originalFiles[newIndex]
+          resolve(true)
+        }
+        })
+
+        }
           requestDraw();
           this.formatProperties();
         }
@@ -5079,7 +5110,7 @@ loader.createLoader();
     });
     requestDraw();
   }
-  changeProperties(e) {
+ async changeProperties(e) {
     const name = e.target.name;
 
     if (name === "angle") {
@@ -5103,55 +5134,100 @@ value= value <= 0 ? 0 : value
     if (name === "iteratedFiles") {
       const loader = new LoaderManager(e.target.files.length); // Set max items to the number of selected files
 loader.createLoader();
-      Array.from(e.target.files).forEach((file) => {
-        const url = URL.createObjectURL(file);
-
-        const img = new Image();
-        img.src = url;
-
-        img.onload = () => {
-          this.iteratedFiles.push(img);
-          this.fileName.push(file.name);
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => {
-            this.originalFiles.push(reader.result);
-            loader.incrementOriginalState();
-            this.formatProperties();
-          };
-        };
-      });
+// Option 1: Use for...of loop (recommended)
+for (const file of Array.from(e.target.files)) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+      img.src = url;
+  await new Promise((resolve, reject) => {
+    img.onload = () => {
+      this.fileName.push(file.name);
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onload = async () => {
+        const imageID = crypto.randomUUID();
+        await db.collection(`img${formerName}`).add({
+          id: imageID,
+          image: reader.result,
+          entryDate: (new Date()).getTime()
+        });
+        this.originalFiles.push(imageID);
+        loader.incrementOriginalState();
+        this.formatProperties();
+         URL.revokeObjectURL(url);
+        resolve(true);
+      };
+    };
+  });
+}
     }
 
     requestDraw();
   }
-  backToDefault() {
-    this.image = 0;
+  async backToDefault() {
     this.width = this.originalWidth;
     this.height = this.originalHeight;
+       URL.revokeObjectURL(this.image.url);
+  const imageIterateFile =  await db.collection(`img${formerName}`).doc({id:this.selectedFile}).get()
+    let imageIterate = imageIterateFile.image
+    let img = new Image()
+    img.src = imageIterate
+    await new Promise((resolve,reject)=>{
+      img.onload = () =>{
+        this.image = img
+        resolve(true)
+      }
+    })
   }
-  drawIteratedImage(i) {
-    if (this.iteratedFiles.length >= i) {
+  async drawIteratedImage(i) {
+    if (this.originalFiles.length >= i) {
       if (i === 0) {
-        this.mainTainedWidth = this.iteratedFiles[i].width;
-        this.mainTainedHeight = this.iteratedFiles[i].height;
         this.originalWidth = this.width;
         this.originalHeight = this.height;
       }
-      if (this.formatIterated === "maintainHeight") {
-        const originalHeight = this.iteratedFiles[i].height;
-        this.width =
-          this.originalWidth * (this.mainTainedHeight / originalHeight);
-        this.height = this.originalHeight;
-      } else if (this.formatIterated === "maintainWidth") {
-        const originalWidth = this.iteratedFiles[i].width;
-        this.height =
-          this.originalHeight / (this.mainTainedWidth / originalWidth);
-        this.width = this.originalWidth;
+      URL.revokeObjectURL(this.image.url);
+  const imageIterateFile =  await db.collection(`img${formerName}`).doc({id:this.originalFiles[i]}).get()
+    let imageIterate = imageIterateFile.image
+    let img = new Image()
+    img.src = imageIterate
+    await new Promise((resolve,reject)=>{
+      img.onload = () =>{
+        this.image = img
+        resolve(true)
       }
-      this.image = i;
+    })
+     
+if (this.formatIterated === "maintainHeight") {
+
+  const scale =  this.image.width  /this.image.height;
+
+  this.height = this.originalHeight;
+  this.width = this.originalWidth *  scale;
+  console.log(scale,i)
+
+} else if (this.formatIterated === "maintainWidth") {
+
+  const scale =  this.image.width  /this.image.height;
+
+  this.width = this.originalWidth;
+  this.height = this.originalHeight / scale;
+}else{
+  this.width = this.originalWidth
+  this.height = this.originalHeight
+}
     } else {
-      this.image = 0;
+        URL.revokeObjectURL(this.image.url);
+  const imageIterateFile =  await db.collection(`img${formerName}`).doc({id:this.selectedFile}).get()
+    let imageIterate = imageIterateFile.image
+    let img = new Image()
+    img.src = imageIterate
+    await new Promise((resolve,reject)=>{
+      img.onload = () =>{
+        this.image = img
+        resolve(true)
+      }
+    })
     }
   }
   doubleClicked(mouse) {
@@ -5646,13 +5722,20 @@ loader.createLoader();
   const img = new Image();
   img.src = url;
   await new Promise((resolve) => {
-    img.onload = () => {
+    img.onload =  () => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.addEventListener("load", () => {
+
+      reader.addEventListener("load", async () => {
+              const imageID = crypto.randomUUID()
+      await db.collection(`img${formerName}`).add({
+        id:imageID,
+        image: reader.result,
+        entryDate: new Date().getTime()
+      })
         drawingImage = {
           image: img,
-          originalFile: reader.result,
+          originalFile: imageID,
           aspectRatio: img.height / img.width,
           fileName: file.name,
         };
@@ -5721,6 +5804,18 @@ async function reviveObjects(objData) {
       objData.list.map((item) => reviveObjects(item)),
     );
   }
+  if(objData.type === "image"){
+    const revivedImageFile = await db.collection(`img${formerName}`).doc({id:objData.selectedFile}).get()
+const revivedImage = revivedImageFile.image
+const img = new Image()
+img.src = revivedImage
+await new Promise((resolve,reject)=>{
+  img.onload = () =>{
+    objData.image = img
+    resolve(true)
+  }
+})
+  }
   if(objData.type === "text"){
     objData.textPlace = document.createElement("textarea")
     objData.measurer = false
@@ -5762,20 +5857,20 @@ objData.clips = await Promise.all(
   }
 
   // ✅ Handle images properly
-  if (objData.type === "image" && objData.originalFiles?.length) {
-    const loadedImages = await Promise.all(
-      objData.originalFiles.map((src) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.src = src;
-          img.onload = () => resolve(img);
-        });
-      }),
-    );
+  // if (objData.type === "image" && objData.originalFiles?.length) {
+  //   const loadedImages = await Promise.all(
+  //     objData.originalFiles.map((src) => {
+  //       return new Promise((resolve) => {
+  //         const img = new Image();
+  //         img.src = src;
+  //         img.onload = () => resolve(img);
+  //       });
+  //     }),
+  //   );
 
-    objData.iteratedFiles = loadedImages;
-    objData.imagePreview = loadedImages[0]?.src || "";
-  }
+  //   objData.iteratedFiles = loadedImages;
+  //   objData.imagePreview = loadedImages[0]?.src || "";
+  // }
 
   Object.assign(instance, objData);
   if(objData.type === "text") textBoxes.push(instance)
@@ -5870,7 +5965,7 @@ async function saveToFile() {
 //     requestDraw();
 //   });
 // End
-function Tools(tool) {
+async function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
     if (pen !== null && pen.points.length > 0) {
       if (button.id !== "addLine") button.classList.remove("active");
@@ -6027,7 +6122,11 @@ button.classList.add("active");
     case "delete":
       if (selectedObj) {
         let index = objects.indexOf(selectedObj);
+        if(objects[selectedObj].type === "image"){
+          await db.collection(`img${formerName}`).doc({id:objects[selectedObj]})
+        }
         objects.splice(index, 1);
+      
         if(selectedObj.clipped ==="clipped"){
 const clipIndex = objects.find(obj => obj.id === selectedObj.clipper);
       if(clipIndex){
@@ -6719,7 +6818,7 @@ async function generateCard() {
   const maxImageIterLength = Math.max(
     1,
     ...images.map((imgObj) =>
-      imgObj.iteratedFiles.length ? imgObj.iteratedFiles.length : 1,
+      imgObj.originalFiles.length ? imgObj.originalFiles.length : 1,
     ),
   );
 
@@ -6735,7 +6834,9 @@ loader.createLoader();
     // 1) draw current iteration onto main canvas
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    images.forEach((img) => img.drawIteratedImage(i));
+    for(let img of images){
+      await img.drawIteratedImage(i)
+    }
     textBoxes.forEach((textBox) => textBox.drawIteratedImage(i));
     objects.forEach((obj) => obj.addObject());
 
