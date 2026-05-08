@@ -1,3 +1,4 @@
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = canvas.getBoundingClientRect().width;
@@ -557,6 +558,8 @@ class Formats {
         this.list.forEach((l) => (l.outlineType = []));
       }
       this.formatProperties();
+          undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
     });
     document.querySelector(".dashedb").addEventListener("click", () => {
       if (this.type === "group") {
@@ -572,6 +575,8 @@ class Formats {
         );
       }
       this.formatProperties();
+                undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
     });
     document.getElementById("outline").addEventListener("click", () => {
       this.outline = !this.outline;
@@ -579,6 +584,8 @@ class Formats {
         this.list.forEach((l) => (l.outline = this.outline));
       }
       this.formatProperties();
+                undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
     });
     if (this.colorFill === "linear" || this.colorFill === "radial") {
       if (this.type === "group") {
@@ -599,6 +606,8 @@ class Formats {
         }
         this.addObject();
         this.formatProperties();
+                undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
       });
       document.querySelectorAll(".color-div").forEach((div, i) => {
         div
@@ -608,6 +617,8 @@ class Formats {
             if (this.type === "group") {
               this.list.forEach((l) => (l.colorStop[i] = e.target.value));
             }
+                      undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
           });
         div
           .querySelector("input[type='color']")
@@ -616,6 +627,8 @@ class Formats {
             if (this.type === "group") {
               this.list.forEach((l) => (l.color[i] = e.target.value));
             }
+                      undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
           });
         div.querySelector("button").addEventListener("click", (e) => {
           this.color.splice(i, 1);
@@ -625,9 +638,13 @@ class Formats {
               l.color.splice(i, 1);
               l.colorStop = [];
             });
+                      undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
           }
           this.addObject();
           this.formatProperties();
+                    undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
         });
       });
     }
@@ -639,6 +656,8 @@ class Formats {
       }
       this.addObject();
       this.formatProperties();
+                undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
     });
   }
   similarProptiesOutput() {
@@ -721,8 +740,8 @@ class Formats {
         <div class="uniform-div">
           Outline Type
           <div>
-            <button class="normalb"></button>
-            <button class="dashedb"></button>
+            <button class="normalb ${this.outlineType !== [] ? "selected" : "" }"></button>
+            <button class="dashedb ${this.outlineType === [] ? "selected" : "" }"></button>
           </div>
         </div>
 
@@ -2474,6 +2493,7 @@ class Ellipse extends Formats {
     this.arcEnd = 2 * Math.PI;
     this.clipped = "none";
     this.clips = [];
+    this.mode = "fill"
   }
   addObject() {
     ctx.save();
@@ -2754,23 +2774,23 @@ class Ellipse extends Formats {
   changeProperties(e) {
     const name = e.target.name;
 
-    if (name === "angle") {
-      this.angle = radToDeg(Number(e.target.value) || 0, "rad");
-    }
-
-    if (name === "bgColor") {
-      this.color[0] = e.target.value;
-    }
-
-    if (name === "colorDeg" || name === "arcStart" || name === "arcEnd") {
+    if (name === "angle" || name=== "arcStart" || name=== "arcEnd") {
       this[name] = radToDeg(Number(e.target.value) || 0, "rad");
     }
 
-    if (name === "outlineColor") {
+    else if (name === "bgColor") {
+      this.color[0] = e.target.value;
+    }
+
+    else if (name === "colorDeg" || name === "arcStart" || name === "arcEnd") {
+      this[name] = radToDeg(Number(e.target.value) || 0, "rad");
+    }
+
+    else if (name === "outlineColor") {
       this.outlineColor = e.target.value;
     }
 
-    if (e.target.type === "number") {
+    else if (e.target.type === "number") {
       let value = backValues(Number(e.target.value) || 0);
       value = value <= 0 ? 0 : value;
       if (!isNaN(value) && value !== null) {
@@ -2778,24 +2798,18 @@ class Ellipse extends Formats {
           this.x = value + this.radiusX;
         }
 
-        if (name === "y") {
+        else if (name === "y") {
           this.y = value + this.radiusY;
         }
 
-        if (name === "opacity") {
+        else if (name === "opacity") {
           this.opacity = Number(e.target.value) || 0;
         }
-        if (name === "radiusX" || name === "radiusY") {
+        else if (name === "radiusX" || name === "radiusY") {
           this[name] = value / 2;
         }
 
-        if (
-          name !== "x" &&
-          name !== "y" &&
-          name !== "opacity" &&
-          name !== "radiusX" &&
-          name !== "radiusY"
-        ) {
+        else  {
           this[name] = value;
         }
       }
@@ -5031,7 +5045,7 @@ class Images extends Formats {
                 Change
                 <input type="file">
               </button>
-              <button class="del"> D</button>
+              <button class="del">D</button>
             </div>
           `,
         )
@@ -5185,8 +5199,12 @@ class Images extends Formats {
     if (name === "iteratedFiles") {
       const loader = new LoaderManager(e.target.files.length); // Set max items to the number of selected files
       loader.createLoader();
+        await new Promise((resolve) => setTimeout(resolve, 50));
       // Option 1: Use for...of loop (recommended)
-      for (const file of Array.from(e.target.files)) {
+      const files = Array.from(e.target.files);
+
+      for ( let i = 0; i < files.length; i++) {
+        const file = files[i];
         const url = URL.createObjectURL(file);
         const img = new Image();
         img.src = url;
@@ -5201,10 +5219,13 @@ class Images extends Formats {
               await db.collection(`img${formerName}`).add({
                 id: imageID,
                 image: reader.result,
-                entryDate: new Date().getTime(),
+                entryDate: (new Date()).getTime(),
               });
               this.originalFiles.push(imageID);
               loader.incrementOriginalState();
+                  if (i % 10 === 0) {
+await new Promise(resolve => requestAnimationFrame(resolve))
+}
               this.formatProperties();
               URL.revokeObjectURL(url);
               resolve(true);
@@ -6842,6 +6863,7 @@ function zoomToRect(rect) {
   requestDraw();
 }
 async function generateCard() {
+  const fragment = document.createDocumentFragment();
   document.querySelector("footer").style.display = "block";
   cancelGenerate();
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -6849,9 +6871,10 @@ async function generateCard() {
   panX = 0;
   panY = 0;
   requestDraw();
-  generationArea.style.padding = generateInfo.spacing + "px";
+  // generationArea.style.padding = generateInfo.spacing + "px";
   generationArea.style.gap = generateInfo.spacing + "px";
-
+const currentPageWidth = generationArea.getBoundingClientRect().width - (generateInfo.spacing * 2)
+const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / generateInfo.renderWidth
   let previouslySelectedObj = selectedObj;
   selectedObj = null;
   generationArea.innerHTML = "";
@@ -6860,8 +6883,7 @@ async function generateCard() {
 
   const createNewPage = () => {
     const page = document.createElement("section");
-    generationArea.append(page);
-
+    fragment.append(page);
     page.style.width = "100%";
     page.style.backgroundColor = "#ffffff";
     page.style.display = "grid";
@@ -6869,20 +6891,21 @@ async function generateCard() {
     page.style.gridTemplateColumns = `repeat(${generateInfo.noPerRow}, 1fr)`;
     page.style.placeItems = "center";
 
-    const width = page.getBoundingClientRect().width;
-    const height =
-      (width * generateInfo.renderHeight) / generateInfo.renderWidth;
+    // const width = page.getBoundingClientRect().width;
+    const width = currentPageWidth
+    const height = currentPageHeight
+      ;
     page.style.height = `${height}px`;
 
     return page;
   };
 
-  let currentPage = createNewPage();
+  // let currentPage = createNewPage();
 
   const containerWidth =
-    currentPage.getBoundingClientRect().width - generateInfo.spacing;
+    currentPageWidth - generateInfo.spacing;
   const containerHeight =
-    currentPage.getBoundingClientRect().height - generateInfo.spacing;
+    currentPageHeight - generateInfo.spacing;
 
   const cellWidth = containerWidth / generateInfo.noPerRow;
   const cellHeight = containerHeight / generateInfo.noPerColumn;
@@ -6893,7 +6916,7 @@ async function generateCard() {
     cellWidth / paperRect0.width,
     cellHeight / paperRect0.height,
   );
-  currentPage.style.display = "none";
+  // currentPage.style.display = "none";
   let iterationLength = 1;
 
   if (textBoxes.length > 0) {
@@ -6918,27 +6941,9 @@ async function generateCard() {
   const loader = new LoaderManager(iterationLength); // Set max items to the number of selected files
   loader.createLoader();
   await new Promise((resolve) => setTimeout(resolve, 50));
-  for (let i = 0; i < iterationLength; i++) {
-    // 1) draw current iteration onto main canvas
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let img of images) {
-      await img.drawIteratedImage(i);
-    }
-    textBoxes.forEach((textBox) => textBox.drawIteratedImage(i));
-    objects.forEach((obj) => obj.addObject());
-
-    // 2) compute crop region (paper div) in CANVAS pixel coords
+      // 2) compute crop region (paper div) in CANVAS pixel coords
     const canvasRect = canvas.getBoundingClientRect();
     const paperRect = canvassDiv.getBoundingClientRect();
-
-    // const sx = canvas.width / canvasRect.width;
-    // const sy = canvas.height / canvasRect.height;
-
-    // const cropX = (paperRect.left - canvasRect.left) * sx;
-    // const cropY = (paperRect.top - canvasRect.top) * sy;
-    // const cropW = paperRect.width * sx;
-    // const cropH = paperRect.height * sy;
     const cropX = (canvas.width - measurement.width) / 2;
     const cropY = (canvas.height - measurement.height) / 2;
     const cropW = measurement.width;
@@ -6946,9 +6951,19 @@ async function generateCard() {
     // 3) copy cropped area to an offscreen canvas
     const croppedCanvas = document.createElement("canvas");
     const cty = croppedCanvas.getContext("2d");
-
     croppedCanvas.width = cropW * scaleFactor;
     croppedCanvas.height = cropH * scaleFactor;
+
+
+  for (let i = 0; i < iterationLength; i++) {
+    // 1) draw current iteration onto main canvas
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    await Promise.all([
+      ...images.map(img => img.drawIteratedImage(i)),
+      ...textBoxes.map(textBox => textBox.drawIteratedImage(i))
+    ]);
+    objects.forEach((obj) => obj.addObject());
 
     cty.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
     cty.drawImage(
@@ -6963,29 +6978,43 @@ async function generateCard() {
       cropH, // dest (before scaleFactor transform)
     );
 
-    const canvasData = croppedCanvas.toDataURL();
+    const blob = await new Promise(resolve =>
+  croppedCanvas.toBlob(resolve, "image/webp", 0.9)
+);
+const url = URL.createObjectURL(blob);
 
     // 4) create preview element
     const div = document.createElement("div");
     const img = document.createElement("img");
-    img.src = canvasData;
-
-    div.style.position = "relative";
-    div.style.backgroundColor = "#ffffff";
-    div.style.display = "flex";
-    div.style.alignItems = "center";
-    div.style.justifyContent = "center";
+       await new Promise((resolve) => {
+      img.onload = () => {
+        URL.revokeObjectURL(url); // Now safe to revoke
+        resolve();
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url); // Clean up on error too
+        resolve();
+      };
+      img.src = url;
+    });
+  div.classList.add("iterationDiv")
+    // div.style.position = "relative";
+    // div.style.backgroundColor = "#ffffff";
+    // div.style.display = "flex";
+    // div.style.alignItems = "center";
+    // div.style.justifyContent = "center";
 
     if (generateInfo.renderPage === "auto") {
       div.style.width = "100%";
-      img.style.width = "100%";
-      img.style.height = "100%";
-      img.style.objectFit = "cover";
+      img.classList.add("iterationImgAuto");
+      // img.style.width = "100%";
+      // img.style.height = "100%";
+      // img.style.objectFit = "cover";
       div.append(img);
-      generationArea.append(div);
+      fragment.append(div);
 
-      const w = div.getBoundingClientRect().width;
-      div.style.height = `${(w * paperRect.height) / paperRect.width}px`;
+      // const w = div.getBoundingClientRect().width;
+      div.style.height = `${(currentPageWidth * paperRect.height) / paperRect.width}px`;
     } else {
       if (boxCountInPage >= boxesPerPage) {
         currentPage = createNewPage();
@@ -6994,10 +7023,10 @@ async function generateCard() {
 
       div.style.width = `${paperRect0.width * localScale}px`;
       div.style.height = `${paperRect0.height * localScale}px`;
-
-      img.style.width = "100%";
-      img.style.height = "100%";
-      img.style.objectFit = "contain";
+ img.classList.add("iterationImgElse");
+      // img.style.width = "100%";
+      // img.style.height = "100%";
+      // img.style.objectFit = "contain";
 
       div.append(img);
       currentPage.append(div);
@@ -7005,8 +7034,12 @@ async function generateCard() {
       boxCountInPage++;
     }
     loader.incrementOriginalState();
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
+    if (i % 10 === 0) {
+await new Promise(resolve => requestAnimationFrame(resolve))
+}
+  
+}
+generationArea.append(fragment);
   images.forEach((img) => img.backToDefault());
   textBoxes.forEach((textBox) => textBox.backToDefault());
 
@@ -7386,6 +7419,10 @@ document.addEventListener("keydown", async (e) => {
     Tools("duplicate");
   } else if (e.shiftKey && e.key === "@" && selectedObj !== null) {
     zoomToRect(selectedObj.whereToSnap().pos);
+  } else if(e.ctrlKey && e.key === "a"){
+    Tools('multipleSelection')
+    multipleSelectArr = [...objects];
+    multipleSelect = true;
   } else if (
     e.ctrlKey &&
     e.key.toLowerCase() === "g" &&

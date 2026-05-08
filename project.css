@@ -1074,6 +1074,7 @@ footer{
 #generationArea{
   display: flex;
   flex-direction: column;
+  align-items: center;
   padding: 1rem;
   gap: 1rem;
 }
@@ -1094,7 +1095,23 @@ footer{
   z-index: 9999;
   min-width: 300px;
 }
-
+.iterationDiv{
+  position: relative;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.iterationImgAuto{
+  width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.iterationImgElse{
+  width: 100%;
+   height: 100%;
+  object-fit: contain;
+}
 @media (max-width: 768px){
   main{
     height: auto;
