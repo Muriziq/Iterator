@@ -2,28 +2,26 @@ const nameDiv = document.querySelector(".name");
 const already = document.querySelector(".already");
 const orderProjects = document.querySelector(".order-projects");
 const nameInput = document.getElementById("name");
-  let db = new Localbase("db");
+let db = new Localbase("db");
 let data;
 window.addEventListener("load", async () => {
-
   const fonts = await db.collection("fonts").get();
-  let fontNames = []
-  if(fonts.length > 0){
-     fontNames = fonts.map((font) => font.fontFamily);
+  let fontNames = [];
+  if (fonts.length > 0) {
+    fontNames = fonts.map((font) => font.fontFamily);
   }
- 
-    localStorage.setItem("fontNames", JSON.stringify([...fontNames]));
+
+  localStorage.setItem("fontNames", JSON.stringify([...fontNames]));
   const datas = await db
     .collection("projects")
     .orderBy("entryDate", "desc")
     .get();
-    let projectNames = []
-  if(datas.length > 0){
-     projectNames = datas.map((project) => project.name);
+  let projectNames = [];
+  if (datas.length > 0) {
+    projectNames = datas.map((project) => project.name);
   }
   localStorage.setItem("project-names", JSON.stringify([...projectNames]));
   if (datas.length <= 0) return;
-
 
   orderProjects.innerHTML = `
     ${datas
@@ -51,21 +49,21 @@ window.addEventListener("load", async () => {
 });
 nameInput.addEventListener("input", (e) => {
   const value = e.target.value.trim().toLowerCase();
-  const availableNames = JSON.parse(localStorage.getItem("project-names")) || [];
+  const availableNames =
+    JSON.parse(localStorage.getItem("project-names")) || [];
   if (availableNames.includes(`${value}.json`)) {
     already.textContent = "Name Already Exists";
     already.style.display = "flex";
   } else {
     already.style.display = "none";
   }
-})
+});
 document.getElementById("new-project").addEventListener("click", () => {
   data = [];
   nameDiv.style.display = "flex";
   nameInput.value = "";
   nameInput.focus();
   already.style.display = "none";
-
 });
 document
   .querySelector("#upload-project input")
@@ -75,9 +73,8 @@ document
     reader.readAsText(file);
     reader.onload = async () => {
       const jsonData = JSON.parse(reader.result);
-      const projectName = `${file.name.trim().toLowerCase()}.json`;
+      const projectName = file.name;
       const names = JSON.parse(localStorage.getItem("project-names")) || [];
-
       if (
         projectName.replace(/\.json$/i, "") === "" ||
         names.includes(projectName)
@@ -102,7 +99,6 @@ async function proceed() {
     return;
   }
   nameInputs += ".json";
-  console.log(nameInputs);
   const names = JSON.parse(localStorage.getItem("project-names")) || [];
   if (names.includes(nameInputs)) {
     already.textContent = "Name Already Exists";

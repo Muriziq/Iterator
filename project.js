@@ -97,55 +97,57 @@ let defaultFonts = [
 ];
 const newFonts = JSON.parse(localStorage.getItem("fontNames")) || [];
 let allFonts = [...defaultFonts, ...newFonts];
- let db = new Localbase('db') || []
+let db = new Localbase("db") || [];
 
-const projectName = document.getElementById("project-name")
-let formerName = ""
-projectName.addEventListener("input",async (e)=>{
-    const dbName = `${e.target.value.trim().toLowerCase()}.json`
-  const names =  JSON.parse(localStorage.getItem("project-names")) || [];
-  if(names.includes(formerName)){
-    await db.collection("projects").doc({name:formerName}).update({
-      name:dbName,
-      entryDate: (new Date()).getTime()
-    })
+const projectName = document.getElementById("project-name");
+let formerName = "";
+projectName.addEventListener("input", async (e) => {
+  const dbName = `${e.target.value.trim().toLowerCase()}.json`;
+  const names = JSON.parse(localStorage.getItem("project-names")) || [];
+  if (names.includes(formerName)) {
+    await db.collection("projects").doc({ name: formerName }).update({
+      name: dbName,
+      entryDate: new Date().getTime(),
+    });
     const imageDatas = await db.collection(`img${formerName}`).get();
-    for(imageFiles of imageDatas){
-      await db.collection(`img${dbName}`).add(imageFiles)
+    for (imageFiles of imageDatas) {
+      await db.collection(`img${dbName}`).add(imageFiles);
     }
-    await db.collection(`img${formerName}`).delete()
-    const formerIndex = names.indexOf(formerName)
-    names[formerIndex] = dbName
-    localStorage.setItem("project-names",JSON.stringify([...names]))
+    await db.collection(`img${formerName}`).delete();
+    const formerIndex = names.indexOf(formerName);
+    names[formerIndex] = dbName;
+    localStorage.setItem("project-names", JSON.stringify([...names]));
   }
-  formerName = dbName
-  notify("changed")
-})
-window.addEventListener("resize",()=>{
-  canvasSize()
-})
+  formerName = dbName;
+  notify("changed");
+});
+window.addEventListener("resize", () => {
+  canvasSize();
+});
 window.addEventListener("load", async () => {
   try {
     const params = new URLSearchParams(window.location.search);
-    const data = params.get('data');
+    const data = params.get("data");
     if (data) {
-        const decoded = decodeURIComponent(data);
+      const decoded = decodeURIComponent(data);
 
-            const objectsData = await  db.collection("projects").doc({name:data}).get()
-                    projectName.value = objectsData.name.replace(/\.json$/i,"")
-                    formerName = objectsData.name
-            await importLoaded(objectsData.object)     
-    }
-    else{
+      const objectsData = await db
+        .collection("projects")
+        .doc({ name: data })
+        .get();
+      projectName.value = objectsData.name.replace(/\.json$/i, "");
+      formerName = objectsData.name;
+      await importLoaded(objectsData.object);
+    } else {
       const names = JSON.parse(localStorage.getItem("project-names")) || [];
-      const newProjectCount = names.filter(project => 
-  /^new project(\s+\d+)?$/i.test(project)
-).length;
-  projectName.value = `new project ${newProjectCount === 0 ? "" : newProjectCount}` 
+      const newProjectCount = names.filter((project) =>
+        /^new project(\s+\d+)?$/i.test(project),
+      ).length;
+      projectName.value = `new project ${newProjectCount === 0 ? "" : newProjectCount}`;
     }
-} catch (error) {
-    console.log(error) ;
-}
+  } catch (error) {
+    console.log(error);
+  }
 
   width.value = measurement.width;
   height.value = measurement.height;
@@ -471,21 +473,20 @@ class LoaderManager {
   }
 
   // Create the loader UI container
-  createLoader(containerId = 'loader-container') {
-
-   let container = document.createElement('div');
-      container.id = containerId;
-      container.classList.add('loader-container');
-      document.body.appendChild(container);
+  createLoader(containerId = "loader-container") {
+    let container = document.createElement("div");
+    container.id = containerId;
+    container.classList.add("loader-container");
+    document.body.appendChild(container);
     this.loaderContainer = container;
-        this.loaderContainer.style.display = 'block';
+    this.loaderContainer.style.display = "block";
   }
 
   // Increment and show progress
   incrementOriginalState() {
     this.currentIndex++;
     this.showProgress();
-    
+
     // Auto-hide when complete
     if (this.currentIndex >= this.maxItems) {
       setTimeout(() => this.reset(), 500);
@@ -495,10 +496,10 @@ class LoaderManager {
   // Update the display
   showProgress() {
     if (!this.loaderContainer) return;
-    
+
     const percentage = (this.currentIndex / this.maxItems) * 100;
-    
-    this.loaderContainer.style.display = 'block';
+
+    this.loaderContainer.style.display = "block";
     this.loaderContainer.innerHTML = `
       <div style="text-align: center;">
         <div style="margin-bottom: 10px;">Loading Images...</div>
@@ -522,15 +523,14 @@ class LoaderManager {
     `;
   }
 
-
   reset() {
     this.currentIndex = 0;
-    document.body.removeChild(this.loaderContainer)
+    document.body.removeChild(this.loaderContainer);
   }
 }
 class Formats {
   constructor() {
-    this.id = crypto.randomUUID()
+    this.id = crypto.randomUUID();
     this.clips = null;
     this.scaleX = 1;
     this.scaleY = 1;
@@ -546,9 +546,9 @@ class Formats {
     this.colorFill = "none";
     this.colorDeg = 0.2;
     this.colorStop = [];
-    this.selectedArea = null
+    this.selectedArea = null;
     this.angle = 0;
-    this.clipper = null
+    this.clipper = null;
   }
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
@@ -741,79 +741,81 @@ class Formats {
     </section>
   `;
   }
-    getWorldPoints(){
-      if(this.type === "ellipse" || this.type === "text" || this.type === "image" || this.type === "group"){
-      let ellipseW = this.whereToSnap()
-    return [
-      {x: ellipseW.x[0], y: ellipseW.y[0]},
-      {x: ellipseW.x[1], y: ellipseW.y[1]},
-      {x: ellipseW.x[2], y: ellipseW.y[2]}
-
-    ]
-  }
-    if(this.type === "rectangle" && this.roundedOrbeveled !== "shaped"){
-                    let rectW = this.whereToSnap()
-    return [
-      {x: rectW.x[0], y: rectW.y[0]},
-      {x: rectW.x[1], y: rectW.y[1]},
-      {x: rectW.x[2], y: rectW.y[2]}
-
-    ]
+  getWorldPoints() {
+    if (
+      this.type === "ellipse" ||
+      this.type === "text" ||
+      this.type === "image" ||
+      this.type === "group"
+    ) {
+      let ellipseW = this.whereToSnap();
+      return [
+        { x: ellipseW.x[0], y: ellipseW.y[0] },
+        { x: ellipseW.x[1], y: ellipseW.y[1] },
+        { x: ellipseW.x[2], y: ellipseW.y[2] },
+      ];
+    }
+    if (this.type === "rectangle" && this.roundedOrbeveled !== "shaped") {
+      let rectW = this.whereToSnap();
+      return [
+        { x: rectW.x[0], y: rectW.y[0] },
+        { x: rectW.x[1], y: rectW.y[1] },
+        { x: rectW.x[2], y: rectW.y[2] },
+      ];
     }
 
-    return this.points.map(point=> this.pointToWorld(point.points))
+    return this.points.map((point) => this.pointToWorld(point.points));
   }
-    pointToWorld(point){
-        let  centerX ;
-        let  centerY ;
-        if(this.type === "rectangle"){
-          centerX = this.x + this.width / 2;
-          centerY = this.y + this.height / 2;
-        }
-        else{
-          centerX = this.x
-          centerY = this.y
-        }
-     const scaledX = point.x * this.scaleX;
-        const scaledY = point.y * this.scaleY;
-        
-        const rotatedX = scaledX * Math.cos(this.angle) - scaledY * Math.sin(this.angle);
-        const rotatedY = scaledX * Math.sin(this.angle) + scaledY * Math.cos(this.angle);
-        
-        // Step 2: Translate to world position
-        const worldX = centerX + rotatedX;
-        const worldY = centerY + rotatedY;
-        return {x:worldX,y:worldY}
-  }
-  worldToPoint(point){
-        let  centerX ;
-        let  centerY ;
-        if(this.type === "rectangle"){
-          centerX = this.x + this.width / 2;
-          centerY = this.y + this.height / 2;
-        }
-        else{
-          centerX = this.x
-          centerY = this.y
-        }
-        const cos = Math.cos(-this.angle);
-        const sin = Math.sin(-this.angle);
-        
-        // Remove translation
-        const translatedX = point.x - centerX;
-        const translatedY = point.y - centerY;
-        
-        // Remove rotation
-        const rotatedX = translatedX * cos - translatedY * sin;
-        const rotatedY = translatedX * sin + translatedY * cos;
-        
-        // Remove scale
-        return {
-            x: rotatedX / this.scaleX,
-            y: rotatedY / this.scaleY
-        };
-  }
+  pointToWorld(point) {
+    let centerX;
+    let centerY;
+    if (this.type === "rectangle") {
+      centerX = this.x + this.width / 2;
+      centerY = this.y + this.height / 2;
+    } else {
+      centerX = this.x;
+      centerY = this.y;
+    }
+    const scaledX = point.x * this.scaleX;
+    const scaledY = point.y * this.scaleY;
 
+    const rotatedX =
+      scaledX * Math.cos(this.angle) - scaledY * Math.sin(this.angle);
+    const rotatedY =
+      scaledX * Math.sin(this.angle) + scaledY * Math.cos(this.angle);
+
+    // Step 2: Translate to world position
+    const worldX = centerX + rotatedX;
+    const worldY = centerY + rotatedY;
+    return { x: worldX, y: worldY };
+  }
+  worldToPoint(point) {
+    let centerX;
+    let centerY;
+    if (this.type === "rectangle") {
+      centerX = this.x + this.width / 2;
+      centerY = this.y + this.height / 2;
+    } else {
+      centerX = this.x;
+      centerY = this.y;
+    }
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+
+    // Remove translation
+    const translatedX = point.x - centerX;
+    const translatedY = point.y - centerY;
+
+    // Remove rotation
+    const rotatedX = translatedX * cos - translatedY * sin;
+    const rotatedY = translatedX * sin + translatedY * cos;
+
+    // Remove scale
+    return {
+      x: rotatedX / this.scaleX,
+      y: rotatedY / this.scaleY,
+    };
+  }
 
   lineFormat(localMouseX, localMouseY, localDeltaX, localDeltaY) {
     if (this.selectedArea === "lineIndex") {
@@ -837,102 +839,110 @@ class Formats {
       this.points[this.selectedLineIndex].controls[0].y += localDeltaY;
       this.points[this.selectedLineIndex].controls[1].x += localDeltaX;
       this.points[this.selectedLineIndex].controls[1].y += localDeltaY;
-
-
     } else if (this.selectedArea === "curveIndex") {
       const { curveIndex, controlIndex } = this.selectedLineIndex;
       this.points[curveIndex].controls[controlIndex].x = localMouseX;
       this.points[curveIndex].controls[controlIndex].y = localMouseY;
     }
-// Store current local position
-const currentLocalPoint = this.points[this.selectedLineIndex].points;
-const currentWorldPoint = this.pointToWorld(currentLocalPoint);
+    // Store current local position
+    const currentLocalPoint = this.points[this.selectedLineIndex].points;
+    const currentWorldPoint = this.pointToWorld(currentLocalPoint);
 
-let pointXfound = false;
-let pointYfound = false;
+    let pointXfound = false;
+    let pointYfound = false;
 
-// 1. Check internal points (in local space for X)
-for (let i = 0; i < this.points.length; i++) {
-    if (i === this.selectedLineIndex) continue;
-    
-    // For X snapping - compare world X coordinates
-    const otherWorldPoint = this.pointToWorld(this.points[i].points);
-    if (Math.abs(otherWorldPoint.x - currentWorldPoint.x) < thresholds.pthreshold()) {
+    // 1. Check internal points (in local space for X)
+    for (let i = 0; i < this.points.length; i++) {
+      if (i === this.selectedLineIndex) continue;
+
+      // For X snapping - compare world X coordinates
+      const otherWorldPoint = this.pointToWorld(this.points[i].points);
+      if (
+        Math.abs(otherWorldPoint.x - currentWorldPoint.x) <
+        thresholds.pthreshold()
+      ) {
         // Create new world point with snapped X, keep original Y
         const snappedWorldPoint = {
-            x: otherWorldPoint.x,
-            y: currentWorldPoint.y
+          x: otherWorldPoint.x,
+          y: currentWorldPoint.y,
         };
         const newLocalPoint = this.worldToPoint(snappedWorldPoint);
         this.points[this.selectedLineIndex].points.x = newLocalPoint.x;
         pointXfound = true;
         break;
+      }
     }
-}
 
-// 2. Check other objects for X snapping
-if (!pointXfound) {
-    for (let i = objects.length - 1; i >= 0; i--) {
+    // 2. Check other objects for X snapping
+    if (!pointXfound) {
+      for (let i = objects.length - 1; i >= 0; i--) {
         if (objects[i] === this) continue; // Skip self
-        
+
         const worldPoints = objects[i].getWorldPoints(); // You need this method
         for (let e = worldPoints.length - 1; e >= 0; e--) {
-            if (Math.abs(worldPoints[e].x - currentWorldPoint.x) < thresholds.pthreshold()) {
-                // Snap X only, keep current Y in world space
-                const snappedWorldPoint = {
-                    x: worldPoints[e].x,
-                    y: currentWorldPoint.y
-                };
-                const newLocalPoint = this.worldToPoint(snappedWorldPoint);
-                this.points[this.selectedLineIndex].points.x = newLocalPoint.x;
-                pointXfound = true;
-                break;
-            }
+          if (
+            Math.abs(worldPoints[e].x - currentWorldPoint.x) <
+            thresholds.pthreshold()
+          ) {
+            // Snap X only, keep current Y in world space
+            const snappedWorldPoint = {
+              x: worldPoints[e].x,
+              y: currentWorldPoint.y,
+            };
+            const newLocalPoint = this.worldToPoint(snappedWorldPoint);
+            this.points[this.selectedLineIndex].points.x = newLocalPoint.x;
+            pointXfound = true;
+            break;
+          }
         }
         if (pointXfound) break;
+      }
     }
-}
 
-// 3. Check internal points for Y snapping
-for (let i = 0; i < this.points.length; i++) {
-    if (i === this.selectedLineIndex) continue;
-    
-    const otherWorldPoint = this.pointToWorld(this.points[i].points);
-    if (Math.abs(otherWorldPoint.y - currentWorldPoint.y) < thresholds.pthreshold()) {
+    // 3. Check internal points for Y snapping
+    for (let i = 0; i < this.points.length; i++) {
+      if (i === this.selectedLineIndex) continue;
+
+      const otherWorldPoint = this.pointToWorld(this.points[i].points);
+      if (
+        Math.abs(otherWorldPoint.y - currentWorldPoint.y) <
+        thresholds.pthreshold()
+      ) {
         const snappedWorldPoint = {
-            x: currentWorldPoint.x,
-            y: otherWorldPoint.y
+          x: currentWorldPoint.x,
+          y: otherWorldPoint.y,
         };
         const newLocalPoint = this.worldToPoint(snappedWorldPoint);
         this.points[this.selectedLineIndex].points.y = newLocalPoint.y;
         pointYfound = true;
         break;
+      }
     }
-}
 
-// 4. Check other objects for Y snapping
-if (!pointYfound) {
-    for (let i = objects.length - 1; i >= 0; i--) {
+    // 4. Check other objects for Y snapping
+    if (!pointYfound) {
+      for (let i = objects.length - 1; i >= 0; i--) {
         if (objects[i] === this) continue;
-        
+
         const worldPoints = objects[i].getWorldPoints();
         for (let e = worldPoints.length - 1; e >= 0; e--) {
-            if (Math.abs(worldPoints[e].y - currentWorldPoint.y) < thresholds.pthreshold()) {
-                const snappedWorldPoint = {
-                    x: currentWorldPoint.x,
-                    y: worldPoints[e].y
-                };
-                const newLocalPoint = this.worldToPoint(snappedWorldPoint);
-                this.points[this.selectedLineIndex].points.y = newLocalPoint.y;
-                pointYfound = true;
-                break;
-            }
+          if (
+            Math.abs(worldPoints[e].y - currentWorldPoint.y) <
+            thresholds.pthreshold()
+          ) {
+            const snappedWorldPoint = {
+              x: currentWorldPoint.x,
+              y: worldPoints[e].y,
+            };
+            const newLocalPoint = this.worldToPoint(snappedWorldPoint);
+            this.points[this.selectedLineIndex].points.y = newLocalPoint.y;
+            pointYfound = true;
+            break;
+          }
         }
         if (pointYfound) break;
+      }
     }
-}
-
-
   }
   pointDblClick(localMouseX, localMouseY) {
     if (this.selectedArea === "pointIndex") {
@@ -970,283 +980,14 @@ if (!pointYfound) {
       return true;
     }
   }
-rectFormat(mouse) {
-  if (this.selectedArea === "Left") {
-    let snap = false;
-    const newWidth = this.width + (this.x - mouse.x);
-    if (newWidth > 0) {
-      let newX = mouse.x;
-      let newWidthCalc = newWidth;
-      
-      // Snap logic for Left
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const xCoor = objects[i].whereToSnap().x;
-        for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
-            const difference = xCoor[e] - newX;
-            newX = xCoor[e];
-            newWidthCalc = newWidth - difference; // Adjust width when snapping
-            snap = true;
-            break;
-          }
-        }
-        if (snap) break;
-      }
-      
-      this.x = newX;
-      this.width = newWidthCalc;
-    }
-  } 
-  else if (this.selectedArea === "Right") {
-    let snap = false;
-    const newWidth = mouse.x - this.x;
-    if (newWidth > 0) {
-      let newWidthCalc = newWidth;
-      
-      // Snap logic for Right
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const xCoor = objects[i].whereToSnap().x;
-        for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - (this.x + newWidthCalc)) < thresholds.pthreshold()) {
-            newWidthCalc = xCoor[e] - this.x;
-            snap = true;
-            break;
-          }
-        }
-        if (snap) break;
-      }
-      
-      this.width = newWidthCalc;
-    }
-  } 
-  else if (this.selectedArea === "Top") {
-    let snap = false;
-    const newHeight = this.height + (this.y - mouse.y);
-    if (newHeight > 0) {
-      let newY = mouse.y;
-      let newHeightCalc = newHeight;
-      
-      // Snap logic for Top
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const yCoor = objects[i].whereToSnap().y;
-        for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
-            const difference = yCoor[e] - newY;
-            newY = yCoor[e];
-            newHeightCalc = newHeight - difference;
-            snap = true;
-            break;
-          }
-        }
-        if (snap) break;
-      }
-      
-      this.y = newY;
-      this.height = newHeightCalc;
-    }
-  } 
-  else if (this.selectedArea === "Bottom") {
-    let snap = false;
-    const newHeight = mouse.y - this.y;
-    if (newHeight > 0) {
-      let newHeightCalc = newHeight;
-      
-      // Snap logic for Bottom
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const yCoor = objects[i].whereToSnap().y;
-        for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - (this.y + newHeightCalc)) < thresholds.pthreshold()) {
-            newHeightCalc = yCoor[e] - this.y;
-            snap = true;
-            break;
-          }
-        }
-        if (snap) break;
-      }
-      
-      this.height = newHeightCalc;
-    }
-  } 
-  else if (this.selectedArea === "TopLeft") {
-    let snapX = false, snapY = false;
-    let newX = mouse.x;
-    let newY = mouse.y;
-    let newWidth = this.width + (this.x - mouse.x);
-    let newHeight = this.height + (this.y - mouse.y);
-    
-    if (newWidth > 0) {
-      // Snap X
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const xCoor = objects[i].whereToSnap().x;
-        for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
-            const difference = xCoor[e] - newX;
-            newX = xCoor[e];
-            newWidth = newWidth - difference;
-            snapX = true;
-            break;
-          }
-        }
-        if (snapX) break;
-      }
-      
-      // Snap Y
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const yCoor = objects[i].whereToSnap().y;
-        for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
-            const difference = yCoor[e] - newY;
-            newY = yCoor[e];
-            newHeight = newHeight - difference;
-            snapY = true;
-            break;
-          }
-        }
-        if (snapY) break;
-      }
-      
-      this.x = newX;
-      this.y = newY;
-      this.width = newWidth;
-      this.height = newHeight;
-    }
-  } 
-  else if (this.selectedArea === "TopRight") {
-    let snapY = false;
-    let newY = mouse.y;
-    let newWidth = mouse.x - this.x;
-    let newHeight = this.height + (this.y - mouse.y);
-    
-    if (newWidth > 0 && newHeight > 0) {
-      // Snap Y (Top side)
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const yCoor = objects[i].whereToSnap().y;
-        for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
-            const difference = yCoor[e] - newY;
-            newY = yCoor[e];
-            newHeight = newHeight - difference;
-            snapY = true;
-            break;
-          }
-        }
-        if (snapY) break;
-      }
-      
-      // Snap X (Right side)
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const xCoor = objects[i].whereToSnap().x;
-        for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.pthreshold()) {
-            newWidth = xCoor[e] - this.x;
-            break;
-          }
-        }
-      }
-      
-      this.y = newY;
-      this.width = newWidth;
-      this.height = newHeight;
-    }
-  } 
-  else if (this.selectedArea === "BottomLeft") {
-    let snapX = false;
-    let newX = mouse.x;
-    let newWidth = this.width + (this.x - mouse.x);
-    let newHeight = mouse.y - this.y;
-    
-    if (newWidth > 0 && newHeight > 0) {
-      // Snap X (Left side)
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const xCoor = objects[i].whereToSnap().x;
-        for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
-            const difference = xCoor[e] - newX;
-            newX = xCoor[e];
-            newWidth = newWidth - difference;
-            snapX = true;
-            break;
-          }
-        }
-        if (snapX) break;
-      }
-      
-      // Snap Y (Bottom side)
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const yCoor = objects[i].whereToSnap().y;
-        for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - (this.y + newHeight)) < thresholds.pthreshold()) {
-            newHeight = yCoor[e] - this.y;
-            break;
-          }
-        }
-      }
-      
-      this.x = newX;
-      this.width = newWidth;
-      this.height = newHeight;
-    }
-  } 
-  else if (this.selectedArea === "BottomRight") {
-    let newWidth = mouse.x - this.x;
-    let newHeight = mouse.y - this.y;
-    
-    if (newWidth > 0 && newHeight > 0) {
-      // Snap X (Right side)
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const xCoor = objects[i].whereToSnap().x;
-        for (let e = 0; e < xCoor.length; e++) {
-          if (Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.pthreshold()) {
-            newWidth = xCoor[e] - this.x;
-            break;
-          }
-        }
-      }
-      
-      // Snap Y (Bottom side)
-      for (let i = objects.length - 1; i >= 0; i--) {
-        if (objects[i] === this) continue;
-        const yCoor = objects[i].whereToSnap().y;
-        for (let e = 0; e < yCoor.length; e++) {
-          if (Math.abs(yCoor[e] - (this.y + newHeight)) < thresholds.pthreshold()) {
-            newHeight = yCoor[e] - this.y;
-            break;
-          }
-        }
-      }
-      
-      this.width = newWidth;
-      this.height = newHeight;
-    }
-  }
-
-  // Ensure positive dimensions
-  this.width = this.width <= 0 ? 0 : this.width;
-  this.height = this.height <= 0 ? 0 : this.height;
-}
-circFormat(mouse, x, y) {
-  if (this.isDoubleClicked) {
-    this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
-  } else {
+  rectFormat(mouse) {
     if (this.selectedArea === "Left") {
       let snap = false;
-      const newRadiusX = this.radiusX + (x - mouse.x);
-      if (newRadiusX > 0) {
-        this.radiusX = newRadiusX;
+      const newWidth = this.width + (this.x - mouse.x);
+      if (newWidth > 0) {
         let newX = mouse.x;
-        let newWidthCalc = this.radiusX;
-        
+        let newWidthCalc = newWidth;
+
         // Snap logic for Left
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
@@ -1255,46 +996,49 @@ circFormat(mouse, x, y) {
             if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
               const difference = xCoor[e] - newX;
               newX = xCoor[e];
-              newWidthCalc = newRadiusX - difference;
+              newWidthCalc = newWidth - difference; // Adjust width when snapping
               snap = true;
               break;
             }
           }
           if (snap) break;
         }
-        this.radiusX = newWidthCalc;
+
+        this.x = newX;
+        this.width = newWidthCalc;
       }
-    } 
-    else if (this.selectedArea === "Right") {
+    } else if (this.selectedArea === "Right") {
       let snap = false;
-      const newRadiusX = mouse.x - this.x;
-      if (newRadiusX > 0) {
-        let newRadiusCalc = newRadiusX;
-        
+      const newWidth = mouse.x - this.x;
+      if (newWidth > 0) {
+        let newWidthCalc = newWidth;
+
         // Snap logic for Right
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
           for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - (this.x + newRadiusCalc)) < thresholds.pthreshold()) {
-              newRadiusCalc = xCoor[e] - this.x;
+            if (
+              Math.abs(xCoor[e] - (this.x + newWidthCalc)) <
+              thresholds.pthreshold()
+            ) {
+              newWidthCalc = xCoor[e] - this.x;
               snap = true;
               break;
             }
           }
           if (snap) break;
         }
-        this.radiusX = newRadiusCalc;
+
+        this.width = newWidthCalc;
       }
-    } 
-    else if (this.selectedArea === "Top") {
+    } else if (this.selectedArea === "Top") {
       let snap = false;
-      const newRadiusY = this.radiusY + (y - mouse.y);
-      if (newRadiusY > 0) {
-        this.radiusY = newRadiusY;
+      const newHeight = this.height + (this.y - mouse.y);
+      if (newHeight > 0) {
         let newY = mouse.y;
-        let newHeightCalc = this.radiusY;
-        
+        let newHeightCalc = newHeight;
+
         // Snap logic for Top
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
@@ -1303,50 +1047,52 @@ circFormat(mouse, x, y) {
             if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
               const difference = yCoor[e] - newY;
               newY = yCoor[e];
-              newHeightCalc = newRadiusY - difference;
+              newHeightCalc = newHeight - difference;
               snap = true;
               break;
             }
           }
           if (snap) break;
         }
-        this.radiusY = newHeightCalc;
+
+        this.y = newY;
+        this.height = newHeightCalc;
       }
-    } 
-    else if (this.selectedArea === "Bottom") {
+    } else if (this.selectedArea === "Bottom") {
       let snap = false;
-      const newRadiusY = mouse.y - this.y;
-      if (newRadiusY > 0) {
-        let newRadiusCalc = newRadiusY;
-        
+      const newHeight = mouse.y - this.y;
+      if (newHeight > 0) {
+        let newHeightCalc = newHeight;
+
         // Snap logic for Bottom
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - (this.y + newRadiusCalc)) < thresholds.pthreshold()) {
-              newRadiusCalc = yCoor[e] - this.y;
+            if (
+              Math.abs(yCoor[e] - (this.y + newHeightCalc)) <
+              thresholds.pthreshold()
+            ) {
+              newHeightCalc = yCoor[e] - this.y;
               snap = true;
               break;
             }
           }
           if (snap) break;
         }
-        this.radiusY = newRadiusCalc;
+
+        this.height = newHeightCalc;
       }
-    } 
-    else if (this.selectedArea === "TopLeft") {
-      let snapX = false, snapY = false;
-      const newRadiusX = this.radiusX + (x - mouse.x);
-      const newRadiusY = this.radiusY + (y - mouse.y);
-      
-      if (newRadiusX > 0 && newRadiusY > 0) {
-        let newX = mouse.x;
-        let newY = mouse.y;
-        let newRadiusXCalc = newRadiusX;
-        let newRadiusYCalc = newRadiusY;
-        
-        // Snap X (Left)
+    } else if (this.selectedArea === "TopLeft") {
+      let snapX = false,
+        snapY = false;
+      let newX = mouse.x;
+      let newY = mouse.y;
+      let newWidth = this.width + (this.x - mouse.x);
+      let newHeight = this.height + (this.y - mouse.y);
+
+      if (newWidth > 0) {
+        // Snap X
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
@@ -1354,15 +1100,15 @@ circFormat(mouse, x, y) {
             if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
               const difference = xCoor[e] - newX;
               newX = xCoor[e];
-              newRadiusXCalc = newRadiusX - difference;
+              newWidth = newWidth - difference;
               snapX = true;
               break;
             }
           }
           if (snapX) break;
         }
-        
-        // Snap Y (Top)
+
+        // Snap Y
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
@@ -1370,43 +1116,27 @@ circFormat(mouse, x, y) {
             if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
               const difference = yCoor[e] - newY;
               newY = yCoor[e];
-              newRadiusYCalc = newRadiusY - difference;
+              newHeight = newHeight - difference;
               snapY = true;
               break;
             }
           }
           if (snapY) break;
         }
-        
-        this.radiusX = newRadiusXCalc;
-        this.radiusY = newRadiusYCalc;
+
+        this.x = newX;
+        this.y = newY;
+        this.width = newWidth;
+        this.height = newHeight;
       }
-    } 
-    else if (this.selectedArea === "TopRight") {
+    } else if (this.selectedArea === "TopRight") {
       let snapY = false;
-      const newRadiusX = mouse.x - this.x;
-      const newRadiusY = this.radiusY + (y - mouse.y);
-      
-      if (newRadiusX > 0 && newRadiusY > 0) {
-        let newY = mouse.y;
-        let newRadiusXCalc = newRadiusX;
-        let newRadiusYCalc = newRadiusY;
-        
-        // Snap X (Right)
-        for (let i = objects.length - 1; i >= 0; i--) {
-          if (objects[i] === this) continue;
-          const xCoor = objects[i].whereToSnap().x;
-          for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) < thresholds.pthreshold()) {
-              newRadiusXCalc = xCoor[e] - this.x;
-              snapY = true;
-              break;
-            }
-          }
-          if (snapY) break;
-        }
-        
-        // Snap Y (Top)
+      let newY = mouse.y;
+      let newWidth = mouse.x - this.x;
+      let newHeight = this.height + (this.y - mouse.y);
+
+      if (newWidth > 0 && newHeight > 0) {
+        // Snap Y (Top side)
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
@@ -1414,29 +1144,40 @@ circFormat(mouse, x, y) {
             if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
               const difference = yCoor[e] - newY;
               newY = yCoor[e];
-              newRadiusYCalc = newRadiusY - difference;
+              newHeight = newHeight - difference;
               snapY = true;
               break;
             }
           }
           if (snapY) break;
         }
-        
-        this.radiusX = newRadiusXCalc;
-        this.radiusY = newRadiusYCalc;
+
+        // Snap X (Right side)
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i] === this) continue;
+          const xCoor = objects[i].whereToSnap().x;
+          for (let e = 0; e < xCoor.length; e++) {
+            if (
+              Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.pthreshold()
+            ) {
+              newWidth = xCoor[e] - this.x;
+              break;
+            }
+          }
+        }
+
+        this.y = newY;
+        this.width = newWidth;
+        this.height = newHeight;
       }
-    } 
-    else if (this.selectedArea === "BottomLeft") {
+    } else if (this.selectedArea === "BottomLeft") {
       let snapX = false;
-      const newRadiusX = this.radiusX + (x - mouse.x);
-      const newRadiusY = mouse.y - this.y;
-      
-      if (newRadiusX > 0 && newRadiusY > 0) {
-        let newX = mouse.x;
-        let newRadiusXCalc = newRadiusX;
-        let newRadiusYCalc = newRadiusY;
-        
-        // Snap X (Left)
+      let newX = mouse.x;
+      let newWidth = this.width + (this.x - mouse.x);
+      let newHeight = mouse.y - this.y;
+
+      if (newWidth > 0 && newHeight > 0) {
+        // Snap X (Left side)
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
@@ -1444,87 +1185,378 @@ circFormat(mouse, x, y) {
             if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
               const difference = xCoor[e] - newX;
               newX = xCoor[e];
-              newRadiusXCalc = newRadiusX - difference;
+              newWidth = newWidth - difference;
               snapX = true;
               break;
             }
           }
           if (snapX) break;
         }
-        
-        // Snap Y (Bottom)
+
+        // Snap Y (Bottom side)
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) < thresholds.pthreshold()) {
-              newRadiusYCalc = yCoor[e] - this.y;
-              snapX = true;
+            if (
+              Math.abs(yCoor[e] - (this.y + newHeight)) <
+              thresholds.pthreshold()
+            ) {
+              newHeight = yCoor[e] - this.y;
               break;
             }
           }
-          if (snapX) break;
         }
-        
-        this.radiusX = newRadiusXCalc;
-        this.radiusY = newRadiusYCalc;
+
+        this.x = newX;
+        this.width = newWidth;
+        this.height = newHeight;
       }
-    } 
-    else if (this.selectedArea === "BottomRight") {
-      let snapX = false, snapY = false;
-      const newRadiusX = mouse.x - this.x;
-      const newRadiusY = mouse.y - this.y;
-      
-      if (newRadiusX > 0 && newRadiusY > 0) {
-        let newRadiusXCalc = newRadiusX;
-        let newRadiusYCalc = newRadiusY;
-        
-        // Snap X (Right)
+    } else if (this.selectedArea === "BottomRight") {
+      let newWidth = mouse.x - this.x;
+      let newHeight = mouse.y - this.y;
+
+      if (newWidth > 0 && newHeight > 0) {
+        // Snap X (Right side)
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const xCoor = objects[i].whereToSnap().x;
           for (let e = 0; e < xCoor.length; e++) {
-            if (Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) < thresholds.pthreshold()) {
-              newRadiusXCalc = xCoor[e] - this.x;
-              snapX = true;
+            if (
+              Math.abs(xCoor[e] - (this.x + newWidth)) < thresholds.pthreshold()
+            ) {
+              newWidth = xCoor[e] - this.x;
               break;
             }
           }
-          if (snapX) break;
         }
-        
-        // Snap Y (Bottom)
+
+        // Snap Y (Bottom side)
         for (let i = objects.length - 1; i >= 0; i--) {
           if (objects[i] === this) continue;
           const yCoor = objects[i].whereToSnap().y;
           for (let e = 0; e < yCoor.length; e++) {
-            if (Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) < thresholds.pthreshold()) {
-              newRadiusYCalc = yCoor[e] - this.y;
-              snapY = true;
+            if (
+              Math.abs(yCoor[e] - (this.y + newHeight)) <
+              thresholds.pthreshold()
+            ) {
+              newHeight = yCoor[e] - this.y;
               break;
             }
           }
-          if (snapY) break;
         }
-        
-        this.radiusX = newRadiusXCalc;
-        this.radiusY = newRadiusYCalc;
-      }
-    } 
-    else if (this.selectedArea === "Selected") {
-      this.x += mouse.x - lastMouseX;
-      this.y += mouse.y - lastMouseY;
-      if (this.clips.length > 0) {
-        this.clips.forEach((clip) =>
-          clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
-        );
+
+        this.width = newWidth;
+        this.height = newHeight;
       }
     }
-    
-    this.radiusX = this.radiusX <= 0 ? 0 : this.radiusX;
-    this.radiusY = this.radiusY <= 0 ? 0 : this.radiusY;
+
+    // Ensure positive dimensions
+    this.width = this.width <= 0 ? 0 : this.width;
+    this.height = this.height <= 0 ? 0 : this.height;
   }
-}
+  circFormat(mouse, x, y) {
+    if (this.isDoubleClicked) {
+      this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x) - Math.PI / 2;
+    } else {
+      if (this.selectedArea === "Left") {
+        let snap = false;
+        const newRadiusX = this.radiusX + (x - mouse.x);
+        if (newRadiusX > 0) {
+          this.radiusX = newRadiusX;
+          let newX = mouse.x;
+          let newWidthCalc = this.radiusX;
+
+          // Snap logic for Left
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const xCoor = objects[i].whereToSnap().x;
+            for (let e = 0; e < xCoor.length; e++) {
+              if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
+                const difference = xCoor[e] - newX;
+                newX = xCoor[e];
+                newWidthCalc = newRadiusX - difference;
+                snap = true;
+                break;
+              }
+            }
+            if (snap) break;
+          }
+          this.radiusX = newWidthCalc;
+        }
+      } else if (this.selectedArea === "Right") {
+        let snap = false;
+        const newRadiusX = mouse.x - this.x;
+        if (newRadiusX > 0) {
+          let newRadiusCalc = newRadiusX;
+
+          // Snap logic for Right
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const xCoor = objects[i].whereToSnap().x;
+            for (let e = 0; e < xCoor.length; e++) {
+              if (
+                Math.abs(xCoor[e] - (this.x + newRadiusCalc)) <
+                thresholds.pthreshold()
+              ) {
+                newRadiusCalc = xCoor[e] - this.x;
+                snap = true;
+                break;
+              }
+            }
+            if (snap) break;
+          }
+          this.radiusX = newRadiusCalc;
+        }
+      } else if (this.selectedArea === "Top") {
+        let snap = false;
+        const newRadiusY = this.radiusY + (y - mouse.y);
+        if (newRadiusY > 0) {
+          this.radiusY = newRadiusY;
+          let newY = mouse.y;
+          let newHeightCalc = this.radiusY;
+
+          // Snap logic for Top
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const yCoor = objects[i].whereToSnap().y;
+            for (let e = 0; e < yCoor.length; e++) {
+              if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
+                const difference = yCoor[e] - newY;
+                newY = yCoor[e];
+                newHeightCalc = newRadiusY - difference;
+                snap = true;
+                break;
+              }
+            }
+            if (snap) break;
+          }
+          this.radiusY = newHeightCalc;
+        }
+      } else if (this.selectedArea === "Bottom") {
+        let snap = false;
+        const newRadiusY = mouse.y - this.y;
+        if (newRadiusY > 0) {
+          let newRadiusCalc = newRadiusY;
+
+          // Snap logic for Bottom
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const yCoor = objects[i].whereToSnap().y;
+            for (let e = 0; e < yCoor.length; e++) {
+              if (
+                Math.abs(yCoor[e] - (this.y + newRadiusCalc)) <
+                thresholds.pthreshold()
+              ) {
+                newRadiusCalc = yCoor[e] - this.y;
+                snap = true;
+                break;
+              }
+            }
+            if (snap) break;
+          }
+          this.radiusY = newRadiusCalc;
+        }
+      } else if (this.selectedArea === "TopLeft") {
+        let snapX = false,
+          snapY = false;
+        const newRadiusX = this.radiusX + (x - mouse.x);
+        const newRadiusY = this.radiusY + (y - mouse.y);
+
+        if (newRadiusX > 0 && newRadiusY > 0) {
+          let newX = mouse.x;
+          let newY = mouse.y;
+          let newRadiusXCalc = newRadiusX;
+          let newRadiusYCalc = newRadiusY;
+
+          // Snap X (Left)
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const xCoor = objects[i].whereToSnap().x;
+            for (let e = 0; e < xCoor.length; e++) {
+              if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
+                const difference = xCoor[e] - newX;
+                newX = xCoor[e];
+                newRadiusXCalc = newRadiusX - difference;
+                snapX = true;
+                break;
+              }
+            }
+            if (snapX) break;
+          }
+
+          // Snap Y (Top)
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const yCoor = objects[i].whereToSnap().y;
+            for (let e = 0; e < yCoor.length; e++) {
+              if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
+                const difference = yCoor[e] - newY;
+                newY = yCoor[e];
+                newRadiusYCalc = newRadiusY - difference;
+                snapY = true;
+                break;
+              }
+            }
+            if (snapY) break;
+          }
+
+          this.radiusX = newRadiusXCalc;
+          this.radiusY = newRadiusYCalc;
+        }
+      } else if (this.selectedArea === "TopRight") {
+        let snapY = false;
+        const newRadiusX = mouse.x - this.x;
+        const newRadiusY = this.radiusY + (y - mouse.y);
+
+        if (newRadiusX > 0 && newRadiusY > 0) {
+          let newY = mouse.y;
+          let newRadiusXCalc = newRadiusX;
+          let newRadiusYCalc = newRadiusY;
+
+          // Snap X (Right)
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const xCoor = objects[i].whereToSnap().x;
+            for (let e = 0; e < xCoor.length; e++) {
+              if (
+                Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) <
+                thresholds.pthreshold()
+              ) {
+                newRadiusXCalc = xCoor[e] - this.x;
+                snapY = true;
+                break;
+              }
+            }
+            if (snapY) break;
+          }
+
+          // Snap Y (Top)
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const yCoor = objects[i].whereToSnap().y;
+            for (let e = 0; e < yCoor.length; e++) {
+              if (Math.abs(yCoor[e] - newY) < thresholds.pthreshold()) {
+                const difference = yCoor[e] - newY;
+                newY = yCoor[e];
+                newRadiusYCalc = newRadiusY - difference;
+                snapY = true;
+                break;
+              }
+            }
+            if (snapY) break;
+          }
+
+          this.radiusX = newRadiusXCalc;
+          this.radiusY = newRadiusYCalc;
+        }
+      } else if (this.selectedArea === "BottomLeft") {
+        let snapX = false;
+        const newRadiusX = this.radiusX + (x - mouse.x);
+        const newRadiusY = mouse.y - this.y;
+
+        if (newRadiusX > 0 && newRadiusY > 0) {
+          let newX = mouse.x;
+          let newRadiusXCalc = newRadiusX;
+          let newRadiusYCalc = newRadiusY;
+
+          // Snap X (Left)
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const xCoor = objects[i].whereToSnap().x;
+            for (let e = 0; e < xCoor.length; e++) {
+              if (Math.abs(xCoor[e] - newX) < thresholds.pthreshold()) {
+                const difference = xCoor[e] - newX;
+                newX = xCoor[e];
+                newRadiusXCalc = newRadiusX - difference;
+                snapX = true;
+                break;
+              }
+            }
+            if (snapX) break;
+          }
+
+          // Snap Y (Bottom)
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const yCoor = objects[i].whereToSnap().y;
+            for (let e = 0; e < yCoor.length; e++) {
+              if (
+                Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) <
+                thresholds.pthreshold()
+              ) {
+                newRadiusYCalc = yCoor[e] - this.y;
+                snapX = true;
+                break;
+              }
+            }
+            if (snapX) break;
+          }
+
+          this.radiusX = newRadiusXCalc;
+          this.radiusY = newRadiusYCalc;
+        }
+      } else if (this.selectedArea === "BottomRight") {
+        let snapX = false,
+          snapY = false;
+        const newRadiusX = mouse.x - this.x;
+        const newRadiusY = mouse.y - this.y;
+
+        if (newRadiusX > 0 && newRadiusY > 0) {
+          let newRadiusXCalc = newRadiusX;
+          let newRadiusYCalc = newRadiusY;
+
+          // Snap X (Right)
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const xCoor = objects[i].whereToSnap().x;
+            for (let e = 0; e < xCoor.length; e++) {
+              if (
+                Math.abs(xCoor[e] - (this.x + newRadiusXCalc)) <
+                thresholds.pthreshold()
+              ) {
+                newRadiusXCalc = xCoor[e] - this.x;
+                snapX = true;
+                break;
+              }
+            }
+            if (snapX) break;
+          }
+
+          // Snap Y (Bottom)
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i] === this) continue;
+            const yCoor = objects[i].whereToSnap().y;
+            for (let e = 0; e < yCoor.length; e++) {
+              if (
+                Math.abs(yCoor[e] - (this.y + newRadiusYCalc)) <
+                thresholds.pthreshold()
+              ) {
+                newRadiusYCalc = yCoor[e] - this.y;
+                snapY = true;
+                break;
+              }
+            }
+            if (snapY) break;
+          }
+
+          this.radiusX = newRadiusXCalc;
+          this.radiusY = newRadiusYCalc;
+        }
+      } else if (this.selectedArea === "Selected") {
+        this.x += mouse.x - lastMouseX;
+        this.y += mouse.y - lastMouseY;
+        if (this.clips.length > 0) {
+          this.clips.forEach((clip) =>
+            clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
+          );
+        }
+      }
+
+      this.radiusX = this.radiusX <= 0 ? 0 : this.radiusX;
+      this.radiusY = this.radiusY <= 0 ? 0 : this.radiusY;
+    }
+  }
 }
 class Rectangle extends Formats {
   constructor(x, y, width, height) {
@@ -1595,7 +1627,7 @@ class Rectangle extends Formats {
     ];
     this.selectedLineIndex = null;
     this.mode = "edit";
-    this.previousSnap = {x:null,y:null}
+    this.previousSnap = { x: null, y: null };
   }
   addObject() {
     const xs = this.points.map((p) => p.points.x);
@@ -1855,13 +1887,13 @@ class Rectangle extends Formats {
 
           return true;
         }
-        if(Math.abs(localMouseX- this.maxX) < thresholds.threshold()){
-          this.selectedArea = "scaleR"
-          return true
+        if (Math.abs(localMouseX - this.maxX) < thresholds.threshold()) {
+          this.selectedArea = "scaleR";
+          return true;
         }
-        if(Math.abs(localMouseY- this.maxY) < thresholds.threshold()){
-          this.selectedArea = "scaleB"
-          return true
+        if (Math.abs(localMouseY - this.maxY) < thresholds.threshold()) {
+          this.selectedArea = "scaleB";
+          return true;
         }
         ctx.save();
         ctx.setTransform(scale, 0, 0, scale, panX, panY);
@@ -1898,7 +1930,7 @@ class Rectangle extends Formats {
 
       return this.selectedArea !== null;
     }
-    return false 
+    return false;
   }
   moveClip(x, y) {
     this.x += x;
@@ -1944,7 +1976,7 @@ class Rectangle extends Formats {
           p.controls[1].x = p.controls[1].x * scaleX;
           p.controls[1].y = p.controls[1].y * scaleY;
         });
-      }else if(this.selectedArea === "scaleR"){
+      } else if (this.selectedArea === "scaleR") {
         const lastWidth = lastMouseX - this.x;
         const currentWidth = mouse.x - this.x;
         const scaleX = currentWidth / lastWidth;
@@ -1953,15 +1985,14 @@ class Rectangle extends Formats {
           p.controls[0].x = p.controls[0].x * scaleX;
           p.controls[1].x = p.controls[1].x * scaleX;
         });
-      } else if(this.selectedArea === "scaleB"){
+      } else if (this.selectedArea === "scaleB") {
         const lastHeight = lastMouseY - this.y;
         const currentHeight = mouse.y - this.y;
         const scaleY = currentHeight / lastHeight;
         this.points.forEach((p) => {
           p.points.y = p.points.y * scaleY;
         });
-      }
-       else {
+      } else {
         if (this.roundedOrbeveled !== "shaped") {
           super.rectFormat(mouse);
         }
@@ -1970,7 +2001,7 @@ class Rectangle extends Formats {
           this.y += mouse.y - lastMouseY;
           if (this.clips.length > 0) {
             this.clips.forEach((clip) =>
-              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY)
+              clip.moveClip(mouse.x - lastMouseX, mouse.y - lastMouseY),
             );
           }
         }
@@ -2239,7 +2270,7 @@ class Rectangle extends Formats {
 
     if (e.target.type === "number") {
       let value = backValues(Number(e.target.value) || 0);
-      value= value <= 0 ? 0 : value 
+      value = value <= 0 ? 0 : value;
       if (name === "outlineThickness") this.outlineThickness = value;
 
       if (name === "x") {
@@ -2344,46 +2375,46 @@ class Rectangle extends Formats {
     ctx.closePath();
   }
   whereToSnap() {
-
     if (this.roundedOrbeveled === "shaped") {
-let minX = Infinity, maxX = -Infinity;
-let minY = Infinity, maxY = -Infinity;
-const worldPoints = this.points.map(p => this.pointToWorld(p.points));
-worldPoints.forEach(p => {
-  if (p.x < minX) minX = p.x;
-  if (p.x > maxX) maxX = p.x;
-  if (p.y < minY) minY = p.y;
-  if (p.y > maxY) maxY = p.y;
-});
-let newWidth = maxX - minX;
-let newHeight = maxY - minY;
+      let minX = Infinity,
+        maxX = -Infinity;
+      let minY = Infinity,
+        maxY = -Infinity;
+      const worldPoints = this.points.map((p) => this.pointToWorld(p.points));
+      worldPoints.forEach((p) => {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      });
+      let newWidth = maxX - minX;
+      let newHeight = maxY - minY;
 
-return {
-  x: [minX, minX + newWidth / 2, maxX],
-  y: [minY, minY + newHeight / 2, maxY],
-  pos: {
-    x: minX,
-    y: minY,
-    width: newWidth,
-    height: newHeight,
-  },
-};
+      return {
+        x: [minX, minX + newWidth / 2, maxX],
+        y: [minY, minY + newHeight / 2, maxY],
+        pos: {
+          x: minX,
+          y: minY,
+          width: newWidth,
+          height: newHeight,
+        },
+      };
     }
-        let cos = Math.cos(this.angle);
-let sin = Math.sin(this.angle);
+    let cos = Math.cos(this.angle);
+    let sin = Math.sin(this.angle);
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
-let newWidth  = Math.abs(this.width * cos) + Math.abs(this.height * sin);
-let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
-let rectx = centerX - newWidth / 2;
-let recty = centerY - newHeight /2 
+    let newWidth = Math.abs(this.width * cos) + Math.abs(this.height * sin);
+    let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
+    let rectx = centerX - newWidth / 2;
+    let recty = centerY - newHeight / 2;
     return {
       x: [rectx, rectx + newWidth / 2, rectx + newWidth],
       y: [recty, recty + newHeight / 2, recty + newHeight],
       pos: { x: rectx, y: recty, width: newWidth, height: newHeight },
     };
   }
-
 
   changeLocation(value, type) {
     if (type === "x") {
@@ -2600,7 +2631,6 @@ class Ellipse extends Formats {
       thresholds.threshold(),
     );
     return this.selectedArea !== null;
-
   }
   moveClip(x, y) {
     this.x += x;
@@ -2742,7 +2772,7 @@ class Ellipse extends Formats {
 
     if (e.target.type === "number") {
       let value = backValues(Number(e.target.value) || 0);
-      value= value <= 0 ? 0 : value 
+      value = value <= 0 ? 0 : value;
       if (!isNaN(value) && value !== null) {
         if (name === "x") {
           this.x = value + this.radiusX;
@@ -2791,19 +2821,19 @@ class Ellipse extends Formats {
     return true;
   }
   whereToSnap() {
-let cos = Math.cos(this.angle);
-let sin = Math.sin(this.angle);
+    let cos = Math.cos(this.angle);
+    let sin = Math.sin(this.angle);
 
-let rx = this.radiusX;
-let ry = this.radiusY;
+    let rx = this.radiusX;
+    let ry = this.radiusY;
 
-let newWidth  = 2 * Math.sqrt((rx * cos) ** 2 + (ry * sin) ** 2);
-let newHeight = 2 * Math.sqrt((rx * sin) ** 2 + (ry * cos) ** 2);
-let centerX = this.x ;
-let centerY = this.y ;
+    let newWidth = 2 * Math.sqrt((rx * cos) ** 2 + (ry * sin) ** 2);
+    let newHeight = 2 * Math.sqrt((rx * sin) ** 2 + (ry * cos) ** 2);
+    let centerX = this.x;
+    let centerY = this.y;
 
-let rectx = centerX - newWidth / 2;
-let recty = centerY - newHeight / 2;
+    let rectx = centerX - newWidth / 2;
+    let recty = centerY - newHeight / 2;
     return {
       x: [rectx, rectx + newWidth / 2, rectx + newWidth],
       y: [recty, recty + newHeight / 2, recty + newHeight],
@@ -3032,13 +3062,13 @@ class Polygon extends Formats {
         this.selectedArea = "scale";
         return true;
       }
-      if(Math.abs(localX- this.maxX) < thresholds.threshold()){
-        this.selectedArea = "scaleR"
-        return true
+      if (Math.abs(localX - this.maxX) < thresholds.threshold()) {
+        this.selectedArea = "scaleR";
+        return true;
       }
-      if(Math.abs(localY- this.maxY) < thresholds.threshold()){
-        this.selectedArea = "scaleB"
-        return true
+      if (Math.abs(localY - this.maxY) < thresholds.threshold()) {
+        this.selectedArea = "scaleB";
+        return true;
       }
       ctx.save();
 
@@ -3131,8 +3161,7 @@ class Polygon extends Formats {
         p.controls[1].x = p.controls[1].x * scaleX;
         p.controls[1].y = p.controls[1].y * scaleY;
       });
-    }
-    else if(this.selectedArea === "scaleR"){
+    } else if (this.selectedArea === "scaleR") {
       const lastWidth = lastMouseX - this.x;
       const currentWidth = mouse.x - this.x;
       const scaleX = currentWidth / lastWidth;
@@ -3141,7 +3170,7 @@ class Polygon extends Formats {
         p.controls[0].x = p.controls[0].x * scaleX;
         p.controls[1].x = p.controls[1].x * scaleX;
       });
-    } else if(this.selectedArea === "scaleB"){
+    } else if (this.selectedArea === "scaleB") {
       const lastHeight = lastMouseY - this.y;
       const currentHeight = mouse.y - this.y;
       const scaleY = currentHeight / lastHeight;
@@ -3295,7 +3324,7 @@ ${super.similarProptiesOutput()}
 
     if (e.target.type === "number") {
       let value = backValues(Number(e.target.value) || 0);
-value= value <= 0 ? 0 : value 
+      value = value <= 0 ? 0 : value;
       if (name === "x") {
         this.x = value - this.minX;
       }
@@ -3395,28 +3424,30 @@ value= value <= 0 ? 0 : value
     }
   }
   whereToSnap() {
-let minX = Infinity, maxX = -Infinity;
-let minY = Infinity, maxY = -Infinity;
-const worldPoints = this.points.map(p => this.pointToWorld(p.points));
-worldPoints.forEach(p => {
-  if (p.x < minX) minX = p.x;
-  if (p.x > maxX) maxX = p.x;
-  if (p.y < minY) minY = p.y;
-  if (p.y > maxY) maxY = p.y;
-});
-let newWidth = maxX - minX;
-let newHeight = maxY - minY;
+    let minX = Infinity,
+      maxX = -Infinity;
+    let minY = Infinity,
+      maxY = -Infinity;
+    const worldPoints = this.points.map((p) => this.pointToWorld(p.points));
+    worldPoints.forEach((p) => {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    });
+    let newWidth = maxX - minX;
+    let newHeight = maxY - minY;
 
-return {
-  x: [minX, minX + newWidth / 2, maxX],
-  y: [minY, minY + newHeight / 2, maxY],
-  pos: {
-    x: minX,
-    y: minY,
-    width: newWidth,
-    height: newHeight,
-  },
-};
+    return {
+      x: [minX, minX + newWidth / 2, maxX],
+      y: [minY, minY + newHeight / 2, maxY],
+      pos: {
+        x: minX,
+        y: minY,
+        width: newWidth,
+        height: newHeight,
+      },
+    };
   }
 
   changeLocation(value, type) {
@@ -3633,13 +3664,13 @@ class Line extends Formats {
 
         return true;
       }
-      if(Math.abs(localX- this.maxX) < thresholds.threshold()){
-        this.selectedArea = "scaleR"
-        return true
+      if (Math.abs(localX - this.maxX) < thresholds.threshold()) {
+        this.selectedArea = "scaleR";
+        return true;
       }
-      if(Math.abs(localY- this.maxY) < thresholds.threshold()){
-        this.selectedArea = "scaleB"
-        return true
+      if (Math.abs(localY - this.maxY) < thresholds.threshold()) {
+        this.selectedArea = "scaleB";
+        return true;
       }
       ctx.save();
       ctx.translate(this.x, this.y);
@@ -3725,7 +3756,7 @@ class Line extends Formats {
           p.controls[1].x = p.controls[1].x * scaleX;
           p.controls[1].y = p.controls[1].y * scaleY;
         });
-      }else if(this.selectedArea === "scaleR"){
+      } else if (this.selectedArea === "scaleR") {
         const lastWidth = lastMouseX - this.x;
         const currentWidth = mouse.x - this.x;
         const scaleX = currentWidth / lastWidth;
@@ -3734,7 +3765,7 @@ class Line extends Formats {
           p.controls[0].x = p.controls[0].x * scaleX;
           p.controls[1].x = p.controls[1].x * scaleX;
         });
-      } else if(this.selectedArea === "scaleB"){
+      } else if (this.selectedArea === "scaleB") {
         const lastHeight = lastMouseY - this.y;
         const currentHeight = mouse.y - this.y;
         const scaleY = currentHeight / lastHeight;
@@ -3928,7 +3959,7 @@ class Line extends Formats {
     }
     if (e.target.type === "number") {
       let value = backValues(parseFloat(e.target.value));
-      value= value <= 0 ? 0 : value 
+      value = value <= 0 ? 0 : value;
       if (name === "x") {
         this.x = value - this.minX;
       } else if (name === "y") {
@@ -3964,28 +3995,30 @@ class Line extends Formats {
     redoObject.length = 0;
   }
   whereToSnap() {
- let minX = Infinity, maxX = -Infinity;
-let minY = Infinity, maxY = -Infinity;
-const worldPoints = this.points.map(p => this.pointToWorld(p.points));
-worldPoints.forEach(p => {
-  if (p.x < minX) minX = p.x;
-  if (p.x > maxX) maxX = p.x;
-  if (p.y < minY) minY = p.y;
-  if (p.y > maxY) maxY = p.y;
-});
-let newWidth = maxX - minX;
-let newHeight = maxY - minY;
+    let minX = Infinity,
+      maxX = -Infinity;
+    let minY = Infinity,
+      maxY = -Infinity;
+    const worldPoints = this.points.map((p) => this.pointToWorld(p.points));
+    worldPoints.forEach((p) => {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    });
+    let newWidth = maxX - minX;
+    let newHeight = maxY - minY;
 
-return {
-  x: [minX, minX + newWidth / 2, maxX],
-  y: [minY, minY + newHeight / 2, maxY],
-  pos: {
-    x: minX,
-    y: minY,
-    width: newWidth,
-    height: newHeight,
-  },
-};
+    return {
+      x: [minX, minX + newWidth / 2, maxX],
+      y: [minY, minY + newHeight / 2, maxY],
+      pos: {
+        x: minX,
+        y: minY,
+        width: newWidth,
+        height: newHeight,
+      },
+    };
   }
   changeLocation(value, type) {
     if (type === "x") {
@@ -4028,8 +4061,8 @@ class TextBox extends Formats {
     this.fontStyle = "normal";
     this.width = 0;
     this.maintainedWidth = 0;
-    this.originalText = ""
-    this.originalFontSize = ""
+    this.originalText = "";
+    this.originalFontSize = "";
     this.originalPosition = { x: this.x, y: this.y };
     this.height = 0;
     this.textAllign = "left";
@@ -4043,7 +4076,7 @@ class TextBox extends Formats {
     this.outline = false;
     this.colorFill = "uniform";
     this.formatIterated = "none";
-    this.iterateAllign = "left"
+    this.iterateAllign = "left";
   }
   addObject() {
     if (this.isDoubleClicked) {
@@ -4379,68 +4412,72 @@ class TextBox extends Formats {
 
     </section>
   `;
-  document.querySelector(".font-imports input").addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if(!file) return
+    document
+      .querySelector(".font-imports input")
+      .addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-      try {
-    // Get font name from file
-    const fileName = file.name;
-    const fontNames = JSON.parse(localStorage.getItem("fontNames")) || [];
-      if(fontNames.includes(fileName)){
-        notify("Font already imported");
-return
-      } 
+        try {
+          // Get font name from file
+          const fileName = file.name;
+          const fontNames = JSON.parse(localStorage.getItem("fontNames")) || [];
+          if (fontNames.includes(fileName)) {
+            notify("Font already imported");
+            return;
+          }
 
-    const fileExt = fileName.substring(fileName.lastIndexOf('.'));
-    const fontFamily = null || fileName.replace(fileExt, '');
-    
-    // Read file directly (no fetch needed!)
-    const reader = new FileReader();
-    const fontData = await new Promise((resolve, reject) => {
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file); // Direct file read, not fetch
-    });
-    const fontFormat = getFormatFromExtension(fileExt);
- // Set the font family to the newly imported font
-    
-    // Store in IndexedDB
-    await db.collection('fonts').add({
-      id: fontFamily,
-      fontFamily: fontFamily,
-      fontData: fontData,  // Complete font data from file
-      fontFormat: fontFormat,
-      timestamp: (new Date()).getTime(),
-      fileName: fileName,   // Store original filename
-      fileSize: file.size   // Store size for info
-    });
-    
-    console.log(`Font ${fontFamily} stored successfully from uploaded file`);
-    localStorage.setItem("fontNames", JSON.stringify([...fontNames, fontFamily]));
+          const fileExt = fileName.substring(fileName.lastIndexOf("."));
+          const fontFamily = null || fileName.replace(fileExt, "");
 
-          const style = document.createElement('style');
-      const fontCSS = `
+          // Read file directly (no fetch needed!)
+          const reader = new FileReader();
+          const fontData = await new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error("Failed to read file"));
+            reader.readAsDataURL(file); // Direct file read, not fetch
+          });
+          const fontFormat = getFormatFromExtension(fileExt);
+          // Set the font family to the newly imported font
+
+          // Store in IndexedDB
+          await db.collection("fonts").add({
+            id: fontFamily,
+            fontFamily: fontFamily,
+            fontData: fontData, // Complete font data from file
+            fontFormat: fontFormat,
+            timestamp: new Date().getTime(),
+            fileName: fileName, // Store original filename
+            fileSize: file.size, // Store size for info
+          });
+
+          console.log(
+            `Font ${fontFamily} stored successfully from uploaded file`,
+          );
+          localStorage.setItem(
+            "fontNames",
+            JSON.stringify([...fontNames, fontFamily]),
+          );
+
+          const style = document.createElement("style");
+          const fontCSS = `
         @font-face {
           font-family: '${fontFamily}';
           src: url('${fontData}') format('${fontFormat}');
           font-display: swap;
         }
       `;
-      style.textContent = fontCSS;
-      document.head.appendChild(style);
-      this.fontFamily = fontFamily;  
-      defaultFonts.push(fontFamily);
-                  this.fonts = [];
-            this.formatProperties();
-         requestDraw();
-
-
-  } catch (error) {
-    console.error('Error storing font:', error);
-  }
-
-  })
+          style.textContent = fontCSS;
+          document.head.appendChild(style);
+          this.fontFamily = fontFamily;
+          defaultFonts.push(fontFamily);
+          this.fonts = [];
+          this.formatProperties();
+          requestDraw();
+        } catch (error) {
+          console.error("Error storing font:", error);
+        }
+      });
 
     super.similarPropties();
     // Bind inputs
@@ -4534,29 +4571,28 @@ return
           div.addEventListener("click", async () => {
             this.fontFamily = div.textContent;
             if (!defaultFonts.includes(this.fontFamily)) {
-              
-    const result = await db.collection('fonts')
-      .doc({ id: this.fontFamily })
-      .get();
-        if (result && result.fontData) {
-      // Create dynamic @font-face rule
-      const style = document.createElement('style');
-      const fontCSS = `
+              const result = await db
+                .collection("fonts")
+                .doc({ id: this.fontFamily })
+                .get();
+              if (result && result.fontData) {
+                // Create dynamic @font-face rule
+                const style = document.createElement("style");
+                const fontCSS = `
         @font-face {
           font-family: '${result.fontFamily}';
           src: url('${result.fontData}') format('${result.fontFormat}');
           font-display: swap;
         }
       `;
-      style.textContent = fontCSS;
-      document.head.appendChild(style);
-      
-      console.log(`Font ${fontFamily} loaded from IndexedDB`);
-    }
-    else{
-      notify("Font not found in database");
-      this.fontFamily = "sans-serif";
-    }
+                style.textContent = fontCSS;
+                document.head.appendChild(style);
+
+                console.log(`Font ${fontFamily} loaded from IndexedDB`);
+              } else {
+                notify("Font not found in database");
+                this.fontFamily = "sans-serif";
+              }
               defaultFonts.push(this.fontFamily);
             }
             requestDraw();
@@ -4604,94 +4640,93 @@ return
     requestDraw();
   }
 
-doubleClicked(mouse) {
-  const padding = () => adapt(5)
+  doubleClicked(mouse) {
+    const padding = () => adapt(5);
     const rect = reverseMousePos(canvas, {
-        x: this.whereToSnap().pos.x - (padding() * 2),
-        y: this.whereToSnap().pos.y - (padding() * 2),
+      x: this.whereToSnap().pos.x - padding() * 2,
+      y: this.whereToSnap().pos.y - padding() * 2,
     });
-    
+
     this.isDoubleClicked = true;
     // Create or reuse a hidden measuring element
     if (!this.measurer) {
-
-        this.measurer = document.createElement('div');
-        this.measurer.style.position = 'absolute';
-        this.measurer.style.visibility = 'hidden';
-        this.measurer.style.height = 'auto';
-        this.measurer.style.width = 'auto';
-        this.measurer.style.whiteSpace = 'pre-wrap';
-        this.measurer.style.wordWrap = 'break-word';
-        document.body.appendChild(this.measurer);
+      this.measurer = document.createElement("div");
+      this.measurer.style.position = "absolute";
+      this.measurer.style.visibility = "hidden";
+      this.measurer.style.height = "auto";
+      this.measurer.style.width = "auto";
+      this.measurer.style.whiteSpace = "pre-wrap";
+      this.measurer.style.wordWrap = "break-word";
+      document.body.appendChild(this.measurer);
     }
-    
+
     // Copy all text styles to measurer
-    this.measurer.style.fontSize = `${(this.fontSize) / scaleRatio}px`;
+    this.measurer.style.fontSize = `${this.fontSize / scaleRatio}px`;
     this.measurer.style.fontFamily = this.fontFamily;
     this.measurer.style.fontStyle = this.fontStyle;
     this.measurer.style.fontWeight = this.fontStyle;
-    this.measurer.style.lineHeight = `${(this.lineHeight) / scaleRatio}px`;
+    this.measurer.style.lineHeight = `${this.lineHeight / scaleRatio}px`;
     this.measurer.style.padding = `${adapt(5)}px`;
-    this.measurer.style.boxSizing = 'border-box';
-    
+    this.measurer.style.boxSizing = "border-box";
+
     // Measure text
-    this.measurer.textContent = this.text || ' ';
+    this.measurer.textContent = this.text || " ";
     const measuredWidth = this.measurer.offsetWidth;
     const measuredHeight = this.measurer.offsetHeight;
-    
+
     // Setup textarea
     this.textPlace.value = this.text.trim();
     this.textPlace.classList.add("textArea");
     this.textPlace.style.position = "absolute";
     this.textPlace.style.left = `${rect.x}px`;
     this.textPlace.style.top = `${rect.y}px`;
-    this.textPlace.style.border = `${(thresholds.slineWidth()) / scaleRatio}px dashed ${thresholds.sColor}`;
-    this.textPlace.style.fontSize = `${(this.fontSize) / scaleRatio}px`;
+    this.textPlace.style.border = `${thresholds.slineWidth() / scaleRatio}px dashed ${thresholds.sColor}`;
+    this.textPlace.style.fontSize = `${this.fontSize / scaleRatio}px`;
     this.textPlace.style.fontFamily = this.fontFamily;
     this.textPlace.style.fontStyle = this.fontStyle;
     this.textPlace.style.fontWeight = this.fontWeight;
     this.textPlace.style.textAlign = this.textAllign;
-    this.textPlace.style.lineHeight = `${(this.lineHeight) / scaleRatio}px`;
+    this.textPlace.style.lineHeight = `${this.lineHeight / scaleRatio}px`;
     this.textPlace.style.color = this.color[0];
-    this.textPlace.style.boxSizing = 'border-box';
+    this.textPlace.style.boxSizing = "border-box";
     this.textPlace.style.padding = `${padding()}px`;
-    this.textPlace.style.overflow = 'hidden';
-    this.textPlace.style.resize = 'none';
-    this.textPlace.style.whiteSpace = 'pre-wrap';
-    this.textPlace.style.wordWrap = 'break-word';
-    
+    this.textPlace.style.overflow = "hidden";
+    this.textPlace.style.resize = "none";
+    this.textPlace.style.whiteSpace = "pre-wrap";
+    this.textPlace.style.wordWrap = "break-word";
+
     // Set exact width based on measurement
     this.textPlace.style.width = `${Math.max(measuredWidth, adapt(10)) + adapt(2)}px`;
     this.textPlace.style.height = `${Math.max(measuredHeight, adapt(5)) + adapt(2)}px`;
-    
+
     canvass.appendChild(this.textPlace);
     this.textPlace.focus();
     this.textPlace.select();
-    
+
     // Input handler using measurer
     if (this.inputHandler) {
-        this.textPlace.removeEventListener('input', this.inputHandler);
+      this.textPlace.removeEventListener("input", this.inputHandler);
     }
-    
+
     this.inputHandler = (e) => {
-        this.text = e.target.value;
-        
-        // Update measurer with new text
-        this.measurer.textContent = this.text || ' ';
-        
-        // Get dimensions from measurer (not the textarea)
-        const newWidth = this.measurer.offsetWidth;
-        const newHeight = this.measurer.offsetHeight;
-        
-        // Apply to textarea
-        this.textPlace.style.width = `${Math.max(newWidth, adapt(10)) + adapt(2)}px`;
-        this.textPlace.style.height = `${Math.max(newHeight, adapt(5)) + adapt(2)}px`;
-        this.formatProperties()
-        requestDraw();
+      this.text = e.target.value;
+
+      // Update measurer with new text
+      this.measurer.textContent = this.text || " ";
+
+      // Get dimensions from measurer (not the textarea)
+      const newWidth = this.measurer.offsetWidth;
+      const newHeight = this.measurer.offsetHeight;
+
+      // Apply to textarea
+      this.textPlace.style.width = `${Math.max(newWidth, adapt(10)) + adapt(2)}px`;
+      this.textPlace.style.height = `${Math.max(newHeight, adapt(5)) + adapt(2)}px`;
+      this.formatProperties();
+      requestDraw();
     };
-    
+
     this.textPlace.addEventListener("input", this.inputHandler);
-}
+  }
   backToDefault() {
     this.fontSize = this.originalFontSize;
     this.text = this.originalText;
@@ -4715,13 +4750,13 @@ doubleClicked(mouse) {
       ctx.textAlign = this.textAllign;
       ctx.textBaseline = "alphabetic";
       if (this.formatIterated === "shrinkToFit") {
-  const textWidth = ctx.measureText(texts[i]).width;
-  if (textWidth > this.maintainedWidth) {
-    const scale = this.maintainedWidth / textWidth;
-    this.fontSize *= scale;
-    this.text = texts[i];
-  }}
-      else if (this.formatIterated === "Fit") {
+        const textWidth = ctx.measureText(texts[i]).width;
+        if (textWidth > this.maintainedWidth) {
+          const scale = this.maintainedWidth / textWidth;
+          this.fontSize *= scale;
+          this.text = texts[i];
+        }
+      } else if (this.formatIterated === "Fit") {
         const textWidth = ctx.measureText(texts[i]).width;
         const scale = this.maintainedWidth / textWidth;
         this.fontSize *= scale > 0 ? scale : 1;
@@ -4768,26 +4803,29 @@ doubleClicked(mouse) {
       }
 
       if (this.iterateAllign === "center") {
-
-        this.x = this.originalPosition.x + this.maintainedWidth / 2 - ctx.measureText(this.text).width / 2;
+        this.x =
+          this.originalPosition.x +
+          this.maintainedWidth / 2 -
+          ctx.measureText(this.text).width / 2;
+      } else if (this.iterateAllign === "right") {
+        this.x =
+          this.originalPosition.x +
+          this.maintainedWidth -
+          ctx.measureText(this.text).width;
+      } else {
+        this.x = this.originalPosition.x;
       }
-      else if(this.iterateAllign === "right"){
-        this.x = this.originalPosition.x + this.maintainedWidth - ctx.measureText(this.text).width;
-      }
-    else{
-      this.x = this.originalPosition.x;
-    }
     }
   }
   whereToSnap() {
-        let cos = Math.cos(this.angle);
-let sin = Math.sin(this.angle);
+    let cos = Math.cos(this.angle);
+    let sin = Math.sin(this.angle);
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
-let newWidth  = Math.abs(this.width * cos) + Math.abs(this.height * sin);
-let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
-let rectx = centerX - newWidth / 2;
-let recty = centerY - newHeight /2 
+    let newWidth = Math.abs(this.width * cos) + Math.abs(this.height * sin);
+    let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
+    let rectx = centerX - newWidth / 2;
+    let recty = centerY - newHeight / 2;
     return {
       x: [rectx, rectx + newWidth / 2, rectx + newWidth],
       y: [recty, recty + newHeight / 2, recty + newHeight],
@@ -4810,21 +4848,20 @@ let recty = centerY - newHeight /2
 }
 function getFormatFromExtension(ext) {
   const formats = {
-    '.ttf': 'truetype',
-    '.otf': 'opentype',
-    '.woff': 'woff',
-    '.woff2': 'woff2'
+    ".ttf": "truetype",
+    ".otf": "opentype",
+    ".woff": "woff",
+    ".woff2": "woff2",
   };
-  return formats[ext.toLowerCase()] || 'truetype';
+  return formats[ext.toLowerCase()] || "truetype";
 }
 function getFontFormat(url) {
-  if (url.endsWith('.woff2')) return 'woff2';
-  if (url.endsWith('.woff')) return 'woff';
-  if (url.endsWith('.ttf')) return 'truetype';
-  if (url.endsWith('.otf')) return 'opentype';
-  return 'truetype';
+  if (url.endsWith(".woff2")) return "woff2";
+  if (url.endsWith(".woff")) return "woff";
+  if (url.endsWith(".ttf")) return "truetype";
+  if (url.endsWith(".otf")) return "opentype";
+  return "truetype";
 }
-
 
 class Images extends Formats {
   constructor(x, y, image, width, aspectRatio, originalFile, fileName) {
@@ -4839,10 +4876,11 @@ class Images extends Formats {
     this.image = image;
     this.selectedArea = null;
     this.originalFiles = [originalFile];
-    this.selectedFile= originalFile;
+    this.selectedFile = originalFile;
     this.maintainApect = false;
     this.clipped = "none";
     this.formatIterated = "maintainSize";
+    this.isConverted = false;
   }
   addObject() {
     ctx.save();
@@ -5022,25 +5060,28 @@ class Images extends Formats {
       });
     document.querySelectorAll(".iteratedsec > div").forEach((div, i) => {
       div.addEventListener("click", async () => {
-      const imageFiles = await db.collection(`img${formerName}`).doc({id:this.originalFiles[i]}).get()
-      const imageP  = imageFiles.image
-      URL.revokeObjectURL(this.image.url);
-      let newImg = new Image()
-      newImg.src = imageP
-      await new Promise((resolve,reject)=>{
-        newImg.onload = () =>{
-          this.image = newImg
-          this.selectedFile = this.originalFiles[i]
-          resolve(true)
-        }
-      })
+        const imageFiles = await db
+          .collection(`img${formerName}`)
+          .doc({ id: this.originalFiles[i] })
+          .get();
+        const imageP = imageFiles.image;
+        URL.revokeObjectURL(this.image.url);
+        let newImg = new Image();
+        newImg.src = imageP;
+        await new Promise((resolve, reject) => {
+          newImg.onload = () => {
+            this.image = newImg;
+            this.selectedFile = this.originalFiles[i];
+            resolve(true);
+          };
+        });
         requestDraw();
         this.formatProperties();
       });
 
       div.querySelector(".change").addEventListener("change", async (e) => {
-              const loader = new LoaderManager(1); // Set max items to 10
-loader.createLoader();
+        const loader = new LoaderManager(1); // Set max items to 10
+        loader.createLoader();
         const file = e.target.files[0];
         if (!file) return;
         const url = URL.createObjectURL(file);
@@ -5051,45 +5092,55 @@ loader.createLoader();
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = async () => {
-            await  db.collection(`img${formerName}`).doc({id:this.originalFiles[i]}).update({
-              image: reader.result,
-              entryDate: (new Date()).getTime()
-            })
-            if(this.selectedFile === this.originalFiles[i]){
-              this.image = img
+            await db
+              .collection(`img${formerName}`)
+              .doc({ id: this.originalFiles[i] })
+              .update({
+                image: reader.result,
+                entryDate: new Date().getTime(),
+              });
+            if (this.selectedFile === this.originalFiles[i]) {
+              this.image = img;
             }
-             loader.incrementOriginalState();
+            loader.incrementOriginalState();
             requestDraw();
             this.formatProperties();
 
-                    if(this.selectedFile !== this.originalFiles[i]){
-        URL.revokeObjectURL(url)
-      }
+            if (this.selectedFile !== this.originalFiles[i]) {
+              URL.revokeObjectURL(url);
+            }
           };
         };
-
       });
       div.querySelector(".del").addEventListener("click", async () => {
         if (this.originalFiles.length > 1) {
-        const deleteImage = this.originalFiles[i]
-        await db.collection(`img${formerName}`).doc({id:deleteImage}).delete()
+          const deleteImage = this.originalFiles[i];
+          await db
+            .collection(`img${formerName}`)
+            .doc({ id: deleteImage })
+            .delete();
           this.originalFiles.splice(i, 1);
-        if(deleteImage === this.selectedFile){
-        URL.revokeObjectURL(this.image.url)
-        const newIndex = i >= this.originalFiles.length ? this.originalFiles.length - 1 :i;
-        const newImageFiles = await  db.collection(`img${formerName}`).doc({id:this.originalFiles[newIndex]}).get()
-        const newImage = newImageFiles.image
-        await new Promise((resolve,reject)=>{
-        const img = new Image()
-        img.src = newImage
-        img.onload = ()=>{
-          this.image = img
-          this.selectedFile = this.originalFiles[newIndex]
-          resolve(true)
-        }
-        })
-
-        }
+          if (deleteImage === this.selectedFile) {
+            URL.revokeObjectURL(this.image.url);
+            const newIndex =
+              i >= this.originalFiles.length
+                ? this.originalFiles.length - 1
+                : i;
+            const newImageFiles = await db
+              .collection(`img${formerName}`)
+              .doc({ id: this.originalFiles[newIndex] })
+              .get();
+            const newImage = newImageFiles.image;
+            await new Promise((resolve, reject) => {
+              const img = new Image();
+              img.src = newImage;
+              img.onload = () => {
+                this.image = img;
+                this.selectedFile = this.originalFiles[newIndex];
+                resolve(true);
+              };
+            });
+          }
           requestDraw();
           this.formatProperties();
         }
@@ -5110,7 +5161,7 @@ loader.createLoader();
     });
     requestDraw();
   }
- async changeProperties(e) {
+  async changeProperties(e) {
     const name = e.target.name;
 
     if (name === "angle") {
@@ -5119,7 +5170,7 @@ loader.createLoader();
 
     if (e.target.type === "number") {
       let value = backValues(Number(e.target.value) || 0);
-value= value <= 0 ? 0 : value 
+      value = value <= 0 ? 0 : value;
       if (!isNaN(value) && value !== null) {
         if (name === "opacity") {
           this.opacity = Number(e.target.value) || 0;
@@ -5133,34 +5184,34 @@ value= value <= 0 ? 0 : value
 
     if (name === "iteratedFiles") {
       const loader = new LoaderManager(e.target.files.length); // Set max items to the number of selected files
-loader.createLoader();
-// Option 1: Use for...of loop (recommended)
-for (const file of Array.from(e.target.files)) {
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-      img.src = url;
-  await new Promise((resolve, reject) => {
-    img.onload = () => {
-      this.fileName.push(file.name);
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      
-      reader.onload = async () => {
-        const imageID = crypto.randomUUID();
-        await db.collection(`img${formerName}`).add({
-          id: imageID,
-          image: reader.result,
-          entryDate: (new Date()).getTime()
+      loader.createLoader();
+      // Option 1: Use for...of loop (recommended)
+      for (const file of Array.from(e.target.files)) {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = url;
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            this.fileName.push(file.name);
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+
+            reader.onload = async () => {
+              const imageID = crypto.randomUUID();
+              await db.collection(`img${formerName}`).add({
+                id: imageID,
+                image: reader.result,
+                entryDate: new Date().getTime(),
+              });
+              this.originalFiles.push(imageID);
+              loader.incrementOriginalState();
+              this.formatProperties();
+              URL.revokeObjectURL(url);
+              resolve(true);
+            };
+          };
         });
-        this.originalFiles.push(imageID);
-        loader.incrementOriginalState();
-        this.formatProperties();
-         URL.revokeObjectURL(url);
-        resolve(true);
-      };
-    };
-  });
-}
+      }
     }
 
     requestDraw();
@@ -5168,17 +5219,20 @@ for (const file of Array.from(e.target.files)) {
   async backToDefault() {
     this.width = this.originalWidth;
     this.height = this.originalHeight;
-       URL.revokeObjectURL(this.image.url);
-  const imageIterateFile =  await db.collection(`img${formerName}`).doc({id:this.selectedFile}).get()
-    let imageIterate = imageIterateFile.image
-    let img = new Image()
-    img.src = imageIterate
-    await new Promise((resolve,reject)=>{
-      img.onload = () =>{
-        this.image = img
-        resolve(true)
-      }
-    })
+    URL.revokeObjectURL(this.image.url);
+    const imageIterateFile = await db
+      .collection(`img${formerName}`)
+      .doc({ id: this.selectedFile })
+      .get();
+    let imageIterate = imageIterateFile.image;
+    let img = new Image();
+    img.src = imageIterate;
+    await new Promise((resolve, reject) => {
+      img.onload = () => {
+        this.image = img;
+        resolve(true);
+      };
+    });
   }
   async drawIteratedImage(i) {
     if (this.originalFiles.length >= i) {
@@ -5187,47 +5241,50 @@ for (const file of Array.from(e.target.files)) {
         this.originalHeight = this.height;
       }
       URL.revokeObjectURL(this.image.url);
-  const imageIterateFile =  await db.collection(`img${formerName}`).doc({id:this.originalFiles[i]}).get()
-    let imageIterate = imageIterateFile.image
-    let img = new Image()
-    img.src = imageIterate
-    await new Promise((resolve,reject)=>{
-      img.onload = () =>{
-        this.image = img
-        resolve(true)
+      const imageIterateFile = await db
+        .collection(`img${formerName}`)
+        .doc({ id: this.originalFiles[i] })
+        .get();
+      let imageIterate = imageIterateFile.image;
+      let img = new Image();
+      img.src = imageIterate;
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          this.image = img;
+          resolve(true);
+        };
+      });
+
+      if (this.formatIterated === "maintainHeight") {
+        const scale = this.image.width / this.image.height;
+
+        this.height = this.originalHeight;
+        this.width = this.originalWidth * scale;
+        console.log(scale, i);
+      } else if (this.formatIterated === "maintainWidth") {
+        const scale = this.image.width / this.image.height;
+
+        this.width = this.originalWidth;
+        this.height = this.originalHeight / scale;
+      } else {
+        this.width = this.originalWidth;
+        this.height = this.originalHeight;
       }
-    })
-     
-if (this.formatIterated === "maintainHeight") {
-
-  const scale =  this.image.width  /this.image.height;
-
-  this.height = this.originalHeight;
-  this.width = this.originalWidth *  scale;
-  console.log(scale,i)
-
-} else if (this.formatIterated === "maintainWidth") {
-
-  const scale =  this.image.width  /this.image.height;
-
-  this.width = this.originalWidth;
-  this.height = this.originalHeight / scale;
-}else{
-  this.width = this.originalWidth
-  this.height = this.originalHeight
-}
     } else {
-        URL.revokeObjectURL(this.image.url);
-  const imageIterateFile =  await db.collection(`img${formerName}`).doc({id:this.selectedFile}).get()
-    let imageIterate = imageIterateFile.image
-    let img = new Image()
-    img.src = imageIterate
-    await new Promise((resolve,reject)=>{
-      img.onload = () =>{
-        this.image = img
-        resolve(true)
-      }
-    })
+      URL.revokeObjectURL(this.image.url);
+      const imageIterateFile = await db
+        .collection(`img${formerName}`)
+        .doc({ id: this.selectedFile })
+        .get();
+      let imageIterate = imageIterateFile.image;
+      let img = new Image();
+      img.src = imageIterate;
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          this.image = img;
+          resolve(true);
+        };
+      });
     }
   }
   doubleClicked(mouse) {
@@ -5236,14 +5293,14 @@ if (this.formatIterated === "maintainHeight") {
     return true;
   }
   whereToSnap() {
-       let cos = Math.cos(this.angle);
-let sin = Math.sin(this.angle);
+    let cos = Math.cos(this.angle);
+    let sin = Math.sin(this.angle);
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
-let newWidth  = Math.abs(this.width * cos) + Math.abs(this.height * sin);
-let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
-let rectx = centerX - newWidth / 2;
-let recty = centerY - newHeight /2 
+    let newWidth = Math.abs(this.width * cos) + Math.abs(this.height * sin);
+    let newHeight = Math.abs(this.width * sin) + Math.abs(this.height * cos);
+    let rectx = centerX - newWidth / 2;
+    let recty = centerY - newHeight / 2;
     return {
       x: [rectx, rectx + newWidth / 2, rectx + newWidth],
       y: [recty, recty + newHeight / 2, recty + newHeight],
@@ -5504,14 +5561,14 @@ class Group extends Formats {
     if (this.list.length > 0) this.list.forEach((list) => list.moveClip(x, y));
   }
   whereToSnap() {
-        let cos = Math.cos(this.angle);
-let sin = Math.sin(this.angle);
-let formerWidth = this.maxX - this.minX;
-let formerHeight = this.maxY - this.minY
-let newWidth  = Math.abs(formerWidth * cos) + Math.abs(formerHeight * sin);
-let newHeight = Math.abs(formerWidth * sin) + Math.abs(formerHeight * cos);
-let rectx = this.x - newWidth / 2;
-let recty = this.y - newHeight /2
+    let cos = Math.cos(this.angle);
+    let sin = Math.sin(this.angle);
+    let formerWidth = this.maxX - this.minX;
+    let formerHeight = this.maxY - this.minY;
+    let newWidth = Math.abs(formerWidth * cos) + Math.abs(formerHeight * sin);
+    let newHeight = Math.abs(formerWidth * sin) + Math.abs(formerHeight * cos);
+    let rectx = this.x - newWidth / 2;
+    let recty = this.y - newHeight / 2;
     return {
       x: [rectx, rectx + newWidth / 2, rectx + newWidth],
       y: [recty, recty + newHeight / 2, recty + newHeight],
@@ -5716,23 +5773,23 @@ async function addImage(e) {
   canvas.style.cursor = "wait";
   const file = e.target.files[0];
   if (!file) return;
-      const loader = new LoaderManager(1); // Set max items to the number of selected files
-loader.createLoader();
+  const loader = new LoaderManager(1); // Set max items to the number of selected files
+  loader.createLoader();
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.src = url;
   await new Promise((resolve) => {
-    img.onload =  () => {
+    img.onload = () => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
 
       reader.addEventListener("load", async () => {
-              const imageID = crypto.randomUUID()
-      await db.collection(`img${formerName}`).add({
-        id:imageID,
-        image: reader.result,
-        entryDate: new Date().getTime()
-      })
+        const imageID = crypto.randomUUID();
+        await db.collection(`img${formerName}`).add({
+          id: imageID,
+          image: reader.result,
+          entryDate: new Date().getTime(),
+        });
         drawingImage = {
           image: img,
           originalFile: imageID,
@@ -5743,30 +5800,36 @@ loader.createLoader();
       });
     };
   });
-loader.incrementOriginalState();
+  loader.incrementOriginalState();
   canvas.style.cursor = "crosshair";
   isDrawing = "image";
 }
 // For Saving and Retrieving
-async function importLoaded(jsonData,shouldCanvas=true){
-const { canvasItems, revivableItems } = jsonData.reduce((acc, data) => {
-  if (data.type === "canvas") {
-    acc.canvasItems.push(data);
-  } else {
-    acc.revivableItems.push(data);
+async function importLoaded(jsonData, shouldCanvas = true) {
+  const { canvasItems, revivableItems } = jsonData.reduce(
+    (acc, data) => {
+      if (data.type === "canvas") {
+        acc.canvasItems.push(data);
+      } else {
+        acc.revivableItems.push(data);
+      }
+      return acc;
+    },
+    { canvasItems: [], revivableItems: [] },
+  );
+
+  if (canvasItems.length > 0 && shouldCanvas) {
+    measurement = canvasItems[0].measurement;
+    whatsMeasured = canvasItems[0].whatsMeasured;
+    canvasSize();
   }
-  return acc;
-}, { canvasItems: [], revivableItems: [] });
 
-if (canvasItems.length > 0 && shouldCanvas) {
-  measurement = canvasItems[0].measurement;
-  whatsMeasured = canvasItems[0].whatsMeasured;
-  canvasSize();
-}
-
-const revived = await Promise.all(revivableItems.map(item => reviveObjects(item)));
-    objects.push(...revived);
-    requestDraw()
+  const revived = await Promise.all(
+    revivableItems.map((item) => reviveObjects(item)),
+  );
+  objects.push(...revived);
+  requestDraw();
+  await saveToFile();
 }
 async function reviveObjects(objData) {
   let instance;
@@ -5804,56 +5867,71 @@ async function reviveObjects(objData) {
       objData.list.map((item) => reviveObjects(item)),
     );
   }
-  if(objData.type === "image"){
-    const revivedImageFile = await db.collection(`img${formerName}`).doc({id:objData.selectedFile}).get()
-const revivedImage = revivedImageFile.image
-const img = new Image()
-img.src = revivedImage
-await new Promise((resolve,reject)=>{
-  img.onload = () =>{
-    objData.image = img
-    resolve(true)
-  }
-})
-  }
-  if(objData.type === "text"){
-    objData.textPlace = document.createElement("textarea")
-    objData.measurer = false
-    if(!(defaultFonts.includes(objData.fontFamily))){
-      if(newFonts.includes(objData.fontFamily)){
-            const result = await db.collection('fonts')
-      .doc({ id: this.fontFamily })
+  if (objData.type === "image") {
+    if (objData.isConverted) {
+      for (let i = 0; i < objData.originalFiles.length; i++) {
+        const imageID = crypto.randomUUID();
+        await db.collection(`img${formerName}`).add({
+          id: imageID,
+          image: objData.originalFiles[i],
+          entryDate: new Date().getTime(),
+        });
+        objData.originalFiles[i] = imageID;
+      }
+      objData.isConverted = false;
+    }
+    const revivedImageFile = await db
+      .collection(`img${formerName}`)
+      .limit(1)
       .get();
+    const revivedImage = revivedImageFile[0].image;
+    const img = new Image();
+    img.src = revivedImage;
+    await new Promise((resolve, reject) => {
+      img.onload = () => {
+        objData.image = img;
+        resolve(true);
+      };
+    });
+  }
+  if (objData.type === "text") {
+    objData.textPlace = document.createElement("textarea");
+    objData.measurer = false;
+    if (!defaultFonts.includes(objData.fontFamily)) {
+      if (newFonts.includes(objData.fontFamily)) {
+        const result = await db
+          .collection("fonts")
+          .doc({ id: this.fontFamily })
+          .get();
         if (result && result.fontData) {
-      // Create dynamic @font-face rule
-      const style = document.createElement('style');
-      const fontCSS = `
+          // Create dynamic @font-face rule
+          const style = document.createElement("style");
+          const fontCSS = `
         @font-face {
           font-family: '${result.fontFamily}';
           src: url('${result.fontData}') format('${result.fontFormat}');
           font-display: swap;
         }
       `;
-      style.textContent = fontCSS;
-      document.head.appendChild(style);
-      
+          style.textContent = fontCSS;
+          document.head.appendChild(style);
+        }
+      } else {
+        objData.fontFamily = "sans-serif";
       }
-    }else{
-      objData.fontFamily = "sans-serif";
-    }
-
     }
   }
 
   // ✅ Handle clips
   if (objData.clips && objData.clips.length > 0) {
-objData.clips = await Promise.all(
-  objData.clips.map(async (clip) => {  // ← Add async
-    const reviveClip = await reviveObjects(clip);  // ← Add await
-    reviveClip.clipper = objData.id;
-    return reviveClip;
-  })
-);
+    objData.clips = await Promise.all(
+      objData.clips.map(async (clip) => {
+        // ← Add async
+        const reviveClip = await reviveObjects(clip); // ← Add await
+        reviveClip.clipper = objData.id;
+        return reviveClip;
+      }),
+    );
   }
 
   // ✅ Handle images properly
@@ -5873,76 +5951,74 @@ objData.clips = await Promise.all(
   // }
 
   Object.assign(instance, objData);
-  if(objData.type === "text") textBoxes.push(instance)
-  if(objData.type === "image") images.push(instance)
+  if (objData.type === "text") textBoxes.push(instance);
+  if (objData.type === "image") images.push(instance);
   return instance;
 }
-document.getElementById("retrieve-file").addEventListener("change",(e)=>retrieveFile(e))
-async function retrieveFile(e){
+document
+  .getElementById("retrieve-file")
+  .addEventListener("change", (e) => retrieveFile(e));
+async function retrieveFile(e) {
   const file = e.target.files[0];
-  const reader = new FileReader()
-  reader.readAsText(file)
-  reader.onload = async()=>{
-    const jsonData = JSON.parse(reader.result)
-    importLoaded(jsonData,false)
-
-  }
+  const reader = new FileReader();
+  reader.readAsText(file);
+  reader.onload = async () => {
+    const jsonData = JSON.parse(reader.result);
+    importLoaded(jsonData, false);
+  };
 }
 let saveTimeout;
 
 function autoSave() {
-    // Clear previous timeout to avoid multiple saves
-    clearTimeout(saveTimeout);
-    
-    // Save after 2 seconds of no changes (debouncing)
-    saveTimeout = setTimeout(async () => {
-        await saveToFile();
-        console.log("✅ Autosaved at:", new Date().toLocaleTimeString());
-        autoSave()
-    }, 2000);
+  // Clear previous timeout to avoid multiple saves
+  clearTimeout(saveTimeout);
+
+  // Save after 2 seconds of no changes (debouncing)
+  saveTimeout = setTimeout(async () => {
+    await saveToFile();
+    console.log("✅ Autosaved at:", new Date().toLocaleTimeString());
+    autoSave();
+  }, 2000);
 }
 document.querySelector(".save").addEventListener("click", async () => {
   await saveToFile();
-    notify("Saved")
-})
+  notify("Saved");
+});
 async function saveToFile() {
   let allData = [
     {
-      type:"canvas",
+      type: "canvas",
       measurement: measurement,
       whatsMeasured: whatsMeasured,
-      backgroundImage: canvas.toDataURL()
-
-
-    },...objects
-  ]
+      backgroundImage: canvas.toDataURL(),
+    },
+    ...objects,
+  ];
   allData = JSON.parse(JSON.stringify(allData));
 
-  const names =  JSON.parse(localStorage.getItem("project-names")) || [];
-  try{
-  if(names.includes(formerName)){
-    await db.collection("projects").doc({name:formerName}).set({
-      name: formerName,
-      object:allData,
-      entryDate: (new Date()).getTime()
-    })
-  }else{
-
-     await db.collection("projects").add({
-       name: formerName,
+  const names = JSON.parse(localStorage.getItem("project-names")) || [];
+  try {
+    if (names.includes(formerName)) {
+      await db.collection("projects").doc({ name: formerName }).set({
+        name: formerName,
         object: allData,
-        entryDate: (new Date()).getTime()
-     })
-     localStorage.setItem("project-names",JSON.stringify([...names,formerName]))
+        entryDate: new Date().getTime(),
+      });
+    } else {
+      await db.collection("projects").add({
+        name: formerName,
+        object: allData,
+        entryDate: new Date().getTime(),
+      });
+      localStorage.setItem(
+        "project-names",
+        JSON.stringify([...names, formerName]),
+      );
+    }
+  } catch (err) {
+    console.log(err);
+    notify("Error Saving");
   }
-
-  }
-  catch(err){
-    console.log(err)
-    notify("Error Saving")
-  }
-
-
 
   // const data = JSON.stringify(allData);
 
@@ -5969,14 +6045,13 @@ async function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
     if (pen !== null && pen.points.length > 0) {
       if (button.id !== "addLine") button.classList.remove("active");
-      else{
-button.classList.add("active");
-      } 
+      else {
+        button.classList.add("active");
+      }
     } else {
-      if (button.id === tool){
-button.classList.add("active");
-      } 
-      else button.classList.remove("active");
+      if (button.id === tool) {
+        button.classList.add("active");
+      } else button.classList.remove("active");
     }
   });
   if (pen !== null && pen.points.length > 0) return;
@@ -6096,7 +6171,7 @@ button.classList.add("active");
           height: measurement.height,
         });
         requestDraw();
-        Tools("zoom")
+        Tools("zoom");
       });
 
       requestDraw();
@@ -6122,18 +6197,21 @@ button.classList.add("active");
     case "delete":
       if (selectedObj) {
         let index = objects.indexOf(selectedObj);
-        if(objects[selectedObj].type === "image"){
-          await db.collection(`img${formerName}`).doc({id:objects[selectedObj]})
+        if (objects[selectedObj].type === "image") {
+          await db
+            .collection(`img${formerName}`)
+            .doc({ id: objects[selectedObj] });
         }
         objects.splice(index, 1);
-      
-        if(selectedObj.clipped ==="clipped"){
-const clipIndex = objects.find(obj => obj.id === selectedObj.clipper);
-      if(clipIndex){
-        const selectedIndex = clipIndex.clips.indexOf(selectedObj)
-        clipIndex.clips.splice(selectedIndex,1)
-      }
 
+        if (selectedObj.clipped === "clipped") {
+          const clipIndex = objects.find(
+            (obj) => obj.id === selectedObj.clipper,
+          );
+          if (clipIndex) {
+            const selectedIndex = clipIndex.clips.indexOf(selectedObj);
+            clipIndex.clips.splice(selectedIndex, 1);
+          }
         }
         selectedObj = null;
         propertiesBar.innerHTML = "";
@@ -6180,21 +6258,19 @@ function flip(value) {
       selectedObj.scaleX *= -1;
     } else selectedObj.scaleY *= -1;
     undoObject.push(cloneObject(objects));
-  redoObject.length = 0;
+    redoObject.length = 0;
     requestDraw();
   }
-  if(multipleSelect && multipleSelectArr.length > 0){
-    if(value === "x"){
-      multipleSelectArr.forEach(obj => obj.scaleX *= -1);
-    }else {
-      multipleSelectArr.forEach(obj => obj.scaleY *= -1);
-    } 
-        undoObject.push(cloneObject(objects));
-  redoObject.length = 0;
+  if (multipleSelect && multipleSelectArr.length > 0) {
+    if (value === "x") {
+      multipleSelectArr.forEach((obj) => (obj.scaleX *= -1));
+    } else {
+      multipleSelectArr.forEach((obj) => (obj.scaleY *= -1));
+    }
+    undoObject.push(cloneObject(objects));
+    redoObject.length = 0;
     requestDraw();
-
   }
-
 }
 document.querySelector(".generateButton").addEventListener("click", () => {
   document.querySelector(".generate").style.display = "flex";
@@ -6231,7 +6307,6 @@ document.querySelector(".generateButton").addEventListener("click", () => {
     });
   });
 });
-
 
 function cancelGenerate() {
   document.querySelector(".generate").style.display = "none";
@@ -6353,60 +6428,63 @@ function drawingObject(original = false) {
   }
 }
 function bringToFront(selected) {
-  if(selected.clipped === "clipped"){
-    const clipIndex = objects.find(obj => obj.id === selected.clipper);
-      if(clipIndex){
-
-        const selectedIndex = clipIndex.clips.indexOf(selected)
-        clipIndex.clips.splice(selectedIndex,1)
-       clipIndex.clips.push(selected)
-       requestDraw()
-      }
+  if (selected.clipped === "clipped") {
+    const clipIndex = objects.find((obj) => obj.id === selected.clipper);
+    if (clipIndex) {
+      const selectedIndex = clipIndex.clips.indexOf(selected);
+      clipIndex.clips.splice(selectedIndex, 1);
+      clipIndex.clips.push(selected);
+      requestDraw();
+    }
   }
   let index = objects.indexOf(selected);
-  if(index === -1) return 
-      objects.splice(index, 1);
-    objects.push(selected);
-    requestDraw();
+  if (index === -1) return;
+  objects.splice(index, 1);
+  objects.push(selected);
+  requestDraw();
   undoObject.push(cloneObject(objects));
   redoObject.length = 0;
 }
 function sendToBack(selected) {
-  if(selected.clipped === "clipped"){
-    const clipIndex = objects.find(obj => obj.id === selected.clipper);
-      if(clipIndex){
-        const selectedIndex = clipIndex.clips.indexOf(selected)
-        clipIndex.clips.splice(selectedIndex,1)
-       clipIndex.clips.unshift(selected)
-       requestDraw()
-      }
+  if (selected.clipped === "clipped") {
+    const clipIndex = objects.find((obj) => obj.id === selected.clipper);
+    if (clipIndex) {
+      const selectedIndex = clipIndex.clips.indexOf(selected);
+      clipIndex.clips.splice(selectedIndex, 1);
+      clipIndex.clips.unshift(selected);
+      requestDraw();
+    }
   }
   let index = objects.indexOf(selected);
-  if(index === -1) return
-      objects.splice(index, 1);
-    objects.unshift(selected);
-    requestDraw();
-undoObject.push(cloneObject(objects));
+  if (index === -1) return;
+  objects.splice(index, 1);
+  objects.unshift(selected);
+  requestDraw();
+  undoObject.push(cloneObject(objects));
   redoObject.length = 0;
 }
 function pageUp(selected) {
   // Handle clipping reorder FIRST if selected is clipped
   if (selected.clipped === "clipped") {
-    const clipParent = objects.find(obj => obj.id === selected.clipper);
+    const clipParent = objects.find((obj) => obj.id === selected.clipper);
     if (clipParent) {
       const selectedIndex = clipParent.clips.indexOf(selected);
-      if (selectedIndex === -1 || selectedIndex >= clipParent.clips.length - 1) return;
-      
-      [clipParent.clips[selectedIndex], clipParent.clips[selectedIndex + 1]] = [clipParent.clips[selectedIndex + 1], clipParent.clips[selectedIndex]];
+      if (selectedIndex === -1 || selectedIndex >= clipParent.clips.length - 1)
+        return;
+
+      [clipParent.clips[selectedIndex], clipParent.clips[selectedIndex + 1]] = [
+        clipParent.clips[selectedIndex + 1],
+        clipParent.clips[selectedIndex],
+      ];
 
       requestDraw();
     }
   }
-  
+
   // Reorder in main objects array (for non-clipped or root objects)
   const i = objects.indexOf(selected);
   if (i === -1 || i >= objects.length - 1) return;
-  
+
   // swap with next
   [objects[i], objects[i + 1]] = [objects[i + 1], objects[i]];
   requestDraw();
@@ -6417,20 +6495,23 @@ function pageUp(selected) {
 function pageDown(selected) {
   // Handle clipping reorder FIRST if selected is clipped
   if (selected.clipped === "clipped") {
-    const clipParent = objects.find(obj => obj.id === selected.clipper);
+    const clipParent = objects.find((obj) => obj.id === selected.clipper);
     if (clipParent) {
       const selectedIndex = clipParent.clips.indexOf(selected);
       if (selectedIndex === -1 || selectedIndex === 0) return;
 
-      [clipParent.clips[selectedIndex], clipParent.clips[selectedIndex - 1]] = [clipParent.clips[selectedIndex - 1], clipParent.clips[selectedIndex]];
+      [clipParent.clips[selectedIndex], clipParent.clips[selectedIndex - 1]] = [
+        clipParent.clips[selectedIndex - 1],
+        clipParent.clips[selectedIndex],
+      ];
       requestDraw();
     }
   }
-  
+
   // Reorder in main objects array (for non-clipped or root objects)
   const i = objects.indexOf(selected);
   if (i === -1 || i === 0) return;
-  
+
   // swap with previous
   [objects[i], objects[i - 1]] = [objects[i - 1], objects[i]];
   requestDraw();
@@ -6498,12 +6579,12 @@ function radToDeg(val, type) {
     return parseFloat(((val * 180) / Math.PI).toFixed(2));
   }
 }
-let toggleHome = "flex"
+let toggleHome = "flex";
 
-document.getElementById("home-button").addEventListener("click",()=>{
-  document.getElementById("home-menu").style.display = toggleHome
-  toggleHome = toggleHome === "flex" ? "none" : "flex"
-})
+document.getElementById("home-button").addEventListener("click", () => {
+  document.getElementById("home-menu").style.display = toggleHome;
+  toggleHome = toggleHome === "flex" ? "none" : "flex";
+});
 
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");
@@ -6525,7 +6606,14 @@ async function saveAsPDF() {
         format: [pdfWidth, pdfHeight],
       });
 
-      pdf.addImage(dataUrl.toDataURL('image/png'), "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(
+        dataUrl.toDataURL("image/png"),
+        "PNG",
+        0,
+        0,
+        pdfWidth,
+        pdfHeight,
+      );
       pdf.save("content.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -6588,8 +6676,8 @@ async function saveAsImage() {
 
       const dataUrl = await html2canvas(images[i]);
       const link = document.createElement("a");
-      link.download = `${formerName.replace(/\.json$/i,"")}${i}.png`;
-      link.href =  dataUrl.toDataURL('image/png');
+      link.download = `${formerName.replace(/\.json$/i, "")}${i}.png`;
+      link.href = dataUrl.toDataURL("image/png");
       link.click();
     } catch (error) {
       console.error("Failed to save as image:", error);
@@ -6683,7 +6771,7 @@ function align(arg) {
         other[oth].changeLocation(value - otherSnap.height, "y");
     }
   }
-    if (multipleSelectArr.length > 1) multipleSelectFunction();
+  if (multipleSelectArr.length > 1) multipleSelectFunction();
   requestDraw();
   undoObject.push(cloneObject(objects));
   redoObject.length = 0;
@@ -6755,8 +6843,8 @@ function zoomToRect(rect) {
 }
 async function generateCard() {
   document.querySelector("footer").style.display = "block";
-    cancelGenerate()
-    await new Promise(resolve => setTimeout(resolve, 50));
+  cancelGenerate();
+  await new Promise((resolve) => setTimeout(resolve, 50));
   scale = 1;
   panX = 0;
   panY = 0;
@@ -6827,15 +6915,15 @@ async function generateCard() {
 
   // Increase output resolution. You can change this to 1, 2, 3...
   const scaleFactor = 2;
-      const loader = new LoaderManager(iterationLength); // Set max items to the number of selected files
-loader.createLoader();
-  await new Promise(resolve => setTimeout(resolve, 50));
+  const loader = new LoaderManager(iterationLength); // Set max items to the number of selected files
+  loader.createLoader();
+  await new Promise((resolve) => setTimeout(resolve, 50));
   for (let i = 0; i < iterationLength; i++) {
     // 1) draw current iteration onto main canvas
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for(let img of images){
-      await img.drawIteratedImage(i)
+    for (let img of images) {
+      await img.drawIteratedImage(i);
     }
     textBoxes.forEach((textBox) => textBox.drawIteratedImage(i));
     objects.forEach((obj) => obj.addObject());
@@ -6916,9 +7004,8 @@ loader.createLoader();
 
       boxCountInPage++;
     }
-          loader.incrementOriginalState();
-              await new Promise(resolve => setTimeout(resolve, 50));
-
+    loader.incrementOriginalState();
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
   images.forEach((img) => img.backToDefault());
   textBoxes.forEach((textBox) => textBox.backToDefault());
@@ -6944,22 +7031,22 @@ function requestDraw() {
   });
 }
 function multipleSelectFunction() {
-      multipleSelectCoor.start.x = Math.min(
-        ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
-      );
-      multipleSelectCoor.start.y = Math.min(
-        ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
-      );
-      multipleSelectCoor.end.x = Math.max(
-        ...multipleSelectArr.map(
-          (obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width,
-        ),
-      );
-      multipleSelectCoor.end.y = Math.max(
-        ...multipleSelectArr.map(
-          (obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height,
-        ),
-      );
+  multipleSelectCoor.start.x = Math.min(
+    ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
+  );
+  multipleSelectCoor.start.y = Math.min(
+    ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
+  );
+  multipleSelectCoor.end.x = Math.max(
+    ...multipleSelectArr.map(
+      (obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width,
+    ),
+  );
+  multipleSelectCoor.end.y = Math.max(
+    ...multipleSelectArr.map(
+      (obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height,
+    ),
+  );
 }
 function cMousedown(event) {
   for (let i = objects.length - 1; i >= 0; i--) {
@@ -6979,11 +7066,11 @@ function cMousedown(event) {
       const text = new TextBox(pos.x, pos.y);
       objects.push(text);
       textBoxes.push(text);
-      text.doubleClicked(pos)
-      isDrawing = null
-      selectedObj = text
+      text.doubleClicked(pos);
+      isDrawing = null;
+      selectedObj = text;
       selectedObj.formatProperties();
-      Tools("moveTool")
+      Tools("moveTool");
     } else {
       drawingStart = true;
       drawingCoordinate.start = { x: pos.x, y: pos.y };
@@ -7037,18 +7124,18 @@ function cMousedown(event) {
       Tools("moveTool");
       undoObject.push(cloneObject(objects));
       redoObject.length = 0;
-      return
+      return;
     } else {
       notify("Select An Object");
     }
   } else if (cloneObj !== null) {
     const cloned = cloneObj.showClone();
-              cloned.changeLocation(pos.x, "x");
-          cloned.changeLocation(pos.y, "y");
+    cloned.changeLocation(pos.x, "x");
+    cloned.changeLocation(pos.y, "y");
     objects.push(cloned);
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;
-    return
+    return;
   } else if (clippedObject !== null && previousClip !== null) {
     editclip.style.display = "block";
 
@@ -7060,7 +7147,7 @@ function cMousedown(event) {
         selectedObj.isDoubleClicked = false;
         selectedObj.formatProperties();
         break;
-        return
+        return;
       }
     }
   } else if (multipleSelect) {
@@ -7068,9 +7155,8 @@ function cMousedown(event) {
       if (objects[i].whatSelected(pos)) {
         if (!multipleSelectArr.includes(objects[i])) {
           multipleSelectArr.push(objects[i]);
-                  break;
+          break;
         }
-
       }
     }
     if (multipleSelectArr.length === 0) {
@@ -7081,7 +7167,7 @@ function cMousedown(event) {
     }
 
     if (multipleSelectArr.length > 0) {
-        multipleSelectFunction()
+      multipleSelectFunction();
       if (
         pos.x >= multipleSelectCoor.start.x &&
         pos.x <= multipleSelectCoor.end.x &&
@@ -7099,7 +7185,7 @@ function cMousedown(event) {
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].whatSelected(pos)) {
         hitObject = objects[i];
-        break
+        break;
       }
     }
 
@@ -7123,9 +7209,7 @@ function cMousedown(event) {
       startX = event.clientX;
       startY = event.clientY;
     }
-
   }
-
 
   lastMouseX = pos.x;
   lastMouseY = pos.y;
@@ -7265,80 +7349,74 @@ document.addEventListener("keydown", async (e) => {
     tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
   // console.log(e.key)
   if (isTyping) return;
-  
+
   e.preventDefault();
-if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "=")) return;
+  if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "=")) return;
   if (e.code === "ArrowUp") {
     if (selectedObj !== null) selectedObj.moveClip(0, -thresholds.arrowKeys());
     else if (multipleSelect && multipleSelectArr.length > 0) {
-      multipleSelectArr.forEach((obj) => obj.moveClip(0, -thresholds.arrowKeys()));
+      multipleSelectArr.forEach((obj) =>
+        obj.moveClip(0, -thresholds.arrowKeys()),
+      );
     } else {
       panY += -thresholds.arrowKeys();
     }
-  }
- else  if (e.code === "ArrowDown") {
+  } else if (e.code === "ArrowDown") {
     if (selectedObj !== null) selectedObj.moveClip(0, thresholds.arrowKeys());
     else if (multipleSelect && multipleSelectArr.length > 0) {
-      multipleSelectArr.forEach((obj) => obj.moveClip(0, thresholds.arrowKeys()));
-    }
-    else panY += thresholds.arrowKeys();
-  }
-  else if (e.code === "ArrowLeft") {
+      multipleSelectArr.forEach((obj) =>
+        obj.moveClip(0, thresholds.arrowKeys()),
+      );
+    } else panY += thresholds.arrowKeys();
+  } else if (e.code === "ArrowLeft") {
     if (selectedObj !== null) selectedObj.moveClip(-thresholds.arrowKeys(), 0);
     else if (multipleSelect && multipleSelectArr.length > 0) {
-      multipleSelectArr.forEach((obj) => obj.moveClip(-thresholds.arrowKeys(), 0));
-    }
-    else panX += -thresholds.arrowKeys();
-  }
-  else if (e.code === "ArrowRight") {
+      multipleSelectArr.forEach((obj) =>
+        obj.moveClip(-thresholds.arrowKeys(), 0),
+      );
+    } else panX += -thresholds.arrowKeys();
+  } else if (e.code === "ArrowRight") {
     if (selectedObj !== null) selectedObj.moveClip(thresholds.arrowKeys(), 0);
     else if (multipleSelect && multipleSelectArr.length > 0) {
-      multipleSelectArr.forEach((obj) => obj.moveClip(thresholds.arrowKeys(), 0));
-    }
-    else panX += thresholds.arrowKeys();
-  }
-  else if (e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null) {
+      multipleSelectArr.forEach((obj) =>
+        obj.moveClip(thresholds.arrowKeys(), 0),
+      );
+    } else panX += thresholds.arrowKeys();
+  } else if (e.ctrlKey && e.key.toLowerCase() === "d" && selectedObj !== null) {
     Tools("duplicate");
-  }
-  else if (e.shiftKey && e.key === "@" && selectedObj !== null) {
+  } else if (e.shiftKey && e.key === "@" && selectedObj !== null) {
     zoomToRect(selectedObj.whereToSnap().pos);
-  }
-  else if (
+  } else if (
     e.ctrlKey &&
     e.key.toLowerCase() === "g" &&
     multipleSelectArr.length > 1
   ) {
     group();
-  }
-  else if(e.ctrlKey && e.key.toLowerCase() === 's'){
-    await saveToFile()
-    notify("Saved")
-  }
-  else if(    e.ctrlKey &&
-    e.key.toLowerCase() === "u" && selectedObj !== null && selectedObj.type === "group"){
-            selectedObj.list.forEach((l) => objects.push(l));
-      const index = objects.indexOf(selectedObj);
-      objects.splice(index, 1);
-      selectedObj = null;
-      Tools("moveTool");
-    }
-
-  else if (e.key.toLowerCase() === "delete" && selectedObj !== null) {
+  } else if (e.ctrlKey && e.key.toLowerCase() === "s") {
+    await saveToFile();
+    notify("Saved");
+  } else if (
+    e.ctrlKey &&
+    e.key.toLowerCase() === "u" &&
+    selectedObj !== null &&
+    selectedObj.type === "group"
+  ) {
+    selectedObj.list.forEach((l) => objects.push(l));
+    const index = objects.indexOf(selectedObj);
+    objects.splice(index, 1);
+    selectedObj = null;
+    Tools("moveTool");
+  } else if (e.key.toLowerCase() === "delete" && selectedObj !== null) {
     Tools("delete");
-  }
-  else if (e.key.toLowerCase() === "pageup") {
+  } else if (e.key.toLowerCase() === "pageup") {
     if (selectedObj !== null) pageUp(selectedObj);
-  }
-  else if (e.key.toLowerCase() === "pagedown") {
+  } else if (e.key.toLowerCase() === "pagedown") {
     if (selectedObj !== null) pageDown(selectedObj);
-  }
-  else if (e.key.toLowerCase() === "home") {
+  } else if (e.key.toLowerCase() === "home") {
     if (selectedObj) bringToFront(selectedObj);
-  }
-  else if (e.key.toLowerCase() === "end") {
+  } else if (e.key.toLowerCase() === "end") {
     if (selectedObj) sendToBack(selectedObj);
-  }
-  else if (e.key.toLowerCase() === "l") align("left");
+  } else if (e.key.toLowerCase() === "l") align("left");
   else if (e.key.toLowerCase() === "c") align("centerX");
   else if (e.key.toLowerCase() === "r") align("right");
   else if (e.key.toLowerCase() === "t") align("top");
@@ -7346,27 +7424,20 @@ if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "=")) return;
   else if (e.key.toLowerCase() === "b") align("bottom");
   else if (e.key.toLowerCase() === "q") flip("x");
   else if (e.key.toLowerCase() === "w") flip("y");
-  else if (e.key.toLowerCase() === "m"){
+  else if (e.key.toLowerCase() === "m") {
     Tools("moveTool");
-  }
-  else if (e.key.toLowerCase() === "s"){
-    Tools('multipleSelection')
-  }
-  else if (e.key.toLowerCase() === "h") {
+  } else if (e.key.toLowerCase() === "s") {
+    Tools("multipleSelection");
+  } else if (e.key.toLowerCase() === "h") {
     Tools("panTool");
-  }
-  else if(e.ctrlKey && e.key.toLowerCase() === "z"){
+  } else if (e.ctrlKey && e.key.toLowerCase() === "z") {
     undo();
-    return
-  }
-  else if(e.ctrlKey && e.key.toLowerCase() === "y"){
+    return;
+  } else if (e.ctrlKey && e.key.toLowerCase() === "y") {
     redo();
-  }
-
-  else if (e.key.toLowerCase() === "z") {
+  } else if (e.key.toLowerCase() === "z") {
     Tools("zoom");
-  }
-  else if (e.key.toLowerCase() === "p") {
+  } else if (e.key.toLowerCase() === "p") {
     Tools("addLine");
   }
 
