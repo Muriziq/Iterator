@@ -6911,7 +6911,6 @@ async function generateCard() {
   panX = 0;
   panY = 0;
   requestDraw();
-  // generationArea.style.padding = generateInfo.spacing + "px";
   generationArea.style.gap = generateInfo.spacing + "px";
 const currentPageWidth = generationArea.getBoundingClientRect().width - (generateInfo.spacing * 2)
 const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / generateInfo.renderWidth
@@ -6924,24 +6923,14 @@ const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / gener
   const createNewPage = () => {
     const page = document.createElement("section");
     fragment.append(page);
-    page.style.width = "100%";
-    page.style.backgroundColor = "#ffffff";
-    page.style.display = "grid";
+    page.classList.add("createNewProject")
     page.style.gridTemplateRows = `repeat(${generateInfo.noPerColumn}, 1fr)`;
     page.style.gridTemplateColumns = `repeat(${generateInfo.noPerRow}, 1fr)`;
-    page.style.placeItems = "center";
-
-    // const width = page.getBoundingClientRect().width;
-    const width = currentPageWidth
-    const height = currentPageHeight
-      ;
-    page.style.height = `${height}px`;
 
     return page;
   };
-
-  // let currentPage = createNewPage();
-
+  let currentPage = createNewPage();
+  let boxCountInPage = 0;
   const containerWidth =
     currentPageWidth - generateInfo.spacing;
   const containerHeight =
@@ -6956,7 +6945,8 @@ const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / gener
     cellWidth / paperRect0.width,
     cellHeight / paperRect0.height,
   );
-  // currentPage.style.display = "none";
+const ifNotAutoWidth = paperRect0.width * localScale
+const ifNotAutoHeight = paperRect0.height * localScale
   let iterationLength = 1;
 
   if (textBoxes.length > 0) {
@@ -6974,21 +6964,18 @@ const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / gener
   );
 
   iterationLength = Math.max(iterationLength, maxImageIterLength);
-  let boxCountInPage = 0;
 
   // Increase output resolution. You can change this to 1, 2, 3...
-  const scaleFactor = 2;
+  const scaleFactor = 1;
   const loader = new LoaderManager(iterationLength); // Set max items to the number of selected files
   loader.createLoader();
   await new Promise((resolve) => setTimeout(resolve, 50));
-      // 2) compute crop region (paper div) in CANVAS pixel coords
     const canvasRect = canvas.getBoundingClientRect();
     const paperRect = canvassDiv.getBoundingClientRect();
     const cropX = (canvas.width - measurement.width) / 2;
     const cropY = (canvas.height - measurement.height) / 2;
     const cropW = measurement.width;
     const cropH = measurement.height;
-    // 3) copy cropped area to an offscreen canvas
     const croppedCanvas = document.createElement("canvas");
     const cty = croppedCanvas.getContext("2d");
     croppedCanvas.width = cropW * scaleFactor;
@@ -7041,7 +7028,21 @@ const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / gener
         currentPage = createNewPage();
         boxCountInPage = 0;
       }
-      console.log("yah")
+            previewCanvas.width = ifNotAutoWidth
+      previewCanvas.height = ifNotAutoHeight
+      previewCanvas.style.width = ifNotAutoWidth + "px"
+      previewCanvas.style.height = ifNotAutoHeight+ "px"
+        ptx.drawImage(
+        croppedCanvas,
+        0,
+        0,
+        ifNotAutoWidth,
+        ifNotAutoHeight
+      )
+      div.append(previewCanvas)
+            currentPage.append(div);
+
+      boxCountInPage++;
     }
     loader.incrementOriginalState();
     if (i % 10 === 0) {

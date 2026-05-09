@@ -1104,15 +1104,12 @@ footer{
   width: auto;
   height: auto;
 }
-/* .iterationImgAuto{
+.createNewProject{
   width: 100%;
-    height: 100%;
-    object-fit: cover;
-} */
-.iterationImgElse{
-  width: 100%;
-   height: 100%;
-  object-fit: contain;
+  height: auto;
+  background-color: #ffffff;
+  display: grid;
+  place-items: center;
 }
 @media (max-width: 768px){
   main{
