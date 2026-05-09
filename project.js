@@ -2027,7 +2027,7 @@ class Rectangle extends Formats {
       }
     }
   }
-  showClone() {
+  showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.points = this.points.map((p) => ({
       points: { x: p.points.x, y: p.points.y },
@@ -2035,7 +2035,9 @@ class Rectangle extends Formats {
       controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
       cornerRadius: p.cornerRadius,
     }));
-
+    if(!isUndo){
+     clone.id = crypto.randomUUID(); 
+    }
     clone.clips = this.clips.map((c) => c.showClone());
     return clone;
   }
@@ -2824,9 +2826,12 @@ class Ellipse extends Formats {
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;
   }
-  showClone() {
+  showClone(isUndo=false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.clips = this.clips.map((c) => c.showClone());
+        if(!isUndo){
+     clone.id = crypto.randomUUID(); 
+    }
     return clone;
   }
   doubleClicked(mouse) {
@@ -3408,7 +3413,7 @@ ${super.similarProptiesOutput()}
     redoObject.length = 0;
     requestDraw();
   }
-  showClone() {
+  showClone(isUndo=false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.points = this.points.map((p) => ({
       points: { x: p.points.x, y: p.points.y },
@@ -3416,7 +3421,9 @@ ${super.similarProptiesOutput()}
       controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
       cornerRadius: p.cornerRadius,
     }));
-
+    if(!isUndo){
+     clone.id = crypto.randomUUID(); 
+    }
     clone.clips = this.clips.map((c) => c.showClone());
     return clone;
   }
@@ -3722,7 +3729,7 @@ class Line extends Formats {
       return true;
     }
   }
-  showClone() {
+  showClone(isUndo=false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.points = this.points.map((p) => ({
       points: { x: p.points.x, y: p.points.y },
@@ -3730,6 +3737,9 @@ class Line extends Formats {
       controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
       cornerRadius: p.cornerRadius,
     }));
+        if(!isUndo){
+     clone.id = crypto.randomUUID(); 
+    }
 
     clone.clips = this.clips.map((c) => c.showClone());
     return clone;
@@ -4179,9 +4189,12 @@ class TextBox extends Formats {
     ctx.restore();
   }
 
-  showClone() {
+  showClone(isUndo=false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.textPlace = document.createElement("textarea");
+        if(!isUndo){
+     clone.id = crypto.randomUUID(); 
+    }
     return clone;
   }
   colorType() {
@@ -4975,11 +4988,14 @@ class Images extends Formats {
       }
     }
   }
-  showClone() {
+  showClone(isUndo=false) {
     const clone = Object.assign(
       Object.create(Object.getPrototypeOf(this)),
       this,
     );
+        if(!isUndo){
+     clone.id = crypto.randomUUID(); 
+    }
     return clone;
   }
   formatProperties() {
@@ -5470,9 +5486,12 @@ class Group extends Formats {
       }
     }
   }
-  showClone() {
+  showClone(isUndo=false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.list = this.list.map((obj) => obj.showClone());
+        if(!isUndo){
+     clone.id = crypto.randomUUID(); 
+    }
     return clone;
   }
   doubleClicked(mouse) {
@@ -5633,7 +5652,7 @@ function blobToBase64(blob) {
   });
 }
 function cloneObject(object) {
-  return object.map((obj) => obj.showClone());
+  return object.map((obj) => obj.showClone(true));
 }
 function undo() {
   if (undoObject.length > 1) {
@@ -5851,6 +5870,7 @@ async function importLoaded(jsonData, shouldCanvas = true) {
   objects.push(...revived);
   requestDraw();
   await saveToFile();
+  await deleteUnusedImage()
 }
 async function reviveObjects(objData) {
   let instance;
@@ -5989,7 +6009,30 @@ async function retrieveFile(e) {
   };
 }
 let saveTimeout;
-
+async function deleteUnusedImage() {
+    // Get all images from LocalBase
+    const allImageFile = await db.collection(`img${formerName}`).get();
+    
+    // Create Set for O(1) lookups
+    const imagesInSet = new Set();
+    images.forEach(img => {
+        img.originalFiles?.forEach(file => {
+            imagesInSet.add(file);
+        });
+    });
+    
+    // Filter IDs to delete
+    const toDeleteIds = allImageFile
+        .filter(doc => !imagesInSet.has(doc.id))
+        .map(doc => doc.id);
+    
+    if (toDeleteIds.length === 0) return;
+    
+    // Delete sequentially (LocalBase doesn't support batch AFAIK)
+    for (const id of toDeleteIds) {
+        await db.collection(`img${formerName}`).doc({ id }).delete();
+    }
+}
 function autoSave() {
   // Clear previous timeout to avoid multiple saves
   clearTimeout(saveTimeout);
@@ -5997,12 +6040,14 @@ function autoSave() {
   // Save after 2 seconds of no changes (debouncing)
   saveTimeout = setTimeout(async () => {
     await saveToFile();
+    await deleteUnusedImage()
     console.log("✅ Autosaved at:", new Date().toLocaleTimeString());
     autoSave();
   }, 2000);
 }
 document.querySelector(".save").addEventListener("click", async () => {
   await saveToFile();
+   await deleteUnusedImage()
   notify("Saved");
 });
 async function saveToFile() {
@@ -6218,11 +6263,6 @@ async function Tools(tool) {
     case "delete":
       if (selectedObj) {
         let index = objects.indexOf(selectedObj);
-        if (objects[selectedObj].type === "image") {
-          await db
-            .collection(`img${formerName}`)
-            .doc({ id: objects[selectedObj] });
-        }
         objects.splice(index, 1);
 
         if (selectedObj.clipped === "clipped") {
@@ -6964,7 +7004,6 @@ const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / gener
       ...textBoxes.map(textBox => textBox.drawIteratedImage(i))
     ]);
     objects.forEach((obj) => obj.addObject());
-
     cty.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
     cty.drawImage(
       canvas,
@@ -6977,61 +7016,32 @@ const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / gener
       cropW,
       cropH, // dest (before scaleFactor transform)
     );
-
-    const blob = await new Promise(resolve =>
-  croppedCanvas.toBlob(resolve, "image/webp", 0.9)
-);
-const url = URL.createObjectURL(blob);
-
-    // 4) create preview element
     const div = document.createElement("div");
-    const img = document.createElement("img");
-       await new Promise((resolve) => {
-      img.onload = () => {
-        URL.revokeObjectURL(url); // Now safe to revoke
-        resolve();
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url); // Clean up on error too
-        resolve();
-      };
-      img.src = url;
-    });
+    const previewCanvas = document.createElement("canvas");
+    const ptx = previewCanvas.getContext("2d");
+
   div.classList.add("iterationDiv")
-    // div.style.position = "relative";
-    // div.style.backgroundColor = "#ffffff";
-    // div.style.display = "flex";
-    // div.style.alignItems = "center";
-    // div.style.justifyContent = "center";
 
     if (generateInfo.renderPage === "auto") {
-      div.style.width = "100%";
-      img.classList.add("iterationImgAuto");
-      // img.style.width = "100%";
-      // img.style.height = "100%";
-      // img.style.objectFit = "cover";
-      div.append(img);
+      previewCanvas.width = currentPageWidth
+      previewCanvas.height = currentPageHeight
+      previewCanvas.style.width = currentPageWidth + "px"
+      previewCanvas.style.height = currentPageHeight+ "px"
+      ptx.drawImage(
+        croppedCanvas,
+        0,
+        0,
+        currentPageWidth,
+        currentPageHeight
+      )
+      div.append(previewCanvas);
       fragment.append(div);
-
-      // const w = div.getBoundingClientRect().width;
-      div.style.height = `${(currentPageWidth * paperRect.height) / paperRect.width}px`;
     } else {
       if (boxCountInPage >= boxesPerPage) {
         currentPage = createNewPage();
         boxCountInPage = 0;
       }
-
-      div.style.width = `${paperRect0.width * localScale}px`;
-      div.style.height = `${paperRect0.height * localScale}px`;
- img.classList.add("iterationImgElse");
-      // img.style.width = "100%";
-      // img.style.height = "100%";
-      // img.style.objectFit = "contain";
-
-      div.append(img);
-      currentPage.append(div);
-
-      boxCountInPage++;
+      console.log("yah")
     }
     loader.incrementOriginalState();
     if (i % 10 === 0) {
