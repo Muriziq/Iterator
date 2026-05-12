@@ -62,7 +62,7 @@ let clipped = null;
 let thresholds = {
   selected: () => adapt(2),
   normalMode: () => adapt(25),
-  threshold: () => adapt(2),
+  threshold: () => adapt(5),
   pthreshold: () => adapt(5),
   maxCanvasSize: () => adapt(5000),
   pointHold: () => adapt(15),
@@ -166,9 +166,9 @@ window.addEventListener("load", async () => {
     thresholds.pointHold = () => adapt(7.5);
     thresholds.normalMode = () => adapt(15);
   }
-  document.getElementById("auto-save").checked = true
-  ifAutoSave = true
-  autoSave()
+  document.getElementById("auto-save").checked = false
+  ifAutoSave = false
+  // autoSave()
 });
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
@@ -5783,8 +5783,7 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
       renderPageSize = measurementArr[10];
       break;
     case "auto":
-      renderPageSize = "";
-
+    renderPageSize = {...measurement}
       break;
     case "letter":
       renderPageSize = measurementArr[7];
@@ -5796,13 +5795,21 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
   }
   const rows = document.getElementById("noPerRow");
   const columns = document.getElementById("noPerColumn");
-  if (renderPageSize !== "") {
-    rows.readOnly = false;
-    columns.readOnly = false;
     const height = document.getElementById("renderHeight");
     const width = document.getElementById("renderWidth");
     width.value = renderPageSize.width;
     height.value = renderPageSize.height;
+    generateInfo.renderWidth = renderPageSize.width
+    generateInfo.renderHeight = renderPageSize.height
+    if(generateInfo.renderPage === "auto"){
+    rows.value = 1;
+    columns.value = 1;
+    rows.readOnly = true
+    columns.readOnly = true
+    }else{
+          rows.readOnly = false;
+    columns.readOnly = false;
+    }
     if (generateInfo.renderPage === "custom") {
       height.readOnly = false;
       width.readOnly = false;
@@ -5810,12 +5817,6 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
       height.readOnly = true;
       width.readOnly = true;
     }
-  } else {
-    rows.readOnly = true;
-    columns.readOnly = true;
-    rows.value = 1;
-    columns.value = 1;
-  }
 });
 async function addImage(e) {
   canvas.style.cursor = "wait";
@@ -6652,77 +6653,137 @@ document.getElementById("home-button").addEventListener("click", () => {
 
 async function saveAsPDF() {
   const container = document.getElementById("generationArea");
+  const { jsPDF } = window.jspdf;
 
-  if (generateInfo.renderPage === "auto") {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+  // how many pages before creating a new PDF
+  const MAX_PAGES_PER_PDF = 50;
 
-      const dataUrl = await html2canvas(container);
-      const { jsPDF } = window.jspdf;
-
-      const rect = container.getBoundingClientRect();
-      const pdfWidth = rect.width * 0.264583;
-      const pdfHeight = rect.height * 0.264583;
-
-      const pdf = new jsPDF({
-        orientation: pdfWidth > pdfHeight ? "l" : "p",
-        unit: "mm",
-        format: [pdfWidth, pdfHeight],
-      });
-
-      pdf.addImage(
-        dataUrl.toDataURL("image/png"),
-        "PNG",
-        0,
-        0,
-        pdfWidth,
-        pdfHeight,
-      );
-      pdf.save("content.pdf");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-    }
-  } else {
-    const sections = container.querySelectorAll("section");
-    const { jsPDF } = window.jspdf;
-
-    const pdf = new jsPDF({
+  // helper
+  function createPDF() {
+    return new jsPDF({
       orientation: "portrait",
       unit: "pt",
-      format: generateInfo.renderPage.toLowerCase(),
+      format:
+        generateInfo.renderPage === "auto"
+          ? "a4"
+          : generateInfo.renderPage.toLowerCase(),
+      compress: true,
     });
+  }
 
-    for (let i = 0; i < sections.length; i++) {
-      const section = sections[i];
+  // sections to render
+  const sections =
+    generateInfo.renderPage === "auto"
+      ? [container]
+      : [...container.querySelectorAll("section")];
 
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        const dataUrl = await domtoimage.toPng(section);
+  let pdf = createPDF();
 
-        const imgProps = pdf.getImageProperties(dataUrl);
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgRatio = imgProps.width / imgProps.height;
-        const pageRatio = pageWidth / pageHeight;
+  let currentPageCount = 0;
+  let pdfIndex = 1;
 
-        let imgWidth, imgHeight;
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
 
-        if (imgRatio > pageRatio) {
-          imgWidth = pageWidth;
-          imgHeight = (imgProps.height * pageWidth) / imgProps.width;
-        } else {
-          imgHeight = pageHeight;
-          imgWidth = (imgProps.width * pageHeight) / imgProps.height;
-        }
+    try {
+      // small delay so UI stays responsive
+      await new Promise((resolve) => setTimeout(resolve, 20));
 
-        if (i > 0) pdf.addPage();
-        pdf.addImage(dataUrl, "PNG", 0, 0, imgWidth, imgHeight);
-      } catch (error) {
-        console.error(`Failed to render section ${i + 1}`, error);
+      let dataUrl;
+
+      // render image
+      if (generateInfo.renderPage === "auto") {
+        const canvas = await html2canvas(section, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 1,
+          backgroundColor: "#ffffff",
+        });
+
+        dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+        // free canvas memory
+        canvas.width = 0;
+        canvas.height = 0;
+      } else {
+        dataUrl = await domtoimage.toJpeg(section, {
+          quality: 0.9,
+          bgcolor: "#ffffff",
+        });
       }
-    }
 
-    pdf.save("content.pdf");
+      // load image safely
+      const img = new Image();
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const imgRatio = img.width / img.height;
+      const pageRatio = pageWidth / pageHeight;
+
+      let imgWidth;
+      let imgHeight;
+
+      if (imgRatio > pageRatio) {
+        imgWidth = pageWidth;
+        imgHeight = pageWidth / imgRatio;
+      } else {
+        imgHeight = pageHeight;
+        imgWidth = pageHeight * imgRatio;
+      }
+
+      // center image
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+
+      // add page except first
+      if (currentPageCount > 0) {
+        pdf.addPage();
+      }
+
+      // add image
+      pdf.addImage(
+        dataUrl,
+        "JPEG",
+        x,
+        y,
+        imgWidth,
+        imgHeight,
+        undefined,
+        "FAST"
+      );
+
+      currentPageCount++;
+
+      // free image memory
+      img.src = "";
+
+      // save current PDF if limit reached
+      if (
+        currentPageCount >= MAX_PAGES_PER_PDF ||
+        i === sections.length - 1
+      ) {
+        pdf.save(`content-part-${pdfIndex}.pdf`);
+
+        pdfIndex++;
+
+        // reset counters
+        currentPageCount = 0;
+
+        // create new PDF if more pages remain
+        if (i !== sections.length - 1) {
+          pdf = createPDF();
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to render section ${i + 1}`, error);
+    }
   }
 }
 async function saveAsImage() {
