@@ -11,6 +11,23 @@
   --input-color: #f8f8f8;
   --aligin-sec: #1f1f1f;
   --button-hover: #616161;
+  --white: #ffffff;
+  --border-color: #616161;
+}
+
+/* Light mode — toggled by adding .light-mode to <body> */
+body.light-mode{
+  --bg-color: #f2f2f2;
+  --side-color: #e2e2e2;
+  --icon-img: #c8c8c8;
+  --input-img: #d6d6d6;
+  --h3-fill: #1a1a1a;
+  --border-bottom: 2px solid #aaaaaa;
+  --close-button: #666666;
+  --input-color: #111111;
+  --aligin-sec: #ebebeb;
+  --button-hover: #aaaaaa;
+  --border-color: #aaaaaa;
 }
 
 *{
@@ -57,6 +74,7 @@ button{
   color: var(--h3-fill);
   background-color: var(--aligin-sec);
   height: auto;
+ border-bottom: 1px solid var(--input-color); 
 }
 .home{
 position: relative;
@@ -93,28 +111,73 @@ position: relative;
   position: absolute;
   display: none;
   flex-direction: column;
-  background-color: #181818;
-  border: 3px solid #616161;
+  background-color: var(--side-color);
+  border: 1px solid var(--input-color);
   top: 60px;
   z-index: 10;
   width: 250px;
+  border-radius: 0.7rem;
+  overflow: hidden;
 }
 
 .home-menu button{
   padding: 1rem 1rem;
   border: none;
   position: relative;
-  border-bottom:  3px solid #616161;
+  border-bottom: 1px solid var(--input-color);
   background-color: transparent;
   width: 100%;
   color: var(--h3-fill);
   transition: all 0.5s;
 }
-.home-menu :is(button:active,button:hover){
-  background-color: #616161;
+.home-menu :is(button:active,button:hover) {
+  /* background-color: var(--border-color); */
+  font-size: 0.95rem;
 }
 .home-menu button:last-of-type{
   border-bottom: none;
+}
+
+/* Make the <a> tag match button styling */
+.home-menu a{
+  padding: 1rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--input-color);
+  background-color: transparent;
+  width: 100%;
+  color: var(--h3-fill);
+  transition: all 0.5s;
+  text-decoration: none;
+  display: block;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.home-menu a:is(:hover, a:active){
+  /* background-color: var(--border-color); */
+  font-size: 0.95rem;
+}
+.home-menu :is(.autosave:active,.autosave:hover){
+  font-size: 0.85rem;
+}
+/* AutoSave button — space between label and checkbox */
+.home-menu button:has(#auto-save){
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#auto-save{
+  width: 16px;
+  height: 16px;
+  accent-color: var(--h3-fill);
+  cursor: pointer;
+  flex-shrink: 0;
+  pointer-events: auto;
+  position: static;
+  align-self: center;
+  transform: translate(0,0);
 }
 header > section{
   display: flex;
@@ -443,7 +506,7 @@ main > section{
   overflow-y: auto;
   transform: translateX(-50%);
   left: 50%;
-    background-color: var(--input-img);
+  background-color: var(--input-img);
   color: var(--input-color);
   top:55px;
   display: flex;
@@ -557,12 +620,6 @@ main > section{
   padding-right: 0;
 }
 
-.color-sec img{
-  width: 15px;
-  height: auto;
-  object-fit: cover;
-}
-
 .normalb,
 .dashedb{
   height: 35px;
@@ -609,9 +666,9 @@ main > section{
   background-color: transparent; 
   width:auto;
   height:auto;
-    white-space: nowrap;   /* prevents wrapping */
-  overflow: hidden;    /* hide scroll */
-  resize: none;          /* optional */
+    white-space: nowrap;
+  overflow: hidden;
+  resize: none;
 }
 
 img,.notification{
@@ -625,7 +682,7 @@ img,.notification{
   left: 50%;
   top: 50%;
   transform: translate(-50%,-50%);
-  background-color: #ffffff;
+  background-color: var(--white);
   z-index: -2;
   border-radius: 0.2rem;
   touch-action: none;
@@ -849,9 +906,6 @@ img,.notification{
    border : none;
    text-align : left;
    resize: none;
-
-   /* white-space: pre;
-   overflow: hidden; */
 }
 .dropdown{
   position: absolute;
@@ -979,33 +1033,37 @@ input[type=number]::-webkit-outer-spin-button{
   background-color: var(--button-hover);
 }
 
+/* ─── Generate Modal ─────────────────────────────────────────────────────── */
 .generate{
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
   flex-direction: column;
-  justify-content:flex-end;
+  justify-content: flex-end;
   align-items: end;
-  background-color: #181818;
-  border: 2px solid #616161;
+  background-color: var(--side-color);
+  border: 2px solid var(--border-color);
   padding: 2rem;
   border-radius: 0.3rem;
   z-index: 3;
   display: none;
   width: 80%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .generate > div:first-child{
   width: 100%;
   display: flex;
-  flex-direction:row;
+  flex-direction: row;
   align-items: center;
-  justify-content: end;
+  justify-content: space-between;
   color: var(--h3-fill);
   border-bottom: var(--border-bottom);
   padding-bottom: 1rem;
-  gap: 40%;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .generate h3{
@@ -1020,30 +1078,45 @@ input[type=number]::-webkit-outer-spin-button{
   color: var(--input-color);
   font-weight: 700;
   border-radius: 0.3rem;
+  margin-top: 1rem;
+  align-self: flex-end;
 }
 
 .generate > div:first-child button{
   background-color: transparent;
   border: none;
   height: 30px;
-  width:30px;
+  width: 30px;
+  flex-shrink: 0;
 }
 
 .generate1{
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   padding: 1rem 0;
   width: 100%;
-  text-wrap: nowrap;
   color: var(--h3-fill);
 }
+
 .generate1 > div{
   display: flex;
   flex-direction: row;
-  gap: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  width: 100%;
+}
+
+/* Keep width+height pair and row+col pair each on one line */
+.generate1f{
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: nowrap;
 }
 
 .generate1d{
@@ -1053,19 +1126,24 @@ input[type=number]::-webkit-outer-spin-button{
   padding: 0.5rem 1rem;
   border-radius: 0.2rem;
   gap: 0.5rem;
-}
-.generate1f{
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
+  color: var(--h3-fill);
+  font-size: 0.8rem;
   align-items: center;
 }
+
+.generate1d input{
+  width: 60px;
+}
+
+
+
 .generate img{
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
 footer{
   background-color: var(--side-color);
   padding: 1rem;
@@ -1088,7 +1166,7 @@ footer{
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
+  background: var(--white);
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -1097,7 +1175,7 @@ footer{
 }
 .iterationDiv{
   position: relative;
-  background-color: #ffffff;
+  background-color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1107,10 +1185,12 @@ footer{
 .createNewProject{
   width: 100%;
   height: auto;
-  background-color: #ffffff;
+  background-color: var(--white);
   display: grid;
   place-items: center;
 }
+
+/* ─── Media Queries ──────────────────────────────────────────────────────── */
 @media (max-width: 768px){
   main{
     height: auto;
@@ -1131,7 +1211,6 @@ footer{
     gap: 0.5rem;
   }
   .header{
-
     gap: 1.5rem;
     text-wrap: nowrap;
     padding: 0.5rem 1rem;
@@ -1150,30 +1229,52 @@ footer{
     overflow-x: auto;
   }
   #propertiesTab::-webkit-scrollbar,
-.leftSidebar::-webkit-scrollbar{
-  height: 4px;
-}
-#propertiesTab > div:first-child{
-  overflow-y: auto;
-  width: 100vw;
-  min-width: 100vw;
-  border: none;
-}
-#properties{
-  display: flex;
-  flex-direction: row;
-  height: 300px;
-}
-#properties > section{
-  width: 100vw;
-  min-width: 100vw;
-  overflow-y: auto;
-  border-bottom: none;
-}
-.leftSidebar hr{
-  width: 5px;
-  height: 40px;
-}
+  .leftSidebar::-webkit-scrollbar{
+    height: 4px;
+  }
+  #propertiesTab > div:first-child{
+    overflow-y: auto;
+    width: 100vw;
+    min-width: 100vw;
+    border: none;
+  }
+  #properties{
+    display: flex;
+    flex-direction: row;
+    height: 300px;
+  }
+  #properties > section{
+    width: 100vw;
+    min-width: 100vw;
+    overflow-y: auto;
+    border-bottom: none;
+  }
+  .leftSidebar hr{
+    width: 5px;
+    height: 40px;
+  }
 
-}
+  /* Generate modal — full width, scrollable on mobile */
+  .generate{
+    width: 95%;
+    padding: 1.2rem;
+    max-height: 85vh;
+  }
 
+  .generate1 > div{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+
+  
+
+  .generate1d input{
+    width: 80px;
+  }
+
+  .generate > button{
+    width: 100%;
+    align-self: stretch;
+  }
+}

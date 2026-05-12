@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link rel="stylesheet" href="contact.css">
+</head>
+<body>
+
+  <div class="page">
+    <div class="page-header">
+      <p class="eyebrow">Reach out</p>
+      <h1>Get In Touch</h1>
+      <p>Report a bug, share feedback, or enquire about hiring.</p>
+    </div>
+
+    <div class="card">
+      <form id="contact-form" novalidate>
+
+        <div class="form-row">
+          <div class="form-field" id="field-name">
+            <label for="cf-name">Name</label>
+            <input type="text" id="cf-name" placeholder="Your name" autocomplete="name">
+            <span class="error-msg">Please enter your name.</span>
+          </div>
+          <div class="form-field" id="field-email">
+            <label for="cf-email">Email</label>
+            <input type="email" id="cf-email" placeholder="you@email.com" autocomplete="email">
+            <span class="error-msg">Enter a valid email address.</span>
+          </div>
+        </div>
+
+        <div class="form-field" id="field-subject">
+          <label for="cf-subject">Topic</label>
+          <select id="cf-subject">
+            <option value="Bug report">Bug report</option>
+            <option value="Feedback">Feedback</option>
+            <option value="Hiring enquiry">Hiring enquiry</option>
+            <option value="Other">Other</option>
+          </select>
+          <span class="error-msg">Please pick a topic.</span>
+        </div>
+
+        <div class="form-field" id="field-message">
+          <label for="cf-message">Message</label>
+          <textarea id="cf-message" placeholder="Describe your issue or message..."></textarea>
+          <span class="error-msg">Please write a message.</span>
+        </div>
+
+        <button type="submit" class="btn-submit" id="cf-submit">
+          <span class="btn-label">Send Message</span>
+          <div class="spinner"></div>
+        </button>
+
+        <div class="toast" id="cf-toast">
+          <svg class="toast-icon" id="toast-icon" viewBox="0 0 24 24"></svg>
+          <span id="toast-text"></span>
+        </div>
+
+        <div id="cf-fallback">
+          <div class="divider">or reach me directly</div>
+
+          <!-- Contact info — always visible -->
+          <div class="contact-info">
+            <a class="contact-item" href="mailto:youremail@gmail.com">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <div>
+                <span class="contact-label">Email</span>
+                <span class="contact-value">sannidawodumuriziq@gmail.com</span>
+              </div>
+            </a>
+            <a class="contact-item" href="tel:+000000000000">
+              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.78a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <div>
+                <span class="contact-label">Phone</span>
+                <span class="contact-value">+234 811 726 9043</span>
+              </div>
+            </a>
+            <a class="contact-item" href="https://linkedin.com/in/yourhandle" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+              <div>
+                <span class="contact-label">GITHUB</span>
+                <span class="contact-value">https://github.com/muriziq</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Action buttons — shown only on EmailJS failure -->
+          <div class="fallbacks" id="fallback-btns">
+            <button type="button" class="fallback-btn" onclick="copyEmail()">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span id="copy-label">Copy email</span>
+            </button>
+            <a class="fallback-btn" href="mailto:youremail@gmail.com">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Open mail app
+            </a>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+  <script src="contact.js"></script>
+
+
+</body>
+</html>

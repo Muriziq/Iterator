@@ -100,6 +100,11 @@ const newFonts = JSON.parse(localStorage.getItem("fontNames")) || [];
 let allFonts = [...defaultFonts, ...newFonts];
 let db = new Localbase("db") || [];
 
+let saveTimeout = null;
+let isSaving = false;
+let ifAutoSave = document.getElementById("auto-save").checked;
+
+
 const projectName = document.getElementById("project-name");
 let formerName = "";
 projectName.addEventListener("input", async (e) => {
@@ -161,6 +166,9 @@ window.addEventListener("load", async () => {
     thresholds.pointHold = () => adapt(7.5);
     thresholds.normalMode = () => adapt(15);
   }
+  document.getElementById("auto-save").checked = true
+  ifAutoSave = true
+  autoSave()
 });
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
@@ -5869,8 +5877,6 @@ async function importLoaded(jsonData, shouldCanvas = true) {
   );
   objects.push(...revived);
   requestDraw();
-  await saveToFile();
-  await deleteUnusedImage()
 }
 async function reviveObjects(objData) {
   let instance;
@@ -6008,7 +6014,6 @@ async function retrieveFile(e) {
     importLoaded(jsonData, false);
   };
 }
-let saveTimeout;
 async function deleteUnusedImage() {
     // Get all images from LocalBase
     const allImageFile = await db.collection(`img${formerName}`).get();
@@ -6033,22 +6038,39 @@ async function deleteUnusedImage() {
         await db.collection(`img${formerName}`).doc({ id }).delete();
     }
 }
-function autoSave() {
-  // Clear previous timeout to avoid multiple saves
-  clearTimeout(saveTimeout);
 
-  // Save after 2 seconds of no changes (debouncing)
-  saveTimeout = setTimeout(async () => {
+document.getElementById("auto-save").addEventListener("change", (e) => {
+  ifAutoSave = e.target.checked;
+  if (ifAutoSave) autoSave();
+  else clearTimeout(saveTimeout);
+});
+
+async function runSave(source) {
+  if (isSaving) return;
+  isSaving = true;
+  try {
     await saveToFile();
-    await deleteUnusedImage()
-    console.log("✅ Autosaved at:", new Date().toLocaleTimeString());
+    await deleteUnusedImage();
+    if (source === "manual") notify("Saved");
+    else console.log("✅ Autosaved at:", new Date().toLocaleTimeString());
+  } finally {
+    isSaving = false;
+  }
+}
+
+function autoSave() {
+  if (!ifAutoSave) return;
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    await runSave("auto");
     autoSave();
   }, 2000);
 }
+
 document.querySelector(".save").addEventListener("click", async () => {
-  await saveToFile();
-   await deleteUnusedImage()
-  notify("Saved");
+  if (ifAutoSave) clearTimeout(saveTimeout);
+  await runSave("manual");
+  if (ifAutoSave) autoSave();
 });
 async function saveToFile() {
   let allData = [
@@ -6086,27 +6108,8 @@ async function saveToFile() {
     notify("Error Saving");
   }
 
-  // const data = JSON.stringify(allData);
-
-  // const blob = new Blob([data], { type: "application/json" });
-
-  // const a = document.createElement("a");
-  // a.href = URL.createObjectURL(blob);
-  // a.download = `${projectName.value}.json`;
-  // a.click();
 }
 
-// fetch("project.json")
-//   .then(res => res.json())
-//   .then(async data => {
-//     const revived = await Promise.all(
-//       data.map(item => reviveObjects(item))
-//     );
-
-//     objects.push(...revived);
-//     requestDraw();
-//   });
-// End
 async function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
     if (pen !== null && pen.points.length > 0) {
@@ -6722,7 +6725,6 @@ async function saveAsPDF() {
     pdf.save("content.pdf");
   }
 }
-
 async function saveAsImage() {
   const element = document.getElementById("generationArea");
   let images;
@@ -6903,124 +6905,126 @@ function zoomToRect(rect) {
   requestDraw();
 }
 async function generateCard() {
-  const fragment = document.createDocumentFragment();
+  // --- Setup ---
   document.querySelector("footer").style.display = "block";
   cancelGenerate();
   await new Promise((resolve) => setTimeout(resolve, 50));
+
   scale = 1;
   panX = 0;
   panY = 0;
   requestDraw();
-  generationArea.style.gap = generateInfo.spacing + "px";
-const currentPageWidth = generationArea.getBoundingClientRect().width - (generateInfo.spacing * 2)
-const currentPageHeight = (currentPageWidth * generateInfo.renderHeight) / generateInfo.renderWidth
+
+  // Destructure once — avoids repeated property lookups
+  const { spacing, noPerRow, noPerColumn, renderWidth, renderHeight, renderPage } = generateInfo;
+
+  generationArea.style.gap = spacing + "px";
+
+  const pageRect = generationArea.getBoundingClientRect();
+  const currentPageWidth = pageRect.width - spacing * 2;
+  const currentPageHeight = (currentPageWidth * renderHeight) / renderWidth;
+
   let previouslySelectedObj = selectedObj;
   selectedObj = null;
-  generationArea.innerHTML = "";
 
-  const boxesPerPage = generateInfo.noPerColumn * generateInfo.noPerRow;
+  // Faster than innerHTML = "" — skips HTML parser
+  generationArea.replaceChildren();
 
+  const fragment = document.createDocumentFragment();
+  const boxesPerPage = noPerColumn * noPerRow;
+
+  // --- Page factory ---
   const createNewPage = () => {
     const page = document.createElement("section");
+    page.classList.add("createNewProject");
+    page.style.gridTemplateRows = `repeat(${noPerColumn}, 1fr)`;
+    page.style.gridTemplateColumns = `repeat(${noPerRow}, 1fr)`;
     fragment.append(page);
-    page.classList.add("createNewProject")
-    page.style.gridTemplateRows = `repeat(${generateInfo.noPerColumn}, 1fr)`;
-    page.style.gridTemplateColumns = `repeat(${generateInfo.noPerRow}, 1fr)`;
-
     return page;
   };
-  let currentPage = createNewPage();
-  let boxCountInPage = 0;
-  const containerWidth =
-    currentPageWidth - generateInfo.spacing;
-  const containerHeight =
-    currentPageHeight - generateInfo.spacing;
 
-  const cellWidth = containerWidth / generateInfo.noPerRow;
-  const cellHeight = containerHeight / generateInfo.noPerColumn;
+  // --- Sizing (computed once, outside loop) ---
+  const containerWidth = currentPageWidth - spacing;
+  const containerHeight = currentPageHeight - spacing;
+  const cellWidth = containerWidth / noPerRow;
+  const cellHeight = containerHeight / noPerColumn;
 
-  // scale for preview grid placement (DOM sizing)
-  const paperRect0 = canvassDiv.getBoundingClientRect();
-  const localScale = Math.min(
-    cellWidth / paperRect0.width,
-    cellHeight / paperRect0.height,
-  );
-const ifNotAutoWidth = paperRect0.width * localScale
-const ifNotAutoHeight = paperRect0.height * localScale
+  const paperRect = canvassDiv.getBoundingClientRect();
+  const localScale = Math.min(cellWidth / paperRect.width, cellHeight / paperRect.height);
+  const ifNotAutoWidth = paperRect.width * localScale;
+  const ifNotAutoHeight = paperRect.height * localScale;
+
+  // --- Iteration length ---
   let iterationLength = 1;
 
   if (textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...textBoxes.map((tb) => tb.textArea.split("\n").length),
+      ...textBoxes.map((tb) => tb.textArea.split("\n").length)
     );
   }
 
   const maxImageIterLength = Math.max(
     1,
-    ...images.map((imgObj) =>
-      imgObj.originalFiles.length ? imgObj.originalFiles.length : 1,
-    ),
+    ...images.map((img) => (img.originalFiles.length ? img.originalFiles.length : 1))
   );
 
   iterationLength = Math.max(iterationLength, maxImageIterLength);
 
-  // Increase output resolution. You can change this to 1, 2, 3...
+  // --- Crop constants (hoisted; never change per iteration) ---
   const scaleFactor = 1;
-  const loader = new LoaderManager(iterationLength); // Set max items to the number of selected files
+  const cropX = (canvas.width - measurement.width) / 2;
+  const cropY = (canvas.height - measurement.height) / 2;
+  const cropW = measurement.width;
+  const cropH = measurement.height;
+
+  // --- Reusable cropped canvas ---
+  const croppedCanvas = document.createElement("canvas");
+  const cty = croppedCanvas.getContext("2d");
+  croppedCanvas.width = cropW * scaleFactor;
+  croppedCanvas.height = cropH * scaleFactor;
+
+  // Only set transform once if scaleFactor never changes
+  if (scaleFactor !== 1) {
+    cty.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
+  }
+
+  const loader = new LoaderManager(iterationLength);
   loader.createLoader();
   await new Promise((resolve) => setTimeout(resolve, 50));
-    const canvasRect = canvas.getBoundingClientRect();
-    const paperRect = canvassDiv.getBoundingClientRect();
-    const cropX = (canvas.width - measurement.width) / 2;
-    const cropY = (canvas.height - measurement.height) / 2;
-    const cropW = measurement.width;
-    const cropH = measurement.height;
-    const croppedCanvas = document.createElement("canvas");
-    const cty = croppedCanvas.getContext("2d");
-    croppedCanvas.width = cropW * scaleFactor;
-    croppedCanvas.height = cropH * scaleFactor;
 
+  let currentPage = createNewPage();
+  let boxCountInPage = 0;
 
+  // Time-based yield — adapts to actual frame duration instead of blind i % 10
+  let lastYield = Date.now();
+
+  // --- Main loop ---
   for (let i = 0; i < iterationLength; i++) {
-    // 1) draw current iteration onto main canvas
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    cty.clearRect(0, 0, croppedCanvas.width, croppedCanvas.height);
+
     await Promise.all([
-      ...images.map(img => img.drawIteratedImage(i)),
-      ...textBoxes.map(textBox => textBox.drawIteratedImage(i))
+      ...images.map((img) => img.drawIteratedImage(i)),
+      ...textBoxes.map((tb) => tb.drawIteratedImage(i)),
     ]);
+
     objects.forEach((obj) => obj.addObject());
-    cty.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
-    cty.drawImage(
-      canvas,
-      cropX,
-      cropY,
-      cropW,
-      cropH, // source (canvas pixels)
-      0,
-      0,
-      cropW,
-      cropH, // dest (before scaleFactor transform)
-    );
-    const div = document.createElement("div");
+
+    cty.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+    // Reuse a single preview canvas per iteration (reduces GC churn)
     const previewCanvas = document.createElement("canvas");
     const ptx = previewCanvas.getContext("2d");
+    const div = document.createElement("div");
+    div.classList.add("iterationDiv");
 
-  div.classList.add("iterationDiv")
-
-    if (generateInfo.renderPage === "auto") {
-      previewCanvas.width = currentPageWidth
-      previewCanvas.height = currentPageHeight
-      previewCanvas.style.width = currentPageWidth + "px"
-      previewCanvas.style.height = currentPageHeight+ "px"
-      ptx.drawImage(
-        croppedCanvas,
-        0,
-        0,
-        currentPageWidth,
-        currentPageHeight
-      )
+    if (renderPage === "auto") {
+      previewCanvas.width = currentPageWidth;
+      previewCanvas.height = currentPageHeight;
+      previewCanvas.style.width = currentPageWidth + "px";
+      previewCanvas.style.height = currentPageHeight + "px";
+      ptx.drawImage(croppedCanvas, 0, 0, currentPageWidth, currentPageHeight);
       div.append(previewCanvas);
       fragment.append(div);
     } else {
@@ -7028,37 +7032,34 @@ const ifNotAutoHeight = paperRect0.height * localScale
         currentPage = createNewPage();
         boxCountInPage = 0;
       }
-            previewCanvas.width = ifNotAutoWidth
-      previewCanvas.height = ifNotAutoHeight
-      previewCanvas.style.width = ifNotAutoWidth + "px"
-      previewCanvas.style.height = ifNotAutoHeight+ "px"
-        ptx.drawImage(
-        croppedCanvas,
-        0,
-        0,
-        ifNotAutoWidth,
-        ifNotAutoHeight
-      )
-      div.append(previewCanvas)
-            currentPage.append(div);
-
+      previewCanvas.width = ifNotAutoWidth;
+      previewCanvas.height = ifNotAutoHeight;
+      previewCanvas.style.width = ifNotAutoWidth + "px";
+      previewCanvas.style.height = ifNotAutoHeight + "px";
+      ptx.drawImage(croppedCanvas, 0, 0, ifNotAutoWidth, ifNotAutoHeight);
+      div.append(previewCanvas);
+      currentPage.append(div);
       boxCountInPage++;
     }
-    loader.incrementOriginalState();
-    if (i % 10 === 0) {
-await new Promise(resolve => requestAnimationFrame(resolve))
-}
-  
-}
-generationArea.append(fragment);
-  images.forEach((img) => img.backToDefault());
-  textBoxes.forEach((textBox) => textBox.backToDefault());
 
-  const generationAreaPosition = generationArea.offsetTop;
-  window.scrollTo({
-    top: generationAreaPosition,
-    behavior: "smooth",
-  });
+    loader.incrementOriginalState();
+
+    // Yield to browser only when a full frame has passed — prevents jank
+    const now = Date.now();
+    if (now - lastYield >= 16) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      lastYield = Date.now();
+    }
+  }
+
+  // Single DOM write at the end — all pages land at once
+  generationArea.append(fragment);
+
+  images.forEach((img) => img.backToDefault());
+  textBoxes.forEach((tb) => tb.backToDefault());
+
+  window.scrollTo({ top: generationArea.offsetTop, behavior: "smooth" });
+
   selectedObj = previouslySelectedObj;
   requestDraw();
 }
@@ -7393,9 +7394,9 @@ document.addEventListener("keydown", async (e) => {
     tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
   // console.log(e.key)
   if (isTyping) return;
-
-  e.preventDefault();
   if ((e.ctrlKey && e.key === "-") || (e.ctrlKey && e.key === "=")) return;
+  e.preventDefault();
+
   if (e.code === "ArrowUp") {
     if (selectedObj !== null) selectedObj.moveClip(0, -thresholds.arrowKeys());
     else if (multipleSelect && multipleSelectArr.length > 0) {

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help — Iterator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <p class="sidebar-title">Help Topics</p>
+
+      <div class="search-wrap">
+        <input class="search-input" type="text" id="search-input" placeholder="Search…" oninput="filterItems(this.value)">
+      </div>
+
+      <a class="nav-link active" href="#tools" onclick="setActive(this)">Tools</a>
+      <a class="nav-link" href="#shapable" onclick="setActive(this)">Shape Tools</a>
+      <a class="nav-link" href="#rect-tools" onclick="setActive(this)">Rectangle Tools</a>
+      <a class="nav-link" href="#text-iterate" onclick="setActive(this)">Text Iteration</a>
+      <a class="nav-link" href="#image-tools" onclick="setActive(this)">Image Options</a>
+      <a class="nav-link" href="#generate" onclick="setActive(this)">Generate</a>
+      <div class="nav-sep"></div>
+      <a class="nav-link" href="#shortcuts" onclick="setActive(this)">Keyboard Shortcuts</a>
+    </nav>
+
+    <!-- Content -->
+    <main class="content">
+
+      <p class="page-eyebrow">Documentation</p>
+      <h1 class="page-title">Help &amp; Reference</h1>
+      <p class="page-sub">Everything you need to know about using the Iterator. Browse by topic or search for a specific tool or shortcut.</p>
+
+      <!-- Tools -->
+      <section class="section" id="tools">
+        <div class="section-header">
+          <h2>Tools</h2>
+          <span class="section-badge">Toolbar</span>
+        </div>
+        <div class="tool-list" id="tools-list">
+
+          <div class="tool-item" data-name="move tool" data-desc="Selects and moves individual objects on the canvas. Click an object to select it, then drag to reposition it.">
+            <div class="tool-icon"><img src="imagess/mouse-pointer-2.svg" alt="Move tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Move Tool</span>
+              <span class="tool-desc">Selects and moves individual objects on the canvas. Click an object to select it, then drag to reposition it.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="multiple selection tool" data-desc="Selects multiple objects at once by clicking each one or dragging a selection box around them. All selected objects can be moved together.">
+            <div class="tool-icon"><img src="imagess/multiple-select.svg" alt="Multiple selection tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Multiple Selection Tool</span>
+              <span class="tool-desc">Selects multiple objects at once by clicking each one or dragging a selection box around them. All selected objects can be moved together.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="pan tool" data-desc="Pans and navigates around the canvas without selecting or modifying any objects. Click and drag to scroll the view in any direction.">
+            <div class="tool-icon"><img src="imagess/hand.svg" alt="Pan tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Pan Tool</span>
+              <span class="tool-desc">Pans and navigates around the canvas without selecting or modifying any objects. Click and drag to scroll the view in any direction.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="add rectangle tool" data-desc="Draws a rectangle on the canvas. Click and drag to define the width and height of the shape.">
+            <div class="tool-icon"><img src="imagess/rectangle-horizontal.svg" alt="Add rectangle tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Add Rectangle Tool</span>
+              <span class="tool-desc">Draws a rectangle on the canvas. Click and drag to define the width and height of the shape.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="add ellipse tool" data-desc="Draws an ellipse or circle on the canvas. Click and drag to define the size of the shape.">
+            <div class="tool-icon"><img src="imagess/circle.svg" alt="Add ellipse tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Add Ellipse Tool</span>
+              <span class="tool-desc">Draws an ellipse or circle on the canvas. Click and drag to define the size of the shape.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="add line tool" data-desc="Draws a straight line on the canvas. Click to set the start point, then drag to define the direction and length.">
+            <div class="tool-icon"><img src="imagess/pen-tool.svg" alt="Add line tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Add Line Tool</span>
+              <span class="tool-desc">Draws a straight line on the canvas. Click to set the start point, then drag to define the direction and length.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="add polygon tool" data-desc="Draws a polygon on the canvas. You can configure the number of sides in the properties panel before or after drawing.">
+            <div class="tool-icon"><img src="imagess/hexagon.svg" alt="Add polygon tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Add Polygon Tool</span>
+              <span class="tool-desc">Draws a polygon on the canvas. You can configure the number of sides in the properties panel before or after drawing.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="add image tool" data-desc="Places an image on the canvas from your device. Once added, the image can be resized, repositioned, and used as an iteration source.">
+            <div class="tool-icon"><img src="imagess/book-image.svg" alt="Add image tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Add Image Tool</span>
+              <span class="tool-desc">Places an image on the canvas from your device. Once added, the image can be resized, repositioned, and used as an iteration source.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="add textbox tool" data-desc="Adds a text box to the canvas. Type directly into it and style the text using the properties panel. Text boxes can also be iterated with dynamic content.">
+            <div class="tool-icon"><img src="imagess/type.svg" alt="Add textbox tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Add Textbox Tool</span>
+              <span class="tool-desc">Adds a text box to the canvas. Type directly into it and style the text using the properties panel. Text boxes can also be iterated with dynamic content.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="zoom tool" data-desc="Zooms in and out of the canvas. Click to zoom in, hold Alt and click to zoom out, or use the scroll wheel for fine control.">
+            <div class="tool-icon"><img src="imagess/zoom.svg" alt="Zoom tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Zoom Tool</span>
+              <span class="tool-desc">Zooms in and out of the canvas. Click to zoom in, hold Alt and click to zoom out, or use the scroll wheel for fine control.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="duplicate tool" data-desc="Creates an exact copy of the currently selected object and places it slightly offset from the original. Works with single objects and groups.">
+            <div class="tool-icon"><img src="imagess/copy.svg" alt="Duplicate tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Duplicate Tool</span>
+              <span class="tool-desc">Creates an exact copy of the currently selected object and places it slightly offset from the original. Works with single objects and groups.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="delete tool" data-desc="Permanently removes the currently selected object or group from the canvas. This action can be undone with Ctrl + Z.">
+            <div class="tool-icon"><img src="imagess/trash.svg" alt="Delete tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Delete Tool</span>
+              <span class="tool-desc">Permanently removes the currently selected object or group from the canvas. This action can be undone with Ctrl + Z.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="layer order tool" data-desc="Controls the stacking order of objects on the canvas. Use it to bring objects forward, send them backward, or move them to the very front or back of the layer stack.">
+            <div class="tool-icon"><img src="imagess/bring-to-front.svg" alt="Layer order tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Layer Order Tool</span>
+              <span class="tool-desc">Controls the stacking order of objects on the canvas. Use it to bring objects forward, send them backward, or move them to the very front or back of the layer stack.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="align top" data-desc="Aligns the selected object to the top edge of the canvas. When multiple objects are selected, they are all aligned to the top edge of the last object selected.">
+            <div class="tool-icon"><img src="imagess/align-start-vertical.svg" alt="Align top"></div>
+            <div class="tool-info">
+              <span class="tool-name">Align Top</span>
+              <span class="tool-desc">Aligns the selected object to the top edge of the canvas. When multiple objects are selected, they are all aligned to the top edge of the last object selected.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="align center vertically" data-desc="Aligns selected objects to the vertical center of the canvas or to each other's vertical midpoint when multiple objects are selected.">
+            <div class="tool-icon"><img src="imagess/align-center-vertical.svg" alt="Align center vertically"></div>
+            <div class="tool-info">
+              <span class="tool-name">Align Center (Vertical)</span>
+              <span class="tool-desc">Aligns selected objects to the vertical center of the canvas or to each other's vertical midpoint when multiple objects are selected.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="align bottom" data-desc="Aligns the selected object to the bottom edge of the canvas. When multiple objects are selected, they are all aligned to the bottom edge of the last object selected.">
+            <div class="tool-icon"><img src="imagess/align-end-vertical.svg" alt="Align bottom"></div>
+            <div class="tool-info">
+              <span class="tool-name">Align Bottom</span>
+              <span class="tool-desc">Aligns the selected object to the bottom edge of the canvas. When multiple objects are selected, they are all aligned to the bottom edge of the last object selected.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="align left" data-desc="Aligns the selected object to the left edge of the canvas. When multiple objects are selected, they are all aligned to the leftmost edge among them.">
+            <div class="tool-icon"><img src="imagess/align-start-horizontal.svg" alt="Align left"></div>
+            <div class="tool-info">
+              <span class="tool-name">Align Left</span>
+              <span class="tool-desc">Aligns the selected object to the left edge of the canvas. When multiple objects are selected, they are all aligned to the leftmost edge among them.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="align center horizontally" data-desc="Aligns selected objects to the horizontal center of the canvas or to each other's horizontal midpoint when multiple objects are selected.">
+            <div class="tool-icon"><img src="imagess/align-center-horizontal.svg" alt="Align center horizontally"></div>
+            <div class="tool-info">
+              <span class="tool-name">Align Center (Horizontal)</span>
+              <span class="tool-desc">Aligns selected objects to the horizontal center of the canvas or to each other's horizontal midpoint when multiple objects are selected.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="align right" data-desc="Aligns the selected object to the right edge of the canvas. When multiple objects are selected, they are all aligned to the rightmost edge among them.">
+            <div class="tool-icon"><img src="imagess/align-end-horizontal.svg" alt="Align right"></div>
+            <div class="tool-info">
+              <span class="tool-name">Align Right</span>
+              <span class="tool-desc">Aligns the selected object to the right edge of the canvas. When multiple objects are selected, they are all aligned to the rightmost edge among them.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="flip horizontal" data-desc="Mirrors the selected object horizontally, producing a left-to-right reflection. Works on single objects and groups.">
+            <div class="tool-icon"><img src="imagess/flip-horizontal-2.svg" alt="Flip horizontal"></div>
+            <div class="tool-info">
+              <span class="tool-name">Flip Horizontal</span>
+              <span class="tool-desc">Mirrors the selected object horizontally, producing a left-to-right reflection. Works on single objects and groups.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="flip vertical" data-desc="Mirrors the selected object vertically, producing a top-to-bottom reflection. Works on single objects and groups.">
+            <div class="tool-icon"><img src="imagess/flip-vertical-2.svg" alt="Flip vertical"></div>
+            <div class="tool-info">
+              <span class="tool-name">Flip Vertical</span>
+              <span class="tool-desc">Mirrors the selected object vertically, producing a top-to-bottom reflection. Works on single objects and groups.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="group tool" data-desc="Combines two or more selected objects into a single group. Grouped objects can be moved, resized, and transformed together as one unit.">
+            <div class="tool-icon"><img src="imagess/users.svg" alt="Group tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Group Tool</span>
+              <span class="tool-desc">Combines two or more selected objects into a single group. Grouped objects can be moved, resized, and transformed together as one unit.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="clip tool" data-desc="Clips the selected objects so that only the portion within the topmost shape (the clipping path) remains visible. Everything outside the clipping path is hidden.">
+            <div class="tool-icon"><img src="imagess/paperclip.svg" alt="Clip tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Clip Tool</span>
+              <span class="tool-desc">Clips the selected objects so that only the portion within the topmost shape (the clipping path) remains visible. Everything outside the clipping path is hidden.</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Shape Tools -->
+      <section class="section" id="shapable">
+        <div class="section-header">
+          <h2>Shape Tools</h2>
+          <span class="section-badge">Edit Mode</span>
+        </div>
+        <div class="note">These tools are available when an object is in Edit Mode. Switch to Edit Mode first to access shape-editing controls.</div>
+        <div class="tool-list" id="shapable-list">
+
+          <div class="tool-item" data-name="convert to curve" data-desc="Converts a straight line segment into a smooth Bezier curve. Drag the control handles that appear to adjust the curve's shape.">
+            <div class="tool-icon"><img src="imagess/spline-pointer.svg" alt="Convert to curve"></div>
+            <div class="tool-info">
+              <span class="tool-name">Convert to Curve</span>
+              <span class="tool-desc">Converts a straight line segment into a smooth Bézier curve. Drag the control handles that appear to adjust the curve's shape freely.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="convert to rounded edge" data-desc="Converts a curve segment into a rounded corner with a uniform radius, giving it a smooth, consistent arc rather than a freeform curve.">
+            <div class="tool-icon"><img src="imagess/square-round-corner.svg" alt="Convert to rounded edge"></div>
+            <div class="tool-info">
+              <span class="tool-name">Convert to Rounded Edge</span>
+              <span class="tool-desc">Converts a curve segment into a rounded corner with a uniform radius, giving it a smooth, consistent arc rather than a freeform curve.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="edit mode" data-desc="Switches the selected object into Edit Mode, revealing its individual anchor points and segments so you can reshape it freely.">
+            <button class="tool-btn">Edit Mode</button>
+            <div class="tool-info">
+              <span class="tool-name">Edit Mode</span>
+              <span class="tool-desc">Switches the selected object into Edit Mode, revealing its individual anchor points and segments so you can reshape it freely.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="normal mode" data-desc="Returns the object from Edit Mode back to Normal Mode. In Normal Mode you can resize, move, rotate, and interact with the object alongside other objects on the canvas.">
+            <button class="tool-btn">Normal Mode</button>
+            <div class="tool-info">
+              <span class="tool-name">Normal Mode</span>
+              <span class="tool-desc">Returns the object from Edit Mode back to Normal Mode. In Normal Mode you can resize, move, rotate, and interact with the object alongside other objects on the canvas.</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Rectangle Tools -->
+      <section class="section" id="rect-tools">
+        <div class="section-header">
+          <h2>Rectangle Tools</h2>
+          <span class="section-badge">Rectangle Only</span>
+        </div>
+        <div class="note">These tools only appear in the properties panel when a rectangle is selected.</div>
+        <div class="tool-list" id="rect-list">
+
+          <div class="tool-item" data-name="bevel tool" data-desc="Adds a bevel effect to the corners of a selected rectangle, cutting each corner at a diagonal angle. Adjust the bevel amount in the properties panel.">
+            <div class="tool-icon"><img src="imagess/Vector 169.svg" alt="Bevel tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Bevel Tool</span>
+              <span class="tool-desc">Adds a bevel effect to the corners of a selected rectangle, cutting each corner at a diagonal angle. Adjust the bevel size in the properties panel.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="round tool" data-desc="Adds a rounded corner effect to a selected rectangle. Increasing the value produces softer, more circular corners.">
+            <div class="tool-icon"><img src="imagess/Rectangle 128.svg" alt="Round tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Round Tool</span>
+              <span class="tool-desc">Adds a rounded corner effect to a selected rectangle. Increasing the value produces softer, more circular corners.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="shape tool" data-desc="Breaks the selected object down into its individual line segments, each of which can then be repositioned and edited independently.">
+            <div class="tool-icon"><img src="imagess/vector-square.svg" alt="Shape tool"></div>
+            <div class="tool-info">
+              <span class="tool-name">Shape Tool</span>
+              <span class="tool-desc">Breaks the selected object down into its individual line segments, each of which can then be repositioned and edited independently.</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Text Iteration -->
+      <section class="section" id="text-iterate">
+        <div class="section-header">
+          <h2>Text Iteration</h2>
+          <span class="section-badge">Textbox</span>
+        </div>
+        <div class="tool-list" id="text-list">
+
+          <div class="tool-item" data-name="format iterated" data-desc="Controls how iterated text lines that exceed the original text box width are displayed. Use this when your iterated data contains entries longer than the original.">
+            <button class="tool-btn">Format Iterated</button>
+            <div class="tool-info">
+              <span class="tool-name">Format Iterated</span>
+              <span class="tool-desc">Controls how iterated text that exceeds the original text box width is displayed. Use this when your data contains entries longer than the original text.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="iterate align" data-desc="Sets the alignment behaviour for all iterated text entries.">
+            <select class="tool-select" disabled>
+              <option>None</option>
+              <option>Fit</option>
+              <option>Shrink to Fit</option>
+              <option>Create New Line</option>
+              <option>At White Space</option>
+            </select>
+            <div class="tool-info">
+              <span class="tool-name">Iterate Align</span>
+              <span class="tool-desc">Sets how all iterated text entries are aligned and how overflow is handled. The available modes are:
+                <br><br>
+                <strong style="color:var(--h3-fill)">None</strong> — No adjustment. Text renders exactly as-is with no overflow handling.<br>
+                <strong style="color:var(--h3-fill)">Fit</strong> — All text entries attempt to fit within the width of the original text box, scaling as needed.<br>
+                <strong style="color:var(--h3-fill)">Shrink to Fit</strong> — Only entries longer than the original shrink to fit; shorter entries are unaffected.<br>
+                <strong style="color:var(--h3-fill)">Create New Line</strong> — Text longer than the original width wraps onto a new line automatically.<br>
+                <strong style="color:var(--h3-fill)">At White Space</strong> — Text wraps onto a new line only at word boundaries (spaces), preventing mid-word breaks.
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Image Options -->
+      <section class="section" id="image-tools">
+        <div class="section-header">
+          <h2>Image Options</h2>
+          <span class="section-badge">Image</span>
+        </div>
+        <div class="tool-list" id="image-list">
+
+          <div class="tool-item" data-name="aspect ratio" data-desc="Locks the width-to-height ratio of the original image file when resizing. Enable this to prevent distortion when you change the image dimensions.">
+            <button class="tool-btn">Aspect Ratio</button>
+            <div class="tool-info">
+              <span class="tool-name">Aspect Ratio</span>
+              <span class="tool-desc">Locks the width-to-height ratio of the original image file when resizing. Enable this to prevent distortion when changing the image dimensions.</span>
+            </div>
+          </div>
+
+          <div class="tool-item" data-name="add images" data-desc="Adds more images to the iteration sequence. Each added image will appear as a separate iteration output. Three sizing modes control how added images are displayed.">
+            <select class="tool-select" disabled>
+              <option>Maintain Size</option>
+              <option>Maintain Width</option>
+              <option>Maintain Height</option>
+            </select>
+            <div class="tool-info">
+              <span class="tool-name">Add Images</span>
+              <span class="tool-desc">Adds more images to the iteration sequence. Each image becomes a separate output. Three sizing modes are available:
+                <br><br>
+                <strong style="color:var(--h3-fill)">Maintain Size</strong> — Preserves the exact width and height of the original image for every added image.<br>
+                <strong style="color:var(--h3-fill)">Maintain Width</strong> — Keeps the original width fixed; the height adjusts proportionally to match each added image's aspect ratio.<br>
+                <strong style="color:var(--h3-fill)">Maintain Height</strong> — Keeps the original height fixed; the width adjusts proportionally to match each added image's aspect ratio.
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Generate -->
+      <section class="section" id="generate">
+        <div class="section-header">
+          <h2>Generate</h2>
+          <span class="section-badge">Output</span>
+        </div>
+        <div class="tool-list" id="generate-list">
+
+          <div class="tool-item" data-name="generate button" data-desc="Starts the iteration process, rendering all outputs based on your current canvas design and data. Once generation is complete, the results are ready to be saved as a PDF or image file.">
+            <button class="tool-btn">Generate</button>
+            <div class="tool-info">
+              <span class="tool-name">Generate Button</span>
+              <span class="tool-desc">Starts the iteration process, rendering all outputs based on your current canvas design and data. Once generation is complete, the results are ready to be exported as a PDF or image file.</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Shortcuts -->
+      <section class="section" id="shortcuts">
+        <div class="section-header">
+          <h2>Keyboard Shortcuts</h2>
+          <span class="section-badge">Quick Reference</span>
+        </div>
+        <div class="shortcut-grid" id="shortcuts-list">
+
+          <div class="shortcut-item" data-name="arrow up" data-desc="Moves the selected object or group upward. If nothing is selected, pans the canvas up.">
+            <span class="key-badge">↑ Arrow</span>
+            <span class="shortcut-desc">Move selected object up. If nothing is selected, pans the canvas up.</span>
+          </div>
+          <div class="shortcut-item" data-name="arrow down" data-desc="Moves the selected object or group downward. If nothing is selected, pans the canvas down.">
+            <span class="key-badge">↓ Arrow</span>
+            <span class="shortcut-desc">Move selected object down. If nothing is selected, pans the canvas down.</span>
+          </div>
+          <div class="shortcut-item" data-name="arrow left" data-desc="Moves the selected object or group to the left. If nothing is selected, pans the canvas left.">
+            <span class="key-badge">← Arrow</span>
+            <span class="shortcut-desc">Move selected object left. If nothing is selected, pans the canvas left.</span>
+          </div>
+          <div class="shortcut-item" data-name="arrow right" data-desc="Moves the selected object or group to the right. If nothing is selected, pans the canvas right.">
+            <span class="key-badge">→ Arrow</span>
+            <span class="shortcut-desc">Move selected object right. If nothing is selected, pans the canvas right.</span>
+          </div>
+          <div class="shortcut-item" data-name="ctrl d duplicate" data-desc="Duplicates the currently selected object.">
+            <span class="key-badge">Ctrl + D</span>
+            <span class="shortcut-desc">Duplicate the selected object.</span>
+          </div>
+          <div class="shortcut-item" data-name="shift at zoom fit" data-desc="Zooms the canvas to fit the selected object within the viewport.">
+            <span class="key-badge">Shift + @</span>
+            <span class="shortcut-desc">Zoom to fit the selected object in view.</span>
+          </div>
+          <div class="shortcut-item" data-name="ctrl a select all" data-desc="Selects all objects currently on the canvas.">
+            <span class="key-badge">Ctrl + A</span>
+            <span class="shortcut-desc">Select all objects on the canvas.</span>
+          </div>
+          <div class="shortcut-item" data-name="ctrl g group" data-desc="Groups the selected objects together. Requires at least two objects to be selected.">
+            <span class="key-badge">Ctrl + G</span>
+            <span class="shortcut-desc">Group selected objects (minimum 2 required).</span>
+          </div>
+          <div class="shortcut-item" data-name="ctrl s save" data-desc="Saves the current project to a file.">
+            <span class="key-badge">Ctrl + S</span>
+            <span class="shortcut-desc">Save the project to file.</span>
+          </div>
+          <div class="shortcut-item" data-name="ctrl u ungroup" data-desc="Ungroups the currently selected group back into individual objects.">
+            <span class="key-badge">Ctrl + U</span>
+            <span class="shortcut-desc">Ungroup the selected group.</span>
+          </div>
+          <div class="shortcut-item" data-name="delete remove" data-desc="Deletes the currently selected object or group from the canvas.">
+            <span class="key-badge">Delete</span>
+            <span class="shortcut-desc">Delete the selected object.</span>
+          </div>
+          <div class="shortcut-item" data-name="page up layer forward" data-desc="Moves the selected object one step forward in the stacking order.">
+            <span class="key-badge">Page Up</span>
+            <span class="shortcut-desc">Move selected object one step forward in layer order.</span>
+          </div>
+          <div class="shortcut-item" data-name="page down layer back" data-desc="Moves the selected object one step backward in the stacking order.">
+            <span class="key-badge">Page Down</span>
+            <span class="shortcut-desc">Move selected object one step back in layer order.</span>
+          </div>
+          <div class="shortcut-item" data-name="home bring to front" data-desc="Brings the selected object to the very front of the layer stack.">
+            <span class="key-badge">Home</span>
+            <span class="shortcut-desc">Bring selected object to the front.</span>
+          </div>
+          <div class="shortcut-item" data-name="end send to back" data-desc="Sends the selected object to the very back of the layer stack.">
+            <span class="key-badge">End</span>
+            <span class="shortcut-desc">Send selected object to the back.</span>
+          </div>
+          <div class="shortcut-item" data-name="l align left" data-desc="Aligns the selected objects to the left.">
+            <span class="key-badge">L</span>
+            <span class="shortcut-desc">Align selected objects to the left.</span>
+          </div>
+          <div class="shortcut-item" data-name="c align center horizontal" data-desc="Aligns the selected objects to the horizontal center.">
+            <span class="key-badge">C</span>
+            <span class="shortcut-desc">Align selected objects to the horizontal center.</span>
+          </div>
+          <div class="shortcut-item" data-name="r align right" data-desc="Aligns the selected objects to the right.">
+            <span class="key-badge">R</span>
+            <span class="shortcut-desc">Align selected objects to the right.</span>
+          </div>
+          <div class="shortcut-item" data-name="t align top" data-desc="Aligns the selected objects to the top.">
+            <span class="key-badge">T</span>
+            <span class="shortcut-desc">Align selected objects to the top.</span>
+          </div>
+          <div class="shortcut-item" data-name="e align center vertical" data-desc="Aligns the selected objects to the vertical center.">
+            <span class="key-badge">E</span>
+            <span class="shortcut-desc">Align selected objects to the vertical center.</span>
+          </div>
+          <div class="shortcut-item" data-name="b align bottom" data-desc="Aligns the selected objects to the bottom.">
+            <span class="key-badge">B</span>
+            <span class="shortcut-desc">Align selected objects to the bottom.</span>
+          </div>
+          <div class="shortcut-item" data-name="q flip horizontal" data-desc="Flips the selected objects horizontally.">
+            <span class="key-badge">Q</span>
+            <span class="shortcut-desc">Flip selected objects horizontally.</span>
+          </div>
+          <div class="shortcut-item" data-name="w flip vertical" data-desc="Flips the selected objects vertically.">
+            <span class="key-badge">W</span>
+            <span class="shortcut-desc">Flip selected objects vertically.</span>
+          </div>
+          <div class="shortcut-item" data-name="m move tool switch" data-desc="Switches the active tool to the Move Tool.">
+            <span class="key-badge">M</span>
+            <span class="shortcut-desc">Switch to Move Tool.</span>
+          </div>
+          <div class="shortcut-item" data-name="s selection tool switch" data-desc="Switches the active tool to the Multiple Selection Tool.">
+            <span class="key-badge">S</span>
+            <span class="shortcut-desc">Switch to Multiple Selection Tool.</span>
+          </div>
+          <div class="shortcut-item" data-name="h pan tool switch" data-desc="Switches the active tool to the Pan Tool.">
+            <span class="key-badge">H</span>
+            <span class="shortcut-desc">Switch to Pan Tool.</span>
+          </div>
+          <div class="shortcut-item" data-name="ctrl z undo" data-desc="Undoes the last action performed.">
+            <span class="key-badge">Ctrl + Z</span>
+            <span class="shortcut-desc">Undo the last action.</span>
+          </div>
+          <div class="shortcut-item" data-name="ctrl y redo" data-desc="Redoes the last undone action.">
+            <span class="key-badge">Ctrl + Y</span>
+            <span class="shortcut-desc">Redo the last undone action.</span>
+          </div>
+          <div class="shortcut-item" data-name="z zoom tool switch" data-desc="Switches the active tool to the Zoom Tool.">
+            <span class="key-badge">Z</span>
+            <span class="shortcut-desc">Switch to Zoom Tool.</span>
+          </div>
+          <div class="shortcut-item" data-name="p line tool switch" data-desc="Switches the active tool to the Add Line Tool.">
+            <span class="key-badge">P</span>
+            <span class="shortcut-desc">Switch to Add Line Tool.</span>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+<script src="help.js"></script>
+</body>
+</html>
