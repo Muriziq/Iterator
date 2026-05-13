@@ -6652,131 +6652,61 @@ document.getElementById("home-button").addEventListener("click", () => {
 });
 
 async function saveAsPDF() {
+    document.querySelector(".saveAsPdf").textContent = "loading"
   const container = document.getElementById("generationArea");
   const { jsPDF } = window.jspdf;
 
-  // how many pages before creating a new PDF
   const MAX_PAGES_PER_PDF = 50;
 
-  // helper
-  function createPDF() {
-    return new jsPDF({
-      orientation: "portrait",
+  const sections =
+    generateInfo.renderPage === "auto"
+      ? [...container.querySelectorAll("div")]
+      : [...container.querySelectorAll("section")];
+
+  if (sections.length === 0) {
+    console.warn("No sections found.");
+    return;
+  }
+
+  let pdfWidth, pdfHeight, createPDF;
+
+  if (generateInfo.renderPage === "auto") {
+    const rect = sections[0].getBoundingClientRect();
+    pdfWidth = rect.width * 0.75;   // px → pt ✅
+    pdfHeight = rect.height * 0.75;
+    createPDF = () => new jsPDF({
+      orientation: pdfWidth > pdfHeight ? "l" : "p",
       unit: "pt",
-      format:
-        generateInfo.renderPage === "auto"
-          ? "a4"
-          : generateInfo.renderPage.toLowerCase(),
-      compress: true,
+      format: [pdfWidth, pdfHeight],
+    });
+  } else {
+    pdfWidth = generateInfo.renderWidth;
+    pdfHeight = generateInfo.renderHeight;
+    createPDF = () => new jsPDF({
+      orientation: pdfWidth > pdfHeight ? "l" : "p",
+      unit: "pt",
+      format: generateInfo.renderPage.toLowerCase(),
     });
   }
 
-  // sections to render
-  const sections =
-    generateInfo.renderPage === "auto"
-      ? [container]
-      : [...container.querySelectorAll("section")];
-
   let pdf = createPDF();
-
   let currentPageCount = 0;
   let pdfIndex = 1;
 
   for (let i = 0; i < sections.length; i++) {
-    const section = sections[i];
-
     try {
-      // small delay so UI stays responsive
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      const canvas = await html2canvas(sections[i]);
+      const imgData = canvas.toDataURL("image/png");
 
-      let dataUrl;
+      if (currentPageCount > 0) pdf.addPage(); // ✅ fixed blank page bug
 
-      // render image
-      if (generateInfo.renderPage === "auto") {
-        const canvas = await html2canvas(section, {
-          useCORS: true,
-          allowTaint: true,
-          scale: 1,
-          backgroundColor: "#ffffff",
-        });
-
-        dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-
-        // free canvas memory
-        canvas.width = 0;
-        canvas.height = 0;
-      } else {
-        dataUrl = await domtoimage.toJpeg(section, {
-          quality: 0.9,
-          bgcolor: "#ffffff",
-        });
-      }
-
-      // load image safely
-      const img = new Image();
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = dataUrl;
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      const imgRatio = img.width / img.height;
-      const pageRatio = pageWidth / pageHeight;
-
-      let imgWidth;
-      let imgHeight;
-
-      if (imgRatio > pageRatio) {
-        imgWidth = pageWidth;
-        imgHeight = pageWidth / imgRatio;
-      } else {
-        imgHeight = pageHeight;
-        imgWidth = pageHeight * imgRatio;
-      }
-
-      // center image
-      const x = (pageWidth - imgWidth) / 2;
-      const y = (pageHeight - imgHeight) / 2;
-
-      // add page except first
-      if (currentPageCount > 0) {
-        pdf.addPage();
-      }
-
-      // add image
-      pdf.addImage(
-        dataUrl,
-        "JPEG",
-        x,
-        y,
-        imgWidth,
-        imgHeight,
-        undefined,
-        "FAST"
-      );
-
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       currentPageCount++;
 
-      // free image memory
-      img.src = "";
-
-      // save current PDF if limit reached
-      if (
-        currentPageCount >= MAX_PAGES_PER_PDF ||
-        i === sections.length - 1
-      ) {
-        pdf.save(`content-part-${pdfIndex}.pdf`);
-
+      if (currentPageCount >= MAX_PAGES_PER_PDF || i === sections.length - 1) {
+        pdf.save(`${formerName.replace(/\.json$/i, "")}-${pdfIndex}.pdf`);
         pdfIndex++;
-
-        // reset counters
         currentPageCount = 0;
-
-        // create new PDF if more pages remain
         if (i !== sections.length - 1) {
           pdf = createPDF();
         }
@@ -6785,8 +6715,10 @@ async function saveAsPDF() {
       console.error(`Failed to render section ${i + 1}`, error);
     }
   }
+      document.querySelector(".saveAsPdf").textContent = "save As Pdf"
 }
 async function saveAsImage() {
+  document.querySelector(".saveAsImage").textContent = "loading"
   const element = document.getElementById("generationArea");
   let images;
   if (generateInfo.renderPage === "auto") {
@@ -6807,6 +6739,7 @@ async function saveAsImage() {
       console.error("Failed to save as image:", error);
     }
   }
+  document.querySelector(".saveAsImage").textContent = "save As Image"
 }
 document.querySelector(".snip").addEventListener("click", () => {
   if (clipped === null) {
