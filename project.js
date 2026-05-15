@@ -5848,7 +5848,9 @@ reader.addEventListener("load", async () => {
       aspectRatio: img.height / img.width,
       fileName: file.name,
     };
-
+  loader.incrementOriginalState();
+  canvas.style.cursor = "crosshair";
+  isDrawing = "image";
     resolve(true);
 
   } catch (err) {
@@ -5857,9 +5859,7 @@ reader.addEventListener("load", async () => {
 });
     };
   });
-  loader.incrementOriginalState();
-  canvas.style.cursor = "crosshair";
-  isDrawing = "image";
+
 }
 // For Saving and Retrieving
 async function importLoaded(jsonData, shouldCanvas = true,saving=false) {
@@ -5935,7 +5935,7 @@ async function reviveObjects(objData) {
         await db.collection(`img${formerName}`).add({
           id: imageID,
           image: objData.originalFiles[i],
-          entryDate: new Date().getTime(),
+          entryDate: (new Date()).getTime(),
         });
         objData.originalFiles[i] = imageID;
       }
@@ -6018,7 +6018,7 @@ async function retrieveFile(e) {
 async function deleteUnusedImage() {
     // Get all images from LocalBase
     const allImageFile = await db.collection(`img${formerName}`).get();
-    if(drawingImage !== null) allImageFile.push(drawingImage.originalFile)
+    if(drawingImage !== null) return
     // Create Set for O(1) lookups
     const imagesInSet = new Set();
     images.forEach(img => {

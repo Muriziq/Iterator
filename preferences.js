@@ -135,6 +135,7 @@ document.getElementById("showFonts").addEventListener("click", (e) => {
 });
 async function renderData(search = "") {
   try {
+    orderProjects.innerHTML = ""
     let allData = "";
     let datas = await db
       .collection("projects")
@@ -251,6 +252,7 @@ async function importData() {
           }
           alert("All projects have been deleted");
           await renderData();
+          updateStorageInfo()
         }
       });
 
