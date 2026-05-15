@@ -143,7 +143,7 @@ window.addEventListener("load", async () => {
         .get();
       projectName.value = objectsData.name.replace(/\.json$/i, "");
       formerName = objectsData.name;
-      await importLoaded(objectsData.object);
+      await importLoaded(objectsData.object,true,true);
     } else {
       const names = JSON.parse(localStorage.getItem("project-names")) || [];
       const newProjectCount = names.filter((project) =>
@@ -151,10 +151,6 @@ window.addEventListener("load", async () => {
       ).length;
       projectName.value = `new project ${newProjectCount === 0 ? "" : newProjectCount}`;
     }
-  } catch (error) {
-    console.log(error);
-  }
-
   width.value = measurement.width;
   height.value = measurement.height;
   canvasSize();
@@ -166,9 +162,13 @@ window.addEventListener("load", async () => {
     thresholds.pointHold = () => adapt(7.5);
     thresholds.normalMode = () => adapt(15);
   }
-  document.getElementById("auto-save").checked = false
-  ifAutoSave = true
-  autoSave()
+
+
+  } catch (error) {
+    console.log(error);
+  }
+
+
 });
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
@@ -5832,21 +5832,29 @@ async function addImage(e) {
       const reader = new FileReader();
       reader.readAsDataURL(file);
 
-      reader.addEventListener("load", async () => {
-        const imageID = crypto.randomUUID();
-        await db.collection(`img${formerName}`).add({
-          id: imageID,
-          image: reader.result,
-          entryDate: new Date().getTime(),
-        });
-        drawingImage = {
-          image: img,
-          originalFile: imageID,
-          aspectRatio: img.height / img.width,
-          fileName: file.name,
-        };
-        resolve(true);
-      });
+reader.addEventListener("load", async () => {
+  try {
+    const imageID = crypto.randomUUID();
+
+    await db.collection(`img${formerName}`).add({
+      id: imageID,
+      image: reader.result,
+      entryDate: (new Date()).getTime(),
+    });
+
+    drawingImage = {
+      image: img,
+      originalFile: imageID,
+      aspectRatio: img.height / img.width,
+      fileName: file.name,
+    };
+
+    resolve(true);
+
+  } catch (err) {
+    console.error("DB INSERT ERROR:", err);
+  }
+});
     };
   });
   loader.incrementOriginalState();
@@ -5854,7 +5862,7 @@ async function addImage(e) {
   isDrawing = "image";
 }
 // For Saving and Retrieving
-async function importLoaded(jsonData, shouldCanvas = true) {
+async function importLoaded(jsonData, shouldCanvas = true,saving=false) {
   const { canvasItems, revivableItems } = jsonData.reduce(
     (acc, data) => {
       if (data.type === "canvas") {
@@ -5878,6 +5886,11 @@ async function importLoaded(jsonData, shouldCanvas = true) {
   );
   objects.push(...revived);
   requestDraw();
+  if(saving){
+      document.getElementById("auto-save").checked = true
+  ifAutoSave = true
+  autoSave()
+  }
 }
 async function reviveObjects(objData) {
   let instance;
@@ -5928,11 +5941,12 @@ async function reviveObjects(objData) {
       }
       objData.isConverted = false;
     }
+    console.log(objData.originalFiles)
     const revivedImageFile = await db
       .collection(`img${formerName}`)
-      .limit(1)
-      .get();
-    const revivedImage = revivedImageFile[0].image;
+          .doc({ id: objData.originalFiles[0] })
+          .get()
+    const revivedImage = revivedImageFile.image;
     const img = new Image();
     img.src = revivedImage;
     await new Promise((resolve, reject) => {
@@ -5982,21 +5996,7 @@ async function reviveObjects(objData) {
     );
   }
 
-  // ✅ Handle images properly
-  // if (objData.type === "image" && objData.originalFiles?.length) {
-  //   const loadedImages = await Promise.all(
-  //     objData.originalFiles.map((src) => {
-  //       return new Promise((resolve) => {
-  //         const img = new Image();
-  //         img.src = src;
-  //         img.onload = () => resolve(img);
-  //       });
-  //     }),
-  //   );
 
-  //   objData.iteratedFiles = loadedImages;
-  //   objData.imagePreview = loadedImages[0]?.src || "";
-  // }
 
   Object.assign(instance, objData);
   if (objData.type === "text") textBoxes.push(instance);
@@ -6018,7 +6018,7 @@ async function retrieveFile(e) {
 async function deleteUnusedImage() {
     // Get all images from LocalBase
     const allImageFile = await db.collection(`img${formerName}`).get();
-    
+    if(drawingImage !== null) allImageFile.push(drawingImage.originalFile)
     // Create Set for O(1) lookups
     const imagesInSet = new Set();
     images.forEach(img => {
@@ -6043,7 +6043,10 @@ async function deleteUnusedImage() {
 document.getElementById("auto-save").addEventListener("change", (e) => {
   ifAutoSave = e.target.checked;
   if (ifAutoSave) autoSave();
-  else clearTimeout(saveTimeout);
+  else{
+    ifAutoSave = false
+clearTimeout(saveTimeout);
+  } 
 });
 
 async function runSave(source) {
@@ -6846,6 +6849,7 @@ function group() {
     selectedObj = newGroup;
     requestDraw();
     Tools("moveTool");
+    newGroup.formatProperties()
   }
 }
 function getMousePos(canvas, evt) {
@@ -7268,7 +7272,7 @@ function cDoubleClick(event) {
     }
   }
 }
-function wMouseUp() {
+async function wMouseUp() {
   if (drawingStart) {
     drawingStart = false;
 
@@ -7303,7 +7307,9 @@ function wMouseUp() {
       objects.push(drawedObject);
       if (isDrawing === "image") {
         images.push(drawedObject);
+        drawingImage = null
       }
+
       selectedObj = drawedObject;
       Tools("moveTool");
             selectedObj.formatProperties();
@@ -7604,4 +7610,4 @@ function draw() {
 }
 
 requestDraw();
-// autoSave()
+

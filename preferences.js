@@ -242,14 +242,13 @@ async function importData() {
             "Are you sure you want to delete all projects? This action cannot be undone.",
           )
         ) {
-          const allProjects = await db.collection("projects").get()
-          const names = allProjects.map(project=>project.name)
-          for(let n=0;n<names.length;n++){
-            await db.collection(`img${n}`).delete();
-          }
-          await db.collection("projects").delete();
-
+          const allFonts = await db.collection("fonts").get()
+          await db.delete()
           localStorage.removeItem("project-names");
+          for(font = 0;font<allFonts.length;font++){
+            console.log(font)
+            await db.collection("fonts").add({...font})
+          }
           alert("All projects have been deleted");
           await renderData();
         }
