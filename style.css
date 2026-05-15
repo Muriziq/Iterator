@@ -38,6 +38,16 @@ body{
     font-weight: 700;
     font-family: "Montserrat",sans-serif;
 }
+.intro small{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+}
+.intro small img{
+    height: 30px; width: 30px;
+}
 .opt{
     display: flex;
     flex-direction: column;
@@ -55,7 +65,7 @@ body{
 }
 .opt .order-projects{
    display: grid;
-   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+   grid-template-columns: repeat(4, 1fr);
    grid-auto-rows: 210px;
    gap: 1rem;
 }
@@ -231,13 +241,13 @@ padding-bottom: 1rem;
         flex-wrap: wrap;
     }
     .opt .order-projects{
-           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-   grid-auto-rows: 180px;
+           grid-template-columns: 1fr 1fr;
+   grid-auto-rows: 200px;
    gap: 0.5rem;
     }
     
     .option button {
-        height: 180px;
+        height: 200px;
         width: 200px;
     }
     
@@ -268,7 +278,7 @@ padding-bottom: 1rem;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 500px) {
     body {
         padding: 0 0.75rem;
     }
@@ -313,13 +323,10 @@ padding-bottom: 1rem;
         min-height: 150px;
     }
     
-    .order-projects {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        width: 100%;
-        gap: 0.5rem;
+    .opt .order-projects{
+    grid-template-columns: 1fr;
+
     }
-    
     .order-projects button {
         width: 100%;
         height: 160px;

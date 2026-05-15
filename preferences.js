@@ -167,8 +167,10 @@ async function renderData(search = "") {
 
     document.querySelectorAll(".objects").forEach((button) => {
       const name = button.querySelector("p").textContent;
-      button.querySelector(".export").addEventListener("click", async () => {
-        const data = await db.collection("projects").doc({ name: name }).get();
+      button.querySelector(".export").addEventListener("click", async (e) => {
+        e.target.textContent = "Exporting"
+        const datar = await db.collection("projects").doc({ name: name }).get();
+        let data = datar.object
         for (let dat = 0; dat < data.length; dat++) {
           if (data[dat].type === "image") {
             if (!data[dat].isConverted) {
@@ -184,7 +186,7 @@ async function renderData(search = "") {
           }
         }
 
-        const stringFied = JSON.stringify(data.object);
+        const stringFied = JSON.stringify(data);
 
         const blob = new Blob([stringFied], { type: "application/json" });
 
@@ -192,6 +194,7 @@ async function renderData(search = "") {
         a.href = URL.createObjectURL(blob);
         a.download = name;
         a.click();
+        e.target.textContent = "Export"
       });
       button.querySelector(".delete").addEventListener("click", async () => {
         await db.collection("projects").doc({ name: name }).delete();
@@ -239,7 +242,13 @@ async function importData() {
             "Are you sure you want to delete all projects? This action cannot be undone.",
           )
         ) {
+          const allProjects = await db.collection("projects").get()
+          const names = allProjects.map(project=>project.name)
+          for(let n=0;n<names.length;n++){
+            await db.collection(`img${n}`).delete();
+          }
           await db.collection("projects").delete();
+
           localStorage.removeItem("project-names");
           alert("All projects have been deleted");
           await renderData();
@@ -272,6 +281,10 @@ async function importData() {
             object: jsonData || [],
             entryDate: new Date().getTime(),
           });
+                localStorage.setItem(
+        "project-names",
+        JSON.stringify([...names, fileName]),
+      );
         }
         await renderData();
       } catch (error) {
@@ -291,10 +304,26 @@ async function importData() {
           return;
         }
         const zip = new JSZip();
-        datas.forEach((dat) => {
-          const stringFied = JSON.stringify(dat.object);
-          zip.file(`${dat.name}.json`, stringFied);
-        });
+for (let idx = 0; idx < datas.length; idx++) {
+  let data = datas[idx].object;
+  for (let dat = 0; dat < data.length; dat++) {
+    if (data[dat].type === "image") {
+      if (!data[dat].isConverted) {
+        for (let i = 0; i < data[dat].originalFiles.length; i++) {
+          const imageData = await db
+            .collection(`img${name}`)
+            .doc({ id: data[dat].originalFiles[i] })
+            .get();
+          data[dat].originalFiles[i] = imageData.image;
+        }
+        data[dat].isConverted = true;
+      }
+    }
+  }
+  datas[idx].object = data; // Update the modified data back
+  const stringFied = JSON.stringify(datas[idx]);
+  zip.file(`${datas[idx].name}.json`, stringFied);
+}
         const content = await zip.generateAsync({ type: "blob" });
         const url = URL.createObjectURL(content);
 

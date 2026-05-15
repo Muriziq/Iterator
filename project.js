@@ -62,7 +62,7 @@ let clipped = null;
 let thresholds = {
   selected: () => adapt(2),
   normalMode: () => adapt(25),
-  threshold: () => adapt(5),
+  threshold: () => adapt(3),
   pthreshold: () => adapt(5),
   maxCanvasSize: () => adapt(5000),
   pointHold: () => adapt(15),
@@ -167,8 +167,8 @@ window.addEventListener("load", async () => {
     thresholds.normalMode = () => adapt(15);
   }
   document.getElementById("auto-save").checked = false
-  ifAutoSave = false
-  // autoSave()
+  ifAutoSave = true
+  autoSave()
 });
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
@@ -7305,8 +7305,8 @@ function wMouseUp() {
         images.push(drawedObject);
       }
       selectedObj = drawedObject;
-      selectedObj.formatProperties();
       Tools("moveTool");
+            selectedObj.formatProperties();
       undoObject.push(cloneObject(objects));
       redoObject.length = 0;
     }
