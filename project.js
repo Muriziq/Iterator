@@ -1,4 +1,4 @@
-
+const saveWorker = new Worker("saveWorker.js");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = canvas.getBoundingClientRect().width;
@@ -99,11 +99,7 @@ let defaultFonts = [
 const newFonts = JSON.parse(localStorage.getItem("fontNames")) || [];
 let allFonts = [...defaultFonts, ...newFonts];
 let db = new Localbase("db") || [];
-
-let saveTimeout = null;
-let isSaving = false;
-let ifAutoSave = document.getElementById("auto-save").checked;
-
+let ifAutoSave = false;
 
 const projectName = document.getElementById("project-name");
 let formerName = "";
@@ -143,7 +139,7 @@ window.addEventListener("load", async () => {
         .get();
       projectName.value = objectsData.name.replace(/\.json$/i, "");
       formerName = objectsData.name;
-      await importLoaded(objectsData.object,true,true);
+      await importLoaded(objectsData.object, true, true);
     } else {
       const names = JSON.parse(localStorage.getItem("project-names")) || [];
       const newProjectCount = names.filter((project) =>
@@ -151,24 +147,20 @@ window.addEventListener("load", async () => {
       ).length;
       projectName.value = `new project ${newProjectCount === 0 ? "" : newProjectCount}`;
     }
-  width.value = measurement.width;
-  height.value = measurement.height;
-  canvasSize();
-  const mediaQuery = window.matchMedia("(max-width: 768px)");
-  if (mediaQuery.matches) {
-    thresholds.pointHold = () => adapt(15);
-    thresholds.normalMode = () => adapt(25);
-  } else {
-    thresholds.pointHold = () => adapt(7.5);
-    thresholds.normalMode = () => adapt(15);
-  }
-
-
+    width.value = measurement.width;
+    height.value = measurement.height;
+    canvasSize();
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    if (mediaQuery.matches) {
+      thresholds.pointHold = () => adapt(15);
+      thresholds.normalMode = () => adapt(25);
+    } else {
+      thresholds.pointHold = () => adapt(7.5);
+      thresholds.normalMode = () => adapt(15);
+    }
   } catch (error) {
     console.log(error);
   }
-
-
 });
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
@@ -566,8 +558,8 @@ class Formats {
         this.list.forEach((l) => (l.outlineType = []));
       }
       this.formatProperties();
-          undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+      undoObject.push(cloneObject(objects));
+      redoObject.length = 0;
     });
     document.querySelector(".dashedb").addEventListener("click", () => {
       if (this.type === "group") {
@@ -583,8 +575,8 @@ class Formats {
         );
       }
       this.formatProperties();
-                undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+      undoObject.push(cloneObject(objects));
+      redoObject.length = 0;
     });
     document.getElementById("outline").addEventListener("click", () => {
       this.outline = !this.outline;
@@ -592,8 +584,8 @@ class Formats {
         this.list.forEach((l) => (l.outline = this.outline));
       }
       this.formatProperties();
-                undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+      undoObject.push(cloneObject(objects));
+      redoObject.length = 0;
     });
     if (this.colorFill === "linear" || this.colorFill === "radial") {
       if (this.type === "group") {
@@ -614,8 +606,8 @@ class Formats {
         }
         this.addObject();
         this.formatProperties();
-                undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+        undoObject.push(cloneObject(objects));
+        redoObject.length = 0;
       });
       document.querySelectorAll(".color-div").forEach((div, i) => {
         div
@@ -625,8 +617,8 @@ class Formats {
             if (this.type === "group") {
               this.list.forEach((l) => (l.colorStop[i] = e.target.value));
             }
-                      undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+            undoObject.push(cloneObject(objects));
+            redoObject.length = 0;
           });
         div
           .querySelector("input[type='color']")
@@ -635,8 +627,8 @@ class Formats {
             if (this.type === "group") {
               this.list.forEach((l) => (l.color[i] = e.target.value));
             }
-                      undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+            undoObject.push(cloneObject(objects));
+            redoObject.length = 0;
           });
         div.querySelector("button").addEventListener("click", (e) => {
           this.color.splice(i, 1);
@@ -646,13 +638,13 @@ class Formats {
               l.color.splice(i, 1);
               l.colorStop = [];
             });
-                      undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+            undoObject.push(cloneObject(objects));
+            redoObject.length = 0;
           }
           this.addObject();
           this.formatProperties();
-                    undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+          undoObject.push(cloneObject(objects));
+          redoObject.length = 0;
         });
       });
     }
@@ -664,8 +656,8 @@ class Formats {
       }
       this.addObject();
       this.formatProperties();
-                undoObject.push(cloneObject(objects));
-    redoObject.length = 0;
+      undoObject.push(cloneObject(objects));
+      redoObject.length = 0;
     });
   }
   similarProptiesOutput() {
@@ -748,8 +740,8 @@ class Formats {
         <div class="uniform-div">
           Outline Type
           <div>
-            <button class="normalb ${this.outlineType !== [] ? "selected" : "" }"></button>
-            <button class="dashedb ${this.outlineType === [] ? "selected" : "" }"></button>
+            <button class="normalb ${this.outlineType !== [] ? "selected" : ""}"></button>
+            <button class="dashedb ${this.outlineType === [] ? "selected" : ""}"></button>
           </div>
         </div>
 
@@ -2043,8 +2035,8 @@ class Rectangle extends Formats {
       controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
       cornerRadius: p.cornerRadius,
     }));
-    if(!isUndo){
-     clone.id = crypto.randomUUID(); 
+    if (!isUndo) {
+      clone.id = crypto.randomUUID();
     }
     clone.clips = this.clips.map((c) => c.showClone());
     return clone;
@@ -2503,7 +2495,7 @@ class Ellipse extends Formats {
     this.arcEnd = 2 * Math.PI;
     this.clipped = "none";
     this.clips = [];
-    this.mode = "fill"
+    this.mode = "fill";
   }
   addObject() {
     ctx.save();
@@ -2784,42 +2776,31 @@ class Ellipse extends Formats {
   changeProperties(e) {
     const name = e.target.name;
 
-    if (name === "angle" || name=== "arcStart" || name=== "arcEnd") {
+    if (name === "angle" || name === "arcStart" || name === "arcEnd") {
       this[name] = radToDeg(Number(e.target.value) || 0, "rad");
-    }
-
-    else if (name === "bgColor") {
+    } else if (name === "bgColor") {
       this.color[0] = e.target.value;
-    }
-
-    else if (name === "colorDeg" || name === "arcStart" || name === "arcEnd") {
+    } else if (
+      name === "colorDeg" ||
+      name === "arcStart" ||
+      name === "arcEnd"
+    ) {
       this[name] = radToDeg(Number(e.target.value) || 0, "rad");
-    }
-
-    else if (name === "outlineColor") {
+    } else if (name === "outlineColor") {
       this.outlineColor = e.target.value;
-    }
-
-    else if (e.target.type === "number") {
+    } else if (e.target.type === "number") {
       let value = backValues(Number(e.target.value) || 0);
       value = value <= 0 ? 0 : value;
       if (!isNaN(value) && value !== null) {
         if (name === "x") {
           this.x = value + this.radiusX;
-        }
-
-        else if (name === "y") {
+        } else if (name === "y") {
           this.y = value + this.radiusY;
-        }
-
-        else if (name === "opacity") {
+        } else if (name === "opacity") {
           this.opacity = Number(e.target.value) || 0;
-        }
-        else if (name === "radiusX" || name === "radiusY") {
+        } else if (name === "radiusX" || name === "radiusY") {
           this[name] = value / 2;
-        }
-
-        else  {
+        } else {
           this[name] = value;
         }
       }
@@ -2834,11 +2815,11 @@ class Ellipse extends Formats {
     undoObject.push(cloneObject(objects));
     redoObject.length = 0;
   }
-  showClone(isUndo=false) {
+  showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.clips = this.clips.map((c) => c.showClone());
-        if(!isUndo){
-     clone.id = crypto.randomUUID(); 
+    if (!isUndo) {
+      clone.id = crypto.randomUUID();
     }
     return clone;
   }
@@ -3421,7 +3402,7 @@ ${super.similarProptiesOutput()}
     redoObject.length = 0;
     requestDraw();
   }
-  showClone(isUndo=false) {
+  showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.points = this.points.map((p) => ({
       points: { x: p.points.x, y: p.points.y },
@@ -3429,8 +3410,8 @@ ${super.similarProptiesOutput()}
       controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
       cornerRadius: p.cornerRadius,
     }));
-    if(!isUndo){
-     clone.id = crypto.randomUUID(); 
+    if (!isUndo) {
+      clone.id = crypto.randomUUID();
     }
     clone.clips = this.clips.map((c) => c.showClone());
     return clone;
@@ -3737,7 +3718,7 @@ class Line extends Formats {
       return true;
     }
   }
-  showClone(isUndo=false) {
+  showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.points = this.points.map((p) => ({
       points: { x: p.points.x, y: p.points.y },
@@ -3745,8 +3726,8 @@ class Line extends Formats {
       controls: p.controls.map((c) => ({ x: c.x, y: c.y })),
       cornerRadius: p.cornerRadius,
     }));
-        if(!isUndo){
-     clone.id = crypto.randomUUID(); 
+    if (!isUndo) {
+      clone.id = crypto.randomUUID();
     }
 
     clone.clips = this.clips.map((c) => c.showClone());
@@ -4197,11 +4178,11 @@ class TextBox extends Formats {
     ctx.restore();
   }
 
-  showClone(isUndo=false) {
+  showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.textPlace = document.createElement("textarea");
-        if(!isUndo){
-     clone.id = crypto.randomUUID(); 
+    if (!isUndo) {
+      clone.id = crypto.randomUUID();
     }
     return clone;
   }
@@ -4996,13 +4977,13 @@ class Images extends Formats {
       }
     }
   }
-  showClone(isUndo=false) {
+  showClone(isUndo = false) {
     const clone = Object.assign(
       Object.create(Object.getPrototypeOf(this)),
       this,
     );
-        if(!isUndo){
-     clone.id = crypto.randomUUID(); 
+    if (!isUndo) {
+      clone.id = crypto.randomUUID();
     }
     return clone;
   }
@@ -5221,13 +5202,14 @@ class Images extends Formats {
     }
 
     if (name === "iteratedFiles") {
+      saveWorker.postMessage({ stopSaving: true });
       const loader = new LoaderManager(e.target.files.length); // Set max items to the number of selected files
       loader.createLoader();
-        await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
       // Option 1: Use for...of loop (recommended)
       const files = Array.from(e.target.files);
 
-      for ( let i = 0; i < files.length; i++) {
+      for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const url = URL.createObjectURL(file);
         const img = new Image();
@@ -5243,19 +5225,23 @@ class Images extends Formats {
               await db.collection(`img${formerName}`).add({
                 id: imageID,
                 image: reader.result,
-                entryDate: (new Date()).getTime(),
+                entryDate: new Date().getTime(),
               });
               this.originalFiles.push(imageID);
               loader.incrementOriginalState();
-                  if (i % 10 === 0) {
-await new Promise(resolve => requestAnimationFrame(resolve))
-}
+              if (i % 10 === 0) {
+                await new Promise((resolve) => requestAnimationFrame(resolve));
+              }
               this.formatProperties();
               URL.revokeObjectURL(url);
               resolve(true);
             };
           };
         });
+      }
+      if (ifAutoSave) {
+        saveWorker.postMessage({ stopSaving: false });
+        saveToFile(true)
       }
     }
 
@@ -5494,11 +5480,11 @@ class Group extends Formats {
       }
     }
   }
-  showClone(isUndo=false) {
+  showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.list = this.list.map((obj) => obj.showClone());
-        if(!isUndo){
-     clone.id = crypto.randomUUID(); 
+    if (!isUndo) {
+      clone.id = crypto.randomUUID();
     }
     return clone;
   }
@@ -5783,7 +5769,7 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
       renderPageSize = measurementArr[10];
       break;
     case "auto":
-    renderPageSize = {...measurement}
+      renderPageSize = { ...measurement };
       break;
     case "letter":
       renderPageSize = measurementArr[7];
@@ -5795,28 +5781,28 @@ document.getElementById("renderPage").addEventListener("change", (e) => {
   }
   const rows = document.getElementById("noPerRow");
   const columns = document.getElementById("noPerColumn");
-    const height = document.getElementById("renderHeight");
-    const width = document.getElementById("renderWidth");
-    width.value = renderPageSize.width;
-    height.value = renderPageSize.height;
-    generateInfo.renderWidth = renderPageSize.width
-    generateInfo.renderHeight = renderPageSize.height
-    if(generateInfo.renderPage === "auto"){
+  const height = document.getElementById("renderHeight");
+  const width = document.getElementById("renderWidth");
+  width.value = renderPageSize.width;
+  height.value = renderPageSize.height;
+  generateInfo.renderWidth = renderPageSize.width;
+  generateInfo.renderHeight = renderPageSize.height;
+  if (generateInfo.renderPage === "auto") {
     rows.value = 1;
     columns.value = 1;
-    rows.readOnly = true
-    columns.readOnly = true
-    }else{
-          rows.readOnly = false;
+    rows.readOnly = true;
+    columns.readOnly = true;
+  } else {
+    rows.readOnly = false;
     columns.readOnly = false;
-    }
-    if (generateInfo.renderPage === "custom") {
-      height.readOnly = false;
-      width.readOnly = false;
-    } else {
-      height.readOnly = true;
-      width.readOnly = true;
-    }
+  }
+  if (generateInfo.renderPage === "custom") {
+    height.readOnly = false;
+    width.readOnly = false;
+  } else {
+    height.readOnly = true;
+    width.readOnly = true;
+  }
 });
 async function addImage(e) {
   canvas.style.cursor = "wait";
@@ -5832,37 +5818,30 @@ async function addImage(e) {
       const reader = new FileReader();
       reader.readAsDataURL(file);
 
-reader.addEventListener("load", async () => {
-  try {
-    const imageID = crypto.randomUUID();
-
-    await db.collection(`img${formerName}`).add({
-      id: imageID,
-      image: reader.result,
-      entryDate: (new Date()).getTime(),
-    });
-
-    drawingImage = {
-      image: img,
-      originalFile: imageID,
-      aspectRatio: img.height / img.width,
-      fileName: file.name,
-    };
-  loader.incrementOriginalState();
-  canvas.style.cursor = "crosshair";
-  isDrawing = "image";
-    resolve(true);
-
-  } catch (err) {
-    console.error("DB INSERT ERROR:", err);
-  }
-});
+      reader.addEventListener("load", async () => {
+        try {
+          const imageID = crypto.randomUUID();
+          drawingImage = {
+            image: img,
+            originalFile: imageID,
+            aspectRatio: img.height / img.width,
+            fileName: file.name,
+            actualFile: reader.result,
+            imageId: imageID,
+          };
+          loader.incrementOriginalState();
+          canvas.style.cursor = "crosshair";
+          isDrawing = "image";
+          resolve(true);
+        } catch (err) {
+          console.error("DB INSERT ERROR:", err);
+        }
+      });
     };
   });
-
 }
 // For Saving and Retrieving
-async function importLoaded(jsonData, shouldCanvas = true,saving=false) {
+async function importLoaded(jsonData, shouldCanvas = true, saving = false) {
   const { canvasItems, revivableItems } = jsonData.reduce(
     (acc, data) => {
       if (data.type === "canvas") {
@@ -5886,12 +5865,72 @@ async function importLoaded(jsonData, shouldCanvas = true,saving=false) {
   );
   objects.push(...revived);
   requestDraw();
-  if(saving){
-      document.getElementById("auto-save").checked = true
-  ifAutoSave = true
-  autoSave()
+  if (saving) {
+    ifAutoSave = true;
+    document.getElementById("auto-save").checked = true;
+    saveWorker.postMessage({ stopSaving: false });
+    saveToFile(true, true);
   }
 }
+function saveToFile(autosave = false, deleteData = false) {
+  let allData = [
+    {
+      type: "canvas",
+      measurement: measurement,
+      whatsMeasured: whatsMeasured,
+      backgroundImage: canvas.toDataURL(),
+    },
+    ...objects,
+  ];
+  allData = JSON.stringify(allData);
+  let dImage = null;
+  if (drawingImage !== null) dImage = { ...drawingImage, image: null };
+  if (autosave) {
+    saveWorker.postMessage({
+      deleteData: deleteData,
+      formerName: formerName,
+      names: JSON.parse(localStorage.getItem("project-names")) || [],
+      allData: allData,
+      autoSave: true,
+      drawingImage: dImage,
+    });
+  } else {
+    saveWorker.postMessage({
+      deleteData: deleteData,
+      formerName: formerName,
+      names: JSON.parse(localStorage.getItem("project-names")) || [],
+      allData: allData,
+      justSave: true,
+      drawingImage: dImage,
+    });
+  }
+}
+
+document.getElementById("auto-save").addEventListener("change", (e) => {
+  ifAutoSave = e.target.checked;
+  if (ifAutoSave) {
+    saveWorker.postMessage({ stopSaving: false });
+    saveToFile(true);
+  } else {
+    saveWorker.postMessage({ stopSaving: true });
+  }
+});
+document.querySelector(".save").addEventListener("click", async () => {
+  saveWorker.postMessage({ stopSaving: false });
+  saveToFile();
+});
+saveWorker.onmessage = (message) => {
+  const messageData = message.data;
+  if ("notify" in messageData) {
+    notify(messageData.notify);
+  }
+  if ("newStorage" in messageData) {
+    localStorage.setItem("project-names", messageData.newStorage);
+  }
+  if ("autoSave" in messageData && messageData.autoSave) {
+    saveToFile(true);
+  }
+};
 async function reviveObjects(objData) {
   let instance;
 
@@ -5935,17 +5974,16 @@ async function reviveObjects(objData) {
         await db.collection(`img${formerName}`).add({
           id: imageID,
           image: objData.originalFiles[i],
-          entryDate: (new Date()).getTime(),
+          entryDate: new Date().getTime(),
         });
         objData.originalFiles[i] = imageID;
       }
       objData.isConverted = false;
     }
-    console.log(objData.originalFiles)
     const revivedImageFile = await db
       .collection(`img${formerName}`)
-          .doc({ id: objData.originalFiles[0] })
-          .get()
+      .doc({ id: objData.originalFiles[0] })
+      .get();
     const revivedImage = revivedImageFile.image;
     const img = new Image();
     img.src = revivedImage;
@@ -5996,13 +6034,12 @@ async function reviveObjects(objData) {
     );
   }
 
-
-
   Object.assign(instance, objData);
   if (objData.type === "text") textBoxes.push(instance);
   if (objData.type === "image") images.push(instance);
   return instance;
 }
+
 document
   .getElementById("retrieve-file")
   .addEventListener("change", (e) => retrieveFile(e));
@@ -6014,104 +6051,6 @@ async function retrieveFile(e) {
     const jsonData = JSON.parse(reader.result);
     importLoaded(jsonData, false);
   };
-}
-async function deleteUnusedImage() {
-    // Get all images from LocalBase
-    const allImageFile = await db.collection(`img${formerName}`).get();
-    if(drawingImage !== null) return
-    // Create Set for O(1) lookups
-    const imagesInSet = new Set();
-    images.forEach(img => {
-        img.originalFiles?.forEach(file => {
-            imagesInSet.add(file);
-        });
-    });
-    
-    // Filter IDs to delete
-    const toDeleteIds = allImageFile
-        .filter(doc => !imagesInSet.has(doc.id))
-        .map(doc => doc.id);
-    
-    if (toDeleteIds.length === 0) return;
-    
-    // Delete sequentially (LocalBase doesn't support batch AFAIK)
-    for (const id of toDeleteIds) {
-        await db.collection(`img${formerName}`).doc({ id }).delete();
-    }
-}
-
-document.getElementById("auto-save").addEventListener("change", (e) => {
-  ifAutoSave = e.target.checked;
-  if (ifAutoSave) autoSave();
-  else{
-    ifAutoSave = false
-clearTimeout(saveTimeout);
-  } 
-});
-
-async function runSave(source) {
-  if (isSaving) return;
-  isSaving = true;
-  try {
-    await saveToFile();
-    await deleteUnusedImage();
-    if (source === "manual") notify("Saved");
-    else console.log("✅ Autosaved at:", new Date().toLocaleTimeString());
-  } finally {
-    isSaving = false;
-  }
-}
-
-function autoSave() {
-  if (!ifAutoSave) return;
-  clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(async () => {
-    await runSave("auto");
-    autoSave();
-  }, 2000);
-}
-
-document.querySelector(".save").addEventListener("click", async () => {
-  if (ifAutoSave) clearTimeout(saveTimeout);
-  await runSave("manual");
-  if (ifAutoSave) autoSave();
-});
-async function saveToFile() {
-  let allData = [
-    {
-      type: "canvas",
-      measurement: measurement,
-      whatsMeasured: whatsMeasured,
-      backgroundImage: canvas.toDataURL(),
-    },
-    ...objects,
-  ];
-  allData = JSON.parse(JSON.stringify(allData));
-
-  const names = JSON.parse(localStorage.getItem("project-names")) || [];
-  try {
-    if (names.includes(formerName)) {
-      await db.collection("projects").doc({ name: formerName }).set({
-        name: formerName,
-        object: allData,
-        entryDate: new Date().getTime(),
-      });
-    } else {
-      await db.collection("projects").add({
-        name: formerName,
-        object: allData,
-        entryDate: new Date().getTime(),
-      });
-      localStorage.setItem(
-        "project-names",
-        JSON.stringify([...names, formerName]),
-      );
-    }
-  } catch (err) {
-    console.log(err);
-    notify("Error Saving");
-  }
-
 }
 
 async function Tools(tool) {
@@ -6474,15 +6413,19 @@ function drawingObject(original = false) {
       );
     case "image":
       if (original) {
-        return new Images(
-          start.x,
-          start.y,
-          drawingImage.image,
-          end.x - start.x,
-          drawingImage.aspectRatio,
-          drawingImage.originalFile,
-          drawingImage.fileName,
-        );
+        return {
+          newImage: new Images(
+            start.x,
+            start.y,
+            drawingImage.image,
+            end.x - start.x,
+            drawingImage.aspectRatio,
+            drawingImage.originalFile,
+            drawingImage.fileName,
+          ),
+          actualFile: drawingImage.actualFile,
+          imageId: drawingImage.imageId,
+        };
       }
       return new Images(
         start.x,
@@ -6655,7 +6598,8 @@ document.getElementById("home-button").addEventListener("click", () => {
 });
 
 async function saveAsPDF() {
-    document.querySelector(".saveAsPdf").textContent = "loading"
+  saveWorker.postMessage({ stopSaving: true });
+  document.querySelector(".saveAsPdf").textContent = "loading";
   const container = document.getElementById("generationArea");
   const { jsPDF } = window.jspdf;
 
@@ -6675,21 +6619,23 @@ async function saveAsPDF() {
 
   if (generateInfo.renderPage === "auto") {
     const rect = sections[0].getBoundingClientRect();
-    pdfWidth = rect.width * 0.75;   // px → pt ✅
+    pdfWidth = rect.width * 0.75; // px → pt ✅
     pdfHeight = rect.height * 0.75;
-    createPDF = () => new jsPDF({
-      orientation: pdfWidth > pdfHeight ? "l" : "p",
-      unit: "pt",
-      format: [pdfWidth, pdfHeight],
-    });
+    createPDF = () =>
+      new jsPDF({
+        orientation: pdfWidth > pdfHeight ? "l" : "p",
+        unit: "pt",
+        format: [pdfWidth, pdfHeight],
+      });
   } else {
     pdfWidth = generateInfo.renderWidth;
     pdfHeight = generateInfo.renderHeight;
-    createPDF = () => new jsPDF({
-      orientation: pdfWidth > pdfHeight ? "l" : "p",
-      unit: "pt",
-      format: generateInfo.renderPage.toLowerCase(),
-    });
+    createPDF = () =>
+      new jsPDF({
+        orientation: pdfWidth > pdfHeight ? "l" : "p",
+        unit: "pt",
+        format: generateInfo.renderPage.toLowerCase(),
+      });
   }
 
   let pdf = createPDF();
@@ -6718,10 +6664,15 @@ async function saveAsPDF() {
       console.error(`Failed to render section ${i + 1}`, error);
     }
   }
-      document.querySelector(".saveAsPdf").textContent = "save As Pdf"
+  document.querySelector(".saveAsPdf").textContent = "save As Pdf";
+      if (ifAutoSave) {
+        saveWorker.postMessage({ stopSaving: false });
+        saveToFile(true)
+      }
 }
 async function saveAsImage() {
-  document.querySelector(".saveAsImage").textContent = "loading"
+  saveWorker.postMessage({ stopSaving: true });
+  document.querySelector(".saveAsImage").textContent = "loading";
   const element = document.getElementById("generationArea");
   let images;
   if (generateInfo.renderPage === "auto") {
@@ -6742,7 +6693,11 @@ async function saveAsImage() {
       console.error("Failed to save as image:", error);
     }
   }
-  document.querySelector(".saveAsImage").textContent = "save As Image"
+  document.querySelector(".saveAsImage").textContent = "save As Image";
+      if (ifAutoSave) {
+        saveWorker.postMessage({ stopSaving: false });
+        saveToFile(true)
+      }
 }
 document.querySelector(".snip").addEventListener("click", () => {
   if (clipped === null) {
@@ -6849,7 +6804,7 @@ function group() {
     selectedObj = newGroup;
     requestDraw();
     Tools("moveTool");
-    newGroup.formatProperties()
+    newGroup.formatProperties();
   }
 }
 function getMousePos(canvas, evt) {
@@ -6903,6 +6858,7 @@ function zoomToRect(rect) {
   requestDraw();
 }
 async function generateCard() {
+  saveWorker.postMessage({ stopSaving: true });
   // --- Setup ---
   document.querySelector("footer").style.display = "block";
   cancelGenerate();
@@ -6914,7 +6870,14 @@ async function generateCard() {
   requestDraw();
 
   // Destructure once — avoids repeated property lookups
-  const { spacing, noPerRow, noPerColumn, renderWidth, renderHeight, renderPage } = generateInfo;
+  const {
+    spacing,
+    noPerRow,
+    noPerColumn,
+    renderWidth,
+    renderHeight,
+    renderPage,
+  } = generateInfo;
 
   generationArea.style.gap = spacing + "px";
 
@@ -6948,7 +6911,10 @@ async function generateCard() {
   const cellHeight = containerHeight / noPerColumn;
 
   const paperRect = canvassDiv.getBoundingClientRect();
-  const localScale = Math.min(cellWidth / paperRect.width, cellHeight / paperRect.height);
+  const localScale = Math.min(
+    cellWidth / paperRect.width,
+    cellHeight / paperRect.height,
+  );
   const ifNotAutoWidth = paperRect.width * localScale;
   const ifNotAutoHeight = paperRect.height * localScale;
 
@@ -6958,13 +6924,15 @@ async function generateCard() {
   if (textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...textBoxes.map((tb) => tb.textArea.split("\n").length)
+      ...textBoxes.map((tb) => tb.textArea.split("\n").length),
     );
   }
 
   const maxImageIterLength = Math.max(
     1,
-    ...images.map((img) => (img.originalFiles.length ? img.originalFiles.length : 1))
+    ...images.map((img) =>
+      img.originalFiles.length ? img.originalFiles.length : 1,
+    ),
   );
 
   iterationLength = Math.max(iterationLength, maxImageIterLength);
@@ -7060,6 +7028,10 @@ async function generateCard() {
 
   selectedObj = previouslySelectedObj;
   requestDraw();
+      if (ifAutoSave) {
+        saveWorker.postMessage({ stopSaving: false });
+        saveToFile(true)
+      }
 }
 
 let needsDraw = false;
@@ -7304,15 +7276,23 @@ async function wMouseUp() {
       multipleSelect = true;
     } else {
       const drawedObject = drawingObject(true);
-      objects.push(drawedObject);
       if (isDrawing === "image") {
-        images.push(drawedObject);
-        drawingImage = null
+        objects.push(drawedObject.newImage);
+        images.push(drawedObject.newImage);
+        drawingImage = null;
+        await db.collection(`img${formerName}`).add({
+          id: drawedObject.imageId,
+          image: drawedObject.actualFile,
+          entryDate: new Date().getTime(),
+        });
+        selectedObj = drawedObject.newImage;
+      } else {
+        objects.push(drawedObject);
+        selectedObj = drawedObject;
       }
 
-      selectedObj = drawedObject;
       Tools("moveTool");
-            selectedObj.formatProperties();
+      selectedObj.formatProperties();
       undoObject.push(cloneObject(objects));
       redoObject.length = 0;
     }
@@ -7431,8 +7411,8 @@ document.addEventListener("keydown", async (e) => {
     Tools("duplicate");
   } else if (e.shiftKey && e.key === "@" && selectedObj !== null) {
     zoomToRect(selectedObj.whereToSnap().pos);
-  } else if(e.ctrlKey && e.key === "a"){
-    Tools('multipleSelection')
+  } else if (e.ctrlKey && e.key === "a") {
+    Tools("multipleSelection");
     multipleSelectArr = [...objects];
     multipleSelect = true;
   } else if (
@@ -7442,8 +7422,7 @@ document.addEventListener("keydown", async (e) => {
   ) {
     group();
   } else if (e.ctrlKey && e.key.toLowerCase() === "s") {
-    await saveToFile();
-    notify("Saved");
+    saveToFile();
   } else if (
     e.ctrlKey &&
     e.key.toLowerCase() === "u" &&
@@ -7610,4 +7589,3 @@ function draw() {
 }
 
 requestDraw();
-
