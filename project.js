@@ -100,7 +100,7 @@ const newFonts = JSON.parse(localStorage.getItem("fontNames")) || [];
 let allFonts = [...defaultFonts, ...newFonts];
 let db = new Localbase("db") || [];
 let ifAutoSave = false;
-
+let wakeLock = null;
 const projectName = document.getElementById("project-name");
 let formerName = "";
 projectName.addEventListener("input", async (e) => {
@@ -162,6 +162,37 @@ window.addEventListener("load", async () => {
     console.log(error);
   }
 });
+
+async function enableWakeLock() {
+  try {
+    // Check support
+    if (!("wakeLock" in navigator)) {
+      console.log("Wake Lock API not supported");
+      return;
+    }
+
+    // Request screen wake lock
+    wakeLock = await navigator.wakeLock.request("screen");
+
+    console.log("Screen Wake Lock enabled");
+
+    // Reacquire if user switches tabs/apps
+    wakeLock.addEventListener("release", () => {
+      console.log("Wake Lock released");
+    });
+
+  } catch (err) {
+    console.log("Wake Lock error:", err);
+  }
+}
+
+async function disableWakeLock() {
+  if (wakeLock !== null) {
+    await wakeLock.release();
+    wakeLock = null;
+    console.log("Screen Wake Lock disabled");
+  }
+}
 class LineUtils {
   static getEdgeAtPosition(localMouseX, localMouseY, points) {
     let threshold = thresholds.threshold();
@@ -5202,7 +5233,7 @@ class Images extends Formats {
     }
 
     if (name === "iteratedFiles") {
-      saveWorker.postMessage({ stopSaving: true });
+      pauseSaving()
       const loader = new LoaderManager(e.target.files.length); // Set max items to the number of selected files
       loader.createLoader();
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -5239,10 +5270,7 @@ class Images extends Formats {
           };
         });
       }
-      if (ifAutoSave) {
-        saveWorker.postMessage({ stopSaving: false });
-        saveToFile(true)
-      }
+continueSaving()
     }
 
     requestDraw();
@@ -5905,7 +5933,17 @@ function saveToFile(autosave = false, deleteData = false) {
     });
   }
 }
-
+function pauseSaving(){
+  saveWorker.postMessage({ stopSaving: true });
+  enableWakeLock()
+}
+function continueSaving(){
+  disableWakeLock()
+        if (ifAutoSave) {
+        saveWorker.postMessage({ stopSaving: false });
+        saveToFile(true)
+      }
+}
 document.getElementById("auto-save").addEventListener("change", (e) => {
   ifAutoSave = e.target.checked;
   if (ifAutoSave) {
@@ -6598,7 +6636,7 @@ document.getElementById("home-button").addEventListener("click", () => {
 });
 
 async function saveAsPDF() {
-  saveWorker.postMessage({ stopSaving: true });
+  pauseSaving()
   document.querySelector(".saveAsPdf").textContent = "loading";
   const container = document.getElementById("generationArea");
   const { jsPDF } = window.jspdf;
@@ -6665,13 +6703,10 @@ async function saveAsPDF() {
     }
   }
   document.querySelector(".saveAsPdf").textContent = "save As Pdf";
-      if (ifAutoSave) {
-        saveWorker.postMessage({ stopSaving: false });
-        saveToFile(true)
-      }
+continueSaving()
 }
 async function saveAsImage() {
-  saveWorker.postMessage({ stopSaving: true });
+  pauseSaving()
   document.querySelector(".saveAsImage").textContent = "loading";
   const element = document.getElementById("generationArea");
   let images;
@@ -6694,10 +6729,7 @@ async function saveAsImage() {
     }
   }
   document.querySelector(".saveAsImage").textContent = "save As Image";
-      if (ifAutoSave) {
-        saveWorker.postMessage({ stopSaving: false });
-        saveToFile(true)
-      }
+continueSaving()
 }
 document.querySelector(".snip").addEventListener("click", () => {
   if (clipped === null) {
@@ -6858,7 +6890,7 @@ function zoomToRect(rect) {
   requestDraw();
 }
 async function generateCard() {
-  saveWorker.postMessage({ stopSaving: true });
+  pauseSaving()
   // --- Setup ---
   document.querySelector("footer").style.display = "block";
   cancelGenerate();
@@ -7028,10 +7060,7 @@ async function generateCard() {
 
   selectedObj = previouslySelectedObj;
   requestDraw();
-      if (ifAutoSave) {
-        saveWorker.postMessage({ stopSaving: false });
-        saveToFile(true)
-      }
+continueSaving()
 }
 
 let needsDraw = false;

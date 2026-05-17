@@ -46,6 +46,7 @@ onmessage = (message) =>{
 function runSave(source) {
   clearTimeout(saveTimeout);
 
+  const delay = source === "manual" ? 0 : 2000;
   saveTimeout = setTimeout(async () => {
     if (isSaving) return;
 
@@ -92,7 +93,7 @@ deleteData = false
     } finally {
       isSaving = false;
     }
-  }, 1000); // waits 1 second after last call
+  }, delay);
 }
 
 async function saveToFile() {

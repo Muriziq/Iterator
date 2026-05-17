@@ -250,9 +250,10 @@ async function importData() {
             console.log(font)
             await db.collection("fonts").add({...font})
           }
+                    await renderData();
+          await updateStorageInfo()
           alert("All projects have been deleted");
-          await renderData();
-          updateStorageInfo()
+
         }
       });
 
