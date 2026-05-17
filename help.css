@@ -37,7 +37,19 @@
       min-height: 100vh;
       transition: background-color 0.3s, color 0.3s;
     }
-
+.header-nav{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 4rem ;
+    width: 100%;
+}
+.header-nav a{
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1.2rem;
+    color: #ecfeeb;
+}
     /* ── Sidebar nav ─────────────────────────────────────────────────── */
     .layout {
       display: grid;
@@ -373,6 +385,16 @@
 
     /* ── Responsive ───────────────────────────────────────────────────── */
     @media (max-width: 768px) {
+      .header-nav {
+        padding: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .header-nav a {
+        font-size: 0.95rem;
+    }
+    
       .layout { grid-template-columns: 1fr; }
       .sidebar {
         position: static;
