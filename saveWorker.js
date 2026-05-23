@@ -1,5 +1,5 @@
-importScripts("https://unpkg.com/localbase/dist/localbase.dev.js")
-// importScripts("node_modules/localbase/dist/localbase.min.js")
+// importScripts("https://unpkg.com/localbase/dist/localbase.dev.js")
+importScripts("node_modules/localbase/dist/localbase.min.js")
 let allDatas = []
 let names = []
 let formerName = ""
@@ -12,6 +12,7 @@ let drawingImage = null
 let deleteData = false
 let db = new Localbase("db") || [];
 let stopSaving = false 
+let images = []
 onmessage = (message) =>{
     const messageData = message.data
     if('formerName' in messageData){
@@ -20,18 +21,20 @@ onmessage = (message) =>{
     if('names' in messageData){
         names = messageData.names
     }
-    if('deleteData' in messageData){
-        deleteData = messageData.deleteData
-    }
     if('stopSaving' in messageData){
         stopSaving = messageData.stopSaving
     }
     if('drawingImage' in messageData){
         drawingImage = messageData.drawingImage
-        console.log(drawingImage)
     }
     if('allData' in messageData){
         allDatas = JSON.parse(messageData.allData)
+    }
+    if('images' in messageData){
+      images = JSON.parse(messageData.images)
+    } 
+        if('deleteData' in messageData){
+        deleteUnusedImage()
     }
     if('justSave' in messageData && !stopSaving){
         runSave("manual")
@@ -54,10 +57,6 @@ function runSave(source) {
 
     try {
       await saveToFile();
-        if(deleteData){
-await deleteUnusedImage()
-deleteData = false
-        } 
       if (source === "manual") {
         postMessage(
           namesDont
@@ -123,8 +122,6 @@ namesDont = false
 }
 
 async function deleteUnusedImage() {
-    // Get all images from LocalBase
-    const images = allDatas.filter(data=>data.type === "image")
     const allImageFile = await db.collection(`img${formerName}`).get();
     if(drawingImage !== null) return
     // Create Set for O(1) lookups
@@ -134,7 +131,6 @@ async function deleteUnusedImage() {
             imagesInSet.add(file);
         });
     });
-    
     // Filter IDs to delete
     const toDeleteIds = allImageFile
         .filter(doc => !imagesInSet.has(doc.id))

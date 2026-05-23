@@ -95,50 +95,6 @@
 
       </aside>
       <section>
-        <div class="generate">
-          <div>
-            <h3>RENDER</h3>
-            <button onclick="cancelGenerate()"><img src="imagess/circle-x.svg" alt=""></button>
-          </div>
-          <div class="generate1">
-            <div>
-              <select name="renderPage" id="renderPage">
-                <option value="auto">Per Page</option>
-                <option value="custom">Custom</option>
-                <option value="a0">A0</option>
-                <option value="a1">A1</option>
-                <option value="a2">A2</option>
-                <option value="a3">A3</option>
-                <option value="a4">A4</option>
-                <option value="a5">A5</option>
-                <option value="letter">Letter</option>
-              </select>
-      
-              <div class="generate1f" >
-                  <div class="generate1d">Width<input type="number" name="renderWidth" id="renderWidth"></div>
-                  <div class="generate1d">Height<input type="number" name="renderHeight" id="renderHeight"></div>
-                
-              </div>
-            </div>
-            <div>
-              <div class="perRow generate1f">
-                No Per:
-                <div class="generate1d">Row<input type="number" name="noPerRow" id="noPerRow"></div>
-                <div class="generate1d">Col<input type="number" name="noPerColumn" id="noPerColumn"></div>
-                
-              </div>
-              <div>
-                <div class="generate1d">
-                Spacing: <input type="text" name="spacing" id="spacing">
-                </div>
-            </div>
-        
-
-
-        </div>
-          </div>
-          <button onclick="generateCard()">Done</button>
-        </div>
         <div class="notification"></div>
         <section class="upsec">
           <div>
@@ -202,13 +158,66 @@
       <article id="generationArea"></article>
 
     </footer>
+            <div class="generate">
+          <div>
+            <h3>RENDER</h3>
+            <button onclick="cancelGenerate()"><img src="imagess/circle-x.svg" alt=""></button>
+          </div>
+          <div class="generate1">
+            <div>
+              <select name="renderPage" id="renderPage">
+                <option value="auto">Per Page</option>
+                <option value="custom">Custom</option>
+                <option value="a0">A0</option>
+                <option value="a1">A1</option>
+                <option value="a2">A2</option>
+                <option value="a3">A3</option>
+                <option value="a4">A4</option>
+                <option value="a5">A5</option>
+                <option value="letter">Letter</option>
+              </select>
+      
+              <div class="generate1f" >
+                  <div class="generate1d">Width<input type="number" name="renderWidth" id="renderWidth"></div>
+                  <div class="generate1d">Height<input type="number" name="renderHeight" id="renderHeight"></div>
+                
+              </div>
+            </div>
+            <div>
+              <div class="perRow generate1f">
+                No Per:
+                <div class="generate1d">Row<input type="number" name="noPerRow" id="noPerRow"></div>
+                <div class="generate1d">Col<input type="number" name="noPerColumn" id="noPerColumn"></div>
+                
+              </div>
+              <div class="perRow generate1f">
+                <div class="generate1d">
+                Spacing: <input type="text" name="spacing" id="spacing">
+                </div>
+                <div class="generate1d">
+                  Quality <select style="height: auto;">
+                    <option value="1">1</option>
+                    <option value="1">2</option>
+                    <option value="1">3</option>
+                    <option value="1">4</option>
+                  </select>
+                </div>
+            </div>
+            <small style="color: #ff0000;">Increasing Quality Might Affect Rendering Speed</small>
+        
 
-    <!-- <script src="node_modules/jspdf/dist/jspdf.umd.min.js"></script>
+
+        </div>
+          </div>
+          <button onclick="generateCard()">Done</button>
+        </div>
+
+    <script src="node_modules/jspdf/dist/jspdf.umd.min.js"></script>
     <script src="node_modules/localbase/dist/localbase.min.js"></script>
-    <script src="node_modules/html2canvas/dist/html2canvas.min.js"></script> -->
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
-<script src="https://unpkg.com/localbase/dist/localbase.dev.js"></script>
+    <script src="node_modules/html2canvas/dist/html2canvas.min.js"></script>
+     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/localbase/dist/localbase.dev.js"></script> -->
     <script src="project.js"></script>
   </body>
 </html>

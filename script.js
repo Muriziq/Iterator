@@ -81,7 +81,7 @@ document
       ) {
         data = jsonData;
         nameDiv.style.display = "flex";
-        nameInput.value = projectName;
+        nameInput.value = projectName.replace(/\.json$/i, "");
         already.textContent = "Invalid Name Input Another";
         return;
       }

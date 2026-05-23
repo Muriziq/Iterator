@@ -83,7 +83,7 @@ let generateInfo = {
   renderHeight: 100,
   noPerRow: 1,
   noPerColumn: 1,
-  spacing: 30,
+  spacing: adapt(30),
 };
 let defaultFonts = [
   "serif",
@@ -4766,8 +4766,8 @@ class TextBox extends Formats {
       const newHeight = this.measurer.offsetHeight;
 
       // Apply to textarea
-      this.textPlace.style.width = `${Math.max(newWidth, adapt(10)) + adapt(2)}px`;
-      this.textPlace.style.height = `${Math.max(newHeight, adapt(5)) + adapt(2)}px`;
+      this.textPlace.style.width = `${Math.max(newWidth, adapt(10)) + adapt(5)}px`;
+      this.textPlace.style.height = `${Math.max(newHeight, adapt(5)) + adapt(5)}px`;
       this.formatProperties();
       requestDraw();
     };
@@ -5896,7 +5896,7 @@ async function importLoaded(jsonData, shouldCanvas = true, saving = false) {
   if (saving) {
     ifAutoSave = true;
     document.getElementById("auto-save").checked = true;
-    saveWorker.postMessage({ stopSaving: false });
+    saveWorker.postMessage({ stopSaving: false,deleteData:true,images:JSON.stringify(images)});
     saveToFile(true, true);
   }
 }
@@ -5915,7 +5915,6 @@ function saveToFile(autosave = false, deleteData = false) {
   if (drawingImage !== null) dImage = { ...drawingImage, image: null };
   if (autosave) {
     saveWorker.postMessage({
-      deleteData: deleteData,
       formerName: formerName,
       names: JSON.parse(localStorage.getItem("project-names")) || [],
       allData: allData,
@@ -5924,7 +5923,6 @@ function saveToFile(autosave = false, deleteData = false) {
     });
   } else {
     saveWorker.postMessage({
-      deleteData: deleteData,
       formerName: formerName,
       names: JSON.parse(localStorage.getItem("project-names")) || [],
       allData: allData,
@@ -6028,6 +6026,7 @@ async function reviveObjects(objData) {
     await new Promise((resolve, reject) => {
       img.onload = () => {
         objData.image = img;
+        objData.selectedFile = objData.originalFiles[0]
         resolve(true);
       };
     });
@@ -6643,10 +6642,7 @@ async function saveAsPDF() {
 
   const MAX_PAGES_PER_PDF = 50;
 
-  const sections =
-    generateInfo.renderPage === "auto"
-      ? [...container.querySelectorAll("div")]
-      : [...container.querySelectorAll("section")];
+  const sections = container.querySelectorAll("canvas")
 
   if (sections.length === 0) {
     console.warn("No sections found.");
@@ -6654,44 +6650,30 @@ async function saveAsPDF() {
   }
 
   let pdfWidth, pdfHeight, createPDF;
-
-  if (generateInfo.renderPage === "auto") {
     const rect = sections[0].getBoundingClientRect();
-    pdfWidth = rect.width * 0.75; // px → pt ✅
-    pdfHeight = rect.height * 0.75;
+    pdfWidth = rect.width; // px → pt ✅
+    pdfHeight = rect.height;
     createPDF = () =>
       new jsPDF({
         orientation: pdfWidth > pdfHeight ? "l" : "p",
-        unit: "pt",
+        unit: "px",
         format: [pdfWidth, pdfHeight],
       });
-  } else {
-    pdfWidth = generateInfo.renderWidth;
-    pdfHeight = generateInfo.renderHeight;
-    createPDF = () =>
-      new jsPDF({
-        orientation: pdfWidth > pdfHeight ? "l" : "p",
-        unit: "pt",
-        format: generateInfo.renderPage.toLowerCase(),
-      });
-  }
 
   let pdf = createPDF();
   let currentPageCount = 0;
   let pdfIndex = 1;
-
+const newName = formerName.replace(/\.json$/i, "")
   for (let i = 0; i < sections.length; i++) {
     try {
-      const canvas = await html2canvas(sections[i]);
-      const imgData = canvas.toDataURL("image/png");
-
+      const imgData = sections[i].toDataURL("image/png");
       if (currentPageCount > 0) pdf.addPage(); // ✅ fixed blank page bug
 
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       currentPageCount++;
 
       if (currentPageCount >= MAX_PAGES_PER_PDF || i === sections.length - 1) {
-        pdf.save(`${formerName.replace(/\.json$/i, "")}-${pdfIndex}.pdf`);
+        pdf.save(`${newName}-${pdfIndex}.pdf`);
         pdfIndex++;
         currentPageCount = 0;
         if (i !== sections.length - 1) {
@@ -6709,20 +6691,14 @@ async function saveAsImage() {
   pauseSaving()
   document.querySelector(".saveAsImage").textContent = "loading";
   const element = document.getElementById("generationArea");
-  let images;
-  if (generateInfo.renderPage === "auto") {
-    images = element.querySelectorAll("div");
-  } else {
-    images = element.querySelectorAll("section");
-  }
+  let images = element.querySelectorAll("canvas");
+  const newName = formerName.replace(/\.json$/i, "")
   for (let i = 0; i < images.length; i++) {
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const dataUrl = await html2canvas(images[i]);
       const link = document.createElement("a");
-      link.download = `${formerName.replace(/\.json$/i, "")}${i}.png`;
-      link.href = dataUrl.toDataURL("image/png");
+      link.download = `${newName}${i}.png`;
+      link.href = images[i].toDataURL("image/png");
       link.click();
     } catch (error) {
       console.error("Failed to save as image:", error);
@@ -6890,18 +6866,29 @@ function zoomToRect(rect) {
   requestDraw();
 }
 async function generateCard() {
-  pauseSaving()
-  // --- Setup ---
+  pauseSaving();
+
+  // ---------------- Setup ----------------
   document.querySelector("footer").style.display = "block";
+
   cancelGenerate();
+  // ---------------- Loader ----------------
+
+
+
   await new Promise((resolve) => setTimeout(resolve, 50));
 
   scale = 1;
   panX = 0;
   panY = 0;
+
   requestDraw();
 
-  // Destructure once — avoids repeated property lookups
+  // ---------------- Export Quality ----------------
+  // Lower on phones to avoid crashes
+  const EXPORT_SCALE =
+    window.innerWidth < 600 ? 2 : 3;
+  // ---------------- Destructure ----------------
   const {
     spacing,
     noPerRow,
@@ -6914,155 +6901,341 @@ async function generateCard() {
   generationArea.style.gap = spacing + "px";
 
   const pageRect = generationArea.getBoundingClientRect();
-  const currentPageWidth = pageRect.width - spacing * 2;
-  const currentPageHeight = (currentPageWidth * renderHeight) / renderWidth;
+
+  const currentPageWidth =
+    pageRect.width - spacing * 2;
+
+  const currentPageHeight =
+    (currentPageWidth * renderHeight) / renderWidth;
 
   let previouslySelectedObj = selectedObj;
+
   selectedObj = null;
 
-  // Faster than innerHTML = "" — skips HTML parser
   generationArea.replaceChildren();
 
   const fragment = document.createDocumentFragment();
-  const boxesPerPage = noPerColumn * noPerRow;
 
-  // --- Page factory ---
-  const createNewPage = () => {
-    const page = document.createElement("section");
-    page.classList.add("createNewProject");
-    page.style.gridTemplateRows = `repeat(${noPerColumn}, 1fr)`;
-    page.style.gridTemplateColumns = `repeat(${noPerRow}, 1fr)`;
-    fragment.append(page);
-    return page;
-  };
+  const boxesPerPage =
+    noPerColumn * noPerRow;
 
-  // --- Sizing (computed once, outside loop) ---
-  const containerWidth = currentPageWidth - spacing;
-  const containerHeight = currentPageHeight - spacing;
-  const cellWidth = containerWidth / noPerRow;
-  const cellHeight = containerHeight / noPerColumn;
+  // ---------------- Cell Sizing ----------------
+  const containerWidth =
+    currentPageWidth - spacing;
 
-  const paperRect = canvassDiv.getBoundingClientRect();
+  const containerHeight =
+    currentPageHeight - spacing;
+
+  const cellWidth =
+    containerWidth / noPerRow;
+
+  const cellHeight =
+    containerHeight / noPerColumn;
+
+  const paperRect =
+    canvassDiv.getBoundingClientRect();
+
   const localScale = Math.min(
     cellWidth / paperRect.width,
-    cellHeight / paperRect.height,
+    cellHeight / paperRect.height
   );
-  const ifNotAutoWidth = paperRect.width * localScale;
-  const ifNotAutoHeight = paperRect.height * localScale;
 
-  // --- Iteration length ---
+  const ifNotAutoWidth =
+    paperRect.width * localScale;
+
+  const ifNotAutoHeight =
+    paperRect.height * localScale;
+
+  // ---------------- Iteration Length ----------------
   let iterationLength = 1;
 
   if (textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...textBoxes.map((tb) => tb.textArea.split("\n").length),
+      ...textBoxes.map(
+        (tb) => tb.textArea.split("\n").length
+      )
     );
   }
 
   const maxImageIterLength = Math.max(
     1,
     ...images.map((img) =>
-      img.originalFiles.length ? img.originalFiles.length : 1,
-    ),
+      img.originalFiles.length
+        ? img.originalFiles.length
+        : 1
+    )
   );
 
-  iterationLength = Math.max(iterationLength, maxImageIterLength);
+  iterationLength = Math.max(
+    iterationLength,
+    maxImageIterLength
+  );
+  const loader =
+    new LoaderManager(iterationLength);
 
-  // --- Crop constants (hoisted; never change per iteration) ---
-  const scaleFactor = 1;
-  const cropX = (canvas.width - measurement.width) / 2;
-  const cropY = (canvas.height - measurement.height) / 2;
+  loader.createLoader();
+  // ---------------- Crop Setup ----------------
+  const cropX =
+    (canvas.width - measurement.width) / 2;
+
+  const cropY =
+    (canvas.height - measurement.height) / 2;
+
   const cropW = measurement.width;
   const cropH = measurement.height;
 
-  // --- Reusable cropped canvas ---
-  const croppedCanvas = document.createElement("canvas");
-  const cty = croppedCanvas.getContext("2d");
-  croppedCanvas.width = cropW * scaleFactor;
-  croppedCanvas.height = cropH * scaleFactor;
+  // ---------------- High Resolution Crop Canvas ----------------
+  const croppedCanvas =
+    document.createElement("canvas");
 
-  // Only set transform once if scaleFactor never changes
-  if (scaleFactor !== 1) {
-    cty.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
-  }
+  const cty =
+    croppedCanvas.getContext("2d");
 
-  const loader = new LoaderManager(iterationLength);
-  loader.createLoader();
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  // INTERNAL RESOLUTION
+  croppedCanvas.width =
+    cropW * EXPORT_SCALE;
 
-  let currentPage = createNewPage();
+  croppedCanvas.height =
+    cropH * EXPORT_SCALE;
+
+  // DISPLAY SIZE
+  croppedCanvas.style.width =
+    cropW + "px";
+
+  croppedCanvas.style.height =
+    cropH + "px";
+
+  // QUALITY
+  cty.imageSmoothingEnabled = true;
+  cty.imageSmoothingQuality = "high";
+
+  // Scale future drawing operations
+  cty.setTransform(
+    EXPORT_SCALE,
+    0,
+    0,
+    EXPORT_SCALE,
+    0,
+    0
+  );
+
+
   let boxCountInPage = 0;
 
-  // Time-based yield — adapts to actual frame duration instead of blind i % 10
   let lastYield = Date.now();
 
-  // --- Main loop ---
+  // ================= MAIN LOOP =================
   for (let i = 0; i < iterationLength; i++) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    cty.clearRect(0, 0, croppedCanvas.width, croppedCanvas.height);
 
+    ctx.clearRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    cty.clearRect(
+      0,
+      0,
+      cropW,
+      cropH
+    );
+
+    // Draw iterated content
     await Promise.all([
-      ...images.map((img) => img.drawIteratedImage(i)),
-      ...textBoxes.map((tb) => tb.drawIteratedImage(i)),
+      ...images.map((img) =>
+        img.drawIteratedImage(i)
+      ),
+
+      ...textBoxes.map((tb) =>
+        tb.drawIteratedImage(i)
+      ),
     ]);
 
-    objects.forEach((obj) => obj.addObject());
+    // Draw objects
+    objects.forEach((obj) =>
+      obj.addObject()
+    );
 
-    cty.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+    // Copy main canvas into high-res cropped canvas
+    cty.drawImage(
+      canvas,
+      cropX,
+      cropY,
+      cropW,
+      cropH,
+      0,
+      0,
+      cropW,
+      cropH
+    );
 
-    // Reuse a single preview canvas per iteration (reduces GC churn)
-    const previewCanvas = document.createElement("canvas");
-    const ptx = previewCanvas.getContext("2d");
-    const div = document.createElement("div");
-    div.classList.add("iterationDiv");
+    let previewCanvas;
+    let ptx;
 
+    // ===================================================
+    // AUTO PAGE MODE
+    // ===================================================
     if (renderPage === "auto") {
-      previewCanvas.width = currentPageWidth;
-      previewCanvas.height = currentPageHeight;
-      previewCanvas.style.width = currentPageWidth + "px";
-      previewCanvas.style.height = currentPageHeight + "px";
-      ptx.drawImage(croppedCanvas, 0, 0, currentPageWidth, currentPageHeight);
-      div.append(previewCanvas);
-      fragment.append(div);
+
+      previewCanvas =
+        document.createElement("canvas");
+
+      ptx =
+        previewCanvas.getContext("2d");
+
+      // HIGH RES INTERNAL SIZE
+      previewCanvas.width =
+        currentPageWidth * EXPORT_SCALE;
+
+      previewCanvas.height =
+        currentPageHeight * EXPORT_SCALE;
+
+      // NORMAL DISPLAY SIZE
+      previewCanvas.style.width =
+        currentPageWidth + "px";
+
+      previewCanvas.style.height =
+        currentPageHeight + "px";
+
+      ptx.imageSmoothingEnabled = true;
+      ptx.imageSmoothingQuality = "high";
+
+      // Scale drawing
+      ptx.scale(
+        EXPORT_SCALE,
+        EXPORT_SCALE
+      );
+
+      // Draw
+      ptx.drawImage(
+        croppedCanvas,
+        0,
+        0,
+        currentPageWidth,
+        currentPageHeight
+      );
+
+      fragment.append(previewCanvas);
+
     } else {
-      if (boxCountInPage >= boxesPerPage) {
-        currentPage = createNewPage();
+
+      // ===================================================
+      // MULTI CARD PAGE MODE
+      // ===================================================
+      if (
+        boxCountInPage >= boxesPerPage ||
+        i === 0
+      ) {
+
         boxCountInPage = 0;
+
+        previewCanvas =
+          document.createElement("canvas");
+
+        ptx =
+          previewCanvas.getContext("2d");
+
+        // HIGH RES INTERNAL SIZE
+        previewCanvas.width =
+          currentPageWidth * EXPORT_SCALE;
+
+        previewCanvas.height =
+          currentPageHeight * EXPORT_SCALE;
+
+        // NORMAL DISPLAY SIZE
+        previewCanvas.style.width =
+          currentPageWidth + "px";
+
+        previewCanvas.style.height =
+          currentPageHeight + "px";
+
+        ptx.imageSmoothingEnabled = true;
+        ptx.imageSmoothingQuality = "high";
+
+        // Scale drawing operations
+        ptx.scale(
+          EXPORT_SCALE,
+          EXPORT_SCALE
+        );
+
+        fragment.append(previewCanvas);
+
+      } else {
+
+        // Get latest canvas in fragment
+        previewCanvas =
+          fragment.lastChild;
+
+        ptx =
+          previewCanvas.getContext("2d");
       }
-      previewCanvas.width = ifNotAutoWidth;
-      previewCanvas.height = ifNotAutoHeight;
-      previewCanvas.style.width = ifNotAutoWidth + "px";
-      previewCanvas.style.height = ifNotAutoHeight + "px";
-      ptx.drawImage(croppedCanvas, 0, 0, ifNotAutoWidth, ifNotAutoHeight);
-      div.append(previewCanvas);
-      currentPage.append(div);
+
+      const col =
+        boxCountInPage % noPerRow;
+
+      const row =
+        Math.floor(
+          boxCountInPage / noPerRow
+        );
+
+      const x =
+        col * ifNotAutoWidth;
+
+      const y =
+        row * ifNotAutoHeight;
+
+      ptx.drawImage(
+        croppedCanvas,
+        x + spacing,
+        y + spacing,
+        ifNotAutoWidth,
+        ifNotAutoHeight
+      );
+
       boxCountInPage++;
     }
 
     loader.incrementOriginalState();
 
-    // Yield to browser only when a full frame has passed — prevents jank
+    // ---------------- Yield ----------------
     const now = Date.now();
+
     if (now - lastYield >= 16) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      await new Promise((resolve) =>
+        requestAnimationFrame(resolve)
+      );
+
       lastYield = Date.now();
     }
   }
 
-  // Single DOM write at the end — all pages land at once
+  // ---------------- DOM Append ----------------
   generationArea.append(fragment);
 
-  images.forEach((img) => img.backToDefault());
-  textBoxes.forEach((tb) => tb.backToDefault());
+  // ---------------- Reset ----------------
+  images.forEach((img) =>
+    img.backToDefault()
+  );
 
-  window.scrollTo({ top: generationArea.offsetTop, behavior: "smooth" });
+  textBoxes.forEach((tb) =>
+    tb.backToDefault()
+  );
 
-  selectedObj = previouslySelectedObj;
+  window.scrollTo({
+    top: generationArea.offsetTop,
+    behavior: "smooth",
+  });
+
+  selectedObj =
+    previouslySelectedObj;
+
   requestDraw();
-continueSaving()
-}
 
+  continueSaving();
+}
 let needsDraw = false;
 
 function requestDraw() {
