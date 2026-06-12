@@ -1,0 +1,308 @@
+import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import { objectProperties } from "../variable.js";
+import { adapt } from "../state/canvas.js";
+
+export default class LineUtils {
+  static getEdgeAtPosition(localMouseX, localMouseY, points) {
+    let threshold = thresholds.threshold();
+    for (let i = 0; i < points.length; i++) {
+      const current = points[i];
+      const next = points[(i + 1) % points.length];
+
+      const p1 = current.points;
+      const p2 = next.points;
+
+      if (current.edgeModes === "shaped") {
+        const cp1 = current.controls[0];
+        const cp2 = current.controls[1];
+
+        const steps = 50;
+        let prev = this.computeBezierPoint(p1, cp1, cp2, p2, 0);
+
+        for (let t = 1; t <= steps; t++) {
+          const tNorm = t / steps;
+          const curr = this.computeBezierPoint(p1, cp1, cp2, p2, tNorm);
+          const dist = this.pointLineDistance(
+            localMouseX,
+            localMouseY,
+            prev.x,
+            prev.y,
+            curr.x,
+            curr.y,
+          );
+          if (dist < threshold) return { value: i, type: "lineIndex" };
+          prev = curr;
+        }
+      } else {
+        const dist = this.pointLineDistance(
+          localMouseX,
+          localMouseY,
+          p1.x,
+          p1.y,
+          p2.x,
+          p2.y,
+        );
+        if (dist <= threshold) return { value: i, type: "lineIndex" };
+      }
+    }
+    return false;
+  }
+  static getPointPositon(localMouseX, localMouseY, points) {
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i].points;
+      const pdx = localMouseX - p.x;
+      const pdy = localMouseY - p.y;
+      if (
+        pdx * pdx + pdy * pdy <
+        thresholds.pointHold() * thresholds.pointHold()
+      ) {
+        return { value: i, type: "pointIndex" };
+      }
+    }
+
+    for (let i = 0; i < points.length; i++) {
+      if (points[i].edgeModes === "shaped") {
+        for (let j = 0; j < 2; j++) {
+          const cp = points[i].controls[j];
+          const cdx = localMouseX - cp.x;
+          const cdy = localMouseY - cp.y;
+          if (
+            cdx * cdx + cdy * cdy <
+            thresholds.pointHold() * thresholds.pointHold()
+          ) {
+            return {
+              value: { curveIndex: i, controlIndex: j },
+              type: "curveIndex",
+            };
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+  static drawRoundedShape(points, radius) {
+    if (points.length < 2) return;
+    ctx.beginPath();
+    for (let i = 0; i < points.length; i++) {
+      const prev = points[(i - 1 + points.length) % points.length].points;
+      const curr = points[i].points;
+      const next = points[(i + 1) % points.length].points;
+
+      const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+      const len1 = Math.hypot(v1.x, v1.y);
+      v1.x /= len1;
+      v1.y /= len1;
+      const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+      const len2 = Math.hypot(v2.x, v2.y);
+      v2.x /= len2;
+      v2.y /= len2;
+      const p1 = {
+        x: curr.x - v1.x * Math.min(radius, len1 / 2),
+        y: curr.y - v1.y * Math.min(radius, len1 / 2),
+      };
+      const p2 = {
+        x: curr.x + v2.x * Math.min(radius, len2 / 2),
+        y: curr.y + v2.y * Math.min(radius, len2 / 2),
+      };
+
+      if (i === 0) {
+        ctx.moveTo(p1.x, p1.y);
+      } else {
+        ctx.lineTo(p1.x, p1.y);
+      }
+
+      ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+    }
+    ctx.closePath();
+  }
+  static drawSmartShape(points, close = true) {
+    if (points.length < 2) return;
+
+    ctx.beginPath();
+
+    for (let i = 0; i < points.length; i++) {
+      const curr = points[i].points;
+      const prevIdx = (i - 1 + points.length) % points.length;
+      const nextIdx = (i + 1) % points.length;
+      const prev = points[prevIdx].points;
+      const next = points[nextIdx].points;
+      const mode = points[i].edgeModes;
+      if (mode === "rounded") {
+        const radius = points[i].cornerRadius;
+        const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
+        const len1 = Math.hypot(v1.x, v1.y);
+        v1.x /= len1;
+        v1.y /= len1;
+        const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+        const len2 = Math.hypot(v2.x, v2.y);
+        v2.x /= len2;
+        v2.y /= len2;
+        const p1 = {
+          x: curr.x - v1.x * Math.min(radius, len1 / 2),
+          y: curr.y - v1.y * Math.min(radius, len1 / 2),
+        };
+        const p2 = {
+          x: curr.x + v2.x * Math.min(radius, len2 / 2),
+          y: curr.y + v2.y * Math.min(radius, len2 / 2),
+        };
+
+        if (i === 0) {
+          ctx.moveTo(p1.x, p1.y);
+        } else {
+          const prevPoint = points[prevIdx];
+          if (prevPoint.edgeModes && prevPoint.controls) {
+            const cp1 = prevPoint.controls[0];
+            const cp2 = prevPoint.controls[1];
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p1.x, p1.y);
+          } else {
+            ctx.lineTo(p1.x, p1.y);
+          }
+        }
+
+        ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+      } else {
+        if (i === 0) {
+          ctx.moveTo(curr.x, curr.y);
+        } else {
+          const prevPoint = points[prevIdx];
+          if (prevPoint.edgeModes === "shaped") {
+            const cp1 = prevPoint.controls[0];
+            const cp2 = prevPoint.controls[1];
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, curr.x, curr.y);
+          } else {
+            ctx.lineTo(curr.x, curr.y);
+          }
+        }
+      }
+    }
+    if (close) {
+      const last = points[points.length - 1];
+      const first = points[0];
+      if (last.edgeModes === "shaped") {
+        const cp1 = last.controls[0];
+        const cp2 = last.controls[1];
+        ctx.bezierCurveTo(
+          cp1.x,
+          cp1.y,
+          cp2.x,
+          cp2.y,
+          first.points.x,
+          first.points.y,
+        );
+      } else {
+        ctx.lineTo(first.points.x, first.points.y);
+      }
+      ctx.closePath();
+    }
+  }
+
+  static drawEditArcs(points, selectedArea, selectedLineIndex) {
+    points.forEach((p, i) => {
+      ctx.beginPath();
+      ctx.rect(
+        p.points.x - thresholds.pointHold() / 2,
+        p.points.y - thresholds.pointHold() / 2,
+        thresholds.pointHold(),
+        thresholds.pointHold(),
+      );
+
+      if (selectedArea === "pointIndex" && i === selectedLineIndex)
+        ctx.fillStyle = "#0000ff";
+      else ctx.fillStyle = "#0000ff88";
+      ctx.strokeStyle = "#e4e4e4";
+      ctx.fill();
+      ctx.lineWidth = adapt(2);
+      ctx.stroke();
+    });
+
+    points.forEach((isCurve, i) => {
+      if (isCurve.edgeModes === "shaped") {
+        isCurve.controls.forEach((cp, j) => {
+          ctx.beginPath();
+          ctx.moveTo(isCurve.points.x, isCurve.points.y);
+          ctx.lineTo(cp.x, cp.y);
+          ctx.strokeStyle = "#0000ff88";
+          ctx.lineWidth = adapt(2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.rect(
+            cp.x - thresholds.pointHold() / 2,
+            cp.y - thresholds.pointHold() / 2,
+            thresholds.pointHold(),
+            thresholds.pointHold(),
+          );
+          const isSelected =
+            selectedArea === "curveIndex" &&
+            selectedLineIndex.curveIndex === i &&
+            selectedLineIndex.controlIndex === j;
+          ctx.fillStyle = isSelected ? "#00ff00" : "#00ff0088";
+          ctx.fill();
+          ctx.stroke();
+        });
+      }
+    });
+  }
+  static getNormalPostion(localX, localY, width, height, threshold) {
+    let selectedArea = null;
+    const nearLeft = Math.abs(localX) < threshold;
+    const nearRight = Math.abs(localX - width) < threshold;
+    const nearTop = Math.abs(localY) < threshold;
+    const nearBottom = Math.abs(localY - height) < threshold;
+    if (nearLeft && nearTop) selectedArea = "TopLeft";
+    else if (nearRight && nearTop) selectedArea = "TopRight";
+    else if (nearLeft && nearBottom) selectedArea = "BottomLeft";
+    else if (nearRight && nearBottom) selectedArea = "BottomRight";
+    else if (nearLeft) selectedArea = "Left";
+    else if (nearRight) selectedArea = "Right";
+    else if (nearTop) selectedArea = "Top";
+    else if (nearBottom) selectedArea = "Bottom";
+    else if (localX > 0 && localX < width && localY > 0 && localY < height) {
+      selectedArea = "Selected";
+    }
+    return selectedArea;
+  }
+  static pointLineDistance(px, py, x1, y1, x2, y2) {
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+
+    const dot = A * C + B * D;
+    const len_sq = C * C + D * D;
+    let param = -1;
+    if (len_sq !== 0) param = dot / len_sq;
+
+    let xx, yy;
+
+    if (param < 0) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+
+    const dx = px - xx;
+    const dy = py - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  static computeBezierPoint(p0, p1, p2, p3, t) {
+    const x =
+      Math.pow(1 - t, 3) * p0.x +
+      3 * Math.pow(1 - t, 2) * t * p1.x +
+      3 * (1 - t) * Math.pow(t, 2) * p2.x +
+      Math.pow(t, 3) * p3.x;
+
+    const y =
+      Math.pow(1 - t, 3) * p0.y +
+      3 * Math.pow(1 - t, 2) * t * p1.y +
+      3 * (1 - t) * Math.pow(t, 2) * p2.y +
+      Math.pow(t, 3) * p3.y;
+
+    return { x, y };
+  }
+}

@@ -1,3 +1,4 @@
+import { objectProperties } from "./src/variable.js";
 const circleFill = document.querySelector(".circle-fill");
 const percentageDisplay = document.getElementById("percentageDisplay");
 const usedDisplay = document.getElementById("usedDisplay");
@@ -154,7 +155,7 @@ async function renderData(search = "") {
     orderProjects.innerHTML = `${allData
       .map((dat) => {
         return `
-        <div class="objects">
+        <div class="objectProperties.objects">
             <div class="objects1"><img src=${dat?.object?.[0]?.backgroundImage || ""} alt="Image Not Found"></div>
             <p>${dat.name}</p>
             <div class="objects2">
