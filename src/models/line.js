@@ -4,7 +4,6 @@ import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip
 import { objectProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
-import { cloneObject, undoObject, redoObject } from "../state/undo.js";
 
 export default class Line extends Formats {
   constructor() {
@@ -442,9 +441,11 @@ export default class Line extends Formats {
         this.x += centerX;
         this.y += centerY;
         this.formatProperties();
+            requestDraw();
       });
       document.querySelector(".close").addEventListener("click", () => {
         this.isClosed = !this.isClosed;
+            requestDraw();
       });
     } else {
       super.similarPropties();
@@ -452,34 +453,21 @@ export default class Line extends Formats {
         if (this.selectedArea === "pointIndex") {
           this.points[this.selectedLineIndex].edgeModes = "rounded";
           this.formatProperties();
+            requestDraw();
         }
       });
       document.querySelector(".convert").addEventListener("click", () => {
         if (this.selectedArea === "pointIndex") {
           this.points[this.selectedLineIndex].edgeModes = "shaped";
+              requestDraw();
         }
       });
       document.querySelector(".normal").addEventListener("click", () => {
         this.mode = this.mode === "normal" ? "edit" : "normal";
         this.formatProperties();
+            requestDraw();
       });
-      propertiesBar
-        .querySelectorAll("input[type='text'],input[type='number']")
-        .forEach((input) => {
-          input.addEventListener(
-            "input",
-            (e) => setTimeout(this.changeProperties(e)),
-            1000,
-          );
-        });
-      propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
-        input.addEventListener(
-          "change",
-          (e) => setTimeout(this.changeProperties(e)),
-          1000,
-        );
-      });
-      requestDraw();
+          super.addingListeners();
     }
   }
   changeProperties(e) {
@@ -530,8 +518,6 @@ export default class Line extends Formats {
     if (this.outlineType.length !== 0)
       this.outlineType = [this.lineDashWidth, this.lineDashSpacing];
     requestDraw();
-    undoObject.push(cloneObject(objectProperties.objects));
-    redoObject.length = 0;
   }
   whereToSnap() {
     let minX = Infinity,

@@ -3,8 +3,7 @@ import { objectProperties } from "../variable.js";
 import { adapt, drawingObject } from "../state/canvas.js";
 import { changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
-import { cloneObject, undoObject, redoObject } from "../state/undo.js";
-
+import { debounce } from "../utils/uiHelpers.js";
 export default class Formats {
   constructor() {
     this.id = crypto.randomUUID();
@@ -34,8 +33,7 @@ export default class Formats {
         this.list.forEach((l) => (l.outlineType = []));
       }
       this.formatProperties();
-      undoObject.push(cloneObject(objectProperties.objects));
-      redoObject.length = 0;
+          requestDraw();
     });
     document.querySelector(".dashedb").addEventListener("click", () => {
       if (this.type === "group") {
@@ -51,8 +49,7 @@ export default class Formats {
         );
       }
       this.formatProperties();
-      undoObject.push(cloneObject(objectProperties.objects));
-      redoObject.length = 0;
+  requestDraw()
     });
     document.getElementById("outline").addEventListener("click", () => {
       this.outline = !this.outline;
@@ -60,8 +57,7 @@ export default class Formats {
         this.list.forEach((l) => (l.outline = this.outline));
       }
       this.formatProperties();
-      undoObject.push(cloneObject(objectProperties.objects));
-      redoObject.length = 0;
+  requestDraw()
     });
     if (this.colorFill === "linear" || this.colorFill === "radial") {
       if (this.type === "group") {
@@ -82,8 +78,7 @@ export default class Formats {
         }
         this.addObject();
         this.formatProperties();
-        undoObject.push(cloneObject(objectProperties.objects));
-        redoObject.length = 0;
+        requestDraw();
       });
       document.querySelectorAll(".color-div").forEach((div, i) => {
         div
@@ -93,8 +88,7 @@ export default class Formats {
             if (this.type === "group") {
               this.list.forEach((l) => (l.colorStop[i] = e.target.value));
             }
-            undoObject.push(cloneObject(objectProperties.objects));
-            redoObject.length = 0;
+            requestDraw();
           });
         div
           .querySelector("input[type='color']")
@@ -103,8 +97,7 @@ export default class Formats {
             if (this.type === "group") {
               this.list.forEach((l) => (l.color[i] = e.target.value));
             }
-            undoObject.push(cloneObject(objectProperties.objects));
-            redoObject.length = 0;
+            requestDraw();
           });
         div.querySelector("button").addEventListener("click", (e) => {
           this.color.splice(i, 1);
@@ -114,13 +107,11 @@ export default class Formats {
               l.color.splice(i, 1);
               l.colorStop = [];
             });
-            undoObject.push(cloneObject(objectProperties.objects));
-            redoObject.length = 0;
+            requestDraw();
           }
           this.addObject();
           this.formatProperties();
-          undoObject.push(cloneObject(objectProperties.objects));
-          redoObject.length = 0;
+          requestDraw()
         });
       });
     }
@@ -132,8 +123,7 @@ export default class Formats {
       }
       this.addObject();
       this.formatProperties();
-      undoObject.push(cloneObject(objectProperties.objects));
-      redoObject.length = 0;
+  requestDraw()
     });
   }
   similarProptiesOutput() {
@@ -1051,5 +1041,31 @@ export default class Formats {
       this.radiusX = this.radiusX <= 0 ? 0 : this.radiusX;
       this.radiusY = this.radiusY <= 0 ? 0 : this.radiusY;
     }
+  }
+
+
+  addingListeners(){
+// 2. Create the debounced version of your function
+const debouncedChangeProperties = debounce((e) => {
+  this.changeProperties(e);
+}, 1000);
+
+// 3. The Event Delegation setup
+['input', 'change'].forEach(eventType => {
+  propertiesBar.addEventListener(eventType, (e) => {
+    
+    // Check if the target is one of our inputs
+    if (e.target.matches("input[type='text'], input[type='number'], input[type='color']")) {
+      
+      // Filter the correct event to the correct input type
+      if ((eventType === 'input' && e.target.type !== 'color') || 
+          (eventType === 'change' && e.target.type === 'color')) {
+        
+        // Call the debounced function
+        debouncedChangeProperties(e);
+      }
+    }
+  });
+});
   }
 }

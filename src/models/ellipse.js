@@ -2,7 +2,6 @@ import Formats from "./formats.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import { ctx, thresholds, propertiesBar } from "../constants.js";
 import requestDraw from "../utils/draw.js";
-import { cloneObject, undoObject, redoObject } from "../state/undo.js";
 
 import LineUtils from "./lineUtils.js";
 import { objectProperties } from "../variable.js";
@@ -268,34 +267,21 @@ export default class Ellipse extends Formats {
       this.arcStart = 0;
       this.arcEnd = Math.PI * 2;
       this.formatProperties();
+          requestDraw();
     });
     document.querySelector(".pie").addEventListener("click", () => {
       this.mode = "pie";
       this.formatProperties();
+          requestDraw();
     });
     document.querySelector(".curve").addEventListener("click", () => {
       this.mode = "curve";
       this.colorFill = "none";
       if (!this.outline) this.outline = true;
       this.formatProperties();
+          requestDraw();
     });
-    propertiesBar
-      .querySelectorAll("input[type='text'],input[type='number']")
-      .forEach((input) => {
-        input.addEventListener(
-          "input",
-          (e) => setTimeout(this.changeProperties(e)),
-          1000,
-        );
-      });
-    propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
-      input.addEventListener(
-        "change",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000,
-      );
-    });
-    requestDraw();
+    super.addingListeners();
   }
   changeProperties(e) {
     const name = e.target.name;
@@ -336,8 +322,6 @@ export default class Ellipse extends Formats {
 
     requestDraw();
 
-    undoObject.push(cloneObject(objectProperties.objects));
-    redoObject.length = 0;
   }
   showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);

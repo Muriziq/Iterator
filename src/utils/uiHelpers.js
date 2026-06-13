@@ -1,8 +1,6 @@
 import { objectProperties } from "../variable.js";
 import { notification } from "../constants.js";
 import requestDraw from "./draw.js";
-import { cloneObject, undoObject, redoObject } from "../state/undo.js";
-
 export function flip(value) {
   if (objectProperties.selectedObj) {
     if (value === "x") {
@@ -10,8 +8,6 @@ export function flip(value) {
     } else {
       objectProperties.selectedObj.scaleY *= -1;
     }
-    undoObject.push(cloneObject(objectProperties.objects));
-    redoObject.length = 0;
     requestDraw();
   }
 
@@ -21,8 +17,6 @@ export function flip(value) {
     } else {
       objectProperties.multipleSelectArr.forEach((obj) => (obj.scaleY *= -1));
     }
-    undoObject.push(cloneObject(objectProperties.objects));
-    redoObject.length = 0;
     requestDraw();
   }
 }
@@ -35,4 +29,18 @@ export function notify(name) {
 
 export function cancelGenerate() {
   document.querySelector(".generate").style.display = "none";
+}
+
+export  function debounce(func, wait) {
+  let timeout; // This holds the ID of the current timer
+  
+  return function(...args) {
+    // 1. Clear the existing timer if the user typed again
+    clearTimeout(timeout);
+    
+    // 2. Start a brand new timer
+    timeout = setTimeout(() => {
+      func.apply(this, args); // Run the actual function after the wait
+    }, wait);
+  };
 }

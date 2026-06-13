@@ -4,7 +4,6 @@ import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip
 import { objectProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
-import { cloneObject, undoObject, redoObject } from "../state/undo.js";
 
 export default class Rectangle extends Formats {
   constructor(x, y, width, height) {
@@ -599,10 +598,12 @@ export default class Rectangle extends Formats {
     document.querySelector(".beveled").addEventListener("click", () => {
       this.roundedOrbeveled = "beveled";
       this.formatProperties();
+          requestDraw();
     });
     document.querySelector(".rounded").addEventListener("click", () => {
       this.roundedOrbeveled = "rounded";
       this.formatProperties();
+          requestDraw();
     });
     document.querySelector(".shapetool").addEventListener("click", () => {
       this.roundedOrbeveled = "shaped";
@@ -664,6 +665,7 @@ export default class Rectangle extends Formats {
       this.scaleY = 1;
       document.querySelector(".thick input").readOnly = true;
       this.formatProperties();
+          requestDraw();
     });
 
     document.querySelector(".rounded-edge").addEventListener("click", () => {
@@ -673,6 +675,7 @@ export default class Rectangle extends Formats {
             ? null
             : "rounded";
         this.formatProperties();
+            requestDraw();
       }
     });
     document.querySelector(".convert").addEventListener("click", () => {
@@ -682,21 +685,15 @@ export default class Rectangle extends Formats {
             ? null
             : "shaped";
         this.formatProperties();
+            requestDraw();
       }
     });
     document.querySelector(".normal").addEventListener("click", () => {
       this.mode = this.mode === "normal" ? "edit" : "normal";
       this.formatProperties();
+          requestDraw();
     });
-    propertiesBar
-      .querySelectorAll("input[type='text'],input[type='number']")
-      .forEach((input) => {
-        input.addEventListener("input", (e) => this.changeProperties(e));
-      });
-    propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
-      input.addEventListener("change", (e) => this.changeProperties(e));
-    });
-    requestDraw();
+    super.addingListeners();
   }
 
   changeProperties(e) {
@@ -795,8 +792,6 @@ export default class Rectangle extends Formats {
     }
 
     requestDraw();
-    undoObject.push(cloneObject(objectProperties.objects));
-    redoObject.length = 0;
   }
 
   drawBeveledRect(x, y, width, height, bevel) {

@@ -1,16 +1,18 @@
 import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
 import { adapt, drawingObject } from "../state/canvas.js";
-
+import { saveState } from "../state/undo.js";
 let needsDraw = false;
 
-export default function requestDraw() {
+export default function requestDraw(save=true) {
   if (needsDraw) return;
   needsDraw = true;
 
   requestAnimationFrame(() => {
     needsDraw = false;
     draw();
+    if(save)  saveState()
+  
   });
 }
 

@@ -5,7 +5,6 @@ import { objectProperties } from "../variable.js";
 import { adapt } from "../state/canvas.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
-import { cloneObject, undoObject, redoObject } from "../state/undo.js";
 
 export default class Group extends Formats {
   constructor(list) {
@@ -192,17 +191,10 @@ export default class Group extends Formats {
       objectProperties.objects.splice(index, 1);
       objectProperties.selectedObj = null;
       Tools("moveTool");
+      requestDraw();
     });
     super.similarPropties();
-    propertiesBar
-      .querySelectorAll("input[type='text'],input[type='number']")
-      .forEach((input) => {
-        input.addEventListener("input", (e) => this.changeProperties(e));
-      });
-    propertiesBar.querySelectorAll("input[type='color']").forEach((input) => {
-      input.addEventListener("change", (e) => this.changeProperties(e));
-    });
-    requestDraw();
+    super.addingListeners();
   }
   changeProperties(e) {
     const name = e.target.name;
@@ -243,8 +235,6 @@ export default class Group extends Formats {
       this[name] = e.target.value;
     }
     requestDraw();
-    undoObject.push(cloneObject(objectProperties.objects));
-    redoObject.length = 0;
   }
   moveClip(x, y) {
     this.x += x;

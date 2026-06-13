@@ -1,8 +1,6 @@
 import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
 import { objectProperties } from "../variable.js";
 import requestDraw from "../utils/draw.js";
-import { cloneObject, undoObject, redoObject } from "../state/undo.js";
-
 export function bringToFront(selected) {
   if (selected.clipped === "objectProperties.clipped") {
     const clipIndex = objectProperties.objects.find((obj) => obj.id === selected.clipper);
@@ -18,8 +16,6 @@ export function bringToFront(selected) {
   objectProperties.objects.splice(index, 1);
   objectProperties.objects.push(selected);
   requestDraw();
-  undoObject.push(cloneObject(objectProperties.objects));
-  redoObject.length = 0;
 }
 export function sendToBack(selected) {
   if (selected.clipped === "objectProperties.clipped") {
@@ -36,8 +32,6 @@ export function sendToBack(selected) {
   objectProperties.objects.splice(index, 1);
   objectProperties.objects.unshift(selected);
   requestDraw();
-  undoObject.push(cloneObject(objectProperties.objects));
-  redoObject.length = 0;
 }
 export function pageUp(selected) {
   // Handle clipping reorder FIRST if selected is objectProperties.clipped
@@ -64,8 +58,6 @@ export function pageUp(selected) {
   // swap with next
   [objectProperties.objects[i], objectProperties.objects[i + 1]] = [objectProperties.objects[i + 1], objectProperties.objects[i]];
   requestDraw();
-  undoObject.push(cloneObject(objectProperties.objects));
-  redoObject.length = 0;
 }
 
 export function pageDown(selected) {
@@ -91,6 +83,4 @@ export function pageDown(selected) {
   // swap with previous
   [objectProperties.objects[i], objectProperties.objects[i - 1]] = [objectProperties.objects[i - 1], objectProperties.objects[i]];
   requestDraw();
-  undoObject.push(cloneObject(objectProperties.objects));
-  redoObject.length = 0;
 }

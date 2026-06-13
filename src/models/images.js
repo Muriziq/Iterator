@@ -298,14 +298,10 @@ export default class Images extends Formats {
       requestDraw();
     });
 
-    propertiesBar.querySelectorAll("input").forEach((input) => {
-      input.addEventListener(
-        "input",
-        (e) => setTimeout(this.changeProperties(e)),
-        1000,
-      );
+    propertiesBar.querySelector("input[name='iteratedFiles']").addEventListener("change", (e) => {
+      this.changeProperties(e);
     });
-    requestDraw();
+    super.addingListeners();
   }
   async changeProperties(e) {
     const name = e.target.name;

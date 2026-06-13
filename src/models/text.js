@@ -7,7 +7,6 @@ import requestDraw from "../utils/draw.js";
 import { adapt } from "../state/canvas.js";
 import { reverseMousePos } from "../utils/mousePos.js";
 import { notify } from "../utils/uiHelpers.js";
-
 let allFonts = ["serif", "sans-serif","monospace","cursive","fantasy","system-ui","emoji","math","fangsong", ...(JSON.parse(localStorage.getItem("fontNames")) || [])];
 
 export default class TextBox extends Formats {
@@ -449,7 +448,7 @@ export default class TextBox extends Formats {
     // Bind inputs
     propertiesBar
       .querySelectorAll(
-        "input, textarea, select, button#shadowToggle,button#iterateToggle",
+        "textarea, select, button#shadowToggle,button#iterateToggle",
       )
       .forEach((el) => {
         // Shadow toggle button
@@ -475,7 +474,7 @@ export default class TextBox extends Formats {
           this.changeProperties(e);
         });
       });
-    draw();
+    super.addingListeners();
     // Optional: outline toggle is inside similarProptiesOutput(), keep existing handler if you have one.
   }
   changeProperties(e) {

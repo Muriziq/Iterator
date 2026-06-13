@@ -2,8 +2,8 @@ import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip
 import { objectProperties, canvasProperties } from "../variable.js";
 import requestDraw from "../utils/draw.js";
 
-export let undoObject = [];
-export let redoObject = [];
+let undoObject = [];
+let redoObject = [];
 export function undo() {
   if (undoObject.length > 1) {
     redoObject.push(undoObject.pop());
@@ -13,6 +13,7 @@ export function undo() {
     } else objectProperties.selectedObj = objectProperties.objects[objectProperties.objects.length - 1];
     requestDraw();
   }
+  console.log(undoObject)
 }
 
 export function redo() {
@@ -26,6 +27,10 @@ export function redo() {
     requestDraw();
   }
 }
-export function cloneObject(object) {
+function cloneObject(object) {
   return object.map((obj) => obj.showClone(true));
+}
+export function saveState() {
+  undoObject.push(cloneObject(objectProperties.objects));
+  redoObject = [];
 }

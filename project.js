@@ -4,7 +4,7 @@ import requestDraw from "./src/utils/draw.js";
 import { canvasSize, changeOrientation } from "./src/state/canvas.js";
 import { importLoaded, saveToFile, pauseSaving, continueSaving } from "./src/state/save.js";
 import { saveAsPDF, saveAsImage } from "./src/state/exportSave.js";
-import { undo, redo, cloneObject, undoObject, redoObject } from "./src/state/undo.js";
+import { undo, redo } from "./src/state/undo.js";
 import Tools, { addImage } from "./src/Tools/tools.js";
 import { align, group, zoomToRect } from "./src/Tools/others.js";
 import { backValues, changeValues } from "./src/utils/convert.js";

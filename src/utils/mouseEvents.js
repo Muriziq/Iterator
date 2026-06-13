@@ -4,7 +4,7 @@ import { getMousePos } from "./mousePos.js";
 import TextBox from "../models/text.js";
 import Tools from "../Tools/tools.js";
 import requestDraw from "../utils/draw.js";
-import { undo, redo, cloneObject, undoObject, redoObject } from "../state/undo.js";
+import { undo, redo, saveState} from "../state/undo.js";
 import { multipleSelectFunction, drawingObject } from "../state/canvas.js";
 import { align, group, zoomToRect } from "../Tools/others.js";
 import { bringToFront, sendToBack, pageUp, pageDown } from "../Tools/pageTo.js";
@@ -41,7 +41,6 @@ export function cMousedown(event) {
     }
   } else if (objectProperties.pen !== null) {
     objectProperties.pen.drawPen(pos);
-    undoObject.push(cloneObject(objectProperties.objects));
     objectProperties.selectedObj = objectProperties.pen;
     objectProperties.selectedObj.formatProperties();
   } else if (objectProperties.clipped !== null) {
@@ -85,8 +84,6 @@ export function cMousedown(event) {
     if (objectProperties.clipped === null) {
       notify("Clipped");
       Tools("moveTool");
-      undoObject.push(cloneObject(objectProperties.objects));
-      redoObject.length = 0;
       return;
     } else {
       notify("Select An Object");
@@ -96,8 +93,6 @@ export function cMousedown(event) {
     cloned.changeLocation(pos.x, "x");
     cloned.changeLocation(pos.y, "y");
     objectProperties.objects.push(cloned);
-    undoObject.push(cloneObject(objectProperties.objects));
-    redoObject.length = 0;
     return;
   } else if (objectProperties.clippedObject !== null && objectProperties.previousClip !== null) {
     editclip.style.display = "block";
@@ -176,7 +171,7 @@ export function cMousedown(event) {
 
   objectProperties.lastMouseX = pos.x;
   objectProperties.lastMouseY = pos.y;
-  requestDraw();
+  requestDraw(false);
 }
 export function cDoubleClick(event) {
   const pos = getMousePos(canvas, { x: event.clientX, y: event.clientY });
@@ -241,27 +236,25 @@ export async function wMouseUp() {
 
       Tools("moveTool");
       objectProperties.selectedObj.formatProperties();
-      undoObject.push(cloneObject(objectProperties.objects));
-      redoObject.length = 0;
+      saveState()
     }
   }
 
   if (objectProperties.isDraggingObject || objectProperties.isRotatingObject || objectProperties.multipleSelect) {
-    undoObject.push(cloneObject(objectProperties.objects));
-    redoObject.length = 0;
+   saveState()
   }
 
   objectProperties.isDraggingObject = false;
   objectProperties.isRotatingObject = false;
   objectProperties.isPanning = false;
 
-  requestDraw();
+  requestDraw(false);
 }
 export function cMouseUp() {
   if (objectProperties.selectedObj && !objectProperties.cloneObj && !objectProperties.pen) {
     objectProperties.selectedObj.formatProperties();
   }
-  requestDraw();
+  requestDraw(false);
 }
 export function cMouseLeave() {
   if (!objectProperties.isDraggingObject && !objectProperties.drawingStart) {
@@ -310,7 +303,7 @@ export function cMouseMove(event) {
   objectProperties.lastMouseY = pos.y;
 
   if (changed) {
-    requestDraw();
+    requestDraw(false);
   }
 }
 

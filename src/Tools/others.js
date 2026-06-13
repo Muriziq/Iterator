@@ -3,7 +3,6 @@ import { objectProperties, canvasProperties } from "../variable.js";
 import Tools from "../Tools/tools.js";
 import Group from "../models/group.js";
 import requestDraw from "../utils/draw.js";
-import { cloneObject, undoObject, redoObject } from "../state/undo.js";
 import { multipleSelectFunction } from "../state/canvas.js";
 
 export function align(arg) {
@@ -80,8 +79,6 @@ export function align(arg) {
   }
   if (objectProperties.multipleSelectArr.length > 1) multipleSelectFunction();
   requestDraw();
-  undoObject.push(cloneObject(objectProperties.objects));
-  redoObject.length = 0;
 }
 export function group() {
   if (objectProperties.multipleSelectArr.length > 1) {
