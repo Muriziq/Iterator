@@ -281,7 +281,6 @@ export default class Ellipse extends Formats {
       this.formatProperties();
           requestDraw();
     });
-    super.addingListeners();
   }
   changeProperties(e) {
     const name = e.target.name;

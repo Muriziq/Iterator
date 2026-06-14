@@ -693,7 +693,6 @@ export default class Rectangle extends Formats {
       this.formatProperties();
           requestDraw();
     });
-    super.addingListeners();
   }
 
   changeProperties(e) {

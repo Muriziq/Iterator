@@ -11,7 +11,7 @@ import { backValues, changeValues } from "./src/utils/convert.js";
 import { bringToFront, sendToBack, pageUp, pageDown } from "./src/Tools/pageTo.js";
 import { cMousedown, cDoubleClick, cMouseUp, cMouseLeave, cMouseMove, wMouseUp, keyDown } from "./src/utils/mouseEvents.js";
 import generateCard from "./src/utils/generate.js";
-import { cancelGenerate, flip, notify } from "./src/utils/uiHelpers.js";
+import { cancelGenerate, flip, notify, debounce } from "./src/utils/uiHelpers.js";
 
 canvas.width = canvas.getBoundingClientRect().width;
 canvas.height = canvas.getBoundingClientRect().height;
@@ -74,7 +74,8 @@ window.addEventListener("load", async () => {
     //   thresholds.normalMode = () => adapt(15);
     // }
   } catch (error) {
-    console.log(error);
+    console.error("Error loading project:", error);
+    alert("Failed to load the project. Please check your data and try again.");
   }
 });
 
@@ -328,6 +329,27 @@ document
   .addEventListener("change", (e) => addImage(e));
 
 
+const debouncedChangeProperties = debounce((e) => {
+  if (objectProperties.selectedObj && typeof objectProperties.selectedObj.changeProperties === "function") {
+    objectProperties.selectedObj.changeProperties(e);
+  }
+}, 500);
+
+['input', 'change'].forEach(eventType => {
+  propertiesBar.addEventListener(eventType, (e) => {
+    
+    // Check if the target is one of our inputs
+    if (e.target.matches("input[type='text'], input[type='number'], input[type='color']")) {
+      
+      // Filter the correct event to the correct input type
+      if ((eventType === 'input' && e.target.type !== 'color') || 
+          (eventType === 'change' && e.target.type === 'color')) {
+        
+        debouncedChangeProperties(e);
+      }
+    }
+  });
+});
 
 // document.addEventListener("contextmenu", (e) => {
 //   e.preventDefault();

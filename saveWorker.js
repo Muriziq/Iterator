@@ -87,8 +87,8 @@ function runSave(source) {
               }
         );
       }
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.error("Autosave error:", error);
     } finally {
       isSaving = false;
     }
@@ -114,9 +114,8 @@ namesDont = false
       newStorage = JSON.stringify([...names, formerName])
       namesDont = true
     }
-  } catch (err) {
-    console.log(err);
-    notify("Error Saving");
+  } catch (error) {
+    console.error("Save to file error:", error);
   }
 
 }

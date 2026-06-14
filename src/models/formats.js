@@ -3,7 +3,6 @@ import { objectProperties } from "../variable.js";
 import { adapt, drawingObject } from "../state/canvas.js";
 import { changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
-import { debounce } from "../utils/uiHelpers.js";
 export default class Formats {
   constructor() {
     this.id = crypto.randomUUID();
@@ -1044,28 +1043,4 @@ export default class Formats {
   }
 
 
-  addingListeners(){
-// 2. Create the debounced version of your function
-const debouncedChangeProperties = debounce((e) => {
-  this.changeProperties(e);
-}, 1000);
-
-// 3. The Event Delegation setup
-['input', 'change'].forEach(eventType => {
-  propertiesBar.addEventListener(eventType, (e) => {
-    
-    // Check if the target is one of our inputs
-    if (e.target.matches("input[type='text'], input[type='number'], input[type='color']")) {
-      
-      // Filter the correct event to the correct input type
-      if ((eventType === 'input' && e.target.type !== 'color') || 
-          (eventType === 'change' && e.target.type === 'color')) {
-        
-        // Call the debounced function
-        debouncedChangeProperties(e);
-      }
-    }
-  });
-});
-  }
 }

@@ -10,11 +10,7 @@ export default async function generateCard() {
 
   // ---------------- Setup ----------------
   document.querySelector("footer").style.display = "block";
-
   cancelGenerate();
-  // ---------------- Loader ----------------
-
-
 
   await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -26,8 +22,8 @@ export default async function generateCard() {
 
   // ---------------- Export Quality ----------------
   // Lower on phones to avoid crashes
-  const EXPORT_SCALE =
-    window.innerWidth < 600 ? 2 : 3;
+  const EXPORT_SCALE = window.innerWidth < 600 ? 2 : 3;
+
   // ---------------- Destructure ----------------
   const {
     spacing,
@@ -40,51 +36,36 @@ export default async function generateCard() {
 
   generationArea.style.gap = spacing + "px";
 
+  // Cache layout reads up front — avoids repeated reflow triggers
   const pageRect = generationArea.getBoundingClientRect();
+  const paperRect = canvassDiv.getBoundingClientRect();
 
-  const currentPageWidth =
-    pageRect.width - spacing * 2;
-
-  const currentPageHeight =
-    (currentPageWidth * renderHeight) / renderWidth;
+  const currentPageWidth = pageRect.width - spacing * 2;
+  const currentPageHeight = (currentPageWidth * renderHeight) / renderWidth;
 
   let previouslySelectedObj = objectProperties.selectedObj;
-
   objectProperties.selectedObj = null;
 
   generationArea.replaceChildren();
 
   const fragment = document.createDocumentFragment();
 
-  const boxesPerPage =
-    noPerColumn * noPerRow;
+  const boxesPerPage = noPerColumn * noPerRow;
 
   // ---------------- Cell Sizing ----------------
-  const containerWidth =
-    currentPageWidth - spacing;
+  const containerWidth = currentPageWidth - spacing;
+  const containerHeight = currentPageHeight - spacing;
 
-  const containerHeight =
-    currentPageHeight - spacing;
-
-  const cellWidth =
-    containerWidth / noPerRow;
-
-  const cellHeight =
-    containerHeight / noPerColumn;
-
-  const paperRect =
-    canvassDiv.getBoundingClientRect();
+  const cellWidth = containerWidth / noPerRow;
+  const cellHeight = containerHeight / noPerColumn;
 
   const localScale = Math.min(
     cellWidth / paperRect.width,
     cellHeight / paperRect.height
   );
 
-  const ifNotAutoWidth =
-    paperRect.width * localScale;
-
-  const ifNotAutoHeight =
-    paperRect.height * localScale;
+  const ifNotAutoWidth = paperRect.width * localScale;
+  const ifNotAutoHeight = paperRect.height * localScale;
 
   // ---------------- Iteration Length ----------------
   let iterationLength = 1;
@@ -92,246 +73,152 @@ export default async function generateCard() {
   if (objectProperties.textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...textBoxes.map(
-        (tb) => tb.textArea.split("\n").length
-      )
+      ...objectProperties.textBoxes.map((tb) => tb.textArea.split("\n").length)
     );
   }
 
   const maxImageIterLength = Math.max(
     1,
-    ...images.map((img) =>
-      img.originalFiles.length
-        ? img.originalFiles.length
-        : 1
+    ...objectProperties.images.map((img) =>
+      img.originalFiles.length ? img.originalFiles.length : 1
     )
   );
 
-  iterationLength = Math.max(
-    iterationLength,
-    maxImageIterLength
-  );
-  const loader =
-    new LoaderManager(iterationLength);
+  iterationLength = Math.max(iterationLength, maxImageIterLength);
 
+  const loader = new LoaderManager(iterationLength);
   loader.createLoader();
+
   // ---------------- Crop Setup ----------------
-  const cropX =
-    (canvas.width - canvasProperties.measurement.width) / 2;
-
-  const cropY =
-    (canvas.height - canvasProperties.measurement.height) / 2;
-
+  const cropX = (canvas.width - canvasProperties.measurement.width) / 2;
+  const cropY = (canvas.height - canvasProperties.measurement.height) / 2;
   const cropW = canvasProperties.measurement.width;
   const cropH = canvasProperties.measurement.height;
 
   // ---------------- High Resolution Crop Canvas ----------------
-  const croppedCanvas =
-    document.createElement("canvas");
+  // Use OffscreenCanvas when available — runs off the main thread,
+  // avoids layout invalidation, and is faster for export-only work.
+  const supportsOffscreen = typeof OffscreenCanvas !== "undefined";
 
-  const cty =
-    croppedCanvas.getContext("2d");
+  let croppedCanvas, cty;
 
-  // INTERNAL RESOLUTION
-  croppedCanvas.width =
-    cropW * EXPORT_SCALE;
+  if (supportsOffscreen) {
+    croppedCanvas = new OffscreenCanvas(cropW * EXPORT_SCALE, cropH * EXPORT_SCALE);
+  } else {
+    croppedCanvas = document.createElement("canvas");
+    croppedCanvas.width = cropW * EXPORT_SCALE;
+    croppedCanvas.height = cropH * EXPORT_SCALE;
+    croppedCanvas.style.width = cropW + "px";
+    croppedCanvas.style.height = cropH + "px";
+  }
 
-  croppedCanvas.height =
-    cropH * EXPORT_SCALE;
-
-  // DISPLAY SIZE
-  croppedCanvas.style.width =
-    cropW + "px";
-
-  croppedCanvas.style.height =
-    cropH + "px";
-
-  // QUALITY
+  cty = croppedCanvas.getContext("2d");
   cty.imageSmoothingEnabled = true;
   cty.imageSmoothingQuality = "high";
 
-  // Scale future drawing operations
-  cty.setTransform(
-    EXPORT_SCALE,
-    0,
-    0,
-    EXPORT_SCALE,
-    0,
-    0
-  );
+  // Set scale once — all subsequent draw calls use these coords
+  cty.setTransform(EXPORT_SCALE, 0, 0, EXPORT_SCALE, 0, 0);
 
+  // ---------------- Pre-allocate Page Canvases ----------------
+  // Creating canvases mid-loop triggers GC pressure. We calculate
+  // exactly how many pages we need and build them all up front.
+  const totalPages =
+    renderPage === "auto"
+      ? iterationLength
+      : Math.ceil(iterationLength / boxesPerPage);
+
+  /**
+   * Creates and configures a page canvas at full export resolution.
+   */
+  function createPageCanvas() {
+    const pc = document.createElement("canvas");
+    pc.width = currentPageWidth * EXPORT_SCALE;
+    pc.height = currentPageHeight * EXPORT_SCALE;
+    pc.style.width = currentPageWidth + "px";
+    pc.style.height = currentPageHeight + "px";
+
+    const ptx = pc.getContext("2d");
+    ptx.imageSmoothingEnabled = true;
+    ptx.imageSmoothingQuality = "high";
+    // Scale once — draw calls use display coords throughout
+    ptx.scale(EXPORT_SCALE, EXPORT_SCALE);
+
+    return { pc, ptx };
+  }
+
+  const pageCanvases = Array.from({ length: totalPages }, () => {
+    const { pc, ptx } = createPageCanvas();
+    fragment.append(pc);
+    return { pc, ptx };
+  });
 
   let boxCountInPage = 0;
-
+  let pageIndex = 0;
   let lastYield = Date.now();
 
   // ================= MAIN LOOP =================
   for (let i = 0; i < iterationLength; i++) {
 
-    ctx.clearRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+    // Clear main canvas and crop target
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    cty.clearRect(0, 0, cropW, cropH);
 
-    cty.clearRect(
-      0,
-      0,
-      cropW,
-      cropH
-    );
-
-    // Draw iterated content
+    // Draw iterated content (images + text boxes in parallel)
     await Promise.all([
-      ...images.map((img) =>
-        img.drawIteratedImage(i)
-      ),
-
-      ...textBoxes.map((tb) =>
-        tb.drawIteratedImage(i)
-      ),
+      ...objectProperties.images.map((img) => img.drawIteratedImage(i)),
+      ...objectProperties.textBoxes.map((tb) => tb.drawIteratedImage(i)),
     ]);
 
-    // Draw objectProperties.objects
-    objectProperties.objects.forEach((obj) =>
-      obj.addObject()
-    );
+    // Draw static objects
+    objectProperties.objects.forEach((obj) => obj.addObject());
 
-    // Copy main canvas into high-res cropped canvas
+    // Copy main canvas → high-res cropped canvas
+    // Explicit source rect ensures we always sample at full internal resolution
     cty.drawImage(
       canvas,
-      cropX,
-      cropY,
-      cropW,
-      cropH,
-      0,
-      0,
-      cropW,
-      cropH
+      cropX, cropY, cropW, cropH,  // source: unscaled crop region
+      0, 0, cropW, cropH           // dest: fill the cropped canvas (cty is pre-scaled)
     );
 
-    let previewCanvas;
-    let ptx;
-
     // ===================================================
-    // AUTO PAGE MODE
+    // AUTO PAGE MODE — one canvas per iteration
     // ===================================================
     if (renderPage === "auto") {
 
-      previewCanvas =
-        document.createElement("canvas");
+      const { ptx } = pageCanvases[i];
 
-      ptx =
-        previewCanvas.getContext("2d");
-
-      // HIGH RES INTERNAL SIZE
-      previewCanvas.width =
-        currentPageWidth * EXPORT_SCALE;
-
-      previewCanvas.height =
-        currentPageHeight * EXPORT_SCALE;
-
-      // NORMAL DISPLAY SIZE
-      previewCanvas.style.width =
-        currentPageWidth + "px";
-
-      previewCanvas.style.height =
-        currentPageHeight + "px";
-
-      ptx.imageSmoothingEnabled = true;
-      ptx.imageSmoothingQuality = "high";
-
-      // Scale drawing
-      ptx.scale(
-        EXPORT_SCALE,
-        EXPORT_SCALE
-      );
-
-      // Draw
+      // Explicit source rect: sample the full internal resolution of croppedCanvas
       ptx.drawImage(
         croppedCanvas,
-        0,
-        0,
-        currentPageWidth,
-        currentPageHeight
+        0, 0, croppedCanvas.width, croppedCanvas.height,  // source: full px
+        0, 0, currentPageWidth, currentPageHeight          // dest: display coords (ptx is pre-scaled)
       );
-
-      fragment.append(previewCanvas);
 
     } else {
 
       // ===================================================
-      // MULTI CARD PAGE MODE
+      // MULTI CARD PAGE MODE — grid layout per page
       // ===================================================
-      if (
-        boxCountInPage >= boxesPerPage ||
-        i === 0
-      ) {
 
+      // Advance to next pre-allocated page when the current one is full
+      if (i > 0 && boxCountInPage >= boxesPerPage) {
         boxCountInPage = 0;
-
-        previewCanvas =
-          document.createElement("canvas");
-
-        ptx =
-          previewCanvas.getContext("2d");
-
-        // HIGH RES INTERNAL SIZE
-        previewCanvas.width =
-          currentPageWidth * EXPORT_SCALE;
-
-        previewCanvas.height =
-          currentPageHeight * EXPORT_SCALE;
-
-        // NORMAL DISPLAY SIZE
-        previewCanvas.style.width =
-          currentPageWidth + "px";
-
-        previewCanvas.style.height =
-          currentPageHeight + "px";
-
-        ptx.imageSmoothingEnabled = true;
-        ptx.imageSmoothingQuality = "high";
-
-        // Scale drawing operations
-        ptx.scale(
-          EXPORT_SCALE,
-          EXPORT_SCALE
-        );
-
-        fragment.append(previewCanvas);
-
-      } else {
-
-        // Get latest canvas in fragment
-        previewCanvas =
-          fragment.lastChild;
-
-        ptx =
-          previewCanvas.getContext("2d");
+        pageIndex++;
       }
 
-      const col =
-        boxCountInPage % noPerRow;
+      const { ptx } = pageCanvases[pageIndex];
 
-      const row =
-        Math.floor(
-          boxCountInPage / noPerRow
-        );
+      const col = boxCountInPage % noPerRow;
+      const row = Math.floor(boxCountInPage / noPerRow);
 
-      const x =
-        col * ifNotAutoWidth;
+      const x = col * ifNotAutoWidth;
+      const y = row * ifNotAutoHeight;
 
-      const y =
-        row * ifNotAutoHeight;
-
+      // Explicit source rect for sharpest possible downsampling
       ptx.drawImage(
         croppedCanvas,
-        x + spacing,
-        y + spacing,
-        ifNotAutoWidth,
-        ifNotAutoHeight
+        0, 0, croppedCanvas.width, croppedCanvas.height,  // source: full internal px
+        x + spacing, y + spacing, ifNotAutoWidth, ifNotAutoHeight  // dest: display coords
       );
 
       boxCountInPage++;
@@ -340,14 +227,12 @@ export default async function generateCard() {
     loader.incrementOriginalState();
 
     // ---------------- Yield ----------------
+    // Use setTimeout instead of requestAnimationFrame for export:
+    // rAF waits for the next paint (up to 16ms delay); setTimeout(0)
+    // yields the thread immediately without blocking the GPU pipeline.
     const now = Date.now();
-
     if (now - lastYield >= 16) {
-
-      await new Promise((resolve) =>
-        requestAnimationFrame(resolve)
-      );
-
+      await new Promise((resolve) => setTimeout(resolve, 0));
       lastYield = Date.now();
     }
   }
@@ -356,21 +241,15 @@ export default async function generateCard() {
   generationArea.append(fragment);
 
   // ---------------- Reset ----------------
-  objectProperties.images.forEach((img) =>
-    img.backToDefault()
-  );
-
-  objectProperties.textBoxes.forEach((tb) =>
-    tb.backToDefault()
-  );
+  objectProperties.images.forEach((img) => img.backToDefault());
+  objectProperties.textBoxes.forEach((tb) => tb.backToDefault());
 
   window.scrollTo({
     top: generationArea.offsetTop,
     behavior: "smooth",
   });
 
-  objectProperties.selectedObj =
-    previouslySelectedObj;
+  objectProperties.selectedObj = previouslySelectedObj;
 
   requestDraw();
 

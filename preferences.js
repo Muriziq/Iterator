@@ -1,4 +1,4 @@
-import { objectProperties } from "./src/variable.js";
+
 const circleFill = document.querySelector(".circle-fill");
 const percentageDisplay = document.getElementById("percentageDisplay");
 const usedDisplay = document.getElementById("usedDisplay");
@@ -116,6 +116,7 @@ async function updateStorageInfo() {
     statusDiv.innerHTML =
       "⚠️ Unable to read storage information. Please refresh and try again.";
     percentageDisplay.textContent = "?";
+    alert("Failed to load storage information. Please try again.");
   }
 }
 
@@ -155,7 +156,7 @@ async function renderData(search = "") {
     orderProjects.innerHTML = `${allData
       .map((dat) => {
         return `
-        <div class="objectProperties.objects">
+        <div class="objects">
             <div class="objects1"><img src=${dat?.object?.[0]?.backgroundImage || ""} alt="Image Not Found"></div>
             <p>${dat.name}</p>
             <div class="objects2">
@@ -216,11 +217,13 @@ async function renderData(search = "") {
           window.location.href = `project.html?data=${encoded}`;
         } catch (error) {
           console.error("Failed to encode data:", error);
+          alert("Failed to navigate to the project. Please try again.");
         }
       });
     });
   } catch (error) {
     console.error("Error rendering data:", error);
+    alert("An unexpected error occurred while rendering projects. Please try again.");
   }
 }
 
@@ -248,7 +251,6 @@ async function importData() {
           await db.delete()
           localStorage.removeItem("project-names");
           for(font = 0;font<allFonts.length;font++){
-            console.log(font)
             await db.collection("fonts").add({...font})
           }
                     await renderData();
@@ -292,6 +294,7 @@ async function importData() {
         await renderData();
       } catch (error) {
         console.error("Error reading files:", error);
+        alert("Failed to read the selected files. Please try again.");
       }
     });
 
@@ -342,6 +345,7 @@ for (let idx = 0; idx < datas.length; idx++) {
     await renderData();
   } catch (error) {
     console.error("Error importing data:", error);
+    alert("Failed to import data. Please try again.");
   }
 }
 
@@ -387,6 +391,7 @@ async function renderFonts(search = "") {
     });
   } catch (error) {
     console.error("Error rendering fonts:", error);
+    alert("Failed to render fonts. Please try again.");
   }
 }
 async function importFonts() {
@@ -464,6 +469,7 @@ async function importFonts() {
         }
       } catch (error) {
         console.error("Error reading files:", error);
+        alert("Failed to read the font files. Please try again.");
       }
       await renderFonts();
     });
@@ -476,6 +482,7 @@ async function importFonts() {
     await renderFonts();
   } catch (error) {
     console.error("Error importing fonts:", error);
+    alert("Failed to import fonts. Please try again.");
   }
 }
 function getFormatFromExtension(ext) {

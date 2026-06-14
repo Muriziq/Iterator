@@ -112,10 +112,14 @@ export function drawingObject(original = false) {
 }
 
 export function adapt(size) {
-  if (canvasProperties.scaleRatio > 1) {
-    return (size / objectProperties.scale) * canvasProperties.scaleRatio;
-  }
-  return size / objectProperties.scale;
+  // 1. Safeguard against division by zero if scale is uninitialized or hits 0
+  const currentScale = objectProperties.scale || 1;
+  
+  // 2. Only apply the internal multiplier if canvasSize() actually enlarged the canvas
+  const ratio = canvasProperties.scaleRatio > 1 ? canvasProperties.scaleRatio : 1;
+  
+  // 3. Return: (Visual Size / Zoom Level) * Internal-to-CSS Ratio
+  return (size / currentScale) * ratio;
 }
 
 export function multipleSelectFunction() {

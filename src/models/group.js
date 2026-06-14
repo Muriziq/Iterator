@@ -194,7 +194,6 @@ export default class Group extends Formats {
       requestDraw();
     });
     super.similarPropties();
-    super.addingListeners();
   }
   changeProperties(e) {
     const name = e.target.name;

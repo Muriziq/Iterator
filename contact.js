@@ -68,7 +68,9 @@ document
       });
       showToast("Message sent — I'll get back to you soon.", "success");
       document.getElementById("contact-form").reset();
-    } catch (_) {
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Failed to send your message. Please try again.");
       showToast("Couldn't send right now. Reach me directly below.", "error");
       document.getElementById("fallback-btns").classList.add("show");
     } finally {

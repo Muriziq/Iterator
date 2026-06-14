@@ -1,7 +1,7 @@
 import Formats from "./formats.js";
 import LineUtils from "./lineUtils.js";
 import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
-import { objectProperties } from "../variable.js";
+import { objectProperties, canvasProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
 import { pauseSaving, continueSaving } from "../state/save.js";
@@ -301,7 +301,6 @@ export default class Images extends Formats {
     propertiesBar.querySelector("input[name='iteratedFiles']").addEventListener("change", (e) => {
       this.changeProperties(e);
     });
-    super.addingListeners();
   }
   async changeProperties(e) {
     const name = e.target.name;

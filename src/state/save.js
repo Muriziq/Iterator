@@ -159,11 +159,10 @@ export async function reviveObjects(objData) {
   if (objData.type === "text") {
     objData.textPlace = document.createElement("textarea");
     objData.measurer = false;
-    if (!defaultFonts.includes(objData.fontFamily)) {
-      if (newFonts.includes(objData.fontFamily)) {
+      if (!defaultFonts.includes(objData.fontFamily) && newFonts.includes(objData.fontFamily)) {
         const result = await db
           .collection("fonts")
-          .doc({ id: this.fontFamily })
+          .doc({ id: objData.fontFamily })
           .get();
         if (result && result.fontData) {
           // Create dynamic @font-face rule
@@ -181,7 +180,6 @@ export async function reviveObjects(objData) {
       } else {
         objData.fontFamily = "sans-serif";
       }
-    }
   }
 
   // ✅ Handle clips

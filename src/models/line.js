@@ -467,7 +467,6 @@ export default class Line extends Formats {
         this.formatProperties();
             requestDraw();
       });
-          super.addingListeners();
     }
   }
   changeProperties(e) {

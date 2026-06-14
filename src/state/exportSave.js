@@ -49,7 +49,8 @@ const newName = canvasProperties.formerName.replace(/\.json$/i, "")
         }
       }
     } catch (error) {
-      console.error(`Failed to render section ${i + 1}`, error);
+      console.error(`Failed to render section ${i + 1}:`, error);
+      alert(`An error occurred while generating PDF section ${i + 1}. Please try again.`);
     }
   }
   document.querySelector(".saveAsPdf").textContent = "save As Pdf";
@@ -70,6 +71,7 @@ export async function saveAsImage() {
       link.click();
     } catch (error) {
       console.error("Failed to save as image:", error);
+      alert("An error occurred while saving the image. Please try again.");
     }
   }
   document.querySelector(".saveAsImage").textContent = "save As Image";

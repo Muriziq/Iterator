@@ -440,8 +440,6 @@ ${super.similarProptiesOutput()}
       this.formatProperties();
        requestDraw();
     });
-    super.addingListeners();
-   
   }
   changeProperties(e) {
     const name = e.target.name;

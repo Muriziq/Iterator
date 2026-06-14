@@ -7,7 +7,7 @@ import requestDraw from "../utils/draw.js";
 import { adapt } from "../state/canvas.js";
 import { reverseMousePos } from "../utils/mousePos.js";
 import { notify } from "../utils/uiHelpers.js";
-let allFonts = ["serif", "sans-serif","monospace","cursive","fantasy","system-ui","emoji","math","fangsong", ...(JSON.parse(localStorage.getItem("fontNames")) || [])];
+let allFonts = [...defaultFonts,...newFonts];
 
 export default class TextBox extends Formats {
   constructor(x, y) {
@@ -46,6 +46,10 @@ export default class TextBox extends Formats {
     }
     if (canvass.contains(this.textPlace)) {
       canvass.removeChild(this.textPlace);
+    }
+    if (this.measurer && document.body.contains(this.measurer)) {
+      document.body.removeChild(this.measurer);
+      this.measurer = null;
     }
 
     ctx.save();
@@ -116,10 +120,10 @@ export default class TextBox extends Formats {
         thresholds.sLineDashSpacing(),
       ]);
       ctx.strokeRect(
-        -this.width / 2 - thresholds.sWidth() / 2,
-        -this.height / 2 - thresholds.sWidth() / 2,
-        this.width + thresholds.sWidth(),
-        this.height + thresholds.sWidth(),
+        -this.width / 2 - thresholds.sWidth() / 2 ,
+        -this.height / 2 - thresholds.sWidth() / 2 ,
+        this.width + thresholds.sWidth() ,
+        this.height + thresholds.sWidth() ,
       );
       ctx.closePath();
     }
@@ -441,6 +445,7 @@ export default class TextBox extends Formats {
           requestDraw();
         } catch (error) {
           console.error("Error storing font:", error);
+          alert("Failed to store the uploaded font. Please try again.");
         }
       });
 
@@ -474,7 +479,6 @@ export default class TextBox extends Formats {
           this.changeProperties(e);
         });
       });
-    super.addingListeners();
     // Optional: outline toggle is inside similarProptiesOutput(), keep existing handler if you have one.
   }
   changeProperties(e) {
@@ -626,11 +630,11 @@ export default class TextBox extends Formats {
     }
 
     // Copy all text styles to measurer
-    this.measurer.style.fontSize = `${this.fontSize / canvasProperties.scaleRatio}px`;
+    this.measurer.style.fontSize = `${adapt(this.fontSize) / adapt(canvasProperties.scaleRatio)}px`;
     this.measurer.style.fontFamily = this.fontFamily;
     this.measurer.style.fontStyle = this.fontStyle;
     this.measurer.style.fontWeight = this.fontStyle;
-    this.measurer.style.lineHeight = `${this.lineHeight / canvasProperties.scaleRatio}px`;
+    this.measurer.style.lineHeight = `${adapt(this.lineHeight) / adapt(canvasProperties.scaleRatio)}px`;
     this.measurer.style.padding = `${adapt(5)}px`;
     this.measurer.style.boxSizing = "border-box";
 
@@ -645,13 +649,13 @@ export default class TextBox extends Formats {
     this.textPlace.style.position = "absolute";
     this.textPlace.style.left = `${rect.x}px`;
     this.textPlace.style.top = `${rect.y}px`;
-    this.textPlace.style.border = `${thresholds.slineWidth() / canvasProperties.scaleRatio}px dashed ${thresholds.sColor}`;
-    this.textPlace.style.fontSize = `${this.fontSize / canvasProperties.scaleRatio}px`;
+    this.textPlace.style.border = `${thresholds.slineWidth() / adapt(canvasProperties.scaleRatio)}px dashed ${thresholds.sColor}`;
+    this.textPlace.style.fontSize = `${adapt(this.fontSize) / adapt(canvasProperties.scaleRatio)}px`;
     this.textPlace.style.fontFamily = this.fontFamily;
     this.textPlace.style.fontStyle = this.fontStyle;
     this.textPlace.style.fontWeight = this.fontWeight;
     this.textPlace.style.textAlign = this.textAllign;
-    this.textPlace.style.lineHeight = `${this.lineHeight / canvasProperties.scaleRatio}px`;
+    this.textPlace.style.lineHeight = `${adapt(this.lineHeight) / adapt(canvasProperties.scaleRatio)}px`;
     this.textPlace.style.color = this.color[0];
     this.textPlace.style.boxSizing = "border-box";
     this.textPlace.style.padding = `${padding()}px`;

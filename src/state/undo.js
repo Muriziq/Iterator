@@ -11,6 +11,9 @@ export function undo() {
     if (objectProperties.pen !== null && objectProperties.objects[objectProperties.objects.length - 1].type === "line") {
       objectProperties.pen = objectProperties.objects[objectProperties.objects.length - 1];
     } else objectProperties.selectedObj = objectProperties.objects[objectProperties.objects.length - 1];
+    if(    objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0){
+      multipleSelectFunction();
+    }
     requestDraw(false);
   }
 }
@@ -23,6 +26,9 @@ export function redo() {
     if (objectProperties.pen !== null && objectProperties.objects[objectProperties.objects.length - 1].type === "line") {
       objectProperties.pen = objectProperties.objects[objectProperties.objects.length - 1];
     } else objectProperties.selectedObj = objectProperties.objects[objectProperties.objects.length - 1];
+  if(objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0){
+      multipleSelectFunction();
+    }
     requestDraw(false);
   }
 }

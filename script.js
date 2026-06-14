@@ -43,6 +43,7 @@ window.addEventListener("load", async () => {
         window.location.href = `project.html?data=${encoded}`;
       } catch (error) {
         console.error("Failed to encode data:", error);
+        alert("Failed to open the project. Please try again.");
       }
     });
   });
@@ -120,5 +121,6 @@ async function saveAndSend(namer, data) {
     window.location.href = `project.html?data=${encoded}`;
   } catch (error) {
     console.error("Failed to encode data:", error);
+    alert("Failed to save and navigate to the project. Please try again.");
   }
 }
