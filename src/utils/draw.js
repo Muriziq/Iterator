@@ -38,9 +38,6 @@ function draw() {
         obj.addObject();
       });
     }
-    if (objectProperties.cloneObj) {
-      objectProperties.cloneObj.addObject();
-    }
     if (objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0) {
       ctx.save();
       ctx.beginPath();

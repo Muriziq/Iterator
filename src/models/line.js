@@ -56,7 +56,7 @@ export default class Line extends Formats {
           this.selectedArea,
           this.selectedLineIndex,
         );
-      if (objectProperties.selectedObj === this || objectProperties.multipleSelectArr.includes(this)) {
+      if (objectProperties.selectedObj === this) {
         ctx.beginPath();
         ctx.lineWidth = thresholds.slineWidth();
         ctx.strokeStyle = thresholds.sColor;

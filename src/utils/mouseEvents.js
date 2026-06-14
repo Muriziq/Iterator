@@ -88,13 +88,7 @@ export function cMousedown(event) {
     } else {
       notify("Select An Object");
     }
-  } else if (objectProperties.cloneObj !== null) {
-    const cloned = objectProperties.cloneObj.showClone();
-    cloned.changeLocation(pos.x, "x");
-    cloned.changeLocation(pos.y, "y");
-    objectProperties.objects.push(cloned);
-    return;
-  } else if (objectProperties.clippedObject !== null && objectProperties.previousClip !== null) {
+  }  else if (objectProperties.clippedObject !== null && objectProperties.previousClip !== null) {
     editclip.style.display = "block";
 
     for (let i = objectProperties.clippedObject.clips.length - 1; i >= 0; i--) {
@@ -156,7 +150,6 @@ export function cMousedown(event) {
       } else {
         editclip.style.display = "none";
       }
-
       objectProperties.isRotatingObject = false;
       objectProperties.selectedObj.isDoubleClicked = false;
       objectProperties.selectedObj.formatProperties();
@@ -182,7 +175,7 @@ export function cDoubleClick(event) {
 
       objectProperties.selectedObj.doubleClicked(pos);
 
-      requestDraw();
+      requestDraw(false);
       break;
     }
   }
@@ -251,7 +244,7 @@ export async function wMouseUp() {
   requestDraw(false);
 }
 export function cMouseUp() {
-  if (objectProperties.selectedObj && !objectProperties.cloneObj && !objectProperties.pen) {
+  if (objectProperties.selectedObj  && !objectProperties.pen) {
     objectProperties.selectedObj.formatProperties();
   }
   requestDraw(false);
@@ -276,9 +269,6 @@ export function cMouseMove(event) {
 
   if (objectProperties.drawingStart) {
     objectProperties.drawingCoordinate.end = { x: pos.x, y: pos.y };
-    changed = true;
-  } else if (objectProperties.cloneObj !== null) {
-    objectProperties.cloneObj.formatSelected(pos);
     changed = true;
   } else if (
     objectProperties.isDraggingObject &&
@@ -322,6 +312,7 @@ export async function keyDown(e){
       objectProperties.multipleSelectArr.forEach((obj) =>
         obj.moveClip(0, -thresholds.arrowKeys()),
       );
+      multipleSelectFunction()
     } else {
       objectProperties.panY += -thresholds.arrowKeys();
     }
@@ -331,6 +322,7 @@ export async function keyDown(e){
       objectProperties.multipleSelectArr.forEach((obj) =>
         obj.moveClip(0, thresholds.arrowKeys()),
       );
+      multipleSelectFunction()
     } else objectProperties.panY += thresholds.arrowKeys();
   } else if (e.code === "ArrowLeft") {
     if (objectProperties.selectedObj !== null) objectProperties.selectedObj.moveClip(-thresholds.arrowKeys(), 0);
@@ -338,6 +330,7 @@ export async function keyDown(e){
       objectProperties.multipleSelectArr.forEach((obj) =>
         obj.moveClip(-thresholds.arrowKeys(), 0),
       );
+      multipleSelectFunction()
     } else objectProperties.panX += -thresholds.arrowKeys();
   } else if (e.code === "ArrowRight") {
     if (objectProperties.selectedObj !== null) objectProperties.selectedObj.moveClip(thresholds.arrowKeys(), 0);
@@ -345,6 +338,7 @@ export async function keyDown(e){
       objectProperties.multipleSelectArr.forEach((obj) =>
         obj.moveClip(thresholds.arrowKeys(), 0),
       );
+      multipleSelectFunction()
     } else objectProperties.panX += thresholds.arrowKeys();
   } else if (e.ctrlKey && e.key.toLowerCase() === "d" && objectProperties.selectedObj !== null) {
     Tools("duplicate");
@@ -352,8 +346,9 @@ export async function keyDown(e){
     zoomToRect(objectProperties.selectedObj.whereToSnap().pos);
   } else if (e.ctrlKey && e.key === "a") {
     Tools("multipleSelection");
-    objectProperties.multipleSelectArr = [...objects];
+    objectProperties.multipleSelectArr = [...objectProperties.objects];
     objectProperties.multipleSelect = true;
+    multipleSelectFunction()
   } else if (
     e.ctrlKey &&
     e.key.toLowerCase() === "g" &&
@@ -402,11 +397,12 @@ export async function keyDown(e){
     return;
   } else if (e.ctrlKey && e.key.toLowerCase() === "y") {
     redo();
+    return
   } else if (e.key.toLowerCase() === "z") {
     Tools("zoom");
   } else if (e.key.toLowerCase() === "p") {
     Tools("addLine");
   }
 
-  requestDraw();
+  requestDraw(false);
 }

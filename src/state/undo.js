@@ -11,9 +11,8 @@ export function undo() {
     if (objectProperties.pen !== null && objectProperties.objects[objectProperties.objects.length - 1].type === "line") {
       objectProperties.pen = objectProperties.objects[objectProperties.objects.length - 1];
     } else objectProperties.selectedObj = objectProperties.objects[objectProperties.objects.length - 1];
-    requestDraw();
+    requestDraw(false);
   }
-  console.log(undoObject)
 }
 
 export function redo() {
@@ -24,7 +23,7 @@ export function redo() {
     if (objectProperties.pen !== null && objectProperties.objects[objectProperties.objects.length - 1].type === "line") {
       objectProperties.pen = objectProperties.objects[objectProperties.objects.length - 1];
     } else objectProperties.selectedObj = objectProperties.objects[objectProperties.objects.length - 1];
-    requestDraw();
+    requestDraw(false);
   }
 }
 function cloneObject(object) {

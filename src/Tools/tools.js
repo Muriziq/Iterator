@@ -25,8 +25,6 @@ export default async function Tools(tool) {
   objectProperties.multipleSelect = false;
   objectProperties.multipleSelectArr = [];
   objectProperties.startPanning = false;
-  objectProperties.duplicateClicked = false;
-  objectProperties.cloneObj = null;
   objectProperties.pen = null;
   propertiesBar.innerHTML = "";
   switch (tool) {
@@ -144,20 +142,15 @@ export default async function Tools(tool) {
       break;
 
     case "duplicate":
-      objectProperties.duplicateClicked = !objectProperties.duplicateClicked;
-      if (objectProperties.duplicateClicked) {
         if (objectProperties.selectedObj) {
-          objectProperties.cloneObj = objectProperties.selectedObj.showClone();
-          objectProperties.cloneObj.changeLocation(objectProperties.lastMouseX, "x");
-          objectProperties.cloneObj.changeLocation(objectProperties.lastMouseY, "y");
+          const cloneObj = objectProperties.selectedObj.showClone();
+          objectProperties.objects.push(cloneObj);
+          objectProperties.selectedObj = cloneObj;
+          notify("duplicated")
         } else {
           notify("Please Select An Object");
-          objectProperties.duplicateClicked = false;
           Tools("moveTool");
         }
-      } else {
-        objectProperties.cloneObj = null;
-      }
       break;
 
     case "delete":

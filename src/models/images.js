@@ -44,7 +44,7 @@ export default class Images extends Formats {
     );
     ctx.closePath();
     ctx.restore();
-    if (objectProperties.selectedObj === this || objectProperties.multipleSelectArr.includes(this)) {
+    if (objectProperties.selectedObj === this ) {
       ctx.beginPath();
       ctx.lineWidth = thresholds.slineWidth();
       ctx.strokeStyle = thresholds.sColor;

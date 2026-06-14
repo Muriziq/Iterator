@@ -142,7 +142,7 @@ export default class Rectangle extends Formats {
       ctx.stroke();
       ctx.closePath();
     }
-    if (objectProperties.selectedObj === this || objectProperties.multipleSelectArr.includes(this)) {
+    if (objectProperties.selectedObj === this) {
       ctx.beginPath();
       ctx.lineWidth = thresholds.slineWidth();
       ctx.strokeStyle = thresholds.sColor;

@@ -120,18 +120,18 @@ export function adapt(size) {
 
 export function multipleSelectFunction() {
   objectProperties.multipleSelectCoor.start.x = Math.min(
-    ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
+    ...objectProperties.multipleSelectArr.map((obj) => obj.whereToSnap().pos.x),
   );
   objectProperties.multipleSelectCoor.start.y = Math.min(
-    ...multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
+    ...objectProperties.multipleSelectArr.map((obj) => obj.whereToSnap().pos.y),
   );
   objectProperties.multipleSelectCoor.end.x = Math.max(
-    ...multipleSelectArr.map(
+    ...objectProperties.multipleSelectArr.map(
       (obj) => obj.whereToSnap().pos.x + obj.whereToSnap().pos.width,
     ),
   );
   objectProperties.multipleSelectCoor.end.y = Math.max(
-    ...multipleSelectArr.map(
+    ...objectProperties.multipleSelectArr.map(
       (obj) => obj.whereToSnap().pos.y + obj.whereToSnap().pos.height,
     ),
   );

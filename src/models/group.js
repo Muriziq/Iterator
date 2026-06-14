@@ -39,7 +39,7 @@ export default class Group extends Formats {
       obj.addObject();
       ctx.restore();
     });
-    if (objectProperties.selectedObj === this || objectProperties.multipleSelectArr.includes(this)) {
+    if (objectProperties.selectedObj === this) {
       ctx.beginPath();
       ctx.lineWidth = thresholds.slineWidth();
       ctx.strokeStyle = thresholds.sColor;
