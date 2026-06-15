@@ -104,25 +104,29 @@ export default class Guide extends Formats {
   }
 
   whereToSnap() {
-    // If the guide is rotated, it bypasses the linear X/Y snapping system
-    if (this.angle !== 0) {
-      return { x: [], y: [], pos: { x: 0, y: 0, width: 0, height: 0 } };
-    }
+    let cos = Math.cos(this.angle);
+    let sin = Math.sin(this.angle);
 
-    // Provide snapping arrays for your other shape logic to detect
-    if (this.orientation === "vertical") {
-      return {
-        x: [this.position],
-        y: [],
-        pos: { x: this.position, y: 0, width: 0, height: 0 }
-      };
-    } else {
-      return {
-        x: [],
-        y: [this.position],
-        pos: { x: 0, y: this.position, width: 0, height: 0 }
-      };
-    }
+    const currentScale = objectProperties.scale || 1;
+    const size = (Math.hypot(canvas.width, canvas.height) / currentScale) * 100;
+
+    let baseWidth = this.orientation === "vertical" ? this.thickness : size * 2;
+    let baseHeight = this.orientation === "vertical" ? size * 2 : this.thickness;
+
+    let centerX = this.orientation === "vertical" ? this.position : 0;
+    let centerY = this.orientation === "vertical" ? 0 : this.position;
+
+    let newWidth = Math.abs(baseWidth * cos) + Math.abs(baseHeight * sin);
+    let newHeight = Math.abs(baseWidth * sin) + Math.abs(baseHeight * cos);
+
+    let rectx = centerX - newWidth / 2;
+    let recty = centerY - newHeight / 2;
+
+    return {
+      x: [rectx, rectx + newWidth / 2, rectx + newWidth],
+      y: [recty, recty + newHeight / 2, recty + newHeight],
+      pos: { x: rectx, y: recty, width: newWidth, height: newHeight }
+    };
   }
 
   formatProperties() {

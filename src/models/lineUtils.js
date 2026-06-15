@@ -81,8 +81,42 @@ export default class LineUtils {
 
     return false;
   }
+
+  /**
+   * Computes per-corner radii scaled down so no two adjacent corners
+   * overflow their shared segment. Iterates a few times to let constraints
+   * propagate when multiple segments are short.
+   *
+   * @param {Array} points  - the points array
+   * @param {Function} getRadius - (point, index) => desired radius (0 for non-rounded corners)
+   * @returns {number[]} safe radius for each corner
+   */
+  static computeSafeRadii(points, getRadius) {
+    const n = points.length;
+    const radii = points.map((p, i) => getRadius(p, i));
+
+    for (let iter = 0; iter < 3; iter++) {
+      for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        const a = points[i].points;
+        const b = points[next].points;
+        const segLen = Math.hypot(b.x - a.x, b.y - a.y);
+        const total = radii[i] + radii[next];
+        if (total > segLen && total > 0) {
+          const scale = segLen / total;
+          radii[i] *= scale;
+          radii[next] *= scale;
+        }
+      }
+    }
+    return radii;
+  }
+
   static drawRoundedShape(points, radius) {
     if (points.length < 2) return;
+
+    const safeRadii = this.computeSafeRadii(points, () => radius);
+
     ctx.beginPath();
     for (let i = 0; i < points.length; i++) {
       const prev = points[(i - 1 + points.length) % points.length].points;
@@ -97,13 +131,15 @@ export default class LineUtils {
       const len2 = Math.hypot(v2.x, v2.y);
       v2.x /= len2;
       v2.y /= len2;
+
+      const r = safeRadii[i];
       const p1 = {
-        x: curr.x - v1.x * Math.min(radius, len1 / 2),
-        y: curr.y - v1.y * Math.min(radius, len1 / 2),
+        x: curr.x - v1.x * r,
+        y: curr.y - v1.y * r,
       };
       const p2 = {
-        x: curr.x + v2.x * Math.min(radius, len2 / 2),
-        y: curr.y + v2.y * Math.min(radius, len2 / 2),
+        x: curr.x + v2.x * r,
+        y: curr.y + v2.y * r,
       };
 
       if (i === 0) {
@@ -112,12 +148,18 @@ export default class LineUtils {
         ctx.lineTo(p1.x, p1.y);
       }
 
-      ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+      ctx.arcTo(curr.x, curr.y, p2.x, p2.y, r);
     }
     ctx.closePath();
   }
+
   static drawSmartShape(points, close = true) {
     if (points.length < 2) return;
+
+    const safeRadii = this.computeSafeRadii(
+      points,
+      (p) => (p.edgeModes === "rounded" ? p.cornerRadius : 0),
+    );
 
     ctx.beginPath();
 
@@ -129,7 +171,6 @@ export default class LineUtils {
       const next = points[nextIdx].points;
       const mode = points[i].edgeModes;
       if (mode === "rounded") {
-        const radius = points[i].cornerRadius;
         const v1 = { x: curr.x - prev.x, y: curr.y - prev.y };
         const len1 = Math.hypot(v1.x, v1.y);
         v1.x /= len1;
@@ -138,13 +179,15 @@ export default class LineUtils {
         const len2 = Math.hypot(v2.x, v2.y);
         v2.x /= len2;
         v2.y /= len2;
+
+        const r = safeRadii[i];
         const p1 = {
-          x: curr.x - v1.x * Math.min(radius, len1 / 2),
-          y: curr.y - v1.y * Math.min(radius, len1 / 2),
+          x: curr.x - v1.x * r,
+          y: curr.y - v1.y * r,
         };
         const p2 = {
-          x: curr.x + v2.x * Math.min(radius, len2 / 2),
-          y: curr.y + v2.y * Math.min(radius, len2 / 2),
+          x: curr.x + v2.x * r,
+          y: curr.y + v2.y * r,
         };
 
         if (i === 0) {
@@ -160,7 +203,7 @@ export default class LineUtils {
           }
         }
 
-        ctx.arcTo(curr.x, curr.y, p2.x, p2.y, radius);
+        ctx.arcTo(curr.x, curr.y, p2.x, p2.y, r);
       } else {
         if (i === 0) {
           ctx.moveTo(curr.x, curr.y);

@@ -245,12 +245,6 @@ export default class Polygon extends Formats {
           p.cornerRadius = this.cornerRadius;
         });
       }
-      if (canvasProperties.scaleRatio > 1) {
-      }
-      // const worldMouse = {
-      //   x: (mouse.x - objectProperties.panX) / objectProperties.scale,
-      //   y: (mouse.y - objectProperties.panY) / objectProperties.scale,
-      // };
 
       const isInside = ctx.isPointInPath(mouse.x, mouse.y);
 
