@@ -10,6 +10,7 @@ import Line from "../models/line.js";
 import TextBox from "../models/text.js";
 import Images from "../models/images.js";
 import Group from "../models/group.js";
+import Guide from "../models/guide.js";
 
 let ifAutoSave = false;
 
@@ -116,6 +117,9 @@ export async function reviveObjects(objData) {
       break;
     case "group":
       instance = new Group();
+      break;
+    case "guide":
+      instance = new Guide();
       break;
     default:
       console.warn(`Unknown type: ${objData.type}`);

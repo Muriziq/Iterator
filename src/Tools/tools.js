@@ -54,7 +54,10 @@ export default async function Tools(tool) {
       objectProperties.selectedObj = null;
       objectProperties.isDrawing = "ellipse";
       break;
-
+    case "addGuide":
+      objectProperties.selectedObj = null;
+      canvas.style.cursor = "crosshair";
+      objectProperties.isDrawing = "guide";
     case "addLine":
       objectProperties.selectedObj = null;
       canvas.style.cursor = "crosshair";

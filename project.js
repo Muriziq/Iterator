@@ -12,6 +12,7 @@ import { bringToFront, sendToBack, pageUp, pageDown } from "./src/Tools/pageTo.j
 import { cMousedown, cDoubleClick, cMouseUp, cMouseLeave, cMouseMove, wMouseUp, keyDown } from "./src/utils/mouseEvents.js";
 import generateCard from "./src/utils/generate.js";
 import { cancelGenerate, flip, notify, debounce } from "./src/utils/uiHelpers.js";
+import Guide from "./src/models/guide.js";
 
 canvas.width = canvas.getBoundingClientRect().width;
 canvas.height = canvas.getBoundingClientRect().height;
@@ -404,6 +405,8 @@ canvas.addEventListener("touchend", () => {
   cMouseLeave();
 });
 window.addEventListener("touchend", wMouseUp);
+
+
 
 window.Tools = Tools;
 window.addImage = addImage;

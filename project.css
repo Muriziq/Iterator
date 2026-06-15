@@ -673,7 +673,9 @@ main > section{
 
 img,.notification{
   touch-action: none;
-  user-select: none;
+  -webkit-user-drag: none; /* Prevents dragging the "ghost" image in Chrome/Safari */
+  user-select: none;       /* Standard syntax */
+  -webkit-user-select: none; 
   pointer-events: none;
 }
 
@@ -686,7 +688,9 @@ img,.notification{
   z-index: -2;
   border-radius: 0.2rem;
   touch-action: none;
-  user-select: none;
+-webkit-user-drag: none; /* Prevents dragging the "ghost" image in Chrome/Safari */
+  user-select: none;       /* Standard syntax */
+  -webkit-user-select: none;
   pointer-events: none;
 }
 

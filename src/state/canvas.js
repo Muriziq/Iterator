@@ -7,6 +7,7 @@ import Rectangle from "../models/rectangle.js";
 import Ellipse from "../models/ellipse.js";
 import Polygon from "../models/polygon.js";
 import Images from "../models/images.js";
+import Guide from "../models/guide.js";
 
 export function canvasSize() {
   objectProperties.scale = 1;
@@ -83,6 +84,10 @@ export function drawingObject(original = false) {
         (end.x - start.x) / 2,
         (end.y - start.y) / 2,
       );
+    case "guide":
+      return new Guide(
+        "vertical",
+        start.x)
     case "image":
       if (original) {
         return {
