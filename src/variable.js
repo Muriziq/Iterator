@@ -43,6 +43,7 @@ export const canvasProperties = {
     noPerRow: 1,
     noPerColumn: 1,
     spacing: 30,
+    quality: 1,
   },
   formerName: ""
 };

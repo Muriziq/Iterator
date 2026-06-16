@@ -281,7 +281,7 @@ header > div button,footer button{
   height:27px;
 }
 
-header select,.generate1 select{
+header select{
   height: 40px;
   outline: none;
   background-color: var(--icon-img);
@@ -1097,7 +1097,7 @@ input[type=number]::-webkit-outer-spin-button{
 .generate1{
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: flex-start;
   flex-wrap: wrap;
   padding: 1rem 0;
@@ -1112,6 +1112,24 @@ input[type=number]::-webkit-outer-spin-button{
   flex-wrap: wrap;
   align-items: center;
   width: 100%;
+}
+
+.generate1 select {
+  flex: 1;
+  cursor: pointer;
+  background-color: var(--icon-img);
+  color: var(--h3-fill);
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.4rem;
+  border: 1px solid transparent;
+  outline: none;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.generate1 select:focus {
+  border-color: var(--h3-fill);
 }
 
 /* Keep width+height pair and row+col pair each on one line */

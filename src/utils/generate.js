@@ -21,8 +21,7 @@ export default async function generateCard() {
   requestDraw();
 
   // ---------------- Export Quality ----------------
-  // Lower on phones to avoid crashes
-  const EXPORT_SCALE = window.innerWidth < 600 ? 2 : 3;
+  const EXPORT_SCALE = canvasProperties.generateInfo.quality;
 
   // ---------------- Destructure ----------------
   const {

@@ -250,6 +250,7 @@ document.querySelector(".generateButton").addEventListener("click", () => {
   document.getElementById("renderPage").value = canvasProperties.generateInfo.renderPage;
   document.getElementById("noPerRow").value = canvasProperties.generateInfo.noPerRow;
   document.getElementById("noPerColumn").value = canvasProperties.generateInfo.noPerColumn;
+  document.getElementById("quality").value = canvasProperties.generateInfo.quality;
   document.getElementById("spacing").value = changeValues(canvasProperties.generateInfo.spacing);
   if (canvasProperties.generateInfo.renderPage === "auto") {
     document.getElementById("noPerRow").readOnly = true;
@@ -262,9 +263,10 @@ document.querySelector(".generateButton").addEventListener("click", () => {
       if (
         e.target.id === "renderPage" ||
         e.target.id === "noPerRow" ||
-        e.target.id === "noPerColumn"
+        e.target.id === "noPerColumn" ||
+        e.target.id === "quality"
       ) {
-        canvasProperties.generateInfo[e.target.id] = Number(e.target.value) || 0;
+        canvasProperties.generateInfo[e.target.id] = Number(e.target.value) || 1;
       } else {
         canvasProperties.generateInfo[e.target.id] = backValues(Number(e.target.value) || 0);
       }
