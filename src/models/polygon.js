@@ -372,23 +372,8 @@ ${super.similarProptiesOutput()}
 
 <section class="shape">
 
-  <div class="shape-row" style="display: ${this.mode === "edit" ? "flex" : "none"}">
-      <button class="convert ${
-        this.selectedArea === "pointIndex" &&
-        this.points[this.selectedLineIndex].edgeModes === "shaped"
-          ? "selected"
-          : ""
-      }">
-        <img src="imagess/spline-pointer.svg" alt="Convert">
-      </button>
-      <button class="rounded-edge ${
-        this.selectedArea === "pointIndex" &&
-        this.points[this.selectedLineIndex].edgeModes === "rounded"
-          ? "selected"
-          : ""
-      }" >
-        <img src="imagess/square-round-corner.svg" alt="Rounded edge">
-      </button>
+  <div class="shape-row" style="display: ${this.mode === "edit" && this.selectedArea === "pointIndex" ? "flex" : "none"}">
+      ${super.shapeProperties()}
   </div>
 
   <label
@@ -417,16 +402,24 @@ ${super.similarProptiesOutput()}
 </section>
 `;
     super.similarPropties();
-    document.querySelector(".rounded-edge").addEventListener("click", () => {
+   document.querySelector(".rounded-edge").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].edgeModes = "rounded";
-         requestDraw();
+        this.points[this.selectedLineIndex].edgeModes =
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+            ? null
+            : "rounded";
+        this.formatProperties();
+            requestDraw();
       }
     });
     document.querySelector(".convert").addEventListener("click", () => {
       if (this.selectedArea === "pointIndex") {
-        this.points[this.selectedLineIndex].edgeModes = "shaped";
-         requestDraw();
+        this.points[this.selectedLineIndex].edgeModes =
+          this.points[this.selectedLineIndex].edgeModes === "shaped"
+            ? null
+            : "shaped";
+        this.formatProperties();
+            requestDraw();
       }
     });
     document.querySelector(".normal").addEventListener("click", () => {
@@ -490,7 +483,7 @@ ${super.similarProptiesOutput()}
       }
 
       if (name === "sides") {
-        this.sides = Number(e.target.value) || 0;
+       this.sides = Math.max(3, Number(e.target.value) || 3);
         this.points = [];
       }
 

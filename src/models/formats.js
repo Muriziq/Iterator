@@ -205,8 +205,8 @@ export default class Formats {
         <div class="uniform-div">
           Outline Type
           <div>
-            <button class="normalb ${this.outlineType !== [] ? "selected" : ""}"></button>
-            <button class="dashedb ${this.outlineType === [] ? "selected" : ""}"></button>
+            <button class="normalb ${this.outlineType.length === 0 ? "selected" : ""}"></button>
+            <button class="dashedb ${this.outlineType.length !== 0 ? "selected" : ""}"></button>
           </div>
         </div>
 
@@ -224,6 +224,26 @@ export default class Formats {
       </section>
     </section>
   `;
+  }
+  shapeProperties(){
+    return `
+          <button class="convert ${
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "shaped"
+          ? "selected"
+          : ""
+      }">
+        <img src="imagess/spline-pointer.svg" alt="Convert">
+      </button>
+      <button class="rounded-edge ${
+        this.selectedArea === "pointIndex" &&
+        this.points[this.selectedLineIndex].edgeModes === "rounded"
+          ? "selected"
+          : ""
+      }" >
+        <img src="imagess/square-round-corner.svg" alt="Rounded edge">
+      </button>
+    `
   }
   getWorldPoints() {
     if (
@@ -316,6 +336,7 @@ export default class Formats {
       this.points[next].controls[0].y += localDeltaY;
       this.points[next].controls[1].x += localDeltaX;
       this.points[next].controls[1].y += localDeltaY;
+      return
     } else if (this.selectedArea === "pointIndex") {
       this.points[this.selectedLineIndex].points.x = localMouseX;
       this.points[this.selectedLineIndex].points.y = localMouseY;
@@ -327,6 +348,7 @@ export default class Formats {
       const { curveIndex, controlIndex } = this.selectedLineIndex;
       this.points[curveIndex].controls[controlIndex].x = localMouseX;
       this.points[curveIndex].controls[controlIndex].y = localMouseY;
+      return
     }
     // Store current local position
     const currentLocalPoint = this.points[this.selectedLineIndex].points;

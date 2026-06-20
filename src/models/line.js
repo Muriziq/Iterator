@@ -362,14 +362,8 @@ export default class Line extends Formats {
   ${super.similarProptiesOutput()}
 
   <section class="shape">
-    <div class="shape-row">
-      <button class="convert">
-        <img src="imagess/spline-pointer.svg" alt="Convert">
-      </button>
-
-      <button class="rounded-edge">
-        <img src="imagess/square-round-corner.svg" alt="Rounded edge">
-      </button>
+    <div class="shape-row" style="display:${this.selectedArea === "pointIndex" ? "flex" : "none"}">
+      ${super.shapeProperties()}
     </div>
 
     <label
@@ -449,19 +443,26 @@ export default class Line extends Formats {
       });
     } else {
       super.similarPropties();
-      document.querySelector(".rounded-edge").addEventListener("click", () => {
-        if (this.selectedArea === "pointIndex") {
-          this.points[this.selectedLineIndex].edgeModes = "rounded";
-          this.formatProperties();
+   document.querySelector(".rounded-edge").addEventListener("click", () => {
+      if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].edgeModes =
+          this.points[this.selectedLineIndex].edgeModes === "rounded"
+            ? null
+            : "rounded";
+        this.formatProperties();
             requestDraw();
-        }
-      });
-      document.querySelector(".convert").addEventListener("click", () => {
-        if (this.selectedArea === "pointIndex") {
-          this.points[this.selectedLineIndex].edgeModes = "shaped";
-              requestDraw();
-        }
-      });
+      }
+    });
+    document.querySelector(".convert").addEventListener("click", () => {
+      if (this.selectedArea === "pointIndex") {
+        this.points[this.selectedLineIndex].edgeModes =
+          this.points[this.selectedLineIndex].edgeModes === "shaped"
+            ? null
+            : "shaped";
+        this.formatProperties();
+            requestDraw();
+      }
+    });
       document.querySelector(".normal").addEventListener("click", () => {
         this.mode = this.mode === "normal" ? "edit" : "normal";
         this.formatProperties();

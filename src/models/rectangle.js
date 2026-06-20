@@ -539,23 +539,8 @@ export default class Rectangle extends Formats {
       </button>
     </div>
 
-    <div class="shape-row" style="display:${this.roundedOrbeveled === "shaped" ? "flex" : "none"}">
-      <button class="convert ${
-        this.selectedArea === "pointIndex" &&
-        this.points[this.selectedLineIndex].edgeModes === "shaped"
-          ? "selected"
-          : ""
-      }">
-        <img src="imagess/spline-pointer.svg" alt="Convert">
-      </button>
-      <button class="rounded-edge ${
-        this.selectedArea === "pointIndex" &&
-        this.points[this.selectedLineIndex].edgeModes === "rounded"
-          ? "selected"
-          : ""
-      }" >
-        <img src="imagess/square-round-corner.svg" alt="Rounded edge">
-      </button>
+    <div class="shape-row" style="display:${this.roundedOrbeveled === "shaped" && this.selectedArea === "pointIndex" ? "flex" : "none"}">
+        ${super.shapeProperties()}
     </div>
 
     <label

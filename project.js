@@ -127,6 +127,7 @@ height.addEventListener("input", (e) => {
 });
 document.getElementById("renderPage").addEventListener("change", (e) => {
   canvasProperties.generateInfo.renderPage = e.target.value;
+  let renderPageSize
   switch (canvasProperties.generateInfo.renderPage) {
     case "a0":
       renderPageSize = measurementArr[9];
@@ -343,13 +344,7 @@ const debouncedChangeProperties = debounce((e) => {
     
     // Check if the target is one of our inputs
     if (e.target.matches("input[type='text'], input[type='number'], input[type='color']")) {
-      
-      // Filter the correct event to the correct input type
-      if ((eventType === 'input' && e.target.type !== 'color') || 
-          (eventType === 'change' && e.target.type === 'color')) {
-        
-        debouncedChangeProperties(e);
-      }
+       debouncedChangeProperties(e);
     }
   });
 });
