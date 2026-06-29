@@ -1,4 +1,20 @@
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import {
+  canvas,
+  ctx,
+  canvass,
+  canvassDiv,
+  propertiesBar,
+  notification,
+  editclip,
+  width,
+  height,
+  saveWorker,
+  measurementArr,
+  db,
+  projectName,
+  thresholds,
+  generationArea,
+} from "../constants.js";
 import { objectProperties } from "../variable.js";
 import { adapt, drawingObject } from "../state/canvas.js";
 import { changeValues, radToDeg } from "../utils/convert.js";
@@ -32,7 +48,7 @@ export default class Formats {
         this.list.forEach((l) => (l.outlineType = []));
       }
       this.formatProperties();
-          requestDraw();
+      requestDraw();
     });
     document.querySelector(".dashedb").addEventListener("click", () => {
       if (this.type === "group") {
@@ -48,7 +64,7 @@ export default class Formats {
         );
       }
       this.formatProperties();
-  requestDraw()
+      requestDraw();
     });
     document.getElementById("outline").addEventListener("click", () => {
       this.outline = !this.outline;
@@ -56,7 +72,7 @@ export default class Formats {
         this.list.forEach((l) => (l.outline = this.outline));
       }
       this.formatProperties();
-  requestDraw()
+      requestDraw();
     });
     if (this.colorFill === "linear" || this.colorFill === "radial") {
       if (this.type === "group") {
@@ -110,7 +126,7 @@ export default class Formats {
           }
           this.addObject();
           this.formatProperties();
-          requestDraw()
+          requestDraw();
         });
       });
     }
@@ -122,7 +138,7 @@ export default class Formats {
       }
       this.addObject();
       this.formatProperties();
-  requestDraw()
+      requestDraw();
     });
   }
   similarProptiesOutput() {
@@ -139,11 +155,15 @@ export default class Formats {
 
       <label class="uniform-div" style="display:${this.colorFill === "uniform" ? "flex" : "none"}">
         <span>Background-Color:</span>
-        <input
-          type="color"
-          name="bgColor"
-          value="${this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]}"
-        >
+        <div class="pickr-wrap" data-name="bgColor">
+          <button type="button" class="pickr-trigger"></button>
+          <input
+            type="color"
+            name="bgColor"
+            value="${this.color[0].length > 7 ? this.color[0].slice(0, 7) : this.color[0]}"
+            hidden
+          >
+        </div>
       </label>
 
       <section
@@ -167,7 +187,10 @@ export default class Formats {
                   >
                 </label>
 
-                <input type="color" value="${color.length > 7 ? color.slice(0, 7) : color}">
+                <div class="pickr-wrap">
+                  <button type="button" class="pickr-trigger"></button>
+                  <input type="color" value="${color.length > 7 ? color.slice(0, 7) : color}" hidden>
+                </div>
                 <button></button>
               </div>
             `,
@@ -194,7 +217,10 @@ export default class Formats {
       <section style="display:${this.outline ? "flex" : "none"}; flex-direction:column; gap:1rem">
         <label class="uniform-div">
           <span>Outiline Color</span>
-          <input type="color" name="outlineColor" value="${this.outlineColor}">
+          <div class="pickr-wrap" data-name="outlineColor">
+            <button type="button" class="pickr-trigger"></button>
+            <input type="color" name="outlineColor" value="${this.outlineColor}" hidden>
+          </div>
         </label>
 
         <label class="thick">
@@ -225,14 +251,14 @@ export default class Formats {
     </section>
   `;
   }
-  shapeProperties(){
+  shapeProperties() {
     return `
           <button class="convert ${
-        this.selectedArea === "pointIndex" &&
-        this.points[this.selectedLineIndex].edgeModes === "shaped"
-          ? "selected"
-          : ""
-      }">
+            this.selectedArea === "pointIndex" &&
+            this.points[this.selectedLineIndex].edgeModes === "shaped"
+              ? "selected"
+              : ""
+          }">
         <img src="imagess/spline-pointer.svg" alt="Convert">
       </button>
       <button class="rounded-edge ${
@@ -243,7 +269,7 @@ export default class Formats {
       }" >
         <img src="imagess/square-round-corner.svg" alt="Rounded edge">
       </button>
-    `
+    `;
   }
   getWorldPoints() {
     if (
@@ -336,7 +362,7 @@ export default class Formats {
       this.points[next].controls[0].y += localDeltaY;
       this.points[next].controls[1].x += localDeltaX;
       this.points[next].controls[1].y += localDeltaY;
-      return
+      return;
     } else if (this.selectedArea === "pointIndex") {
       this.points[this.selectedLineIndex].points.x = localMouseX;
       this.points[this.selectedLineIndex].points.y = localMouseY;
@@ -348,7 +374,7 @@ export default class Formats {
       const { curveIndex, controlIndex } = this.selectedLineIndex;
       this.points[curveIndex].controls[controlIndex].x = localMouseX;
       this.points[curveIndex].controls[controlIndex].y = localMouseY;
-      return
+      return;
     }
     // Store current local position
     const currentLocalPoint = this.points[this.selectedLineIndex].points;
@@ -1054,7 +1080,10 @@ export default class Formats {
         this.y += mouse.y - objectProperties.lastMouseY;
         if (this.clips.length > 0) {
           this.clips.forEach((clip) =>
-            clip.moveClip(mouse.x - objectProperties.lastMouseX, mouse.y - objectProperties.lastMouseY),
+            clip.moveClip(
+              mouse.x - objectProperties.lastMouseX,
+              mouse.y - objectProperties.lastMouseY,
+            ),
           );
         }
       }
@@ -1063,6 +1092,4 @@ export default class Formats {
       this.radiusY = this.radiusY <= 0 ? 0 : this.radiusY;
     }
   }
-
-
 }

@@ -4,23 +4,21 @@ const orderProjects = document.querySelector(".order-projects");
 const nameInput = document.getElementById("name");
 let db = new Localbase("db");
 let data;
-window.addEventListener("load", async () => {
-  const fonts = await db.collection("fonts").get();
-  let fontNames = [];
-  if (fonts.length > 0) {
-    fontNames = fonts.map((font) => font.fontFamily);
-  }
+let cachedProjectNames = [];
 
-  localStorage.setItem("fontNames", JSON.stringify([...fontNames]));
+async function getProjectNames() {
+  const projects = await db.collection("projects").orderBy("entryDate", "desc").get();
+  return projects.map((p) => p.name);
+}
+
+window.addEventListener("load", async () => {
   const datas = await db
     .collection("projects")
     .orderBy("entryDate", "desc")
     .get();
-  let projectNames = [];
-  if (datas.length > 0) {
-    projectNames = datas.map((project) => project.name);
-  }
-  localStorage.setItem("project-names", JSON.stringify([...projectNames]));
+
+  cachedProjectNames = datas.map((project) => project.name);
+
   if (datas.length <= 0) return;
 
   orderProjects.innerHTML = `
@@ -50,9 +48,7 @@ window.addEventListener("load", async () => {
 });
 nameInput.addEventListener("input", (e) => {
   const value = e.target.value.trim().toLowerCase();
-  const availableNames =
-    JSON.parse(localStorage.getItem("project-names")) || [];
-  if (availableNames.includes(`${value}.json`)) {
+  if (cachedProjectNames.includes(`${value}.json`)) {
     already.textContent = "Name Already Exists";
     already.style.display = "flex";
   } else {
@@ -75,7 +71,7 @@ document
     reader.onload = async () => {
       const jsonData = JSON.parse(reader.result);
       const projectName = file.name;
-      const names = JSON.parse(localStorage.getItem("project-names")) || [];
+      const names = await getProjectNames();
       if (
         projectName.replace(/\.json$/i, "") === "" ||
         names.includes(projectName)
@@ -100,7 +96,7 @@ async function proceed() {
     return;
   }
   nameInputs += ".json";
-  const names = JSON.parse(localStorage.getItem("project-names")) || [];
+  const names = await getProjectNames();
   if (names.includes(nameInputs)) {
     already.textContent = "Name Already Exists";
     already.style.display = "flex";
@@ -109,13 +105,12 @@ async function proceed() {
   saveAndSend(nameInputs, data);
 }
 async function saveAndSend(namer, data) {
-  const names = JSON.parse(localStorage.getItem("project-names")) || [];
-  localStorage.setItem("project-names", JSON.stringify([...names, namer]));
   await db.collection("projects").add({
     name: namer,
     object: data,
     entryDate: new Date().getTime(),
   });
+  cachedProjectNames.push(namer);
   try {
     const encoded = encodeURIComponent(namer);
     window.location.href = `project.html?data=${encoded}`;

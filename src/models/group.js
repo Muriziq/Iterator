@@ -5,6 +5,7 @@ import { objectProperties } from "../variable.js";
 import { adapt } from "../state/canvas.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
+import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 
 export default class Group extends Formats {
   constructor(list) {
@@ -21,52 +22,52 @@ export default class Group extends Formats {
     this.y;
     this.clipped = "none";
   }
-  addObject() {
+  addObject(targetCtx = ctx) {
     this.minX = Math.min(...this.list.map((l) => l.whereToSnap().x[0]));
     this.maxX = Math.max(...this.list.map((l) => l.whereToSnap().x[2]));
     this.minY = Math.min(...this.list.map((l) => l.whereToSnap().y[0]));
     this.maxY = Math.max(...this.list.map((l) => l.whereToSnap().y[2]));
     this.x = (this.minX + this.maxX) / 2;
     this.y = (this.minY + this.maxY) / 2;
-    ctx.save();
+    targetCtx.save();
 
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-    ctx.scale(this.scaleX, this.scaleY);
+    targetCtx.translate(this.x, this.y);
+    targetCtx.rotate(this.angle);
+    targetCtx.scale(this.scaleX, this.scaleY);
     this.list.forEach((obj) => {
-      ctx.save();
-      ctx.translate(-this.x, -this.y);
-      obj.addObject();
-      ctx.restore();
+      targetCtx.save();
+      targetCtx.translate(-this.x, -this.y);
+      obj.addObject(targetCtx);
+      targetCtx.restore();
     });
     if (objectProperties.selectedObj === this) {
-      ctx.beginPath();
-      ctx.lineWidth = thresholds.slineWidth();
-      ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([
+      targetCtx.beginPath();
+      targetCtx.lineWidth = thresholds.slineWidth();
+      targetCtx.strokeStyle = thresholds.sColor;
+      targetCtx.setLineDash([
         thresholds.sLineDashWidth(),
         thresholds.sLineDashSpacing(),
       ]);
 
-      ctx.strokeRect(
+      targetCtx.strokeRect(
         this.minX - this.x,
         this.minY - this.y,
         this.maxX - this.minX,
         this.maxY - this.minY,
       );
-      ctx.closePath();
+      targetCtx.closePath();
 
-      ctx.beginPath();
-      ctx.fillStyle = thresholds.normalModeColor;
-      ctx.fillRect(
+      targetCtx.beginPath();
+      targetCtx.fillStyle = thresholds.normalModeColor;
+      targetCtx.fillRect(
         this.maxX - this.x - thresholds.normalMode() / 2,
         this.maxY - this.y - thresholds.normalMode() / 2,
         thresholds.normalMode(),
         thresholds.normalMode(),
       );
-      ctx.closePath();
+      targetCtx.closePath();
     }
-    ctx.restore();
+    targetCtx.restore();
   }
   whatSelected(mouse) {
     this.selectedArea = null;
@@ -150,6 +151,7 @@ export default class Group extends Formats {
     return true;
   }
   formatProperties() {
+    destroyPickrs();
     propertiesBar.innerHTML = `
     <button class="imageb" style="margin-top:1rem ;margin-left:0.5rem" id="ungroup-btn">UnGroup</button>
     <section class="coord-section">
@@ -194,6 +196,7 @@ export default class Group extends Formats {
       requestDraw();
     });
     super.similarPropties();
+    initPickrs(propertiesBar);
   }
   changeProperties(e) {
     const name = e.target.name;

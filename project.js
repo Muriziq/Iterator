@@ -1,5 +1,5 @@
 import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "./src/constants.js";
-import { objectProperties, canvasProperties, defaultFonts, newFonts } from "./src/variable.js";
+import { objectProperties, canvasProperties, defaultFonts, newFonts, loadNewFonts } from "./src/variable.js";
 import requestDraw from "./src/utils/draw.js";
 import { canvasSize, changeOrientation } from "./src/state/canvas.js";
 import { importLoaded, saveToFile, pauseSaving, continueSaving } from "./src/state/save.js";
@@ -12,7 +12,6 @@ import { bringToFront, sendToBack, pageUp, pageDown } from "./src/Tools/pageTo.j
 import { cMousedown, cDoubleClick, cMouseUp, cMouseLeave, cMouseMove, wMouseUp, keyDown } from "./src/utils/mouseEvents.js";
 import generateCard from "./src/utils/generate.js";
 import { cancelGenerate, flip, notify, debounce } from "./src/utils/uiHelpers.js";
-import Guide from "./src/models/guide.js";
 
 canvas.width = canvas.getBoundingClientRect().width;
 canvas.height = canvas.getBoundingClientRect().height;
@@ -21,7 +20,8 @@ let ifAutoSave = false;
 
 projectName.addEventListener("input", async (e) => {
   const dbName = `${e.target.value.trim().toLowerCase()}.json`;
-  const names = JSON.parse(localStorage.getItem("project-names")) || [];
+  const projectDocs = await db.collection("projects").get();
+  const names = projectDocs.map((p) => p.name);
   if (names.includes(canvasProperties.formerName)) {
     await db.collection("projects").doc({ name: canvasProperties.formerName }).update({
       name: dbName,
@@ -32,9 +32,6 @@ projectName.addEventListener("input", async (e) => {
       await db.collection(`img${dbName}`).add(imageFiles);
     }
     await db.collection(`img${canvasProperties.formerName}`).delete();
-    const formerIndex = names.indexOf(canvasProperties.formerName);
-    names[formerIndex] = dbName;
-    localStorage.setItem("project-names", JSON.stringify([...names]));
   }
   canvasProperties.formerName = dbName;
   notify("changed");
@@ -55,9 +52,12 @@ window.addEventListener("load", async () => {
         .get();
       projectName.value = objectsData.name.replace(/\.json$/i, "");
       canvasProperties.formerName = objectsData.name;
+      await loadNewFonts(db);
       await importLoaded(objectsData.object, true, true);
     } else {
-      const names = JSON.parse(localStorage.getItem("project-names")) || [];
+      await loadNewFonts(db);
+      const projectDocs = await db.collection("projects").get();
+      const names = projectDocs.map((p) => p.name);
       const newProjectCount = names.filter((project) =>
         /^new project(\s+\d+)?$/i.test(project),
       ).length;
@@ -215,7 +215,7 @@ saveWorker.onmessage = (message) => {
     notify(messageData.notify);
   }
   if ("newStorage" in messageData) {
-    localStorage.setItem("project-names", messageData.newStorage);
+    // No longer caching in localStorage — Localbase is the source of truth
   }
   if ("autoSave" in messageData && messageData.autoSave) {
     saveToFile(true);
@@ -349,9 +349,6 @@ const debouncedChangeProperties = debounce((e) => {
   });
 });
 
-// document.addEventListener("contextmenu", (e) => {
-//   e.preventDefault();
-// });
 document.addEventListener("keydown", async (e) => {
  keyDown(e)
 });

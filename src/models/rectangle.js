@@ -4,6 +4,7 @@ import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip
 import { objectProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
+import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 
 export default class Rectangle extends Formats {
   constructor(x, y, width, height) {
@@ -76,7 +77,7 @@ export default class Rectangle extends Formats {
     this.mode = "edit";
     this.previousSnap = { x: null, y: null };
   }
-  addObject() {
+  addObject(targetCtx = ctx) {
     const xs = this.points.map((p) => p.points.x);
     const ys = this.points.map((p) => p.points.y);
 
@@ -85,28 +86,28 @@ export default class Rectangle extends Formats {
     this.maxX = Math.max(...xs);
     this.maxY = Math.max(...ys);
 
-    ctx.save();
+    targetCtx.save();
 
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
-    ctx.translate(centerX, centerY);
-    ctx.rotate(this.angle);
-    ctx.scale(this.scaleX, this.scaleY);
-    ctx.beginPath();
+    targetCtx.translate(centerX, centerY);
+    targetCtx.rotate(this.angle);
+    targetCtx.scale(this.scaleX, this.scaleY);
+    targetCtx.beginPath();
     this.createPath();
     if (this.colorFill !== "none") {
-      ctx.fillStyle = this.colorType();
-      ctx.fill();
+      targetCtx.fillStyle = this.colorType();
+      targetCtx.fill();
     }
 
     if (this.roundedOrbeveled === "shaped") {
       if (this.outline) {
-        ctx.save();
-        ctx.lineWidth = this.outlineThickness;
-        ctx.setLineDash(this.outlineType);
-        ctx.strokeStyle = this.outlineColor;
-        ctx.stroke();
-        ctx.restore();
+        targetCtx.save();
+        targetCtx.lineWidth = this.outlineThickness;
+        targetCtx.setLineDash(this.outlineType);
+        targetCtx.strokeStyle = this.outlineColor;
+        targetCtx.stroke();
+        targetCtx.restore();
       }
       if (this.mode === "edit" && objectProperties.selectedObj === this)
         LineUtils.drawEditArcs(
@@ -115,12 +116,12 @@ export default class Rectangle extends Formats {
           this.selectedLineIndex,
         );
     }
-    ctx.closePath();
+    targetCtx.closePath();
     if (this.outline && this.roundedOrbeveled !== "shaped") {
-      ctx.beginPath();
-      ctx.lineWidth = this.outlineThickness;
-      ctx.strokeStyle = this.outlineColor;
-      ctx.setLineDash(this.outlineType);
+      targetCtx.beginPath();
+      targetCtx.lineWidth = this.outlineThickness;
+      targetCtx.strokeStyle = this.outlineColor;
+      targetCtx.setLineDash(this.outlineType);
       if (this.roundedOrbeveled === "rounded") {
         this.drawRoundedRect(
           -this.width / 2 - this.outlineThickness / 2,
@@ -139,35 +140,35 @@ export default class Rectangle extends Formats {
         );
       }
 
-      ctx.stroke();
-      ctx.closePath();
+      targetCtx.stroke();
+      targetCtx.closePath();
     }
     if (objectProperties.selectedObj === this) {
-      ctx.beginPath();
-      ctx.lineWidth = thresholds.slineWidth();
-      ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([
+      targetCtx.beginPath();
+      targetCtx.lineWidth = thresholds.slineWidth();
+      targetCtx.strokeStyle = thresholds.sColor;
+      targetCtx.setLineDash([
         thresholds.sLineDashWidth(),
         thresholds.sLineDashSpacing(),
       ]);
       if (this.roundedOrbeveled !== "shaped") {
-        ctx.strokeRect(
+        targetCtx.strokeRect(
           -this.width / 2 - thresholds.sWidth() / 2,
           -this.height / 2 - thresholds.sWidth() / 2,
           this.width + thresholds.sWidth(),
           this.height + thresholds.sWidth(),
         );
       } else {
-        ctx.strokeRect(
+        targetCtx.strokeRect(
           this.minX,
           this.minY,
           this.maxX - this.minX,
           this.maxY - this.minY,
         );
         if (this.mode === "normal") {
-          ctx.beginPath();
-          ctx.fillStyle = thresholds.normalModeColor;
-          ctx.fillRect(
+          targetCtx.beginPath();
+          targetCtx.fillStyle = thresholds.normalModeColor;
+          targetCtx.fillRect(
             this.maxX - thresholds.normalMode() / 2,
             this.maxY - thresholds.normalMode() / 2,
             thresholds.normalMode(),
@@ -176,20 +177,20 @@ export default class Rectangle extends Formats {
         }
       }
 
-      ctx.closePath();
+      targetCtx.closePath();
     }
-    ctx.restore();
+    targetCtx.restore();
     if (this.clips.length > 0 && this.clipped !== "editclip") {
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(this.angle);
+      targetCtx.save();
+      targetCtx.translate(centerX, centerY);
+      targetCtx.rotate(this.angle);
       this.createPath();
-      ctx.clip();
-      ctx.translate(-centerX, -centerY);
+      targetCtx.clip();
+      targetCtx.translate(-centerX, -centerY);
       this.clips.forEach((clip) => {
-        clip.addObject();
+        clip.addObject(targetCtx);
       });
-      ctx.restore();
+      targetCtx.restore();
     }
   }
   colorType() {
@@ -471,6 +472,7 @@ export default class Rectangle extends Formats {
   }
 
   formatProperties() {
+    destroyPickrs();
     propertiesBar.innerHTML = `
   <section class="coord-section">
     <h3>Coordinate</h3>
@@ -678,6 +680,7 @@ export default class Rectangle extends Formats {
       this.formatProperties();
           requestDraw();
     });
+    initPickrs(propertiesBar);
   }
 
   changeProperties(e) {

@@ -4,6 +4,7 @@ import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip
 import { objectProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
+import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 
 export default class Polygon extends Formats {
   constructor(x, y, radiusX, radiusY) {
@@ -22,7 +23,7 @@ export default class Polygon extends Formats {
     this.clips = [];
   }
 
-  addObject() {
+  addObject(targetCtx = ctx) {
     if (this.points.length === 0) {
       if (this.sides < 3) return;
       const angleStep = (2 * Math.PI) / this.sides;
@@ -50,11 +51,11 @@ export default class Polygon extends Formats {
     this.maxY = Math.max(...ys);
     this.radiusX = (this.maxX - this.minX) / 2;
     this.radiusY = (this.maxY - this.minY) / 2;
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-    ctx.scale(this.scaleX, this.scaleY);
-    ctx.beginPath();
+    targetCtx.save();
+    targetCtx.translate(this.x, this.y);
+    targetCtx.rotate(this.angle);
+    targetCtx.scale(this.scaleX, this.scaleY);
+    targetCtx.beginPath();
     let edgeCurve = false;
     this.points.forEach((p) => {
       if (p.edgeModes !== null) edgeCurve = true;
@@ -67,18 +68,18 @@ export default class Polygon extends Formats {
       });
     }
     if (this.colorFill !== "none") {
-      ctx.fillStyle = this.colorType();
-      ctx.fill();
+      targetCtx.fillStyle = this.colorType();
+      targetCtx.fill();
     }
 
     if (this.outline) {
-      ctx.save();
-      ctx.lineWidth = this.outlineThickness;
-      ctx.setLineDash(this.outlineType);
-      ctx.strokeStyle = this.outlineColor;
-      ctx.lineJoin = "round";
-      ctx.stroke();
-      ctx.restore();
+      targetCtx.save();
+      targetCtx.lineWidth = this.outlineThickness;
+      targetCtx.setLineDash(this.outlineType);
+      targetCtx.strokeStyle = this.outlineColor;
+      targetCtx.lineJoin = "round";
+      targetCtx.stroke();
+      targetCtx.restore();
     }
     if (this.mode === "edit" && objectProperties.selectedObj === this)
       LineUtils.drawEditArcs(
@@ -88,23 +89,23 @@ export default class Polygon extends Formats {
       );
 
     if (objectProperties.selectedObj === this ) {
-      ctx.beginPath();
-      ctx.lineWidth = thresholds.slineWidth();
-      ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([
+      targetCtx.beginPath();
+      targetCtx.lineWidth = thresholds.slineWidth();
+      targetCtx.strokeStyle = thresholds.sColor;
+      targetCtx.setLineDash([
         thresholds.sLineDashWidth(),
         thresholds.sLineDashSpacing(),
       ]);
-      ctx.strokeRect(
+      targetCtx.strokeRect(
         this.minX,
         this.minY,
         this.maxX - this.minX,
         this.maxY - this.minY,
       );
       if (this.mode === "normal") {
-        ctx.beginPath();
-        ctx.fillStyle = thresholds.normalModeColor;
-        ctx.fillRect(
+        targetCtx.beginPath();
+        targetCtx.fillStyle = thresholds.normalModeColor;
+        targetCtx.fillRect(
           this.maxX - thresholds.normalMode() / 2,
           this.maxY - thresholds.normalMode() / 2,
           thresholds.normalMode(),
@@ -113,12 +114,12 @@ export default class Polygon extends Formats {
       }
     }
 
-    ctx.closePath();
-    ctx.restore();
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-    ctx.beginPath();
+    targetCtx.closePath();
+    targetCtx.restore();
+    targetCtx.save();
+    targetCtx.translate(this.x, this.y);
+    targetCtx.rotate(this.angle);
+    targetCtx.beginPath();
     if (edgeCurve) LineUtils.drawSmartShape(this.points);
     else {
       LineUtils.drawRoundedShape(this.points, this.cornerRadius);
@@ -126,12 +127,12 @@ export default class Polygon extends Formats {
         p.cornerRadius = this.cornerRadius;
       });
     }
-    ctx.clip();
-    ctx.translate(-this.x, -this.y);
+    targetCtx.clip();
+    targetCtx.translate(-this.x, -this.y);
     this.clips.forEach((clip) => {
-      clip.addObject();
+      clip.addObject(targetCtx);
     });
-    ctx.restore();
+    targetCtx.restore();
   }
   colorType() {
     const colors = this.color.map((color) =>
@@ -326,6 +327,7 @@ export default class Polygon extends Formats {
     }
   }
   formatProperties() {
+    destroyPickrs();
     propertiesBar.innerHTML = `
 <section class="coord-section">
   <h3>Coordinate</h3>
@@ -427,6 +429,7 @@ ${super.similarProptiesOutput()}
       this.formatProperties();
        requestDraw();
     });
+    initPickrs(propertiesBar);
   }
   changeProperties(e) {
     const name = e.target.name;

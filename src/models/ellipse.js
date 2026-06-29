@@ -2,6 +2,7 @@ import Formats from "./formats.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import { ctx, thresholds, propertiesBar } from "../constants.js";
 import requestDraw from "../utils/draw.js";
+import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 
 import LineUtils from "./lineUtils.js";
 import { objectProperties } from "../variable.js";
@@ -20,15 +21,15 @@ export default class Ellipse extends Formats {
     this.clips = [];
     this.mode = "fill";
   }
-  addObject() {
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-    ctx.scale(this.scaleX, this.scaleY);
-    ctx.beginPath();
+  addObject(targetCtx = ctx) {
+    targetCtx.save();
+    targetCtx.translate(this.x, this.y);
+    targetCtx.rotate(this.angle);
+    targetCtx.scale(this.scaleX, this.scaleY);
+    targetCtx.beginPath();
     if (this.mode === "pie") {
-      ctx.moveTo(0, 0);
-      ctx.ellipse(
+      targetCtx.moveTo(0, 0);
+      targetCtx.ellipse(
         0,
         0,
         this.radiusX,
@@ -38,7 +39,7 @@ export default class Ellipse extends Formats {
         this.arcEnd,
       );
     } else {
-      ctx.ellipse(
+      targetCtx.ellipse(
         0,
         0,
         this.radiusX,
@@ -48,41 +49,41 @@ export default class Ellipse extends Formats {
         this.arcEnd,
       );
     }
-    if (this.mode !== "curve") ctx.closePath();
-    if (this.colorFill !== "none") ctx.fillStyle = this.colorType();
-    if (this.mode !== "curve" && this.colorFill !== "none") ctx.fill();
+    if (this.mode !== "curve") targetCtx.closePath();
+    if (this.colorFill !== "none") targetCtx.fillStyle = this.colorType();
+    if (this.mode !== "curve" && this.colorFill !== "none") targetCtx.fill();
     if (this.outline) {
-      ctx.lineWidth = this.outlineThickness;
-      ctx.strokeStyle = this.outlineColor;
-      ctx.setLineDash(this.outlineType);
-      ctx.stroke();
+      targetCtx.lineWidth = this.outlineThickness;
+      targetCtx.strokeStyle = this.outlineColor;
+      targetCtx.setLineDash(this.outlineType);
+      targetCtx.stroke();
     }
     if (objectProperties.selectedObj === this) {
-      ctx.beginPath();
-      ctx.lineWidth = thresholds.slineWidth();
-      ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([
+      targetCtx.beginPath();
+      targetCtx.lineWidth = thresholds.slineWidth();
+      targetCtx.strokeStyle = thresholds.sColor;
+      targetCtx.setLineDash([
         thresholds.sLineDashWidth(),
         thresholds.sLineDashSpacing(),
       ]);
-      ctx.strokeRect(
+      targetCtx.strokeRect(
         -this.radiusX,
         -this.radiusY,
         this.radiusX * 2,
         this.radiusY * 2,
       );
-      ctx.closePath();
+      targetCtx.closePath();
     }
 
-    ctx.restore();
+    targetCtx.restore();
     if (this.clips.length > 0 && this.clipped !== "editclip") {
-      ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.rotate(this.angle);
-      ctx.beginPath();
+      targetCtx.save();
+      targetCtx.translate(this.x, this.y);
+      targetCtx.rotate(this.angle);
+      targetCtx.beginPath();
       if (this.mode === "pie") {
-        ctx.moveTo(0, 0);
-        ctx.ellipse(
+        targetCtx.moveTo(0, 0);
+        targetCtx.ellipse(
           0,
           0,
           this.radiusX,
@@ -92,7 +93,7 @@ export default class Ellipse extends Formats {
           this.arcEnd,
         );
       } else {
-        ctx.ellipse(
+        targetCtx.ellipse(
           0,
           0,
           this.radiusX,
@@ -102,12 +103,12 @@ export default class Ellipse extends Formats {
           this.arcEnd,
         );
       }
-      ctx.clip();
-      ctx.translate(-this.x, -this.y);
+      targetCtx.clip();
+      targetCtx.translate(-this.x, -this.y);
       this.clips.forEach((clip) => {
-        clip.addObject();
+        clip.addObject(targetCtx);
       });
-      ctx.restore();
+      targetCtx.restore();
     }
   }
 
@@ -189,6 +190,7 @@ export default class Ellipse extends Formats {
     super.circFormat(mouse, x, y);
   }
   formatProperties() {
+    destroyPickrs();
     const pie = "imagess/chart-pie.svg";
     const curveEnd = "imagess/loader-circle.svg";
     propertiesBar.innerHTML = `
@@ -281,6 +283,7 @@ export default class Ellipse extends Formats {
       this.formatProperties();
           requestDraw();
     });
+    initPickrs(propertiesBar);
   }
   changeProperties(e) {
     const name = e.target.name;

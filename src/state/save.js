@@ -47,7 +47,9 @@ export async function importLoaded(jsonData, shouldCanvas = true, saving = false
 }
 
 
-export function saveToFile(autosave = false, deleteData = false) {
+export async function saveToFile(autosave = false, deleteData = false) {
+  const projectDocs = await db.collection("projects").orderBy("entryDate", "desc").get();
+  const projectNames = projectDocs.map((p) => p.name);
   let allData = [
     {
       type: "canvas",
@@ -63,7 +65,7 @@ export function saveToFile(autosave = false, deleteData = false) {
   if (autosave) {
     saveWorker.postMessage({
       formerName: canvasProperties.formerName,
-      names: JSON.parse(localStorage.getItem("project-names")) || [],
+      names: projectNames,
       allData: allData,
       autoSave: true,
       drawingImage: dImage,
@@ -71,7 +73,7 @@ export function saveToFile(autosave = false, deleteData = false) {
   } else {
     saveWorker.postMessage({
       formerName: canvasProperties.formerName,
-      names: JSON.parse(localStorage.getItem("project-names")) || [],
+      names: projectNames,
       allData: allData,
       justSave: true,
       drawingImage: dImage,

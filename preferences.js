@@ -202,12 +202,6 @@ async function renderData(search = "") {
       button.querySelector(".delete").addEventListener("click", async () => {
         await db.collection("projects").doc({ name: name }).delete();
         await db.collection(`img${name}`).delete();
-        let projects = JSON.parse(localStorage.getItem("project-names")) || [];
-        let index = projects.indexOf(name);
-        if (index > -1) {
-          projects.splice(index, 1);
-        }
-        localStorage.setItem("project-names", JSON.stringify(projects));
         alert(`${name} has been deleted`);
         await renderData();
       });
@@ -249,7 +243,6 @@ async function importData() {
         ) {
           const allFonts = await db.collection("fonts").get()
           await db.delete()
-          localStorage.removeItem("project-names");
           for(font = 0;font<allFonts.length;font++){
             await db.collection("fonts").add({...font})
           }
@@ -273,7 +266,8 @@ async function importData() {
           });
           const result = await read;
           const jsonData = JSON.parse(result);
-          const names = JSON.parse(localStorage.getItem("project-names")) || [];
+          const existingProjects = await db.collection("projects").get();
+          const names = existingProjects.map((p) => p.name);
           const fileName = file.name.trim().toLowerCase();
           if (names.includes(fileName)) {
             alert(
@@ -286,10 +280,6 @@ async function importData() {
             object: jsonData || [],
             entryDate: new Date().getTime(),
           });
-                localStorage.setItem(
-        "project-names",
-        JSON.stringify([...names, fileName]),
-      );
         }
         await renderData();
       } catch (error) {
@@ -378,13 +368,6 @@ async function renderFonts(search = "") {
       const button = div.querySelector("button");
       button.addEventListener("click", async () => {
         await db.collection("fonts").doc({ id: name }).delete();
-        const fonts = JSON.parse(localStorage.getItem("fontNames")) || [];
-
-        let index = fonts.indexOf(name);
-        if (index > -1) {
-          fonts.splice(index, 1);
-        }
-        localStorage.setItem("fontNames", JSON.stringify(fonts));
         alert(`${name} has been deleted`);
         await renderFonts();
       });
@@ -417,7 +400,6 @@ async function importFonts() {
           )
         ) {
           await db.collection("fonts").delete();
-          localStorage.removeItem("fontNames");
           alert("All fonts have been deleted");
           await renderFonts();
         }
@@ -429,7 +411,8 @@ async function importFonts() {
       try {
         for (const file of files) {
           const fileName = file.name;
-          const fontNames = JSON.parse(localStorage.getItem("fontNames")) || [];
+          const existingFonts = await db.collection("fonts").get();
+          const fontNames = existingFonts.map((f) => f.fontFamily);
           if (fontNames.includes(fileName)) {
             alert("Font already imported");
             continue;
@@ -461,10 +444,6 @@ async function importFonts() {
 
           console.log(
             `Font ${fontFamily} stored successfully from uploaded file`,
-          );
-          localStorage.setItem(
-            "fontNames",
-            JSON.stringify([...fontNames, fontFamily]),
           );
         }
       } catch (error) {

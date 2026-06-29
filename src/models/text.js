@@ -1,12 +1,12 @@
 import Formats from "./formats.js";
-import LineUtils from "./lineUtils.js";
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import { canvas, ctx, canvass, propertiesBar,  db,  thresholds} from "../constants.js";
 import { objectProperties, defaultFonts, newFonts, canvasProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg, getFormatFromExtension } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
 import { adapt } from "../state/canvas.js";
 import { reverseMousePos } from "../utils/mousePos.js";
 import { notify } from "../utils/uiHelpers.js";
+import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 let allFonts = [...defaultFonts,...newFonts];
 
 export default class TextBox extends Formats {
@@ -40,7 +40,7 @@ export default class TextBox extends Formats {
     this.formatIterated = "none";
     this.iterateAllign = "left";
   }
-  addObject() {
+  addObject(targetCtx = ctx) {
     if (this.isDoubleClicked) {
       return;
     }
@@ -52,19 +52,19 @@ export default class TextBox extends Formats {
       this.measurer = null;
     }
 
-    ctx.save();
+    targetCtx.save();
 
     const lines = this.text.split("\n");
 
-    ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
-    ctx.textAlign = this.textAllign;
-    ctx.textBaseline = "alphabetic";
+    targetCtx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
+    targetCtx.textAlign = this.textAllign;
+    targetCtx.textBaseline = "alphabetic";
 
     let maxWidth = 0;
     let textHeight = 0;
 
     lines.forEach((line) => {
-      const metrics = ctx.measureText(line);
+      const metrics = targetCtx.measureText(line);
       maxWidth = Math.max(maxWidth, metrics.width);
       textHeight =
         metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
@@ -75,15 +75,15 @@ export default class TextBox extends Formats {
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
 
-    ctx.translate(centerX, centerY);
-    ctx.rotate(this.angle);
-    ctx.scale(this.scaleX, this.scaleY);
+    targetCtx.translate(centerX, centerY);
+    targetCtx.rotate(this.angle);
+    targetCtx.scale(this.scaleX, this.scaleY);
 
     if (this.shadow) {
-      ctx.shadowColor = this.shadowStyle.color;
-      ctx.shadowBlur = this.shadowStyle.blur;
-      ctx.shadowOffsetX = this.shadowStyle.offsetX;
-      ctx.shadowOffsetY = this.shadowStyle.offsetY;
+      targetCtx.shadowColor = this.shadowStyle.color;
+      targetCtx.shadowBlur = this.shadowStyle.blur;
+      targetCtx.shadowOffsetX = this.shadowStyle.offsetX;
+      targetCtx.shadowOffsetY = this.shadowStyle.offsetY;
     }
 
     const startY = -this.height / 2 + textHeight;
@@ -97,38 +97,38 @@ export default class TextBox extends Formats {
       const y = startY + index * this.lineHeight;
 
       if (this.outline) {
-        ctx.beginPath();
-        ctx.lineWidth = this.outlineThickness;
-        ctx.strokeStyle = this.outlineColor;
-        ctx.setLineDash(this.outlineType);
-        ctx.strokeText(line, drawX, y);
-        ctx.closePath();
+        targetCtx.beginPath();
+        targetCtx.lineWidth = this.outlineThickness;
+        targetCtx.strokeStyle = this.outlineColor;
+        targetCtx.setLineDash(this.outlineType);
+        targetCtx.strokeText(line, drawX, y);
+        targetCtx.closePath();
       }
 
       if (this.colorFill !== "none") {
-        ctx.fillStyle = this.colorType();
-        ctx.fillText(line, drawX, y);
+        targetCtx.fillStyle = this.colorType();
+        targetCtx.fillText(line, drawX, y);
       }
     });
 
     if (objectProperties.selectedObj === this ) {
-      ctx.beginPath();
-      ctx.lineWidth = thresholds.slineWidth();
-      ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([
+      targetCtx.beginPath();
+      targetCtx.lineWidth = thresholds.slineWidth();
+      targetCtx.strokeStyle = thresholds.sColor;
+      targetCtx.setLineDash([
         thresholds.sLineDashWidth(),
         thresholds.sLineDashSpacing(),
       ]);
-      ctx.strokeRect(
+      targetCtx.strokeRect(
         -this.width / 2 - thresholds.sWidth() / 2 ,
         -this.height / 2 - thresholds.sWidth() / 2 ,
         this.width + thresholds.sWidth() ,
         this.height + thresholds.sWidth() ,
       );
-      ctx.closePath();
+      targetCtx.closePath();
     }
 
-    ctx.restore();
+    targetCtx.restore();
   }
 
   showClone(isUndo = false) {
@@ -234,6 +234,7 @@ export default class TextBox extends Formats {
     }
   }
   formatProperties() {
+    destroyPickrs();
     propertiesBar.innerHTML = `
     <section class="coord-section">
       <h3>Coordinate</h3>
@@ -330,7 +331,10 @@ export default class TextBox extends Formats {
       <section style="display:${this.shadow ? "flex" : "none"}; flex-direction:column; gap:1rem">
         <label class="uniform-div">
           <span>Shadow Color</span>
-          <input type="color" name="shadowColor" value="${this.shadowStyle.color}">
+          <div class="pickr-wrap" data-name="shadowColor">
+            <button type="button" class="pickr-trigger"></button>
+            <input type="color" name="shadowColor" value="${this.shadowStyle.color}" hidden>
+          </div>
         </label>
 
         <div class="two-grid">
@@ -390,7 +394,8 @@ export default class TextBox extends Formats {
         try {
           // Get font name from file
           const fileName = file.name;
-          const fontNames = JSON.parse(localStorage.getItem("fontNames")) || [];
+          const existingFonts = await db.collection("fonts").get();
+          const fontNames = existingFonts.map((f) => f.fontFamily);
           if (fontNames.includes(fileName)) {
             notify("Font already imported");
             return;
@@ -423,10 +428,7 @@ export default class TextBox extends Formats {
           console.log(
             `Font ${fontFamily} stored successfully from uploaded file`,
           );
-          localStorage.setItem(
-            "fontNames",
-            JSON.stringify([...fontNames, fontFamily]),
-          );
+          newFonts.push(fontFamily);
 
           const style = document.createElement("style");
           const fontCSS = `
@@ -479,6 +481,7 @@ export default class TextBox extends Formats {
           this.changeProperties(e);
         });
       });
+    initPickrs(propertiesBar);
     // Optional: outline toggle is inside similarProptiesOutput(), keep existing handler if you have one.
   }
   changeProperties(e) {

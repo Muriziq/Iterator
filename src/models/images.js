@@ -2,9 +2,10 @@ import Formats from "./formats.js";
 import LineUtils from "./lineUtils.js";
 import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
-import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
+import { changeValues, backValues, radToDeg, applyOpacityToHex } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
 import { pauseSaving, continueSaving } from "../state/save.js";
+import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 
 export default class Images extends Formats {
   constructor(x, y, image, width, aspectRatio, originalFile, fileName) {
@@ -25,42 +26,42 @@ export default class Images extends Formats {
     this.formatIterated = "maintainSize";
     this.isConverted = false;
   }
-  addObject() {
-    ctx.save();
+  addObject(targetCtx = ctx) {
+    targetCtx.save();
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
-    ctx.translate(centerX, centerY);
-    ctx.rotate(this.angle);
-    ctx.scale(this.scaleX, this.scaleY);
-    ctx.save();
-    ctx.beginPath();
-    ctx.globalAlpha = this.opacity / 100;
-    ctx.drawImage(
+    targetCtx.translate(centerX, centerY);
+    targetCtx.rotate(this.angle);
+    targetCtx.scale(this.scaleX, this.scaleY);
+    targetCtx.save();
+    targetCtx.beginPath();
+    targetCtx.globalAlpha = this.opacity / 100;
+    targetCtx.drawImage(
       this.image,
       -this.width / 2,
       -this.height / 2,
       this.width,
       this.height,
     );
-    ctx.closePath();
-    ctx.restore();
+    targetCtx.closePath();
+    targetCtx.restore();
     if (objectProperties.selectedObj === this ) {
-      ctx.beginPath();
-      ctx.lineWidth = thresholds.slineWidth();
-      ctx.strokeStyle = thresholds.sColor;
-      ctx.setLineDash([
+      targetCtx.beginPath();
+      targetCtx.lineWidth = thresholds.slineWidth();
+      targetCtx.strokeStyle = thresholds.sColor;
+      targetCtx.setLineDash([
         thresholds.sLineDashWidth(),
         thresholds.sLineDashSpacing(),
       ]);
-      ctx.strokeRect(
+      targetCtx.strokeRect(
         -this.width / 2 - thresholds.sWidth() / 2,
         -this.height / 2 - thresholds.sWidth() / 2,
         this.width + thresholds.sWidth(),
         this.height + thresholds.sWidth(),
       );
-      ctx.closePath();
+      targetCtx.closePath();
     }
-    ctx.restore();
+    targetCtx.restore();
   }
 
   moveClip(x, y) {
@@ -115,6 +116,7 @@ export default class Images extends Formats {
     return clone;
   }
   formatProperties() {
+    destroyPickrs();
     propertiesBar.innerHTML = `
   <section class="coord-section">
     <h3>Coordinate</h3>
@@ -301,6 +303,7 @@ export default class Images extends Formats {
     propertiesBar.querySelector("input[name='iteratedFiles']").addEventListener("change", (e) => {
       this.changeProperties(e);
     });
+    initPickrs(propertiesBar);
   }
   async changeProperties(e) {
     const name = e.target.name;

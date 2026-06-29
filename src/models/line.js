@@ -4,6 +4,7 @@ import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip
 import { objectProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
+import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 
 export default class Line extends Formats {
   constructor() {
@@ -18,7 +19,7 @@ export default class Line extends Formats {
     this.clips = [];
     this.type = "line";
   }
-  addObject() {
+  addObject(targetCtx = ctx) {
     if (this.points.length > 0) {
       const xs = this.points.map((p) => p.points.x);
       const ys = this.points.map((p) => p.points.y);
@@ -29,26 +30,26 @@ export default class Line extends Formats {
       const first = this.points[0].points;
       const last = this.points[this.points.length - 1].points;
       this.close = Math.hypot(first.x - last.x, first.y - last.y) < 3;
-      ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.rotate(this.angle);
-      ctx.scale(this.scaleX, this.scaleY);
-      ctx.beginPath();
+      targetCtx.save();
+      targetCtx.translate(this.x, this.y);
+      targetCtx.rotate(this.angle);
+      targetCtx.scale(this.scaleX, this.scaleY);
+      targetCtx.beginPath();
       LineUtils.drawSmartShape(this.points, this.isClosed);
 
       if (this.colorFill !== "none") {
-        ctx.fillStyle = this.colorType();
-        ctx.fill();
+        targetCtx.fillStyle = this.colorType();
+        targetCtx.fill();
       }
 
       if (this.outline) {
-        ctx.save();
-        ctx.lineWidth = this.outlineThickness;
-        ctx.setLineDash(this.outlineType);
-        ctx.strokeStyle = this.outlineColor;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.restore();
+        targetCtx.save();
+        targetCtx.lineWidth = this.outlineThickness;
+        targetCtx.setLineDash(this.outlineType);
+        targetCtx.strokeStyle = this.outlineColor;
+        targetCtx.lineJoin = "round";
+        targetCtx.stroke();
+        targetCtx.restore();
       }
       if (this.mode === "edit" && objectProperties.selectedObj === this)
         LineUtils.drawEditArcs(
@@ -57,23 +58,23 @@ export default class Line extends Formats {
           this.selectedLineIndex,
         );
       if (objectProperties.selectedObj === this) {
-        ctx.beginPath();
-        ctx.lineWidth = thresholds.slineWidth();
-        ctx.strokeStyle = thresholds.sColor;
-        ctx.setLineDash([
+        targetCtx.beginPath();
+        targetCtx.lineWidth = thresholds.slineWidth();
+        targetCtx.strokeStyle = thresholds.sColor;
+        targetCtx.setLineDash([
           thresholds.sLineDashWidth(),
           thresholds.sLineDashSpacing(),
         ]);
-        ctx.strokeRect(
+        targetCtx.strokeRect(
           this.minX,
           this.minY,
           this.maxX - this.minX,
           this.maxY - this.minY,
         );
         if (this.mode === "normal") {
-          ctx.beginPath();
-          ctx.fillStyle = thresholds.normalModeColor;
-          ctx.fillRect(
+          targetCtx.beginPath();
+          targetCtx.fillStyle = thresholds.normalModeColor;
+          targetCtx.fillRect(
             this.maxX - thresholds.normalMode() / 2,
             this.maxY - thresholds.normalMode() / 2,
             thresholds.normalMode(),
@@ -81,19 +82,19 @@ export default class Line extends Formats {
           );
         }
       }
-      ctx.restore();
+      targetCtx.restore();
       if (this.clips.length > 0 && this.clipped !== "editclip") {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-        ctx.beginPath();
+        targetCtx.save();
+        targetCtx.translate(this.x, this.y);
+        targetCtx.rotate(this.angle);
+        targetCtx.beginPath();
         LineUtils.drawSmartShape(this.points, this.close);
-        ctx.clip();
-        ctx.translate(-this.x, -this.y);
+        targetCtx.clip();
+        targetCtx.translate(-this.x, -this.y);
         this.clips.forEach((clip) => {
-          clip.addObject();
+          clip.addObject(targetCtx);
         });
-        ctx.restore();
+        targetCtx.restore();
       }
     }
   }
@@ -314,6 +315,7 @@ export default class Line extends Formats {
     }
   }
   formatProperties() {
+    destroyPickrs();
     if (objectProperties.pen) {
       propertiesBar.innerHTML = `
           <section class="shape" >
@@ -469,6 +471,7 @@ export default class Line extends Formats {
             requestDraw();
       });
     }
+    initPickrs(propertiesBar);
   }
   changeProperties(e) {
     const name = e.target.name;

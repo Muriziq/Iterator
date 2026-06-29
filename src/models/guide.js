@@ -3,58 +3,60 @@ import { ctx, propertiesBar, thresholds, canvas } from "../constants.js";
 import { objectProperties } from "../variable.js";
 import { changeValues, backValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
-import { adapt }from "../state/canvas.js"
+import { adapt } from "../state/canvas.js";
+import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 
 export default class Guide extends Formats {
   constructor(orientation, position) {
     super();
     this.type = "guide";
     this.orientation = orientation; // "horizontal" or "vertical"
-    this.position = position;       // The specific X or Y coordinate
-    this.color = "#00ffff";         // Default cyan color for guides
-    this.thickness = adapt(1);             // Allow users to adjust thickness
-    this.angle = 0;                 // Allow users to rotate the guide
+    this.position = position; // The specific X or Y coordinate
+    this.color = "#00ffff"; // Default cyan color for guides
+    this.thickness = adapt(1); // Allow users to adjust thickness
+    this.angle = 0; // Allow users to rotate the guide
     this.selectedArea = null;
     this.isDoubleClicked = false;
   }
 
-  addObject() {
-    ctx.save();
-    
+  addObject(targetCtx = ctx) {
+    targetCtx.save();
+
     // Move context to the base position intercept
     if (this.orientation === "vertical") {
-      ctx.translate(this.position, 0);
+      targetCtx.translate(this.position, 0);
     } else {
-      ctx.translate(0, this.position);
+      targetCtx.translate(0, this.position);
     }
-    
-    // Apply rotation
-    ctx.rotate(this.angle);
 
-    ctx.beginPath();
-    
+    // Apply rotation
+    targetCtx.rotate(this.angle);
+
+    targetCtx.beginPath();
+
     // Turn red when selected to indicate active status
-    ctx.strokeStyle = objectProperties.selectedObj === this ? "#ff0000" : this.color;
-    
+    targetCtx.strokeStyle =
+      objectProperties.selectedObj === this ? "#ff0000" : this.color;
+
     // Keep the line thickness consistent regardless of zoom level
     const currentScale = objectProperties.scale || 1;
-    ctx.lineWidth = this.thickness / currentScale; 
-    ctx.setLineDash([5 / currentScale, 5 / currentScale]);
+    targetCtx.lineWidth = this.thickness / currentScale;
+    targetCtx.setLineDash([5 / currentScale, 5 / currentScale]);
 
     // Draw a very long line to act as an infinite guide across the workspace
     // Use the canvas diagonal adjusted by zoom, with a large multiplier to cover panning
     const size = (Math.hypot(canvas.width, canvas.height) / currentScale) * 100;
     if (this.orientation === "vertical") {
-      ctx.moveTo(0, -size);
-      ctx.lineTo(0, size);
+      targetCtx.moveTo(0, -size);
+      targetCtx.lineTo(0, size);
     } else {
-      ctx.moveTo(-size,0);
-      ctx.lineTo(size, 0);
+      targetCtx.moveTo(-size, 0);
+      targetCtx.lineTo(size, 0);
     }
 
-    ctx.stroke();
-    ctx.closePath();
-    ctx.restore();
+    targetCtx.stroke();
+    targetCtx.closePath();
+    targetCtx.restore();
   }
 
   whatSelected(mouse) {
@@ -83,7 +85,8 @@ export default class Guide extends Formats {
 
     // Base threshold + dynamic thickness inclusion
     const currentScale = objectProperties.scale || 1;
-    const hitThreshold = thresholds.threshold() + (this.thickness / currentScale) / 2;
+    const hitThreshold =
+      thresholds.threshold() + this.thickness / currentScale / 2;
 
     if (distance < hitThreshold) {
       this.selectedArea = "Selected";
@@ -111,7 +114,8 @@ export default class Guide extends Formats {
     const size = (Math.hypot(canvas.width, canvas.height) / currentScale) * 100;
 
     let baseWidth = this.orientation === "vertical" ? this.thickness : size * 2;
-    let baseHeight = this.orientation === "vertical" ? size * 2 : this.thickness;
+    let baseHeight =
+      this.orientation === "vertical" ? size * 2 : this.thickness;
 
     let centerX = this.orientation === "vertical" ? this.position : 0;
     let centerY = this.orientation === "vertical" ? 0 : this.position;
@@ -125,11 +129,12 @@ export default class Guide extends Formats {
     return {
       x: [rectx, rectx + newWidth / 2, rectx + newWidth],
       y: [recty, recty + newHeight / 2, recty + newHeight],
-      pos: { x: rectx, y: recty, width: newWidth, height: newHeight }
+      pos: { x: rectx, y: recty, width: newWidth, height: newHeight },
     };
   }
 
   formatProperties() {
+    destroyPickrs();
     propertiesBar.innerHTML = `
       <section class="coord-section">
         <h3>Guide Properties</h3>
@@ -149,7 +154,10 @@ export default class Guide extends Formats {
           </label>
           <label class="field">
             <span class="field-label">Color</span>
-            <input type="color" name="color" value="${this.color}">
+            <div class="pickr-wrap" data-name="color">
+              <button type="button" class="pickr-trigger"></button>
+              <input type="color" name="color" value="${this.color}" hidden>
+            </div>
           </label>
           <label class="field">
             <span class="field-label">Thickness</span>
@@ -163,20 +171,26 @@ export default class Guide extends Formats {
       </section>
     `;
 
-    const orientationSelect = propertiesBar.querySelector("select[name='orientation']");
+    const orientationSelect = propertiesBar.querySelector(
+      "select[name='orientation']",
+    );
     if (orientationSelect) {
       orientationSelect.addEventListener("change", (e) => {
         this.changeProperties(e);
       });
     }
+    initPickrs(propertiesBar);
   }
 
   changeProperties(e) {
     const name = e.target.name;
-    if (name === "position") this.position = backValues(Number(e.target.value) || 0);
+    if (name === "position")
+      this.position = backValues(Number(e.target.value) || 0);
     if (name === "color") this.color = e.target.value;
-    if (name === "thickness") this.thickness = Math.max(1, Number(e.target.value) || 1);
-    if (name === "angle") this.angle = radToDeg(Number(e.target.value) || 0, "rad");
+    if (name === "thickness")
+      this.thickness = Math.max(1, Number(e.target.value) || 1);
+    if (name === "angle")
+      this.angle = radToDeg(Number(e.target.value) || 0, "rad");
     if (name === "orientation") {
       this.orientation = e.target.value;
       this.formatProperties(); // Refresh the panel to swap the X/Y label

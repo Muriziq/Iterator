@@ -60,4 +60,10 @@ export const defaultFonts = [
   "fangsong",
 ];
 
-export const newFonts = JSON.parse(localStorage.getItem("fontNames")) || [];
+export const newFonts = [];
+
+export async function loadNewFonts(db) {
+  const fonts = await db.collection("fonts").get();
+  newFonts.length = 0;
+  newFonts.push(...fonts.map((f) => f.fontFamily));
+}
