@@ -234,13 +234,22 @@
       </main>
     </div>
 
-    <footer style="display: none">
-      <div class="buttonSide">
-        <button class="saveAsPdf">Save As Pdf</button>
-        <button class="saveAsImage">Save As Image</button>
-      </div>
-      <article id="generationArea"></article>
-    </footer>
+
+<footer style="display: none">
+  <div class="buttonSide">
+    <button class="saveAsPdf">Save As Pdf</button>
+    <button class="saveAsImage">Save As Image</button>
+  </div>
+  <div class="paginationControls">
+    <button class="prevBatch">Previous</button>
+    <span class="batchProgress">1 / 1</span>
+    <input class="batchInput" type="number" min="1" value="1" />
+    <button class="nextBatch">Next</button>
+  </div>
+  <article id="generationArea"></article>
+</footer>
+ 
+ 
     <div class="generate">
       <div>
         <h3>RENDER</h3>
@@ -276,23 +285,21 @@
           </div>
         </div>
         <div>
-          <div class="perRow generate1f">
-            No Per:
-            <div class="generate1d">
-              Row<input type="number" name="noPerRow" id="noPerRow" />
+   <div class="generate1d">
+              COl<input type="number" name="noPerRow" id="noPerRow" />
             </div>
             <div class="generate1d">
-              Col<input type="number" name="noPerColumn" id="noPerColumn" />
+              ROW<input type="number" name="noPerColumn" id="noPerColumn" />
             </div>
-          </div>
-          <div class="perRow generate1f">
-            <div class="generate1d">
+                        <div class="generate1d">
               Spacing: <input type="text" name="spacing" id="spacing" />
             </div>
             <div class="generate1d">
               Quality <input type="number" name="quality" id="quality" />
             </div>
-          </div>
+            <div class="generate1d">
+              Batch Size <input type="number" name="batchSize" id="batchSize" />
+            </div>
           <small>Increasing Quality Might Affect Rendering Speed</small>
         </div>
       </div>

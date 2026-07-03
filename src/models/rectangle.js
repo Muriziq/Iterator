@@ -94,7 +94,7 @@ export default class Rectangle extends Formats {
     targetCtx.rotate(this.angle);
     targetCtx.scale(this.scaleX, this.scaleY);
     targetCtx.beginPath();
-    this.createPath();
+    this.createPath(targetCtx);
     if (this.colorFill !== "none") {
       targetCtx.fillStyle = this.colorType();
       targetCtx.fill();
@@ -184,7 +184,7 @@ export default class Rectangle extends Formats {
       targetCtx.save();
       targetCtx.translate(centerX, centerY);
       targetCtx.rotate(this.angle);
-      this.createPath();
+      this.createPath(targetCtx);
       targetCtx.clip();
       targetCtx.translate(-centerX, -centerY);
       this.clips.forEach((clip) => {
@@ -268,15 +268,15 @@ export default class Rectangle extends Formats {
       return grad;
     }
   }
-  createPath() {
+  createPath(targetCtx=ctx) {
     if (this.roundedOrbeveled === "shaped") {
       let edgeCurve = false;
       this.points.forEach((p) => {
         if (p.edgeModes !== null) edgeCurve = true;
       });
-      if (edgeCurve) LineUtils.drawSmartShape(this.points);
+      if (edgeCurve) LineUtils.drawSmartShape(this.points,true,targetCtx);
       else {
-        LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+        LineUtils.drawRoundedShape(this.points, this.cornerRadius,targetCtx);
         this.points.forEach((p) => {
           p.cornerRadius = this.cornerRadius;
         });
@@ -288,6 +288,7 @@ export default class Rectangle extends Formats {
         this.width,
         this.height,
         this.cornerRadius,
+        targetCtx,
       );
     } else if (this.roundedOrbeveled === "beveled") {
       this.drawBeveledRect(
@@ -296,6 +297,7 @@ export default class Rectangle extends Formats {
         this.width,
         this.height,
         this.cornerRadius,
+        targetCtx,
       );
     }
   }
@@ -781,30 +783,30 @@ export default class Rectangle extends Formats {
     requestDraw();
   }
 
-  drawBeveledRect(x, y, width, height, bevel) {
-    ctx.beginPath();
-    ctx.moveTo(x + bevel, y);
-    ctx.lineTo(x + width - bevel, y);
-    ctx.lineTo(x + width, y + bevel);
-    ctx.lineTo(x + width, y + height - bevel);
-    ctx.lineTo(x + width - bevel, y + height);
-    ctx.lineTo(x + bevel, y + height);
-    ctx.lineTo(x, y + height - bevel);
-    ctx.lineTo(x, y + bevel);
-    ctx.closePath();
+  drawBeveledRect(x, y, width, height, bevel,targetCtx=ctx) {
+    targetCtx.beginPath();
+    targetCtx.moveTo(x + bevel, y);
+    targetCtx.lineTo(x + width - bevel, y);
+    targetCtx.lineTo(x + width, y + bevel);
+    targetCtx.lineTo(x + width, y + height - bevel);
+    targetCtx.lineTo(x + width - bevel, y + height);
+    targetCtx.lineTo(x + bevel, y + height);
+    targetCtx.lineTo(x, y + height - bevel);
+    targetCtx.lineTo(x, y + bevel);
+    targetCtx.closePath();
   }
   drawRoundedRect(x, y, width, height, radius) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
+    targetCtx.beginPath();
+    targetCtx.moveTo(x + radius, y);
+    targetCtx.lineTo(x + width - radius, y);
+    targetCtx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    targetCtx.lineTo(x + width, y + height - radius);
+    targetCtx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    targetCtx.lineTo(x + radius, y + height);
+    targetCtx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    targetCtx.lineTo(x, y + radius);
+    targetCtx.quadraticCurveTo(x, y, x + radius, y);
+    targetCtx.closePath();
   }
   whereToSnap() {
     if (this.roundedOrbeveled === "shaped") {

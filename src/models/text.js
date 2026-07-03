@@ -7,7 +7,7 @@ import { adapt } from "../state/canvas.js";
 import { reverseMousePos } from "../utils/mousePos.js";
 import { notify } from "../utils/uiHelpers.js";
 import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
-let allFonts = [...defaultFonts,...newFonts];
+const getAllFonts = () => [...defaultFonts, ...newFonts];
 
 export default class TextBox extends Formats {
   constructor(x, y) {
@@ -395,7 +395,7 @@ export default class TextBox extends Formats {
           // Get font name from file
           const fileName = file.name;
           const existingFonts = await db.collection("fonts").get();
-          const fontNames = existingFonts.map((f) => f.fontFamily);
+          const fontNames = (existingFonts || []).map((f) => f.fontFamily);
           if (fontNames.includes(fileName)) {
             notify("Font already imported");
             return;
@@ -441,7 +441,9 @@ export default class TextBox extends Formats {
           style.textContent = fontCSS;
           document.head.appendChild(style);
           this.fontFamily = fontFamily;
-          allFonts.push(fontFamily);
+          if (!newFonts.includes(fontFamily)) {
+            newFonts.push(fontFamily);
+          }
           this.fonts = [];
           this.formatProperties();
           requestDraw();
@@ -526,7 +528,7 @@ export default class TextBox extends Formats {
       this.formatIterated = e.target.value;
     }
     if (name === "fontFamily") {
-      this.fonts = allFonts.filter((font) =>
+      this.fonts = getAllFonts().filter((font) =>
         font.toLowerCase().includes(e.target.value.toLowerCase()),
       );
 
@@ -542,7 +544,8 @@ export default class TextBox extends Formats {
         document.querySelectorAll(".dropdown-item").forEach((div) => {
           div.addEventListener("click", async () => {
             this.fontFamily = div.textContent;
-            if (!allFonts.includes(this.fontFamily)) {
+            const currentAllFonts = getAllFonts();
+            if (!currentAllFonts.includes(this.fontFamily)) {
               const result = await db
                 .collection("fonts")
                 .doc({ id: this.fontFamily })
@@ -560,12 +563,14 @@ export default class TextBox extends Formats {
                 style.textContent = fontCSS;
                 document.head.appendChild(style);
 
-                console.log(`Font ${fontFamily} loaded from IndexedDB`);
+                console.log(`Font ${this.fontFamily} loaded from IndexedDB`);
               } else {
                 notify("Font not found in database");
                 this.fontFamily = "sans-serif";
               }
-              allFonts.push(this.fontFamily);
+              if (!newFonts.includes(this.fontFamily)) {
+                newFonts.push(this.fontFamily);
+              }
             }
             requestDraw();
             this.fonts = [];
@@ -633,10 +638,15 @@ export default class TextBox extends Formats {
     }
 
     // Copy all text styles to measurer
+    const isBold = this.fontStyle.includes("bold");
+    const isItalic = this.fontStyle.includes("italic");
+    const weightVal = isBold ? "bold" : "normal";
+    const styleVal = isItalic ? "italic" : "normal";
+
     this.measurer.style.fontSize = `${adapt(this.fontSize) / adapt(canvasProperties.scaleRatio)}px`;
     this.measurer.style.fontFamily = this.fontFamily;
-    this.measurer.style.fontStyle = this.fontStyle;
-    this.measurer.style.fontWeight = this.fontStyle;
+    this.measurer.style.fontStyle = styleVal;
+    this.measurer.style.fontWeight = weightVal;
     this.measurer.style.lineHeight = `${adapt(this.lineHeight) / adapt(canvasProperties.scaleRatio)}px`;
     this.measurer.style.padding = `${adapt(5)}px`;
     this.measurer.style.boxSizing = "border-box";
@@ -655,8 +665,8 @@ export default class TextBox extends Formats {
     this.textPlace.style.border = `${thresholds.slineWidth() / adapt(canvasProperties.scaleRatio)}px dashed ${thresholds.sColor}`;
     this.textPlace.style.fontSize = `${adapt(this.fontSize) / adapt(canvasProperties.scaleRatio)}px`;
     this.textPlace.style.fontFamily = this.fontFamily;
-    this.textPlace.style.fontStyle = this.fontStyle;
-    this.textPlace.style.fontWeight = this.fontWeight;
+    this.textPlace.style.fontStyle = styleVal;
+    this.textPlace.style.fontWeight = weightVal;
     this.textPlace.style.textAlign = this.textAllign;
     this.textPlace.style.lineHeight = `${adapt(this.lineHeight) / adapt(canvasProperties.scaleRatio)}px`;
     this.textPlace.style.color = this.color[0];

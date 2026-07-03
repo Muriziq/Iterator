@@ -212,15 +212,25 @@ export default class Images extends Formats {
           .collection(`img${canvasProperties.formerName}`)
           .doc({ id: this.originalFiles[i] })
           .get();
-        const imageP = imageFiles.image;
-        URL.revokeObjectURL(this.image.url);
+        const imageP = (imageFiles && imageFiles.image) ? imageFiles.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
         let newImg = new Image();
         newImg.src = imageP;
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
           newImg.onload = () => {
             this.image = newImg;
             this.selectedFile = this.originalFiles[i];
             resolve(true);
+          };
+          newImg.onerror = () => {
+            console.warn("Failed to load image, using fallback");
+            const fallbackImg = new Image();
+            fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            fallbackImg.onload = () => {
+              this.image = fallbackImg;
+              this.selectedFile = this.originalFiles[i];
+              resolve(true);
+            };
           };
         });
         requestDraw();
@@ -269,7 +279,7 @@ export default class Images extends Formats {
             .delete();
           this.originalFiles.splice(i, 1);
           if (deleteImage === this.selectedFile) {
-            URL.revokeObjectURL(this.image.url);
+            if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
             const newIndex =
               i >= this.originalFiles.length
                 ? this.originalFiles.length - 1
@@ -278,14 +288,24 @@ export default class Images extends Formats {
               .collection(`img${canvasProperties.formerName}`)
               .doc({ id: this.originalFiles[newIndex] })
               .get();
-            const newImage = newImageFiles.image;
-            await new Promise((resolve, reject) => {
+            const newImage = (newImageFiles && newImageFiles.image) ? newImageFiles.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            await new Promise((resolve) => {
               const img = new Image();
               img.src = newImage;
               img.onload = () => {
                 this.image = img;
                 this.selectedFile = this.originalFiles[newIndex];
                 resolve(true);
+              };
+              img.onerror = () => {
+                console.warn("Failed to load image, using fallback");
+                const fallbackImg = new Image();
+                fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                fallbackImg.onload = () => {
+                  this.image = fallbackImg;
+                  this.selectedFile = this.originalFiles[newIndex];
+                  resolve(true);
+                };
               };
             });
           }
@@ -372,18 +392,27 @@ continueSaving()
   async backToDefault() {
     this.width = this.originalWidth;
     this.height = this.originalHeight;
-    URL.revokeObjectURL(this.image.url);
+    if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
     const imageIterateFile = await db
       .collection(`img${canvasProperties.formerName}`)
       .doc({ id: this.selectedFile })
       .get();
-    let imageIterate = imageIterateFile.image;
-    let img = new Image();
-    img.src = imageIterate;
-    await new Promise((resolve, reject) => {
+    let imageIterate = (imageIterateFile && imageIterateFile.image) ? imageIterateFile.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    await new Promise((resolve) => {
+      const img = new Image();
+      img.src = imageIterate;
       img.onload = () => {
         this.image = img;
         resolve(true);
+      };
+      img.onerror = () => {
+        console.warn("Failed to load image, using fallback");
+        const fallbackImg = new Image();
+        fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        fallbackImg.onload = () => {
+          this.image = fallbackImg;
+          resolve(true);
+        };
       };
     });
   }
@@ -393,18 +422,27 @@ continueSaving()
         this.originalWidth = this.width;
         this.originalHeight = this.height;
       }
-      URL.revokeObjectURL(this.image.url);
+      if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
       const imageIterateFile = await db
         .collection(`img${canvasProperties.formerName}`)
         .doc({ id: this.originalFiles[i] })
         .get();
-      let imageIterate = imageIterateFile.image;
-      let img = new Image();
-      img.src = imageIterate;
-      await new Promise((resolve, reject) => {
+      let imageIterate = (imageIterateFile && imageIterateFile.image) ? imageIterateFile.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.src = imageIterate;
         img.onload = () => {
           this.image = img;
           resolve(true);
+        };
+        img.onerror = () => {
+          console.warn("Failed to load image, using fallback");
+          const fallbackImg = new Image();
+          fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+          fallbackImg.onload = () => {
+            this.image = fallbackImg;
+            resolve(true);
+          };
         };
       });
 
@@ -424,18 +462,27 @@ continueSaving()
         this.height = this.originalHeight;
       }
     } else {
-      URL.revokeObjectURL(this.image.url);
+      if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
       const imageIterateFile = await db
         .collection(`img${canvasProperties.formerName}`)
         .doc({ id: this.selectedFile })
         .get();
-      let imageIterate = imageIterateFile.image;
-      let img = new Image();
-      img.src = imageIterate;
-      await new Promise((resolve, reject) => {
+      let imageIterate = (imageIterateFile && imageIterateFile.image) ? imageIterateFile.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.src = imageIterate;
         img.onload = () => {
           this.image = img;
           resolve(true);
+        };
+        img.onerror = () => {
+          console.warn("Failed to load image, using fallback");
+          const fallbackImg = new Image();
+          fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+          fallbackImg.onload = () => {
+            this.image = fallbackImg;
+            resolve(true);
+          };
         };
       });
     }

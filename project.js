@@ -21,15 +21,17 @@ let ifAutoSave = false;
 projectName.addEventListener("input", async (e) => {
   const dbName = `${e.target.value.trim().toLowerCase()}.json`;
   const projectDocs = await db.collection("projects").get();
-  const names = projectDocs.map((p) => p.name);
+  const names = (projectDocs || []).map((p) => p.name);
   if (names.includes(canvasProperties.formerName)) {
     await db.collection("projects").doc({ name: canvasProperties.formerName }).update({
       name: dbName,
       entryDate: new Date().getTime(),
     });
     const imageDatas = await db.collection(`img${canvasProperties.formerName}`).get();
-    for (const imageFiles of imageDatas) {
-      await db.collection(`img${dbName}`).add(imageFiles);
+    if (imageDatas && Array.isArray(imageDatas)) {
+      for (const imageFiles of imageDatas) {
+        await db.collection(`img${dbName}`).add(imageFiles);
+      }
     }
     await db.collection(`img${canvasProperties.formerName}`).delete();
   }
@@ -50,14 +52,19 @@ window.addEventListener("load", async () => {
         .collection("projects")
         .doc({ name: data })
         .get();
+      if (!objectsData || !objectsData.name) {
+        alert("The requested project could not be found.");
+        window.location.href = "index.html";
+        return;
+      }
       projectName.value = objectsData.name.replace(/\.json$/i, "");
       canvasProperties.formerName = objectsData.name;
       await loadNewFonts(db);
-      await importLoaded(objectsData.object, true, true);
+      await importLoaded(objectsData.object || [], true, true);
     } else {
       await loadNewFonts(db);
       const projectDocs = await db.collection("projects").get();
-      const names = projectDocs.map((p) => p.name);
+      const names = (projectDocs || []).map((p) => p.name);
       const newProjectCount = names.filter((project) =>
         /^new project(\s+\d+)?$/i.test(project),
       ).length;
@@ -239,9 +246,11 @@ async function retrieveFile(e) {
 
 document.querySelector(".generateButton").addEventListener("click", () => {
   document.querySelector(".generate").style.display = "flex";
-  const canvasDiv = canvassDiv.getBoundingClientRect();
-  canvasProperties.generateInfo.renderWidth = canvasDiv.width;
-  canvasProperties.generateInfo.renderHeight = canvasDiv.height;
+  if (canvasProperties.generateInfo.renderPage === "auto") {
+    const canvasDiv = canvassDiv.getBoundingClientRect();
+    canvasProperties.generateInfo.renderWidth = canvasDiv.width;
+    canvasProperties.generateInfo.renderHeight = canvasDiv.height;
+  }
   document.getElementById("renderWidth").value = changeValues(
     canvasProperties.generateInfo.renderWidth,
   );
@@ -253,6 +262,7 @@ document.querySelector(".generateButton").addEventListener("click", () => {
   document.getElementById("noPerColumn").value = canvasProperties.generateInfo.noPerColumn;
   document.getElementById("quality").value = canvasProperties.generateInfo.quality;
   document.getElementById("spacing").value = changeValues(canvasProperties.generateInfo.spacing);
+  
   if (canvasProperties.generateInfo.renderPage === "auto") {
     document.getElementById("noPerRow").readOnly = true;
     document.getElementById("noPerColumn").readOnly = true;
@@ -343,7 +353,7 @@ const debouncedChangeProperties = debounce((e) => {
   propertiesBar.addEventListener(eventType, (e) => {
     
     // Check if the target is one of our inputs
-    if (e.target.matches("input[type='text'], input[type='number'], input[type='color']")) {
+    if (e.target.matches("input[type='text'], input[type='number'], input[type='color'], textarea")) {
        debouncedChangeProperties(e);
     }
   });

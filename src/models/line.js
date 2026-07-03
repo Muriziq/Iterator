@@ -35,7 +35,7 @@ export default class Line extends Formats {
       targetCtx.rotate(this.angle);
       targetCtx.scale(this.scaleX, this.scaleY);
       targetCtx.beginPath();
-      LineUtils.drawSmartShape(this.points, this.isClosed);
+      LineUtils.drawSmartShape(this.points, this.isClosed,targetCtx);
 
       if (this.colorFill !== "none") {
         targetCtx.fillStyle = this.colorType();
@@ -88,7 +88,7 @@ export default class Line extends Formats {
         targetCtx.translate(this.x, this.y);
         targetCtx.rotate(this.angle);
         targetCtx.beginPath();
-        LineUtils.drawSmartShape(this.points, this.close);
+        LineUtils.drawSmartShape(this.points, this.close,targetCtx);
         targetCtx.clip();
         targetCtx.translate(-this.x, -this.y);
         this.clips.forEach((clip) => {

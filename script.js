@@ -8,7 +8,7 @@ let cachedProjectNames = [];
 
 async function getProjectNames() {
   const projects = await db.collection("projects").orderBy("entryDate", "desc").get();
-  return projects.map((p) => p.name);
+  return (projects || []).map((p) => p.name);
 }
 
 window.addEventListener("load", async () => {
@@ -17,9 +17,9 @@ window.addEventListener("load", async () => {
     .orderBy("entryDate", "desc")
     .get();
 
-  cachedProjectNames = datas.map((project) => project.name);
+  cachedProjectNames = (datas || []).map((project) => project.name);
 
-  if (datas.length <= 0) return;
+  if (!datas || datas.length <= 0) return;
 
   orderProjects.innerHTML = `
     ${datas

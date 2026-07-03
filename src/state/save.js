@@ -49,7 +49,7 @@ export async function importLoaded(jsonData, shouldCanvas = true, saving = false
 
 export async function saveToFile(autosave = false, deleteData = false) {
   const projectDocs = await db.collection("projects").orderBy("entryDate", "desc").get();
-  const projectNames = projectDocs.map((p) => p.name);
+  const projectNames = (projectDocs || []).map((p) => p.name);
   let allData = [
     {
       type: "canvas",
@@ -151,21 +151,31 @@ export async function reviveObjects(objData) {
       .collection(`img${canvasProperties.formerName}`)
       .doc({ id: objData.originalFiles[0] })
       .get();
-    const revivedImage = revivedImageFile.image;
+    const revivedImage = (revivedImageFile && revivedImageFile.image) ? revivedImageFile.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
     const img = new Image();
     img.src = revivedImage;
-    await new Promise((resolve, reject) => {
+    await new Promise((resolve) => {
       img.onload = () => {
         objData.image = img;
-        objData.selectedFile = objData.originalFiles[0]
+        objData.selectedFile = objData.originalFiles[0];
         resolve(true);
+      };
+      img.onerror = () => {
+        console.warn("Failed to load image, using fallback");
+        const fallbackImg = new Image();
+        fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        fallbackImg.onload = () => {
+          objData.image = fallbackImg;
+          objData.selectedFile = objData.originalFiles[0];
+          resolve(true);
+        };
       };
     });
   }
   if (objData.type === "text") {
     objData.textPlace = document.createElement("textarea");
     objData.measurer = false;
-      if (!defaultFonts.includes(objData.fontFamily) && newFonts.includes(objData.fontFamily)) {
+      if (newFonts.includes(objData.fontFamily)) {
         const result = await db
           .collection("fonts")
           .doc({ id: objData.fontFamily })
@@ -183,7 +193,7 @@ export async function reviveObjects(objData) {
           style.textContent = fontCSS;
           document.head.appendChild(style);
         }
-      } else {
+      } else if(!defaultFonts.includes(objData.fontFamily) && !newFonts.includes(objData.fontFamily)) {
         objData.fontFamily = "sans-serif";
       }
   }

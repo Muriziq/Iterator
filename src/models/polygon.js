@@ -60,9 +60,9 @@ export default class Polygon extends Formats {
     this.points.forEach((p) => {
       if (p.edgeModes !== null) edgeCurve = true;
     });
-    if (edgeCurve) LineUtils.drawSmartShape(this.points);
+    if (edgeCurve) LineUtils.drawSmartShape(this.points,true,targetCtx);
     else {
-      LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+      LineUtils.drawRoundedShape(this.points, this.cornerRadius,targetCtx);
       this.points.forEach((p) => {
         p.cornerRadius = this.cornerRadius;
       });
@@ -120,9 +120,9 @@ export default class Polygon extends Formats {
     targetCtx.translate(this.x, this.y);
     targetCtx.rotate(this.angle);
     targetCtx.beginPath();
-    if (edgeCurve) LineUtils.drawSmartShape(this.points);
+    if (edgeCurve) LineUtils.drawSmartShape(this.points,true,targetCtx);
     else {
-      LineUtils.drawRoundedShape(this.points, this.cornerRadius);
+      LineUtils.drawRoundedShape(this.points, this.cornerRadius,targetCtx);
       this.points.forEach((p) => {
         p.cornerRadius = this.cornerRadius;
       });

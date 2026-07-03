@@ -6,7 +6,7 @@ import { bringToFront, sendToBack, pageUp, pageDown } from "../Tools/pageTo.js";
 import { zoomToRect } from "../Tools/others.js";
 import { notify } from "../utils/uiHelpers.js";
 import LoaderManager from "../models/loader.js";
-
+import { canvasSize } from "../state/canvas.js";
 export default async function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
     if (objectProperties.pen !== null && objectProperties.pen.points.length > 0) {
@@ -128,17 +128,19 @@ export default async function Tools(tool) {
 
       /* FIT TO PAGE */
       fitBtn.addEventListener("click", () => {
-        objectProperties.scale = 1;
-        objectProperties.panX = 0;
-        objectProperties.panY = 0;
-        zoomToRect({
-          x: (canvas.width - canvasProperties.measurement.width) / 2,
-          y: (canvas.height - canvasProperties.measurement.height) / 2,
-          width: canvasProperties.measurement.width,
-          height: canvasProperties.measurement.height,
-        });
+        // objectProperties.scale = 1;
+        // objectProperties.panX = 0;
+        // objectProperties.panY = 0;
+        // zoomToRect({
+        //   x: (canvas.width - canvasProperties.measurement.width) / 2,
+        //   y: (canvas.height - canvasProperties.measurement.height) / 2,
+        //   width: canvasProperties.measurement.width,
+        //   height: canvasProperties.measurement.height,
+        // });
+                canvasSize()
         requestDraw();
         Tools("zoom");
+
       });
 
       requestDraw();

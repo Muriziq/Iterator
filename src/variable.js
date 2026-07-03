@@ -44,6 +44,7 @@ export const canvasProperties = {
     noPerColumn: 1,
     spacing: 30,
     quality: 1,
+    batchSize: 50,
   },
   formerName: ""
 };
@@ -65,5 +66,5 @@ export const newFonts = [];
 export async function loadNewFonts(db) {
   const fonts = await db.collection("fonts").get();
   newFonts.length = 0;
-  newFonts.push(...fonts.map((f) => f.fontFamily));
+  newFonts.push(...(fonts || []).map((f) => f.fontFamily));
 }

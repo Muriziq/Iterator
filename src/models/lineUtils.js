@@ -112,12 +112,12 @@ export default class LineUtils {
     return radii;
   }
 
-  static drawRoundedShape(points, radius) {
+  static drawRoundedShape(points, radius,targetCtx=ctx) {
     if (points.length < 2) return;
 
     const safeRadii = this.computeSafeRadii(points, () => radius);
 
-    ctx.beginPath();
+    targetCtx.beginPath();
     for (let i = 0; i < points.length; i++) {
       const prev = points[(i - 1 + points.length) % points.length].points;
       const curr = points[i].points;
@@ -143,17 +143,17 @@ export default class LineUtils {
       };
 
       if (i === 0) {
-        ctx.moveTo(p1.x, p1.y);
+        targetCtx.moveTo(p1.x, p1.y);
       } else {
-        ctx.lineTo(p1.x, p1.y);
+        targetCtx.lineTo(p1.x, p1.y);
       }
 
-      ctx.arcTo(curr.x, curr.y, p2.x, p2.y, r);
+      targetCtx.arcTo(curr.x, curr.y, p2.x, p2.y, r);
     }
-    ctx.closePath();
+    targetCtx.closePath();
   }
 
-  static drawSmartShape(points, close = true) {
+  static drawSmartShape(points, close = true,targetCtx=ctx) {
     if (points.length < 2) return;
 
     const safeRadii = this.computeSafeRadii(
@@ -161,7 +161,7 @@ export default class LineUtils {
       (p) => (p.edgeModes === "rounded" ? p.cornerRadius : 0),
     );
 
-    ctx.beginPath();
+    targetCtx.beginPath();
 
     for (let i = 0; i < points.length; i++) {
       const curr = points[i].points;
@@ -191,30 +191,30 @@ export default class LineUtils {
         };
 
         if (i === 0) {
-          ctx.moveTo(p1.x, p1.y);
+          targetCtx.moveTo(p1.x, p1.y);
         } else {
           const prevPoint = points[prevIdx];
           if (prevPoint.edgeModes && prevPoint.controls) {
             const cp1 = prevPoint.controls[0];
             const cp2 = prevPoint.controls[1];
-            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p1.x, p1.y);
+            targetCtx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p1.x, p1.y);
           } else {
-            ctx.lineTo(p1.x, p1.y);
+            targetCtx.lineTo(p1.x, p1.y);
           }
         }
 
-        ctx.arcTo(curr.x, curr.y, p2.x, p2.y, r);
+        targetCtx.arcTo(curr.x, curr.y, p2.x, p2.y, r);
       } else {
         if (i === 0) {
-          ctx.moveTo(curr.x, curr.y);
+          targetCtx.moveTo(curr.x, curr.y);
         } else {
           const prevPoint = points[prevIdx];
           if (prevPoint.edgeModes === "shaped") {
             const cp1 = prevPoint.controls[0];
             const cp2 = prevPoint.controls[1];
-            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, curr.x, curr.y);
+            targetCtx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, curr.x, curr.y);
           } else {
-            ctx.lineTo(curr.x, curr.y);
+            targetCtx.lineTo(curr.x, curr.y);
           }
         }
       }
@@ -225,7 +225,7 @@ export default class LineUtils {
       if (last.edgeModes === "shaped") {
         const cp1 = last.controls[0];
         const cp2 = last.controls[1];
-        ctx.bezierCurveTo(
+        targetCtx.bezierCurveTo(
           cp1.x,
           cp1.y,
           cp2.x,
@@ -234,9 +234,9 @@ export default class LineUtils {
           first.points.y,
         );
       } else {
-        ctx.lineTo(first.points.x, first.points.y);
+        targetCtx.lineTo(first.points.x, first.points.y);
       }
-      ctx.closePath();
+      targetCtx.closePath();
     }
   }
 

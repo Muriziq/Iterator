@@ -143,7 +143,7 @@ async function renderData(search = "") {
       .collection("projects")
       .orderBy("entryDate", "desc")
       .get();
-    if (datas.length <= 0) {
+    if (!datas || datas.length <= 0) {
       orderProjects.innerHTML = `<p style="text-align:center;margin-top:2rem;">No projects saved yet.</p>`;
       return;
     }
@@ -173,16 +173,21 @@ async function renderData(search = "") {
       button.querySelector(".export").addEventListener("click", async (e) => {
         e.target.textContent = "Exporting"
         const datar = await db.collection("projects").doc({ name: name }).get();
-        let data = datar.object
+        if (!datar || !datar.object) {
+          alert("Project data is missing or could not be loaded.");
+          e.target.textContent = "Export";
+          return;
+        }
+        let data = datar.object;
         for (let dat = 0; dat < data.length; dat++) {
-          if (data[dat].type === "image") {
+          if (data[dat] && data[dat].type === "image") {
             if (!data[dat].isConverted) {
-              for (let i = 0; i < data[dat].originalFiles.length; i++) {
+              for (let i = 0; i < (data[dat].originalFiles || []).length; i++) {
                 const imageData = await db
                   .collection(`img${name}`)
                   .doc({ id: data[dat].originalFiles[i] })
                   .get();
-                data[dat].originalFiles[i] = imageData.image;
+                data[dat].originalFiles[i] = (imageData && imageData.image) ? imageData.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
               }
               data[dat].isConverted = true;
             }
@@ -241,10 +246,11 @@ async function importData() {
             "Are you sure you want to delete all projects? This action cannot be undone.",
           )
         ) {
-          const allFonts = await db.collection("fonts").get()
-          await db.delete()
-          for(font = 0;font<allFonts.length;font++){
-            await db.collection("fonts").add({...font})
+          const allFonts = await db.collection("fonts").get();
+          await db.delete();
+          const fontsToRestore = allFonts || [];
+          for (let i = 0; i < fontsToRestore.length; i++) {
+            await db.collection("fonts").add({ ...fontsToRestore[i] });
           }
                     await renderData();
           await updateStorageInfo()
@@ -267,7 +273,7 @@ async function importData() {
           const result = await read;
           const jsonData = JSON.parse(result);
           const existingProjects = await db.collection("projects").get();
-          const names = existingProjects.map((p) => p.name);
+          const names = (existingProjects || []).map((p) => p.name);
           const fileName = file.name.trim().toLowerCase();
           if (names.includes(fileName)) {
             alert(
@@ -300,26 +306,27 @@ async function importData() {
           return;
         }
         const zip = new JSZip();
-for (let idx = 0; idx < datas.length; idx++) {
-  let data = datas[idx].object;
-  for (let dat = 0; dat < data.length; dat++) {
-    if (data[dat].type === "image") {
-      if (!data[dat].isConverted) {
-        for (let i = 0; i < data[dat].originalFiles.length; i++) {
-          const imageData = await db
-            .collection(`img${name}`)
-            .doc({ id: data[dat].originalFiles[i] })
-            .get();
-          data[dat].originalFiles[i] = imageData.image;
+        for (let idx = 0; idx < datas.length; idx++) {
+          const projName = datas[idx].name;
+          let data = datas[idx].object || [];
+          for (let dat = 0; dat < data.length; dat++) {
+            if (data[dat] && data[dat].type === "image") {
+              if (!data[dat].isConverted) {
+                for (let i = 0; i < (data[dat].originalFiles || []).length; i++) {
+                  const imageData = await db
+                    .collection(`img${projName}`)
+                    .doc({ id: data[dat].originalFiles[i] })
+                    .get();
+                  data[dat].originalFiles[i] = (imageData && imageData.image) ? imageData.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                }
+                data[dat].isConverted = true;
+              }
+            }
+          }
+          datas[idx].object = data; // Update the modified data back
+          const stringFied = JSON.stringify(datas[idx]);
+          zip.file(`${datas[idx].name}.json`, stringFied);
         }
-        data[dat].isConverted = true;
-      }
-    }
-  }
-  datas[idx].object = data; // Update the modified data back
-  const stringFied = JSON.stringify(datas[idx]);
-  zip.file(`${datas[idx].name}.json`, stringFied);
-}
         const content = await zip.generateAsync({ type: "blob" });
         const url = URL.createObjectURL(content);
 
@@ -343,7 +350,7 @@ async function renderFonts(search = "") {
   try {
     let allFonts = "";
     let fonts = await db.collection("fonts").orderBy("id").get();
-    if (fonts.length <= 0) {
+    if (!fonts || fonts.length <= 0) {
       fontProject.innerHTML = `<p style="text-align:center;margin-top:2rem;">No fonts imported yet.</p>`;
       return;
     }
@@ -411,8 +418,8 @@ async function importFonts() {
       try {
         for (const file of files) {
           const fileName = file.name;
-          const existingFonts = await db.collection("fonts").get();
-          const fontNames = existingFonts.map((f) => f.fontFamily);
+           const existingFonts = await db.collection("fonts").get();
+           const fontNames = (existingFonts || []).map((f) => f.fontFamily);
           if (fontNames.includes(fileName)) {
             alert("Font already imported");
             continue;
