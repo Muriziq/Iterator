@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="style.css">
-
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
         <nav class="header-nav">
                     <a href="#">Home</a>
                     <a href="preferences.html">Storage</a>
                     <a href="help.html">Help</a>
-                    <a href="contact.html">Contact</a>
+                    <a href="#contact-section">Contact</a>
         </nav>
         <div class="name">
             <button class="cancel" onclick="cancel()">
@@ -24,31 +24,196 @@
             <button onclick="proceed()">Proceed</button>
         </div>
     <main>
-
-        <div class="intro">
-            <h1>CREATE, <br> DESIGN  &ITERATE</h1>
+        <div class="hero-section">
+            <div class="hero-content">
+            <h1 class="hero-title">CREATE,<br>DESIGN &ITERATE</h1>
             <p>Upload your file, define your logic, and iterate through data visually <br>
- — no complexity, just control.</p>
- <small>Recommended Browser: <img src="imagess/Chrome_free_icons_designed_by_Pixel_perfect-removebg-preview.png"  alt=""></small>
-        </div>
-        <section class="opt">
-        <div class="option">
-            <button id="new-project" class="special-button">
-                <div><img src="imagess/plus.svg" alt=""></div>
-                <p>NEW PROJECT</p>
-            </button>
-            <button id="upload-project" class="special-button">
-                <input type="file" accept=".json">
-                <div><img src="imagess/book-image.svg" alt=""></div>
-                <p>UPLOAD PROJECT</p>
-            </button>
-        </div>
-        <div class="order-projects">
+     — no complexity, just control.</p>
+            <div class="browser-badge" id="browser-badge">
+                <span>RECOMMENDED BROWSER</span>
+ <img src="imagess/Chrome_free_icons_designed_by_Pixel_perfect-removebg-preview.png"  alt="">
+            </div>
+            </div>
 
+
+
+            <div class="stats-box">
+                <div class="stats-col">
+                    <span class="stat-lbl">ACTIVE TEMPLATES</span>
+                    <span class="stat-val" id="count-templates">0</span>
+                </div>
+                <div class="stats-col">
+                    <span class="stat-lbl">ACTIVE TEMPLATES</span>
+                    <span class="stat-val" id="count-fonts">0</span>
+                </div>
+            </div>
         </div>
+
+        <section class="opt">
+            <div class="cards-grid">
+                <button id="new-project" class="action-card">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </div>
+                    <h3>NEW PROJECT</h3>
+                    <p>CREATE A BLANK CANVAS WHERE YOU CAN DESIGN AND ITERATE</p>
+                </button>
+
+                <button id="upload-project" class="action-card">
+                    <input type="file" accept=".json">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </div>
+                    <h3>UPLOAD PROJECT</h3>
+                    <p>UPLOAD A SAVED PROJECT AND CONTINUE DESIGNING AND ITERATING</p>
+                </button>
+            </div>
+
+            <div class="order-projects">
+    
+            </div>
         </section>
 
+        <!-- Presets section is commented out to match the mockup layout -->
+        <!--
+        <div class="presets-section">
+            <h2>Start with a Template Preset</h2>
+            <div class="presets-grid">
+                <button class="preset-card" data-preset="id-card">
+                    <div class="preset-icon"><img src="imagess/multiple-select.svg" alt=""></div>
+                    <h4>Student/Corporate ID</h4>
+                    <p>Standard CR80 Vertical Card (2.125" x 3.375")</p>
+                </button>
+                <button class="preset-card" data-preset="business-card">
+                    <div class="preset-icon"><img src="imagess/rectangle-horizontal.svg" alt=""></div>
+                    <h4>Business Card</h4>
+                    <p>Standard Horizontal Card (3.5" x 2.0" grid size)</p>
+                </button>
+                <button class="preset-card" data-preset="certificate">
+                    <div class="preset-icon"><img src="imagess/hexagon.svg" alt=""></div>
+                    <h4>Landscape Certificate</h4>
+                    <p>Standard A4 Landscape Certificate (297mm x 210mm)</p>
+                </button>
+                <button class="preset-card" data-preset="event-tag">
+                    <div class="preset-icon"><img src="imagess/ruler (1).svg" alt=""></div>
+                    <h4>Event Badge/Pass</h4>
+                    <p>Standard Event Badge Size (4.0" x 6.0")</p>
+                </button>
+            </div>
+        </div>
+        -->
 
+        <div class="guide-section">
+            <h2>How Iterator Works</h2>
+            <div class="guide-grid">
+                <div class="guide-card">
+                    <div class="guide-num">01</div>
+                    <h3>Design Layout</h3>
+                    <p>Position text blocks and image slots onto the vector canvas. Use fonts and custom boundaries.</p>
+                </div>
+                <div class="guide-card">
+                    <div class="guide-num">02</div>
+                    <h3>Define Iterations</h3>
+                    <p>Check the "Iterate" property on text or image layers, then assign data lists or browse folders.</p>
+                </div>
+                <div class="guide-card">
+                    <div class="guide-num">03</div>
+                    <h3>Batch Generation</h3>
+                    <p>Render high-quality paginated cards. Preview, paginate batches, and export as image or PDF grids.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="contact-section" class="contact-section-wrapper">
+            <div class="contact-header">
+                <p class="eyebrow">Reach out</p>
+                <h1>Get In Touch</h1>
+                <p>Report a bug, share feedback, or enquire about hiring.</p>
+            </div>
+            
+            <div class="contact-card">
+                <form id="contact-form" novalidate>
+                    <div class="form-row">
+                        <div class="form-field" id="field-name">
+                            <label for="cf-name">Name</label>
+                            <input type="text" id="cf-name" placeholder="Your name" autocomplete="name">
+                            <span class="error-msg">Please enter your name.</span>
+                        </div>
+                        <div class="form-field" id="field-email">
+                            <label for="cf-email">Email</label>
+                            <input type="email" id="cf-email" placeholder="you@email.com" autocomplete="email">
+                            <span class="error-msg">Enter a valid email address.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-field" id="field-subject">
+                        <label for="cf-subject">Topic</label>
+                        <select id="cf-subject">
+                            <option value="Bug report">Bug report</option>
+                            <option value="Feedback">Feedback</option>
+                            <option value="Hiring enquiry">Hiring enquiry</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span class="error-msg">Please pick a topic.</span>
+                    </div>
+
+                    <div class="form-field" id="field-message">
+                        <label for="cf-message">Message</label>
+                        <textarea id="cf-message" placeholder="Describe your issue or message..."></textarea>
+                        <span class="error-msg">Please write a message.</span>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="cf-submit">
+                        <span class="btn-label">Send Message</span>
+                        <div class="spinner"></div>
+                    </button>
+
+                    <div class="toast" id="cf-toast">
+                        <svg class="toast-icon" id="toast-icon" viewBox="0 0 24 24"></svg>
+                        <span id="toast-text"></span>
+                    </div>
+
+                    <div id="cf-fallback">
+                        <div class="divider">or reach me directly</div>
+                        
+                        <div class="contact-info">
+                            <a class="contact-item" href="mailto:sannidawodumuriziq@gmail.com">
+                                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                <div>
+                                    <span class="contact-label">Email</span>
+                                    <span class="contact-value">sannidawodumuriziq@gmail.com</span>
+                                </div>
+                            </a>
+                            <a class="contact-item" href="tel:+2348117269043">
+                                <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.78a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                <div>
+                                    <span class="contact-label">Phone</span>
+                                    <span class="contact-value">+234 811 726 9043</span>
+                                </div>
+                            </a>
+                            <a class="contact-item" href="https://github.com/muriziq" target="_blank" rel="noopener">
+                                <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                                <div>
+                                    <span class="contact-label">GITHUB</span>
+                                    <span class="contact-value">https://github.com/muriziq</span>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="fallbacks" id="fallback-btns">
+                            <button type="button" class="fallback-btn" id="btn-copy-email">
+                                <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                <span id="copy-label">Copy email</span>
+                            </button>
+                            <a class="fallback-btn" href="mailto:sannidawodumuriziq@gmail.com">
+                                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                Open mail app
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
 </body>
 <!-- <script src="https://unpkg.com/localbase/dist/localbase.dev.js"></script> -->

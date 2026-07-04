@@ -246,11 +246,13 @@ async function retrieveFile(e) {
 
 document.querySelector(".generateButton").addEventListener("click", () => {
   document.querySelector(".generate").style.display = "flex";
+  
   if (canvasProperties.generateInfo.renderPage === "auto") {
     const canvasDiv = canvassDiv.getBoundingClientRect();
     canvasProperties.generateInfo.renderWidth = canvasDiv.width;
     canvasProperties.generateInfo.renderHeight = canvasDiv.height;
   }
+  
   document.getElementById("renderWidth").value = changeValues(
     canvasProperties.generateInfo.renderWidth,
   );
@@ -262,26 +264,53 @@ document.querySelector(".generateButton").addEventListener("click", () => {
   document.getElementById("noPerColumn").value = canvasProperties.generateInfo.noPerColumn;
   document.getElementById("quality").value = canvasProperties.generateInfo.quality;
   document.getElementById("spacing").value = changeValues(canvasProperties.generateInfo.spacing);
+  document.getElementById("batchSize").value = canvasProperties.generateInfo.batchSize;
   
-  if (canvasProperties.generateInfo.renderPage === "auto") {
-    document.getElementById("noPerRow").readOnly = true;
-    document.getElementById("noPerColumn").readOnly = true;
-    document.getElementById("renderWidth").readOnly = true;
-    document.getElementById("renderHeight").readOnly = true;
-  }
-  document.querySelectorAll(".generate input").forEach((input) => {
-    input.addEventListener("input", (e) => {
-      if (
-        e.target.id === "renderPage" ||
-        e.target.id === "noPerRow" ||
-        e.target.id === "noPerColumn" ||
-        e.target.id === "quality"
-      ) {
-        canvasProperties.generateInfo[e.target.id] = Number(e.target.value) || 1;
-      } else {
-        canvasProperties.generateInfo[e.target.id] = backValues(Number(e.target.value) || 0);
+  const toggleReadOnly = (isAuto) => {
+    document.getElementById("noPerRow").readOnly = isAuto;
+    document.getElementById("noPerColumn").readOnly = isAuto;
+    document.getElementById("renderWidth").readOnly = isAuto;
+    document.getElementById("renderHeight").readOnly = isAuto;
+  };
+  
+  toggleReadOnly(canvasProperties.generateInfo.renderPage === "auto");
+  
+  const handleUpdate = (e) => {
+    const id = e.target.id;
+    if (id === "renderPage") {
+      const val = e.target.value;
+      canvasProperties.generateInfo.renderPage = val;
+      const isAuto = val === "auto";
+      toggleReadOnly(isAuto);
+      if (isAuto) {
+        const canvasDiv = canvassDiv.getBoundingClientRect();
+        canvasProperties.generateInfo.renderWidth = canvasDiv.width;
+        canvasProperties.generateInfo.renderHeight = canvasDiv.height;
+        document.getElementById("renderWidth").value = changeValues(canvasDiv.width);
+        document.getElementById("renderHeight").value = changeValues(canvasDiv.height);
+        document.getElementById("noPerRow").value = 1;
+        document.getElementById("noPerColumn").value = 1;
+        canvasProperties.generateInfo.noPerRow = 1;
+        canvasProperties.generateInfo.noPerColumn = 1;
       }
-    });
+    } else if (
+      id === "noPerRow" ||
+      id === "noPerColumn" ||
+      id === "quality" ||
+      id === "batchSize"
+    ) {
+      canvasProperties.generateInfo[id] = Number(e.target.value) || 1;
+    } else if (id === "renderWidth" || id === "renderHeight" || id === "spacing") {
+      canvasProperties.generateInfo[id] = backValues(Number(e.target.value) || 0);
+    }
+  };
+
+  document.querySelectorAll(".generate input, .generate select").forEach((el) => {
+    el.removeEventListener("input", el._genListener);
+    el.removeEventListener("change", el._genListener);
+    el._genListener = handleUpdate;
+    el.addEventListener("input", handleUpdate);
+    el.addEventListener("change", handleUpdate);
   });
 });
 

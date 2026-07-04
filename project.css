@@ -112,11 +112,11 @@ position: relative;
   display: none;
   flex-direction: column;
   background-color: var(--side-color);
-  border: 1px solid var(--input-color);
+  border: 2px solid var(--border-color);
   top: 60px;
   z-index: 10;
   width: 250px;
-  border-radius: 0.7rem;
+  border-radius: 0.3rem;
   overflow: hidden;
 }
 
@@ -124,15 +124,15 @@ position: relative;
   padding: 1rem 1rem;
   border: none;
   position: relative;
-  border-bottom: 1px solid var(--input-color);
+  border-bottom: 2px solid var(--border-color);
   background-color: transparent;
   width: 100%;
   color: var(--h3-fill);
   transition: all 0.5s;
 }
-.home-menu :is(button:active,button:hover) {
-  /* background-color: var(--border-color); */
-  font-size: 0.95rem;
+.home-menu :is(button:active,button:hover,a:active,a:hover){
+  background-color: var(--input-img);
+
 }
 .home-menu button:last-of-type{
   border-bottom: none;
@@ -142,7 +142,7 @@ position: relative;
 .home-menu a{
   padding: 1rem 1rem;
   border: none;
-  border-bottom: 1px solid var(--input-color);
+  border-bottom: 2px solid var(--border-color);
   background-color: transparent;
   width: 100%;
   color: var(--h3-fill);
@@ -153,13 +153,6 @@ position: relative;
   text-align: center;
 }
 
-.home-menu a:is(:hover, a:active){
-  /* background-color: var(--border-color); */
-  font-size: 0.95rem;
-}
-.home-menu :is(.autosave:active,.autosave:hover){
-  font-size: 0.85rem;
-}
 /* AutoSave button — space between label and checkbox */
 .home-menu button:has(#auto-save){
   display: flex;
@@ -1038,26 +1031,24 @@ input[type=number]::-webkit-outer-spin-button{
 }
 
 /* ─── Generate Modal ─────────────────────────────────────────────────────── */
-.generate{
+.generate {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%,-50%);
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: end;
-  background-color: var(--side-color);
-  border: 2px solid var(--border-color);
-  padding: 2rem;
-  border-radius: 0.3rem;
-  z-index: 10;
+  transform: translate(-50%, -50%);
   display: none;
-  width: 60%;
-  max-height: 90vh;
-  overflow-y: auto;
+  flex-direction: column;
+  background-color: var(--side-color);
+  border: 1px solid var(--border-color);
+  padding: 2.5rem;
+  border-radius: 1rem;
+  z-index: 1000;
+  width: 600px;
+  max-width: 95%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
 }
 
-.generate > div:first-child{
+.generate > div:first-child {
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -1066,64 +1057,71 @@ input[type=number]::-webkit-outer-spin-button{
   color: var(--h3-fill);
   border-bottom: var(--border-bottom);
   padding-bottom: 1rem;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.generate h3{
+.generate h3 {
   font-size: 1.3rem;
-}
-
-.generate > button{
-  padding: 0.7rem 2.5rem;
-  border: none;
-  width: auto;
-  background-color: var(--input-img);
-  color: var(--input-color);
   font-weight: 700;
-  border-radius: 0.3rem;
-  margin-top: 1rem;
-  align-self: flex-end;
+  letter-spacing: 0.05em;
 }
 
-.generate > div:first-child button{
+.generate > button {
+  padding: 0.8rem 2.5rem;
+  border: none;
+  width: 100%;
+  background-color: var(--input-color);
+  color: var(--bg-color);
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 0.5rem;
+  margin-top: 1.5rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.generate > button:hover {
+  opacity: 0.9;
+}
+
+.generate > div:first-child button {
   background-color: transparent;
   border: none;
   height: 30px;
   width: 30px;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
 
-.generate1{
+.generate > div:first-child button:hover {
+  transform: scale(1.1);
+}
+
+.generate1 {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  padding: 1rem 0;
   width: 100%;
-  color: var(--h3-fill);
 }
 
-.generate1 > div{
+.generate1 > div:first-child {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
   width: 100%;
 }
 
 .generate1 select {
-  flex: 1;
+  width: 100%;
   cursor: pointer;
-  background-color: var(--icon-img);
+  background-color: var(--aligin-sec);
   color: var(--h3-fill);
-  font-weight: 500;
-  font-size: 0.85rem;
+  font-weight: 600;
+  font-size: 0.9rem;
   padding: 0.7rem 1rem;
-  border-radius: 0.4rem;
-  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
   outline: none;
   transition: border-color 0.2s, background-color 0.2s;
 }
@@ -1133,55 +1131,171 @@ input[type=number]::-webkit-outer-spin-button{
 }
 
 /* Keep width+height pair and row+col pair each on one line */
-.generate1f{
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: nowrap;
+.generate1f {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
 }
 
-.generate1d{
-  background-color: var(--input-img);
+.generate1 > div:last-child {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.generate1d {
+  background-color: var(--aligin-sec);
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: row;
-  padding: 0.5rem 1rem;
-  border-radius: 0.2rem;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
   gap: 0.5rem;
   color: var(--h3-fill);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   align-items: center;
+  width: 100%;
 }
 
-.generate1d input{
-  width: 60px;
+.generate1d:has(#batchSize) {
+  grid-column: span 2;
 }
 
+.generate1d input {
+  width: 85px;
+  background-color: var(--input-img);
+  color: var(--input-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  text-align: right;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s, opacity 0.2s;
+}
 
+.generate1d input:focus {
+  border-color: var(--h3-fill);
+}
 
-.generate img{
+.generate1d input:read-only {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.generate1 > div:last-child small {
+  grid-column: span 2;
+  color: var(--close-button);
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+.generate img {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
 /* ─── Footer ─────────────────────────────────────────────────────────────── */
-footer{
+footer {
   background-color: var(--side-color);
-  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  padding: 2.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
 }
 
-#generationArea{
+#generationArea {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 1rem;
-  gap: 1rem;
+  gap: 1.5rem;
+  width: 100%;
 }
-.buttonSide{
+
+.buttonSide {
   display: flex;
   flex-direction: row;
-  gap: 1.5rem;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.buttonSide button {
+  background-color: var(--input-img);
+  color: var(--h3-fill);
+  border: 1px solid var(--border-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.7rem 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.buttonSide button:hover {
+  background-color: var(--button-hover);
+}
+
+.paginationControls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background-color: var(--aligin-sec);
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1.5rem;
+  border-radius: 2rem;
+  color: var(--h3-fill);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.paginationControls button {
+  background-color: var(--icon-img);
+  color: var(--h3-fill);
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 1.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.paginationControls button:hover {
+  background-color: var(--button-hover);
+}
+
+.paginationControls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.paginationControls input.batchInput {
+  width: 55px;
+  background-color: var(--input-img);
+  color: var(--input-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.3rem;
+  padding: 0.25rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.paginationControls input.batchInput:focus {
+  border-color: var(--h3-fill);
 }
 .loader-container{
   position: fixed;
