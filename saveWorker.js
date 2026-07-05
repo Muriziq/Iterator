@@ -100,8 +100,7 @@ async function saveToFile() {
 namesDont = false 
   try {
     if (names.includes(formerName)) {
-      await db.collection("projects").doc({ name: formerName }).set({
-        name: formerName,
+      await db.collection("projects").doc({ name: formerName }).update({
         object: allData,
         entryDate: new Date().getTime(),
       });
@@ -111,7 +110,8 @@ namesDont = false
         object: allData,
         entryDate: new Date().getTime(),
       });
-      newStorage = JSON.stringify([...names, formerName])
+      names.push(formerName);
+      newStorage = JSON.stringify([...names])
       namesDont = true
     }
   } catch (error) {

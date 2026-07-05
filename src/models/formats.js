@@ -40,6 +40,13 @@ export default class Formats {
     this.selectedArea = null;
     this.angle = 0;
     this.clipper = null;
+    this.blurEnabled = false;
+    this.blur = 10;
+    this.shadow = false;
+    this.shadowColor = "#000000";
+    this.shadowBlur = 10;
+    this.shadowOffsetX = 5;
+    this.shadowOffsetY = 5;
   }
   similarPropties() {
     document.querySelector(".normalb").addEventListener("click", () => {
@@ -140,6 +147,28 @@ export default class Formats {
       this.formatProperties();
       requestDraw();
     });
+    const shadowToggle = document.getElementById("shadowToggle");
+    if (shadowToggle) {
+      shadowToggle.addEventListener("click", () => {
+        this.shadow = !this.shadow;
+        if (this.type === "group") {
+          this.list.forEach((l) => (l.shadow = this.shadow));
+        }
+        this.formatProperties();
+        requestDraw();
+      });
+    }
+    const blurToggle = document.getElementById("blurToggle");
+    if (blurToggle) {
+      blurToggle.addEventListener("click", () => {
+        this.blurEnabled = !this.blurEnabled;
+        if (this.type === "group") {
+          this.list.forEach((l) => (l.blurEnabled = this.blurEnabled));
+        }
+        this.formatProperties();
+        requestDraw();
+      });
+    }
   }
   similarProptiesOutput() {
     return `
@@ -245,6 +274,54 @@ export default class Formats {
           <label class="field">
             <span class="field-label">Spacing</span>
             <input type="number" name="lineDashSpacing" value="${this.lineDashSpacing}">
+          </label>
+        </div>
+      </section>
+    </section>
+
+    <section class="blur-section" style="display:flex; flex-direction:column; gap:1rem">
+      <header style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
+        <h3>Blur</h3>
+        <button class="${this.blurEnabled ? "outlinet" : "outlinef"}" id="blurToggle"></button>
+      </header>
+
+      <section style="display:${this.blurEnabled ? "flex" : "none"}; flex-direction:column; gap:1rem">
+        <label class="thick">
+          <span>Blur Radius</span>
+          <input type="number" name="blur" min="0" value="${changeValues(this.blur || 0)}">
+        </label>
+      </section>
+    </section>
+
+    <section class="shadow-section" style="display:flex; flex-direction:column; gap:1rem">
+      <header style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
+        <h3>Shadow</h3>
+        <button class="${this.shadow ? "outlinet" : "outlinef"}" id="shadowToggle"></button>
+      </header>
+
+      <section style="display:${this.shadow ? "flex" : "none"}; flex-direction:column; gap:1rem">
+        <label class="uniform-div">
+          <span>Shadow Color</span>
+          <div class="pickr-wrap" data-name="shadowColor">
+            <button type="button" class="pickr-trigger"></button>
+            <input type="color" name="shadowColor" value="${this.shadowColor}" hidden>
+          </div>
+        </label>
+
+        <div class="two-grid">
+          <label class="field">
+            <span class="field-label">Blur</span>
+            <input type="number" name="shadowBlur" value="${changeValues(this.shadowBlur)}">
+          </label>
+
+          <label class="field">
+            <span class="field-label">Offset X</span>
+            <input type="number" name="shadowOffsetX" value="${changeValues(this.shadowOffsetX)}">
+          </label>
+
+          <label class="field">
+            <span class="field-label">Offset Y</span>
+            <input type="number" name="shadowOffsetY" value="${changeValues(this.shadowOffsetY)}">
           </label>
         </div>
       </section>

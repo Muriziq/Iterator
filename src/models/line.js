@@ -31,6 +31,15 @@ export default class Line extends Formats {
       const last = this.points[this.points.length - 1].points;
       this.close = Math.hypot(first.x - last.x, first.y - last.y) < 3;
       targetCtx.save();
+      if (this.blurEnabled && this.blur > 0) {
+        targetCtx.filter = `blur(${this.blur}px)`;
+      }
+      if (this.shadow) {
+        targetCtx.shadowColor = this.shadowColor;
+        targetCtx.shadowBlur = this.shadowBlur;
+        targetCtx.shadowOffsetX = this.shadowOffsetX;
+        targetCtx.shadowOffsetY = this.shadowOffsetY;
+      }
       targetCtx.translate(this.x, this.y);
       targetCtx.rotate(this.angle);
       targetCtx.scale(this.scaleX, this.scaleY);
@@ -44,12 +53,23 @@ export default class Line extends Formats {
 
       if (this.outline) {
         targetCtx.save();
+        targetCtx.shadowColor = "transparent";
+        targetCtx.shadowBlur = 0;
+        targetCtx.shadowOffsetX = 0;
+        targetCtx.shadowOffsetY = 0;
         targetCtx.lineWidth = this.outlineThickness;
         targetCtx.setLineDash(this.outlineType);
         targetCtx.strokeStyle = this.outlineColor;
         targetCtx.lineJoin = "round";
         targetCtx.stroke();
         targetCtx.restore();
+      }
+      if (this.blur > 0 || this.shadow) {
+        targetCtx.filter = "none";
+        targetCtx.shadowColor = "transparent";
+        targetCtx.shadowBlur = 0;
+        targetCtx.shadowOffsetX = 0;
+        targetCtx.shadowOffsetY = 0;
       }
       if (this.mode === "edit" && objectProperties.selectedObj === this)
         LineUtils.drawEditArcs(

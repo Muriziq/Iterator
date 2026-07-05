@@ -69,6 +69,7 @@ window.addEventListener("load", async () => {
         /^new project(\s+\d+)?$/i.test(project),
       ).length;
       projectName.value = `new project ${newProjectCount === 0 ? "" : newProjectCount}`;
+      canvasProperties.formerName = `${projectName.value.trim().toLowerCase()}.json`;
     }
     width.value = canvasProperties.measurement.width;
     height.value = canvasProperties.measurement.height;

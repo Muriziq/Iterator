@@ -30,7 +30,6 @@ export default class TextBox extends Formats {
     this.textAllign = "left";
     this.clipped = "none";
     this.shadow = false;
-    this.shadowStyle = { color: "#000000", blur: 10, offsetX: 5, offsetY: 5 };
     this.lineHeight = adapt(30);
     this.textArea = "";
     this.iterated = false;
@@ -39,22 +38,39 @@ export default class TextBox extends Formats {
     this.colorFill = "uniform";
     this.formatIterated = "none";
     this.iterateAllign = "left";
+    this._isDoubleClicked = false;
+    this._dimensionsDirty = true;
+    this._cachedLines = null;
+    this._cachedTextHeight = 0;
   }
-  addObject(targetCtx = ctx) {
-    if (this.isDoubleClicked) {
-      return;
+
+  get isDoubleClicked() {
+    return this._isDoubleClicked;
+  }
+
+  set isDoubleClicked(val) {
+    const oldVal = this._isDoubleClicked;
+    this._isDoubleClicked = val;
+    if (oldVal && !val) {
+      this.cleanupDOM();
     }
-    if (canvass.contains(this.textPlace)) {
-      canvass.removeChild(this.textPlace);
+  }
+
+  cleanupDOM() {
+    if (this.textPlace && this.textPlace.parentNode) {
+      this.textPlace.parentNode.removeChild(this.textPlace);
     }
-    if (this.measurer && document.body.contains(this.measurer)) {
-      document.body.removeChild(this.measurer);
+    if (this.measurer && this.measurer.parentNode) {
+      this.measurer.parentNode.removeChild(this.measurer);
       this.measurer = null;
     }
+  }
 
-    targetCtx.save();
-
+  recalculateDimensions(targetCtx = ctx) {
     const lines = this.text.split("\n");
+    const oldFont = targetCtx.font;
+    const oldAlign = targetCtx.textAlign;
+    const oldBaseline = targetCtx.textBaseline;
 
     targetCtx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
     targetCtx.textAlign = this.textAllign;
@@ -72,6 +88,37 @@ export default class TextBox extends Formats {
 
     this.width = maxWidth;
     this.height = textHeight + (lines.length - 1) * this.lineHeight;
+    this._cachedLines = lines;
+    this._cachedTextHeight = textHeight;
+    this._dimensionsDirty = false;
+
+    targetCtx.font = oldFont;
+    targetCtx.textAlign = oldAlign;
+    targetCtx.textBaseline = oldBaseline;
+  }
+  addObject(targetCtx = ctx) {
+    if (this.isDoubleClicked) {
+      return;
+    }
+
+    targetCtx.save();
+    if (this.blurEnabled && this.blur > 0) {
+      targetCtx.filter = `blur(${this.blur}px)`;
+    }
+    if (this.shadow) {
+      targetCtx.shadowColor = this.shadowColor;
+      targetCtx.shadowBlur = this.shadowBlur;
+      targetCtx.shadowOffsetX = this.shadowOffsetX;
+      targetCtx.shadowOffsetY = this.shadowOffsetY;
+    }
+
+    if (this._dimensionsDirty || !this._cachedLines) {
+      this.recalculateDimensions(targetCtx);
+    }
+
+    const lines = this._cachedLines;
+    const textHeight = this._cachedTextHeight;
+
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
 
@@ -79,12 +126,9 @@ export default class TextBox extends Formats {
     targetCtx.rotate(this.angle);
     targetCtx.scale(this.scaleX, this.scaleY);
 
-    if (this.shadow) {
-      targetCtx.shadowColor = this.shadowStyle.color;
-      targetCtx.shadowBlur = this.shadowStyle.blur;
-      targetCtx.shadowOffsetX = this.shadowStyle.offsetX;
-      targetCtx.shadowOffsetY = this.shadowStyle.offsetY;
-    }
+    targetCtx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
+    targetCtx.textAlign = this.textAllign;
+    targetCtx.textBaseline = "alphabetic";
 
     const startY = -this.height / 2 + textHeight;
 
@@ -97,12 +141,18 @@ export default class TextBox extends Formats {
       const y = startY + index * this.lineHeight;
 
       if (this.outline) {
+        targetCtx.save();
+        targetCtx.shadowColor = "transparent";
+        targetCtx.shadowBlur = 0;
+        targetCtx.shadowOffsetX = 0;
+        targetCtx.shadowOffsetY = 0;
         targetCtx.beginPath();
         targetCtx.lineWidth = this.outlineThickness;
         targetCtx.strokeStyle = this.outlineColor;
         targetCtx.setLineDash(this.outlineType);
         targetCtx.strokeText(line, drawX, y);
         targetCtx.closePath();
+        targetCtx.restore();
       }
 
       if (this.colorFill !== "none") {
@@ -112,6 +162,11 @@ export default class TextBox extends Formats {
     });
 
     if (objectProperties.selectedObj === this ) {
+      targetCtx.filter = "none";
+      targetCtx.shadowColor = "transparent";
+      targetCtx.shadowBlur = 0;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 0;
       targetCtx.beginPath();
       targetCtx.lineWidth = thresholds.slineWidth();
       targetCtx.strokeStyle = thresholds.sColor;
@@ -321,40 +376,6 @@ export default class TextBox extends Formats {
     </section>
 
     ${super.similarProptiesOutput()}
-
-    <section class="shadow-section" style="display:flex; flex-direction:column; gap:1rem">
-      <div style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
-        <h3>Shadow</h3>
-        <button class="${this.shadow ? "outlinet" : "outlinef"}" id="shadowToggle"></button>
-      </div>
-
-      <section style="display:${this.shadow ? "flex" : "none"}; flex-direction:column; gap:1rem">
-        <label class="uniform-div">
-          <span>Shadow Color</span>
-          <div class="pickr-wrap" data-name="shadowColor">
-            <button type="button" class="pickr-trigger"></button>
-            <input type="color" name="shadowColor" value="${this.shadowStyle.color}" hidden>
-          </div>
-        </label>
-
-        <div class="two-grid">
-          <label class="field">
-            <span class="field-label">Blur</span>
-            <input type="number" name="shadowBlur" value="${changeValues(this.shadowStyle.blur)}">
-          </label>
-
-          <label class="field">
-            <span class="field-label">Offset X</span>
-            <input type="number" name="shadowOffsetX" value="${changeValues(this.shadowStyle.offsetX)}">
-          </label>
-
-          <label class="field">
-            <span class="field-label">Offset Y</span>
-            <input type="number" name="shadowOffsetY" value="${changeValues(this.shadowStyle.offsetY)}">
-          </label>
-        </div>
-      </section>
-    </section>
     <section>
           <div style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
         <h3>Iterarate</h3>
@@ -460,15 +481,6 @@ export default class TextBox extends Formats {
         "textarea, select, button#shadowToggle,button#iterateToggle",
       )
       .forEach((el) => {
-        // Shadow toggle button
-        if (el.id === "shadowToggle") {
-          el.addEventListener("click", () => {
-            this.shadow = !this.shadow;
-            this.formatProperties();
-            requestDraw();
-          });
-          return;
-        }
         if (el.id === "iterateToggle") {
           el.addEventListener("click", () => {
             this.iterated = !this.iterated;
@@ -605,25 +617,44 @@ export default class TextBox extends Formats {
     if (name === "colorDeg") {
       this.colorDeg = radToDeg(Number(e.target.value) || 0, "rad");
     }
-    // Shadow fields
-    if (name === "shadowColor") this.shadowStyle.color = e.target.value;
+    // Shadow fields & blur
+    if (name === "blur") {
+      this.blur = backValues(Number(e.target.value) || 0);
+      if (this.blur < 0) this.blur = 0;
+    }
+    if (name === "shadowColor") this.shadowColor = e.target.value;
     if (name === "shadowBlur")
-      this.shadowStyle.blur = Number(e.target.value) || 0;
+      this.shadowBlur = backValues(Number(e.target.value) || 0);
     if (name === "shadowOffsetX")
-      this.shadowStyle.offsetX = Number(e.target.value) || 0;
+      this.shadowOffsetX = backValues(Number(e.target.value) || 0);
     if (name === "shadowOffsetY")
-      this.shadowStyle.offsetY = Number(e.target.value) || 0;
+      this.shadowOffsetY = backValues(Number(e.target.value) || 0);
 
+    if (
+      name === "text" ||
+      name === "width" ||
+      name === "height" ||
+      name === "fontSize" ||
+      name === "lineHeight" ||
+      name === "fontFamily" ||
+      name === "fontStyle" ||
+      name === "textAllign"
+    ) {
+      this._dimensionsDirty = true;
+    }
     requestDraw();
   }
 
   doubleClicked(mouse) {
     const padding = () => adapt(5);
     const rect = reverseMousePos(canvas, {
-      x: this.whereToSnap().pos.x - padding() * 2,
-      y: this.whereToSnap().pos.y - padding() * 2,
+      x: this.x,
+      y: this.y,
     });
+    const paddingVal = padding();
+    const borderVal = thresholds.slineWidth() / adapt(canvasProperties.scaleRatio);
 
+    this._dimensionsDirty = true;
     this.isDoubleClicked = true;
     // Create or reuse a hidden measuring element
     if (!this.measurer) {
@@ -632,7 +663,7 @@ export default class TextBox extends Formats {
       this.measurer.style.visibility = "hidden";
       this.measurer.style.height = "auto";
       this.measurer.style.width = "auto";
-      this.measurer.style.whiteSpace = "pre-wrap";
+      this.measurer.style.whiteSpace = "pre";
       this.measurer.style.wordWrap = "break-word";
       document.body.appendChild(this.measurer);
     }
@@ -660,8 +691,8 @@ export default class TextBox extends Formats {
     this.textPlace.value = this.text.trim();
     this.textPlace.classList.add("textArea");
     this.textPlace.style.position = "absolute";
-    this.textPlace.style.left = `${rect.x}px`;
-    this.textPlace.style.top = `${rect.y}px`;
+    this.textPlace.style.left = `${rect.x - paddingVal - borderVal}px`;
+    this.textPlace.style.top = `${rect.y - paddingVal - borderVal}px`;
     this.textPlace.style.border = `${thresholds.slineWidth() / adapt(canvasProperties.scaleRatio)}px dashed ${thresholds.sColor}`;
     this.textPlace.style.fontSize = `${adapt(this.fontSize) / adapt(canvasProperties.scaleRatio)}px`;
     this.textPlace.style.fontFamily = this.fontFamily;
@@ -674,7 +705,7 @@ export default class TextBox extends Formats {
     this.textPlace.style.padding = `${padding()}px`;
     this.textPlace.style.overflow = "hidden";
     this.textPlace.style.resize = "none";
-    this.textPlace.style.whiteSpace = "pre-wrap";
+    this.textPlace.style.whiteSpace = "pre";
     this.textPlace.style.wordWrap = "break-word";
 
     // Set exact width based on canvasProperties.measurement
@@ -692,6 +723,7 @@ export default class TextBox extends Formats {
 
     this.inputHandler = (e) => {
       this.text = e.target.value;
+      this._dimensionsDirty = true;
 
       // Update measurer with new text
       this.measurer.textContent = this.text || " ";

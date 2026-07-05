@@ -87,6 +87,15 @@ export default class Rectangle extends Formats {
     this.maxY = Math.max(...ys);
 
     targetCtx.save();
+    if (this.blurEnabled && this.blur > 0) {
+      targetCtx.filter = `blur(${this.blur}px)`;
+    }
+    if (this.shadow) {
+      targetCtx.shadowColor = this.shadowColor;
+      targetCtx.shadowBlur = this.shadowBlur;
+      targetCtx.shadowOffsetX = this.shadowOffsetX;
+      targetCtx.shadowOffsetY = this.shadowOffsetY;
+    }
 
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
@@ -103,21 +112,48 @@ export default class Rectangle extends Formats {
     if (this.roundedOrbeveled === "shaped") {
       if (this.outline) {
         targetCtx.save();
+        targetCtx.shadowColor = "transparent";
+        targetCtx.shadowBlur = 0;
+        targetCtx.shadowOffsetX = 0;
+        targetCtx.shadowOffsetY = 0;
         targetCtx.lineWidth = this.outlineThickness;
         targetCtx.setLineDash(this.outlineType);
         targetCtx.strokeStyle = this.outlineColor;
         targetCtx.stroke();
         targetCtx.restore();
       }
-      if (this.mode === "edit" && objectProperties.selectedObj === this)
+      if (this.mode === "edit" && objectProperties.selectedObj === this) {
+        const savedFilter = targetCtx.filter;
+        const savedShadowColor = targetCtx.shadowColor;
+        const savedShadowBlur = targetCtx.shadowBlur;
+        const savedShadowOffsetX = targetCtx.shadowOffsetX;
+        const savedShadowOffsetY = targetCtx.shadowOffsetY;
+
+        targetCtx.filter = "none";
+        targetCtx.shadowColor = "transparent";
+        targetCtx.shadowBlur = 0;
+        targetCtx.shadowOffsetX = 0;
+        targetCtx.shadowOffsetY = 0;
+
         LineUtils.drawEditArcs(
           this.points,
           this.selectedArea,
           this.selectedLineIndex,
         );
+
+        targetCtx.filter = savedFilter;
+        targetCtx.shadowColor = savedShadowColor;
+        targetCtx.shadowBlur = savedShadowBlur;
+        targetCtx.shadowOffsetX = savedShadowOffsetX;
+        targetCtx.shadowOffsetY = savedShadowOffsetY;
+      }
     }
     targetCtx.closePath();
     if (this.outline && this.roundedOrbeveled !== "shaped") {
+      targetCtx.shadowColor = "transparent";
+      targetCtx.shadowBlur = 0;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 0;
       targetCtx.beginPath();
       targetCtx.lineWidth = this.outlineThickness;
       targetCtx.strokeStyle = this.outlineColor;
@@ -129,6 +165,7 @@ export default class Rectangle extends Formats {
           this.width + this.outlineThickness,
           this.height + this.outlineThickness,
           this.cornerRadius,
+          targetCtx,
         );
       } else if (this.roundedOrbeveled === "beveled") {
         this.drawBeveledRect(
@@ -137,6 +174,7 @@ export default class Rectangle extends Formats {
           this.width + this.outlineThickness,
           this.height + this.outlineThickness,
           this.cornerRadius,
+          targetCtx,
         );
       }
 
@@ -144,6 +182,12 @@ export default class Rectangle extends Formats {
       targetCtx.closePath();
     }
     if (objectProperties.selectedObj === this) {
+      targetCtx.filter = "none";
+      targetCtx.shadowColor = "transparent";
+      targetCtx.shadowBlur = 0;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 0;
+
       targetCtx.beginPath();
       targetCtx.lineWidth = thresholds.slineWidth();
       targetCtx.strokeStyle = thresholds.sColor;
@@ -703,11 +747,18 @@ export default class Rectangle extends Formats {
     if (name === "outlineColor") {
       this.outlineColor = e.target.value;
     }
+    if (name === "shadowColor") {
+      this.shadowColor = e.target.value;
+    }
 
     if (e.target.type === "number") {
       let value = backValues(Number(e.target.value) || 0);
       value = value <= 0 ? 0 : value;
       if (name === "outlineThickness") this.outlineThickness = value;
+      if (name === "blur") this.blur = value;
+      if (name === "shadowBlur") this.shadowBlur = value;
+      if (name === "shadowOffsetX") this.shadowOffsetX = value;
+      if (name === "shadowOffsetY") this.shadowOffsetY = value;
 
       if (name === "x") {
         this.x =
@@ -795,7 +846,7 @@ export default class Rectangle extends Formats {
     targetCtx.lineTo(x, y + bevel);
     targetCtx.closePath();
   }
-  drawRoundedRect(x, y, width, height, radius) {
+  drawRoundedRect(x, y, width, height, radius,targetCtx=ctx) {
     targetCtx.beginPath();
     targetCtx.moveTo(x + radius, y);
     targetCtx.lineTo(x + width - radius, y);

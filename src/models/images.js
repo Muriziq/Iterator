@@ -28,6 +28,15 @@ export default class Images extends Formats {
   }
   addObject(targetCtx = ctx) {
     targetCtx.save();
+    if (this.blurEnabled && this.blur > 0) {
+      targetCtx.filter = `blur(${this.blur}px)`;
+    }
+    if (this.shadow) {
+      targetCtx.shadowColor = this.shadowColor;
+      targetCtx.shadowBlur = this.shadowBlur;
+      targetCtx.shadowOffsetX = this.shadowOffsetX;
+      targetCtx.shadowOffsetY = this.shadowOffsetY;
+    }
     const centerX = this.x + this.width / 2;
     const centerY = this.y + this.height / 2;
     targetCtx.translate(centerX, centerY);
@@ -45,6 +54,13 @@ export default class Images extends Formats {
     );
     targetCtx.closePath();
     targetCtx.restore();
+    if (this.blur > 0 || this.shadow) {
+      targetCtx.filter = "none";
+      targetCtx.shadowColor = "transparent";
+      targetCtx.shadowBlur = 0;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 0;
+    }
     if (objectProperties.selectedObj === this ) {
       targetCtx.beginPath();
       targetCtx.lineWidth = thresholds.slineWidth();
@@ -156,6 +172,54 @@ export default class Images extends Formats {
     <div  style=" display:flex;flex-direction:column; gap:1rem">
       <button class="imageb" id="maintainAspect">Aspect Ratio</button>
     </div>
+  </section>
+
+  <section class="blur-section" style="display:flex; flex-direction:column; gap:1rem">
+    <header style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
+      <h3>Blur</h3>
+      <button class="${this.blurEnabled ? "outlinet" : "outlinef"}" id="blurToggle"></button>
+    </header>
+
+    <section style="display:${this.blurEnabled ? "flex" : "none"}; flex-direction:column; gap:1rem">
+      <label class="thick">
+        <span>Blur Radius</span>
+        <input type="number" name="blur" min="0" value="${changeValues(this.blur || 0)}">
+      </label>
+    </section>
+  </section>
+
+  <section class="shadow-section" style="display:flex; flex-direction:column; gap:1rem">
+    <header style="display:flex; flex-direction:row; justify-content:space-between; align-items:center">
+      <h3>Shadow</h3>
+      <button class="${this.shadow ? "outlinet" : "outlinef"}" id="shadowToggle"></button>
+    </header>
+
+    <section style="display:${this.shadow ? "flex" : "none"}; flex-direction:column; gap:1rem">
+      <label class="uniform-div">
+        <span>Shadow Color</span>
+        <div class="pickr-wrap" data-name="shadowColor">
+          <button type="button" class="pickr-trigger"></button>
+          <input type="color" name="shadowColor" value="${this.shadowColor}" hidden>
+        </div>
+      </label>
+
+      <div class="two-grid">
+        <label class="field">
+          <span class="field-label">Blur</span>
+          <input type="number" name="shadowBlur" value="${changeValues(this.shadowBlur)}">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Offset X</span>
+          <input type="number" name="shadowOffsetX" value="${changeValues(this.shadowOffsetX)}">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Offset Y</span>
+          <input type="number" name="shadowOffsetY" value="${changeValues(this.shadowOffsetY)}">
+        </label>
+      </div>
+    </section>
   </section>
 
   <section class="coord-section">
@@ -319,6 +383,24 @@ export default class Images extends Formats {
       this.height = this.aspectRatio * this.width;
       requestDraw();
     });
+
+    const shadowToggle = document.getElementById("shadowToggle");
+    if (shadowToggle) {
+      shadowToggle.addEventListener("click", () => {
+        this.shadow = !this.shadow;
+        this.formatProperties();
+        requestDraw();
+      });
+    }
+
+    const blurToggle = document.getElementById("blurToggle");
+    if (blurToggle) {
+      blurToggle.addEventListener("click", () => {
+        this.blurEnabled = !this.blurEnabled;
+        this.formatProperties();
+        requestDraw();
+      });
+    }
 
     propertiesBar.querySelector("input[name='iteratedFiles']").addEventListener("change", (e) => {
       this.changeProperties(e);

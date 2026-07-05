@@ -23,6 +23,15 @@ export default class Ellipse extends Formats {
   }
   addObject(targetCtx = ctx) {
     targetCtx.save();
+    if (this.blurEnabled && this.blur > 0) {
+      targetCtx.filter = `blur(${this.blur}px)`;
+    }
+    if (this.shadow) {
+      targetCtx.shadowColor = this.shadowColor;
+      targetCtx.shadowBlur = this.shadowBlur;
+      targetCtx.shadowOffsetX = this.shadowOffsetX;
+      targetCtx.shadowOffsetY = this.shadowOffsetY;
+    }
     targetCtx.translate(this.x, this.y);
     targetCtx.rotate(this.angle);
     targetCtx.scale(this.scaleX, this.scaleY);
@@ -53,12 +62,21 @@ export default class Ellipse extends Formats {
     if (this.colorFill !== "none") targetCtx.fillStyle = this.colorType();
     if (this.mode !== "curve" && this.colorFill !== "none") targetCtx.fill();
     if (this.outline) {
+      targetCtx.shadowColor = "transparent";
+      targetCtx.shadowBlur = 0;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 0;
       targetCtx.lineWidth = this.outlineThickness;
       targetCtx.strokeStyle = this.outlineColor;
       targetCtx.setLineDash(this.outlineType);
       targetCtx.stroke();
     }
     if (objectProperties.selectedObj === this) {
+      targetCtx.filter = "none";
+      targetCtx.shadowColor = "transparent";
+      targetCtx.shadowBlur = 0;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 0;
       targetCtx.beginPath();
       targetCtx.lineWidth = thresholds.slineWidth();
       targetCtx.strokeStyle = thresholds.sColor;

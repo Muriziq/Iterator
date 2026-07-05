@@ -41,6 +41,11 @@ export default class Group extends Formats {
       targetCtx.restore();
     });
     if (objectProperties.selectedObj === this) {
+      targetCtx.filter = "none";
+      targetCtx.shadowColor = "transparent";
+      targetCtx.shadowBlur = 0;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 0;
       targetCtx.beginPath();
       targetCtx.lineWidth = thresholds.slineWidth();
       targetCtx.strokeStyle = thresholds.sColor;
