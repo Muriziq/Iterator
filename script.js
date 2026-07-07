@@ -320,3 +320,34 @@ if (btnCopyEmail) {
     });
   });
 }
+
+// Copy on tap for contact-item elements
+document.querySelectorAll(".contact-item").forEach((item) => {
+  item.addEventListener("click", () => {
+    const valueToCopy = item.getAttribute("data-copy");
+    if (!valueToCopy) return;
+
+    navigator.clipboard.writeText(valueToCopy).then(() => {
+      const labelEl = item.querySelector(".contact-label");
+      if (labelEl) {
+        const originalText = labelEl.getAttribute("data-original") || labelEl.textContent;
+        labelEl.textContent = "Copied!";
+        item.classList.add("copied");
+        setTimeout(() => {
+          labelEl.textContent = originalText;
+          item.classList.remove("copied");
+        }, 2000);
+      }
+    }).catch(err => {
+      console.error("Failed to copy text: ", err);
+    });
+  });
+
+  // Support keyboard accessibility
+  item.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      item.click();
+    }
+  });
+});

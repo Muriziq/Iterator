@@ -1414,3 +1414,175 @@ footer {
     align-self: stretch;
   }
 }
+
+/* Pickr Wrapper Styling */
+.pickr-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--input-img, #222);
+  border: 1px solid var(--side-color, #444);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Pickr Button Custom Styles */
+.pickr-wrap .pcr-button {
+  width: 1.8rem !important;
+  height: 1.8rem !important;
+  border-radius: 0.3rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  cursor: pointer;
+}
+
+.pickr-wrap .pcr-button:hover {
+  transform: scale(1.05);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Eye Dropper Button */
+.pickr-wrap .eyedropper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--input-color, #ccc);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 0.3rem;
+  transition: background-color 0.2s, color 0.2s;
+  margin-left: auto; /* Push it to the right end of the wrap container */
+}
+
+.pickr-wrap .eyedropper-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.pickr-wrap .eyedropper-btn svg {
+  display: block;
+}
+
+/* Pickr Color Palette Popup Styling */
+.pcr-app {
+  width: 300px !important;
+  max-width: 95vw !important;
+  background: #181818 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.6rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+  font-family: inherit !important;
+  padding: 0.8rem !important;
+  box-sizing: border-box !important;
+}
+
+/* Color Picker Selection Canvas */
+.pcr-app .pcr-selection {
+  border-radius: 0.4rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  overflow: hidden !important;
+}
+
+/* Sliders (Hue and Opacity) */
+.pcr-app .pcr-color-chooser,
+.pcr-app .pcr-color-opacity {
+  border-radius: 0.3rem !important;
+  height: 0.6rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: #222 !important;
+}
+
+/* Interaction Bar */
+.pcr-app .pcr-interaction {
+  gap: 0.4rem !important;
+  margin-top: 0.6rem !important;
+}
+
+/* Result Hex/Rgba Input Field */
+.pcr-app .pcr-result {
+  background: #252525 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.3rem !important;
+  color: #fff !important;
+  font-size: 0.75rem !important;
+  padding: 0.3rem 0.5rem !important;
+  text-align: center !important;
+  outline: none !important;
+}
+
+.pcr-app .pcr-result:focus {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Interaction Buttons (Save, Clear, Cancel, Format switcher) */
+.pcr-app .pcr-interaction input[type="button"] {
+  background: #333 !important;
+  border: none !important;
+  border-radius: 0.3rem !important;
+  color: #eee !important;
+  cursor: pointer !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  padding: 0.35rem 0.6rem !important;
+  transition: background-color 0.2s, color 0.2s !important;
+}
+
+.pcr-app .pcr-interaction input[type="button"]:hover {
+  background: #444 !important;
+  color: #fff !important;
+}
+
+/* Save / Action Button Accent Color */
+.pcr-app .pcr-interaction .pcr-save {
+  background: #ecfeeb !important;
+  color: #0b0b0b !important;
+}
+
+.pcr-app .pcr-interaction .pcr-save:hover {
+  background: #c5ffd4 !important;
+  color: #000 !important;
+}
+
+/* Custom Pickr wrap style inside gradient stop rows */
+.color-div .pickr-wrap {
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  padding: 0.15rem 0.3rem !important;
+}
+
+.color-div .pickr-wrap .eyedropper-btn {
+  padding: 0.2rem !important;
+}
+
+/* Stop Input container and field styling */
+.color-div label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.2rem !important;
+  background-color: var(--input-img) !important;
+  padding: 0.2rem 0.4rem !important;
+  border-radius: 0.2rem !important;
+  font-size: 0.65rem !important;
+  flex-shrink: 0 !important;
+  max-width: 75px !important;
+}
+
+.color-div label input[type="number"] {
+  width: 35px !important;
+  border: none !important;
+  border-left: 1px solid var(--side-color) !important;
+  background-color: transparent !important;
+  color: var(--input-color) !important;
+  padding: 0 0 0 0.25rem !important;
+  margin: 0 !important;
+  font-size: 0.65rem !important;
+  text-align: center !important;
+}
