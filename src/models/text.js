@@ -580,15 +580,7 @@ export default class TextBox extends Formats {
     if (name === "lineHeight")
       this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
     if (name === "textarea") {
-      this.textArea = e.target.value;
-      if (this.iterated) {
-        const lines = this.textArea
-          .split("\n")
-          .map((l) => l.trim())
-          .filter((l) => l.length > 0);
-        this.text = lines[0] || "";
-        this._dimensionsDirty = true;
-      }
+      this.textArea = e.target.value.trim();
     }
     if (name === "formatIterated") {
       this.formatIterated = e.target.value;
@@ -711,14 +703,12 @@ export default class TextBox extends Formats {
     const borderVal =
       thresholds.slineWidth() / adapt(canvasProperties.scaleRatio);
 
-    // Calculate page margins in screen coordinates
-    const pageRightWorld = (canvas.width + canvasProperties.measurement.width) / 2;
-    const pageRightScreen = reverseMousePos(canvas, { x: pageRightWorld, y: 0 }).x;
-    const maxScreenWidth = Math.max(pageRightScreen - rect.x - paddingVal * 2 - borderVal * 2, adapt(50));
+    // Calculate canvas boundaries in screen coordinates
+    const canvasRight = canvas.getBoundingClientRect().width;
+    const maxScreenWidth = Math.max(canvasRight - rect.x - paddingVal * 2, 0);
 
-    const pageBottomWorld = (canvas.height + canvasProperties.measurement.height) / 2;
-    const pageBottomScreen = reverseMousePos(canvas, { x: 0, y: pageBottomWorld }).y;
-    const maxScreenHeight = Math.max(pageBottomScreen - rect.y - paddingVal * 2 - borderVal * 2, adapt(20));
+    const canvasBottom = canvas.getBoundingClientRect().height;
+    const maxScreenHeight = Math.max(canvasBottom - rect.y - paddingVal * 2, 0);
 
     this._dimensionsDirty = true;
     this.isDoubleClicked = true;

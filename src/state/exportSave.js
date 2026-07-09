@@ -314,8 +314,10 @@ export async function saveAsPDF() {
     }
 
     // Restore state
-    objectProperties.images.forEach((img) => img.backToDefault());
-    objectProperties.textBoxes.forEach((tb) => tb.backToDefault());
+    await Promise.all([
+      ...objectProperties.images.map((img) => img.backToDefault()),
+      ...objectProperties.textBoxes.map((tb) => tb.backToDefault()),
+    ]);
     objectProperties.selectedObj = previouslySelectedObj;
     requestDraw();
 
@@ -427,8 +429,10 @@ export async function saveAsImage() {
     }
 
     // Restore state
-    objectProperties.images.forEach((img) => img.backToDefault());
-    objectProperties.textBoxes.forEach((tb) => tb.backToDefault());
+    await Promise.all([
+      ...objectProperties.images.map((img) => img.backToDefault()),
+      ...objectProperties.textBoxes.map((tb) => tb.backToDefault()),
+    ]);
     objectProperties.selectedObj = previouslySelectedObj;
     requestDraw();
 

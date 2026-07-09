@@ -327,12 +327,8 @@ export default class Images extends Formats {
         const imageP = (imageFiles && imageFiles.image) ? imageFiles.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
         let newImg = new Image();
-        newImg.src = imageP;
         await new Promise((resolve) => {
           newImg.onload = () => {
-            if (this.image) {
-              this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-            }
             this.image = newImg;
             this.selectedFile = this.originalFiles[i];
             this.aspectRatio = newImg.height / newImg.width;
@@ -341,17 +337,15 @@ export default class Images extends Formats {
           newImg.onerror = () => {
             console.warn("Failed to load image, using fallback");
             const fallbackImg = new Image();
-            fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
             fallbackImg.onload = () => {
-              if (this.image) {
-                this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-              }
               this.image = fallbackImg;
               this.selectedFile = this.originalFiles[i];
               this.aspectRatio = fallbackImg.height / fallbackImg.width;
               resolve(true);
             };
+            fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
           };
+          newImg.src = imageP;
         });
         requestDraw();
         this.formatProperties();
@@ -367,13 +361,10 @@ export default class Images extends Formats {
         loader.createLoader();
         const url = URL.createObjectURL(file);
         const img = new Image();
-        img.src = url;
-        img.url = url;
         img.onload = () => {
           this.fileName[i] = file.name;
           this.aspectRatio = img.height / img.width;
           const reader = new FileReader();
-          reader.readAsDataURL(file);
           reader.onload = async () => {
             await db
               .collection(`img${canvasProperties.formerName}`)
@@ -384,9 +375,6 @@ export default class Images extends Formats {
               });
             if (this.selectedFile === this.originalFiles[i]) {
               if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
-              if (this.image) {
-                this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-              }
               this.image = img;
             }
             loader.incrementOriginalState();
@@ -397,7 +385,15 @@ export default class Images extends Formats {
               URL.revokeObjectURL(url);
             }
           };
+          reader.readAsDataURL(file);
         };
+        img.onerror = () => {
+          console.warn("Failed to load image:", file.name);
+          loader.incrementOriginalState();
+          URL.revokeObjectURL(url);
+        };
+        img.src = url;
+        img.url = url;
       });
       div.querySelector(".del").addEventListener("click", async () => {
         if (this.originalFiles.length > 1) {
@@ -420,11 +416,7 @@ export default class Images extends Formats {
             const newImage = (newImageFiles && newImageFiles.image) ? newImageFiles.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
             await new Promise((resolve) => {
               const img = new Image();
-              img.src = newImage;
               img.onload = () => {
-                if (this.image) {
-                  this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-                }
                 this.image = img;
                 this.selectedFile = this.originalFiles[newIndex];
                 this.aspectRatio = img.height / img.width;
@@ -433,17 +425,15 @@ export default class Images extends Formats {
               img.onerror = () => {
                 console.warn("Failed to load image, using fallback");
                 const fallbackImg = new Image();
-                fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
                 fallbackImg.onload = () => {
-                  if (this.image) {
-                    this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-                  }
                   this.image = fallbackImg;
                   this.selectedFile = this.originalFiles[newIndex];
                   this.aspectRatio = fallbackImg.height / fallbackImg.width;
                   resolve(true);
                 };
+                fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
               };
+              img.src = newImage;
             });
           }
           requestDraw();
@@ -527,13 +517,9 @@ export default class Images extends Formats {
             return new Promise((resolve) => {
               const url = URL.createObjectURL(file);
               const img = new Image();
-              img.src = url;
-              img.url = url;
               img.onload = () => {
                 this.fileName.push(file.name);
                 const reader = new FileReader();
-                reader.readAsDataURL(file);
-
                 reader.onload = async () => {
                   try {
                     const imageID = crypto.randomUUID();
@@ -559,6 +545,7 @@ export default class Images extends Formats {
                   URL.revokeObjectURL(url);
                   resolve(false);
                 };
+                reader.readAsDataURL(file);
               };
               img.onerror = () => {
                 console.warn("Failed to load image:", file.name);
@@ -566,6 +553,8 @@ export default class Images extends Formats {
                 URL.revokeObjectURL(url);
                 resolve(false);
               };
+              img.src = url;
+              img.url = url;
             });
           })
         );
@@ -593,11 +582,7 @@ export default class Images extends Formats {
 
     await new Promise((resolve) => {
       const img = new Image();
-      img.src = imageIterate;
       img.onload = () => {
-        if (this.image) {
-          this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-        }
         this.image = img;
         this.aspectRatio = img.height / img.width;
         resolve(true);
@@ -605,16 +590,14 @@ export default class Images extends Formats {
       img.onerror = () => {
         console.warn("Failed to load image, using fallback");
         const fallbackImg = new Image();
-        fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         fallbackImg.onload = () => {
-          if (this.image) {
-            this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-          }
           this.image = fallbackImg;
           this.aspectRatio = fallbackImg.height / fallbackImg.width;
           resolve(true);
         };
+        fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
       };
+      img.src = imageIterate;
     });
   }
 
@@ -643,11 +626,7 @@ export default class Images extends Formats {
 
       await new Promise((resolve) => {
         const img = new Image();
-        img.src = imageIterate;
         img.onload = () => {
-          if (this.image) {
-            this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-          }
           this.image = img;
           this.aspectRatio = img.height / img.width;
           resolve(true);
@@ -655,16 +634,14 @@ export default class Images extends Formats {
         img.onerror = () => {
           console.warn("Failed to load image, using fallback");
           const fallbackImg = new Image();
-          fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
           fallbackImg.onload = () => {
-            if (this.image) {
-              this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-            }
             this.image = fallbackImg;
             this.aspectRatio = fallbackImg.height / fallbackImg.width;
             resolve(true);
           };
+          fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         };
+        img.src = imageIterate;
       });
 
       const scale = this.image.width / this.image.height;
@@ -718,11 +695,7 @@ export default class Images extends Formats {
 
       await new Promise((resolve) => {
         const img = new Image();
-        img.src = imageIterate;
         img.onload = () => {
-          if (this.image) {
-            this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-          }
           this.image = img;
           this.aspectRatio = img.height / img.width;
           resolve(true);
@@ -730,16 +703,14 @@ export default class Images extends Formats {
         img.onerror = () => {
           console.warn("Failed to load image, using fallback");
           const fallbackImg = new Image();
-          fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
           fallbackImg.onload = () => {
-            if (this.image) {
-              this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-            }
             this.image = fallbackImg;
             this.aspectRatio = fallbackImg.height / fallbackImg.width;
             resolve(true);
           };
+          fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         };
+        img.src = imageIterate;
       });
     }
   }
