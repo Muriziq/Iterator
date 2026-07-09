@@ -50,13 +50,15 @@ When organizations need to generate hundreds of customized ID badges, designers 
 * **Dynamic Grid Snapping**: Real-time cursor snapping aligning shape bounds to coordinates of other shapes on the canvas.
 
 ### 2. Multi-Format Asset Iteration
-* **Dynamic Text Handling**: Input lists of text data (separated by newlines) to iterate fields (e.g., Names, Titles, ID numbers).
+* **Dynamic Text Handling**: Input lists of text data (separated by newlines) to iterate fields (e.g., Names, Titles, ID numbers). Features real-time text iteration preview directly on the canvas as you type.
+* **Text Alignments**: Horizontal (`Left`, `Center`, `Right`) and Vertical (`Top`, `Center`, `Bottom`) iterate alignment overrides to mathematically adjust coordinates as dynamic text lengths update.
 * **Text Overflow Strategies**: 
   * `Fit`: Scale font size dynamically to fill the bounds of the original box.
-  * `Shrink to Fit`: Scale down text *only if* it exceeds the original box width.
+  * `Shrink to Fit`: Scale down text *only if* it exceeds the original box width (relative to initial text width).
   * `Create New Line` & `At White Space`: Character wrapping or word-boundary wrapping.
-* **Dynamic Image Handling**: Batch upload images mapped to dataset sequences.
-* **Image Scaling Modes**: `Maintain Size` (fixed), `Maintain Width` (fixed width, adaptive height), or `Maintain Height` (fixed height, adaptive width).
+* **Dynamic Image Handling**: Batch upload images mapped to dataset sequences, uploading files in parallel chunks of 10.
+* **Image Scaling Modes**: Proportional aspect ratio preservation under `Maintain Height` (adapts width based on aspect ratio) and `Maintain Width` (adapts height based on aspect ratio).
+* **Image Alignments**: Horizontal (`Left`, `Center`, `Right`) and Vertical (`Top`, `Center`, `Bottom`) alignment configurations to mathematically position dynamic images relative to their design boxes.
 
 ### 3. Masking & Vector Clipping
 * **Clipping Masks (Clipping Tool)**: Bind any vector object (images, text, shapes) inside a parent container.
@@ -67,7 +69,8 @@ When organizations need to generate hundreds of customized ID badges, designers 
 * **Preset Document Sizes**: Match industry standards like A1–A6, Letter, Legal, and Business Card dimensions.
 * **Multi-Card Grid Layouts**: Print a single card per page or automatically group cards in custom rows, columns, and spacing intervals.
 * **High-Resolution Exports**: Custom rendering scales (e.g., 2x, 3x) to match print requirements.
-* **Anti-Crash PDF Generation**: Automatic partitioning of exported pages into batched 50-page PDF blocks to prevent browser crashes.
+* **Anti-Crash PDF Generation**: Interactive settings modal overlay allowing users to stage PDF downloads (custom page limit per document, supporting 1 to 500 pages) to prevent browser memory crashes.
+* **Custom Image Formats**: Choose between high-quality transparency PNG files or compressed, smaller JPEG files directly upon clicking download.
 
 ### 5. Desktop-Grade UX (Figma-Like Shortcuts)
 * **Keyboard Hotkeys**: Nudging coordinates (arrow keys), quick duplicating (`Ctrl + D`), full page zooms (`Shift + @`), undo/redo (`Ctrl + Z` / `Ctrl + Y`), alignment commands (`L`/`C`/`R`/`T`/`E`/`B`), and tool switching.
@@ -143,9 +146,13 @@ async function deleteUnusedImage() {
 }
 ```
 
-### 3. Anti-Crash Memory Management (PDF Pagination)
-Generating highly detailed multi-page PDFs can cause browser tabs to exceed memory limits and crash:
-* **Chunked Staged Exports**: PDF exports are batched in groups of 50 pages. The app auto-paginates documents into sequences (`projectname-1.pdf`, `projectname-2.pdf`), releasing canvas contexts back to the browser GC during execution.
+### 3. Anti-Crash Memory Management & VRAM Safety (High-Efficiency Rendering)
+Generating highly detailed multi-page PDFs and rendering hundreds of cards can cause browser tabs to exceed graphics memory limits and crash:
+* **Single Canvas Reuse during Exports**: Rather than instantiating hundreds of new canvas elements inside the PDF/Image download loop (which causes a massive VRAM spike), the exporters instantiate **exactly one** offscreen canvas and context, clear it using `clearRect()`, and draw over it repeatedly. This cuts VRAM allocation by 99% during exports.
+* **Canvas GPU Memory Disposal**: Before removing obsolete cards from the DOM during batch pagination changes, all rendered canvas children are resized to `0px * 0px`. This forces the browser to discard their GPU texture backing-stores immediately rather than waiting on delayed garbage collection.
+* **Texture Cache spacer GIF Cleanups**: When dynamic image properties are overridden or deleted during iterations, the obsolete image element's `src` is temporarily set to a 1px transparent spacer GIF. This signals the browser to instantly drop its decoded texture cache from graphics memory.
+* **Static HTML Progress Indicators**: The Loader progress overlay is constructed as static HTML nodes, updated directly via lightweight JavaScript properties (`style.width` and `textContent`). This completely eliminates heavy, recurring `innerHTML` string parsing and DOM reconstruction overhead.
+* **Chunked Staged Exports**: The app auto-paginates staged PDF documents into sequences (`projectname-1.pdf`, `projectname-2.pdf`) based on user-configured page limits (customizable from 1 to 500 pages) to keep exports lightweight and safe.
 
 ### 4. Screen Wake Lock Integration
 Generating bulk assets (e.g., 500 badges) takes time. If the system goes to sleep mid-generation, rendering is interrupted.

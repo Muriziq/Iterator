@@ -309,6 +309,17 @@
       <button onclick="generateCard()">Done</button>
     </div>
 
+    <!-- Global Loader UI -->
+    <div id="global-loader" class="global-loader-overlay">
+      <div class="global-loader-card">
+        <div id="global-loader-message" class="global-loader-message">Loading...</div>
+        <div class="global-loader-bar-bg">
+          <div id="global-loader-bar-progress" class="global-loader-bar-progress"></div>
+        </div>
+        <div id="global-loader-stats" class="global-loader-stats">0 / 0</div>
+      </div>
+    </div>
+
     <script src="node_modules/jspdf/dist/jspdf.umd.min.js"></script>
     <script src="node_modules/localbase/dist/localbase.min.js"></script>
     <script src="node_modules/html2canvas/dist/html2canvas.min.js"></script>

@@ -262,6 +262,14 @@ export async function saveAsPDF() {
 
     let lastYield = Date.now();
 
+    // Create exactly one offscreen canvas and reuse it
+    const pc = document.createElement("canvas");
+    pc.width = pdfWidth;
+    pc.height = pdfHeight;
+    const ptx = pc.getContext("2d");
+    ptx.imageSmoothingEnabled = true;
+    ptx.imageSmoothingQuality = "high";
+
     for (let i = 0; i < iterationLength; i++) {
       // 1. Draw iterated content for step i
       await Promise.all([
@@ -269,14 +277,8 @@ export async function saveAsPDF() {
         ...objectProperties.textBoxes.map((tb) => tb.drawIteratedImage(i)),
       ]);
 
-      // 2. Create offscreen canvas for the card
-      const pc = document.createElement("canvas");
-      pc.width = pdfWidth;
-      pc.height = pdfHeight;
-      const ptx = pc.getContext("2d");
-      ptx.imageSmoothingEnabled = true;
-      ptx.imageSmoothingQuality = "high";
-
+      // 2. Reuse offscreen canvas for the card
+      ptx.clearRect(0, 0, pdfWidth, pdfHeight);
       ptx.fillStyle = "#ffffff";
       ptx.fillRect(0, 0, pdfWidth, pdfHeight);
 
@@ -385,6 +387,14 @@ export async function saveAsImage() {
 
     let lastYield = Date.now();
 
+    // Create exactly one offscreen canvas and reuse it
+    const pc = document.createElement("canvas");
+    pc.width = imgWidth;
+    pc.height = imgHeight;
+    const ptx = pc.getContext("2d");
+    ptx.imageSmoothingEnabled = true;
+    ptx.imageSmoothingQuality = "high";
+
     for (let i = 0; i < iterationLength; i++) {
       // 1. Draw iterated content for step i
       await Promise.all([
@@ -392,14 +402,8 @@ export async function saveAsImage() {
         ...objectProperties.textBoxes.map((tb) => tb.drawIteratedImage(i)),
       ]);
 
-      // 2. Create offscreen canvas for the card
-      const pc = document.createElement("canvas");
-      pc.width = imgWidth;
-      pc.height = imgHeight;
-      const ptx = pc.getContext("2d");
-      ptx.imageSmoothingEnabled = true;
-      ptx.imageSmoothingQuality = "high";
-
+      // 2. Reuse offscreen canvas for the card
+      ptx.clearRect(0, 0, imgWidth, imgHeight);
       ptx.fillStyle = "#ffffff";
       ptx.fillRect(0, 0, imgWidth, imgHeight);
 

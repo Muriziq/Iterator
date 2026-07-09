@@ -240,6 +240,10 @@ async function renderBatch(startIndex) {
   const loader = new LoaderManager(itemsInBatch, "Generating Cards...");
   loader.createLoader();
 
+  generationArea.querySelectorAll("canvas").forEach((canvas) => {
+    canvas.width = 0;
+    canvas.height = 0;
+  });
   generationArea.replaceChildren();
   const fragment = document.createDocumentFragment();
 

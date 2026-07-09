@@ -8,6 +8,7 @@ import { pauseSaving, continueSaving } from "../state/save.js";
 import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
 import LoaderManager from "./loader.js";
 import { notify } from "../utils/uiHelpers.js";
+
 export default class Images extends Formats {
   constructor(x = 0, y = 0, image = null, width = 0, aspectRatio = 1, originalFile = null, fileName = "") {
     super();
@@ -25,6 +26,13 @@ export default class Images extends Formats {
     this.maintainAspect = false;
     this.clipped = "none";
     this.formatIterated = "maintainSize";
+    this.iterateAllign = "left";
+    this.iterateVAllign = "top";
+    this.originalWidth = this.width;
+    this.originalHeight = this.height;
+    this.maintainedWidth = this.width;
+    this.maintainedHeight = this.height;
+    this.originalPosition = { x: this.x, y: this.y };
     this.isConverted = false;
   }
   addObject(targetCtx = ctx) {
@@ -266,11 +274,27 @@ export default class Images extends Formats {
     </button>
     <label class="uniform-div" style="margin-top:1rem">
       <span>Format Iterated</span>
-                <select name="formatIterated" class="formatIterated">
-    <option value="maintainHeight" ${this.formatIterated === "maintainHeight" ? "selected" : ""}>Maintain Height</option>
-    <option value="maintainWidth" ${this.formatIterated === "maintainWidth" ? "selected" : ""}>Maintain Width</option>
-    <option value="maintainSize" ${this.formatIterated === "maintainSize" ? "selected" : ""} >Maintain Size</option>
-  </select>
+      <select name="formatIterated" class="formatIterated">
+        <option value="maintainHeight" ${this.formatIterated === "maintainHeight" ? "selected" : ""}>Maintain Height</option>
+        <option value="maintainWidth" ${this.formatIterated === "maintainWidth" ? "selected" : ""}>Maintain Width</option>
+        <option value="maintainSize" ${this.formatIterated === "maintainSize" ? "selected" : ""}>Maintain Size</option>
+      </select>
+    </label>
+    <label class="uniform-div" style="margin-top:1rem">
+      <span>Iterate Align</span>
+      <select name="iterateAllign" class="iterateAllign">
+        <option value="left" ${this.iterateAllign === "left" ? "selected" : ""}>Left</option>
+        <option value="center" ${this.iterateAllign === "center" ? "selected" : ""}>Center</option>
+        <option value="right" ${this.iterateAllign === "right" ? "selected" : ""}>Right</option>
+      </select>
+    </label>
+    <label class="uniform-div" style="margin-top:1rem">
+      <span>Vertical Iterate Align</span>
+      <select name="iterateVAllign" class="iterateVAllign">
+        <option value="top" ${this.iterateVAllign === "top" ? "selected" : ""}>Top</option>
+        <option value="center" ${this.iterateVAllign === "center" ? "selected" : ""}>Center</option>
+        <option value="bottom" ${this.iterateVAllign === "bottom" ? "selected" : ""}>Bottom</option>
+      </select>
     </label>
 
   </section>
@@ -280,6 +304,19 @@ export default class Images extends Formats {
       .addEventListener("change", (e) => {
         this.formatIterated = e.target.value;
         this.formatProperties();
+        requestDraw();
+      });
+    document
+      .querySelector(".iterateAllign")
+      .addEventListener("change", (e) => {
+        this.iterateAllign = e.target.value;
+        requestDraw();
+      });
+    document
+      .querySelector(".iterateVAllign")
+      .addEventListener("change", (e) => {
+        this.iterateVAllign = e.target.value;
+        requestDraw();
       });
     document.querySelectorAll(".iteratedsec > div").forEach((div, i) => {
       div.addEventListener("click", async () => {
@@ -293,6 +330,9 @@ export default class Images extends Formats {
         newImg.src = imageP;
         await new Promise((resolve) => {
           newImg.onload = () => {
+            if (this.image) {
+              this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            }
             this.image = newImg;
             this.selectedFile = this.originalFiles[i];
             this.aspectRatio = newImg.height / newImg.width;
@@ -303,6 +343,9 @@ export default class Images extends Formats {
             const fallbackImg = new Image();
             fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
             fallbackImg.onload = () => {
+              if (this.image) {
+                this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+              }
               this.image = fallbackImg;
               this.selectedFile = this.originalFiles[i];
               this.aspectRatio = fallbackImg.height / fallbackImg.width;
@@ -341,6 +384,9 @@ export default class Images extends Formats {
               });
             if (this.selectedFile === this.originalFiles[i]) {
               if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
+              if (this.image) {
+                this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+              }
               this.image = img;
             }
             loader.incrementOriginalState();
@@ -376,6 +422,9 @@ export default class Images extends Formats {
               const img = new Image();
               img.src = newImage;
               img.onload = () => {
+                if (this.image) {
+                  this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                }
                 this.image = img;
                 this.selectedFile = this.originalFiles[newIndex];
                 this.aspectRatio = img.height / img.width;
@@ -386,6 +435,9 @@ export default class Images extends Formats {
                 const fallbackImg = new Image();
                 fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
                 fallbackImg.onload = () => {
+                  if (this.image) {
+                    this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                  }
                   this.image = fallbackImg;
                   this.selectedFile = this.originalFiles[newIndex];
                   this.aspectRatio = fallbackImg.height / fallbackImg.width;
@@ -528,16 +580,24 @@ export default class Images extends Formats {
   async backToDefault() {
     this.width = this.originalWidth;
     this.height = this.originalHeight;
+    this.x = this.originalPosition.x;
+    this.y = this.originalPosition.y;
     if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
+
+    const fileId = this.selectedFile;
     const imageIterateFile = await db
       .collection(`img${canvasProperties.formerName}`)
-      .doc({ id: this.selectedFile })
+      .doc({ id: fileId })
       .get();
     let imageIterate = (imageIterateFile && imageIterateFile.image) ? imageIterateFile.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
     await new Promise((resolve) => {
       const img = new Image();
       img.src = imageIterate;
       img.onload = () => {
+        if (this.image) {
+          this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        }
         this.image = img;
         this.aspectRatio = img.height / img.width;
         resolve(true);
@@ -547,6 +607,9 @@ export default class Images extends Formats {
         const fallbackImg = new Image();
         fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         fallbackImg.onload = () => {
+          if (this.image) {
+            this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+          }
           this.image = fallbackImg;
           this.aspectRatio = fallbackImg.height / fallbackImg.width;
           resolve(true);
@@ -554,22 +617,37 @@ export default class Images extends Formats {
       };
     });
   }
+
   async drawIteratedImage(i) {
     if (this.originalFiles.length > i) {
       if (i === 0) {
         this.originalWidth = this.width;
         this.originalHeight = this.height;
+        this.maintainedWidth = this.width;
+        this.maintainedHeight = this.height;
+        this.originalPosition = { x: this.x, y: this.y };
+      } else {
+        this.width = this.originalWidth;
+        this.height = this.originalHeight;
+        this.x = this.originalPosition.x;
+        this.y = this.originalPosition.y;
       }
       if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
+
+      const fileId = this.originalFiles[i];
       const imageIterateFile = await db
         .collection(`img${canvasProperties.formerName}`)
-        .doc({ id: this.originalFiles[i] })
+        .doc({ id: fileId })
         .get();
       let imageIterate = (imageIterateFile && imageIterateFile.image) ? imageIterateFile.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
       await new Promise((resolve) => {
         const img = new Image();
         img.src = imageIterate;
         img.onload = () => {
+          if (this.image) {
+            this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+          }
           this.image = img;
           this.aspectRatio = img.height / img.width;
           resolve(true);
@@ -579,6 +657,9 @@ export default class Images extends Formats {
           const fallbackImg = new Image();
           fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
           fallbackImg.onload = () => {
+            if (this.image) {
+              this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            }
             this.image = fallbackImg;
             this.aspectRatio = fallbackImg.height / fallbackImg.width;
             resolve(true);
@@ -586,32 +667,62 @@ export default class Images extends Formats {
         };
       });
 
+      const scale = this.image.width / this.image.height;
+
       if (this.formatIterated === "maintainHeight") {
-        const scale = this.image.width / this.image.height;
-
         this.height = this.originalHeight;
-        this.width = this.originalWidth * scale;
-        console.log(scale, i);
+        this.width = this.originalHeight * scale;
       } else if (this.formatIterated === "maintainWidth") {
-        const scale = this.image.width / this.image.height;
-
         this.width = this.originalWidth;
-        this.height = this.originalHeight / scale;
+        this.height = this.originalWidth / scale;
       } else {
         this.width = this.originalWidth;
         this.height = this.originalHeight;
       }
+
+      if (this.iterateAllign === "center") {
+        this.x =
+          this.originalPosition.x +
+          this.maintainedWidth / 2 -
+          this.width / 2;
+      } else if (this.iterateAllign === "right") {
+        this.x =
+          this.originalPosition.x +
+          this.maintainedWidth -
+          this.width;
+      } else {
+        this.x = this.originalPosition.x;
+      }
+
+      if (this.iterateVAllign === "center") {
+        this.y =
+          this.originalPosition.y +
+          this.maintainedHeight / 2 -
+          this.height / 2;
+      } else if (this.iterateVAllign === "bottom") {
+        this.y =
+          this.originalPosition.y +
+          this.maintainedHeight -
+          this.height;
+      } else {
+        this.y = this.originalPosition.y;
+      }
     } else {
       if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
+      const fileId = this.selectedFile;
       const imageIterateFile = await db
         .collection(`img${canvasProperties.formerName}`)
-        .doc({ id: this.selectedFile })
+        .doc({ id: fileId })
         .get();
       let imageIterate = (imageIterateFile && imageIterateFile.image) ? imageIterateFile.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
       await new Promise((resolve) => {
         const img = new Image();
         img.src = imageIterate;
         img.onload = () => {
+          if (this.image) {
+            this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+          }
           this.image = img;
           this.aspectRatio = img.height / img.width;
           resolve(true);
@@ -621,6 +732,9 @@ export default class Images extends Formats {
           const fallbackImg = new Image();
           fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
           fallbackImg.onload = () => {
+            if (this.image) {
+              this.image.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            }
             this.image = fallbackImg;
             this.aspectRatio = fallbackImg.height / fallbackImg.width;
             resolve(true);
