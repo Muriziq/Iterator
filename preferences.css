@@ -217,12 +217,13 @@ svg {
     overflow: hidden;
 }
 
-.objects{
-    height:300px;
-    width: 320px;
+.objects {
+    height: 300px;
+    width: 100%;
+    max-width: 320px;
     background-color: transparent;
-border: 2px solid #616161;
-border-radius: 0.5rem;
+    border: 2px solid #616161;
+    border-radius: 0.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -373,5 +374,107 @@ border-radius: 0.5rem;
     gap: 1rem;
     flex-wrap: wrap;
    justify-content: center;
+}
+
+/* ─── Media Queries for Responsiveness ───────────────────────────────────── */
+
+@media (max-width: 768px) {
+  body {
+    padding: 1.5rem 1rem;
+    gap: 1.5rem;
+  }
+
+  .header-nav {
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 15px;
+    width: 100%;
+  }
+
+  .header-nav a {
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+  }
+
+  .card {
+    flex-direction: column;
+    padding: 30px 20px;
+    gap: 2rem;
+  }
+
+  .card2 {
+    width: 100%;
+  }
+
+  .progress-circle {
+    width: 60vw;
+    height: 60vw;
+    max-width: 260px;
+    max-height: 260px;
+  }
+
+  .incessive {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .incessive > div:first-of-type {
+    width: 100%;
+  }
+
+  .incessive > div:last-of-type {
+    display: flex;
+    flex-direction: row;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .incessive button {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .percentage {
+    font-size: 38px;
+  }
+
+  .font-project > div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .font-project > div button {
+    width: 100%;
+  }
+  
+  .select button {
+    padding: 0.75rem;
+    font-size: 0.95rem;
+  }
 }
 

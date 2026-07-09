@@ -24,6 +24,7 @@ export default class TextBox extends Formats {
     this.fontStyle = "normal";
     this.width = 0;
     this.maintainedWidth = 0;
+    this.maintainedHeight = 0;
     this.originalText = "";
     this.originalFontSize = "";
     this.originalPosition = { x: this.x, y: this.y };
@@ -39,6 +40,7 @@ export default class TextBox extends Formats {
     this.colorFill = "uniform";
     this.formatIterated = "none";
     this.iterateAllign = "left";
+    this.iterateVAllign = "top";
     this._isDoubleClicked = false;
     this._dimensionsDirty = true;
     this._cachedLines = null;
@@ -402,6 +404,14 @@ export default class TextBox extends Formats {
     <option value="center" ${this.iterateAllign === "center" ? "selected" : ""}>Center</option>
     <option value="right" ${this.iterateAllign === "right" ? "selected" : ""}>Right</option>
   </select>
+  </label>
+  <label class="uniform-div" style="margin-top:1rem">
+  <span>Vertical Iterate Align</span>
+  <select name="iterateVAllign" class="iterateVAllign">
+    <option value="top" ${this.iterateVAllign === "top" ? "selected" : ""}>Top</option>
+    <option value="center" ${this.iterateVAllign === "center" ? "selected" : ""}>Center</option>
+    <option value="bottom" ${this.iterateVAllign === "bottom" ? "selected" : ""}>Bottom</option>
+  </select>
   </label>        
       </div>
 
@@ -485,6 +495,14 @@ export default class TextBox extends Formats {
         if (el.id === "iterateToggle") {
           el.addEventListener("click", () => {
             this.iterated = !this.iterated;
+            if (this.iterated) {
+              this.originalText = this.text;
+              const lines = this.textArea.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+              this.text = lines[0] || this.originalText;
+            } else {
+              this.text = this.originalText || "";
+            }
+            this._dimensionsDirty = true;
             this.formatProperties();
             requestDraw();
           });
@@ -517,6 +535,9 @@ export default class TextBox extends Formats {
     if (name === "iterateAllign") {
       this.iterateAllign = e.target.value;
     }
+    if (name === "iterateVAllign") {
+      this.iterateVAllign = e.target.value;
+    }
     if (name === "height") {
       const scale =
         (this.fontSize * backValues(Number(e.target.value) || 0)) / this.height;
@@ -536,6 +557,11 @@ export default class TextBox extends Formats {
       this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
     if (name === "textarea") {
       this.textArea = e.target.value;
+      if (this.iterated) {
+        const lines = this.textArea.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+        this.text = lines[0] || "";
+        this._dimensionsDirty = true;
+      }
     }
     if (name === "formatIterated") {
       this.formatIterated = e.target.value;
@@ -757,25 +783,45 @@ export default class TextBox extends Formats {
       .filter((line) => line.length > 0);
     if (i === 0) {
       this.maintainedWidth = this.width;
+      this.maintainedHeight = this.height;
       this.originalText = this.text;
       this.originalFontSize = this.fontSize;
       this.originalPosition = { x: this.x, y: this.y };
+    } else {
+      this.fontSize = this.originalFontSize;
+      this.text = this.originalText;
+      this.x = this.originalPosition.x;
+      this.y = this.originalPosition.y;
     }
     if (this.iterated && i < texts.length) {
-      ctx.font = `${this.fontStyle} ${this.fontSize}px ${this.fontFamily}`;
+      ctx.font = `${this.fontStyle} ${this.originalFontSize}px ${this.fontFamily}`;
       ctx.textAlign = this.textAllign;
       ctx.textBaseline = "alphabetic";
       if (this.formatIterated === "shrinkToFit") {
-        const textWidth = ctx.measureText(texts[i]).width;
+        const lines = texts[i].split("\n");
+        let maxLineWidth = 0;
+        lines.forEach((l) => {
+          maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
+        });
+        const textWidth = maxLineWidth;
+
         if (textWidth > this.maintainedWidth) {
           const scale = this.maintainedWidth / textWidth;
-          this.fontSize *= scale;
-          this.text = texts[i];
+          this.fontSize = this.originalFontSize * scale;
+        } else {
+          this.fontSize = this.originalFontSize;
         }
+        this.text = texts[i];
       } else if (this.formatIterated === "Fit") {
-        const textWidth = ctx.measureText(texts[i]).width;
+        const lines = texts[i].split("\n");
+        let maxLineWidth = 0;
+        lines.forEach((l) => {
+          maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
+        });
+        const textWidth = maxLineWidth;
+
         const scale = this.maintainedWidth / textWidth;
-        this.fontSize *= scale > 0 ? scale : 1;
+        this.fontSize = this.originalFontSize * (scale > 0 ? scale : 1);
         this.text = texts[i];
       } else if (this.formatIterated === "atWhiteSpace") {
         const words = texts[i].split(" ");
@@ -818,19 +864,36 @@ export default class TextBox extends Formats {
         this.text = texts[i];
       }
 
+      this.recalculateDimensions(ctx);
+
       if (this.iterateAllign === "center") {
         this.x =
           this.originalPosition.x +
           this.maintainedWidth / 2 -
-          ctx.measureText(this.text).width / 2;
+          this.width / 2;
       } else if (this.iterateAllign === "right") {
         this.x =
           this.originalPosition.x +
           this.maintainedWidth -
-          ctx.measureText(this.text).width;
+          this.width;
       } else {
         this.x = this.originalPosition.x;
       }
+
+      if (this.iterateVAllign === "center") {
+        this.y =
+          this.originalPosition.y +
+          this.maintainedHeight / 2 -
+          this.height / 2;
+      } else if (this.iterateVAllign === "bottom") {
+        this.y =
+          this.originalPosition.y +
+          this.maintainedHeight -
+          this.height;
+      } else {
+        this.y = this.originalPosition.y;
+      }
+
       this._dimensionsDirty = true;
     }
   }
