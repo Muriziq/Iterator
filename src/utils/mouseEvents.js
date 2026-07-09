@@ -1,10 +1,26 @@
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import {
+  canvas,
+  ctx,
+  canvass,
+  canvassDiv,
+  propertiesBar,
+  notification,
+  editclip,
+  width,
+  height,
+  saveWorker,
+  measurementArr,
+  db,
+  projectName,
+  thresholds,
+  generationArea,
+} from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
 import { getMousePos } from "./mousePos.js";
 import TextBox from "../models/text.js";
 import Tools from "../Tools/tools.js";
 import requestDraw from "../utils/draw.js";
-import { undo, redo, saveState} from "../state/undo.js";
+import { undo, redo, saveState, rebuildSubArrays } from "../state/undo.js";
 import { multipleSelectFunction, drawingObject } from "../state/canvas.js";
 import { align, group, zoomToRect } from "../Tools/others.js";
 import { bringToFront, sendToBack, pageUp, pageDown } from "../Tools/pageTo.js";
@@ -73,7 +89,9 @@ export function cMousedown(event) {
         objectProperties.clipped.clipper = objectProperties.objects[i].id;
         objectProperties.objects[i].clips.push(objectProperties.clipped);
 
-        const index = objectProperties.objects.indexOf(objectProperties.clipped);
+        const index = objectProperties.objects.indexOf(
+          objectProperties.clipped,
+        );
         objectProperties.selectedObj = objectProperties.objects[i];
         objectProperties.objects.splice(index, 1);
         objectProperties.clipped = null;
@@ -88,7 +106,10 @@ export function cMousedown(event) {
     } else {
       notify("Select An Object");
     }
-  }  else if (objectProperties.clippedObject !== null && objectProperties.previousClip !== null) {
+  } else if (
+    objectProperties.clippedObject !== null &&
+    objectProperties.previousClip !== null
+  ) {
     editclip.style.display = "block";
 
     for (let i = objectProperties.clippedObject.clips.length - 1; i >= 0; i--) {
@@ -105,7 +126,11 @@ export function cMousedown(event) {
   } else if (objectProperties.multipleSelect) {
     for (let i = objectProperties.objects.length - 1; i >= 0; i--) {
       if (objectProperties.objects[i].whatSelected(pos)) {
-        if (!objectProperties.multipleSelectArr.includes(objectProperties.objects[i])) {
+        if (
+          !objectProperties.multipleSelectArr.includes(
+            objectProperties.objects[i],
+          )
+        ) {
           objectProperties.multipleSelectArr.push(objectProperties.objects[i]);
           break;
         }
@@ -127,7 +152,9 @@ export function cMousedown(event) {
         pos.y <= objectProperties.multipleSelectCoor.end.y
       ) {
         objectProperties.isDraggingObject = true;
-        objectProperties.multipleSelectArr.forEach((obj) => (obj.isDoubleClicked = false));
+        objectProperties.multipleSelectArr.forEach(
+          (obj) => (obj.isDoubleClicked = false),
+        );
         objectProperties.selectedObj = null;
       }
     }
@@ -144,7 +171,10 @@ export function cMousedown(event) {
     if (hitObject !== null) {
       objectProperties.selectedObj = hitObject;
 
-      if (objectProperties.selectedObj.clips && objectProperties.selectedObj.clips.length > 0) {
+      if (
+        objectProperties.selectedObj.clips &&
+        objectProperties.selectedObj.clips.length > 0
+      ) {
         editclip.style.display = "block";
         objectProperties.clippedObject = objectProperties.selectedObj;
       } else {
@@ -185,17 +215,43 @@ export async function wMouseUp() {
     objectProperties.drawingStart = false;
 
     if (objectProperties.isDrawing === "zoom") {
-      const x = Math.min(objectProperties.drawingCoordinate.start.x, objectProperties.drawingCoordinate.end.x);
-      const y = Math.min(objectProperties.drawingCoordinate.start.y, objectProperties.drawingCoordinate.end.y);
-      const w = Math.abs(objectProperties.drawingCoordinate.end.x - objectProperties.drawingCoordinate.start.x);
-      const h = Math.abs(objectProperties.drawingCoordinate.end.y - objectProperties.drawingCoordinate.start.y);
+      const x = Math.min(
+        objectProperties.drawingCoordinate.start.x,
+        objectProperties.drawingCoordinate.end.x,
+      );
+      const y = Math.min(
+        objectProperties.drawingCoordinate.start.y,
+        objectProperties.drawingCoordinate.end.y,
+      );
+      const w = Math.abs(
+        objectProperties.drawingCoordinate.end.x -
+          objectProperties.drawingCoordinate.start.x,
+      );
+      const h = Math.abs(
+        objectProperties.drawingCoordinate.end.y -
+          objectProperties.drawingCoordinate.start.y,
+      );
 
       zoomToRect({ x: x, y: y, width: w, height: h });
-    } else if (objectProperties.isDrawing === "objectProperties.multipleSelect") {
-      const x = Math.min(objectProperties.drawingCoordinate.start.x, objectProperties.drawingCoordinate.end.x);
-      const y = Math.min(objectProperties.drawingCoordinate.start.y, objectProperties.drawingCoordinate.end.y);
-      const w = Math.abs(objectProperties.drawingCoordinate.end.x - objectProperties.drawingCoordinate.start.x);
-      const h = Math.abs(objectProperties.drawingCoordinate.end.y - objectProperties.drawingCoordinate.start.y);
+    } else if (
+      objectProperties.isDrawing === "objectProperties.multipleSelect"
+    ) {
+      const x = Math.min(
+        objectProperties.drawingCoordinate.start.x,
+        objectProperties.drawingCoordinate.end.x,
+      );
+      const y = Math.min(
+        objectProperties.drawingCoordinate.start.y,
+        objectProperties.drawingCoordinate.end.y,
+      );
+      const w = Math.abs(
+        objectProperties.drawingCoordinate.end.x -
+          objectProperties.drawingCoordinate.start.x,
+      );
+      const h = Math.abs(
+        objectProperties.drawingCoordinate.end.y -
+          objectProperties.drawingCoordinate.start.y,
+      );
 
       objectProperties.objects.forEach((obj) => {
         const coor = obj.whereToSnap().pos;
@@ -229,12 +285,16 @@ export async function wMouseUp() {
 
       Tools("moveTool");
       objectProperties.selectedObj.formatProperties();
-      saveState()
+      saveState();
     }
   }
 
-  if (objectProperties.isDraggingObject || objectProperties.isRotatingObject || objectProperties.multipleSelect) {
-   saveState()
+  if (
+    objectProperties.isDraggingObject ||
+    objectProperties.isRotatingObject ||
+    objectProperties.multipleSelect
+  ) {
+    saveState();
   }
 
   objectProperties.isDraggingObject = false;
@@ -244,7 +304,7 @@ export async function wMouseUp() {
   requestDraw(false);
 }
 export function cMouseUp() {
-  if (objectProperties.selectedObj  && !objectProperties.pen) {
+  if (objectProperties.selectedObj && !objectProperties.pen) {
     objectProperties.selectedObj.formatProperties();
   }
   requestDraw(false);
@@ -284,7 +344,10 @@ export function cMouseMove(event) {
     multipleSelectFunction();
 
     changed = true;
-  } else if ((objectProperties.isDraggingObject || objectProperties.isRotatingObject) && objectProperties.selectedObj) {
+  } else if (
+    (objectProperties.isDraggingObject || objectProperties.isRotatingObject) &&
+    objectProperties.selectedObj
+  ) {
     objectProperties.selectedObj.formatSelected(pos);
     changed = true;
   }
@@ -297,8 +360,8 @@ export function cMouseMove(event) {
   }
 }
 
-export async function keyDown(e){
- const tag = e.target.tagName;
+export async function keyDown(e) {
+  const tag = e.target.tagName;
   const isTyping =
     tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
   // console.log(e.key)
@@ -307,48 +370,72 @@ export async function keyDown(e){
   e.preventDefault();
 
   if (e.code === "ArrowUp") {
-    if (objectProperties.selectedObj !== null) objectProperties.selectedObj.moveClip(0, -thresholds.arrowKeys());
-    else if (objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0) {
+    if (objectProperties.selectedObj !== null)
+      objectProperties.selectedObj.moveClip(0, -thresholds.arrowKeys());
+    else if (
+      objectProperties.multipleSelect &&
+      objectProperties.multipleSelectArr.length > 0
+    ) {
       objectProperties.multipleSelectArr.forEach((obj) =>
         obj.moveClip(0, -thresholds.arrowKeys()),
       );
-      multipleSelectFunction()
+      multipleSelectFunction();
     } else {
       objectProperties.panY += -thresholds.arrowKeys();
     }
   } else if (e.code === "ArrowDown") {
-    if (objectProperties.selectedObj !== null) objectProperties.selectedObj.moveClip(0, thresholds.arrowKeys());
-    else if (objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0) {
+    if (objectProperties.selectedObj !== null)
+      objectProperties.selectedObj.moveClip(0, thresholds.arrowKeys());
+    else if (
+      objectProperties.multipleSelect &&
+      objectProperties.multipleSelectArr.length > 0
+    ) {
       objectProperties.multipleSelectArr.forEach((obj) =>
         obj.moveClip(0, thresholds.arrowKeys()),
       );
-      multipleSelectFunction()
+      multipleSelectFunction();
     } else objectProperties.panY += thresholds.arrowKeys();
   } else if (e.code === "ArrowLeft") {
-    if (objectProperties.selectedObj !== null) objectProperties.selectedObj.moveClip(-thresholds.arrowKeys(), 0);
-    else if (objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0) {
+    if (objectProperties.selectedObj !== null)
+      objectProperties.selectedObj.moveClip(-thresholds.arrowKeys(), 0);
+    else if (
+      objectProperties.multipleSelect &&
+      objectProperties.multipleSelectArr.length > 0
+    ) {
       objectProperties.multipleSelectArr.forEach((obj) =>
         obj.moveClip(-thresholds.arrowKeys(), 0),
       );
-      multipleSelectFunction()
+      multipleSelectFunction();
     } else objectProperties.panX += -thresholds.arrowKeys();
   } else if (e.code === "ArrowRight") {
-    if (objectProperties.selectedObj !== null) objectProperties.selectedObj.moveClip(thresholds.arrowKeys(), 0);
-    else if (objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0) {
+    if (objectProperties.selectedObj !== null)
+      objectProperties.selectedObj.moveClip(thresholds.arrowKeys(), 0);
+    else if (
+      objectProperties.multipleSelect &&
+      objectProperties.multipleSelectArr.length > 0
+    ) {
       objectProperties.multipleSelectArr.forEach((obj) =>
         obj.moveClip(thresholds.arrowKeys(), 0),
       );
-      multipleSelectFunction()
+      multipleSelectFunction();
     } else objectProperties.panX += thresholds.arrowKeys();
-  } else if (e.ctrlKey && e.key.toLowerCase() === "d" && objectProperties.selectedObj !== null) {
+  } else if (
+    e.ctrlKey &&
+    e.key.toLowerCase() === "d" &&
+    objectProperties.selectedObj !== null
+  ) {
     Tools("duplicate");
-  } else if (e.shiftKey && e.key === "@" && objectProperties.selectedObj !== null) {
+  } else if (
+    e.shiftKey &&
+    e.key === "@" &&
+    objectProperties.selectedObj !== null
+  ) {
     zoomToRect(objectProperties.selectedObj.whereToSnap().pos);
   } else if (e.ctrlKey && e.key === "a") {
     Tools("multipleSelection");
     objectProperties.multipleSelectArr = [...objectProperties.objects];
     objectProperties.multipleSelect = true;
-    multipleSelectFunction()
+    multipleSelectFunction();
   } else if (
     e.ctrlKey &&
     e.key.toLowerCase() === "g" &&
@@ -363,19 +450,30 @@ export async function keyDown(e){
     objectProperties.selectedObj !== null &&
     objectProperties.selectedObj.type === "group"
   ) {
-    objectProperties.selectedObj.list.forEach((l) => objectProperties.objects.push(l));
-    const index = objectProperties.objects.indexOf(objectProperties.selectedObj);
+    objectProperties.selectedObj.list.forEach((l) =>
+      objectProperties.objects.push(l),
+    );
+    const index = objectProperties.objects.indexOf(
+      objectProperties.selectedObj,
+    );
     objectProperties.objects.splice(index, 1);
+    rebuildSubArrays();
     objectProperties.selectedObj = null;
     Tools("moveTool");
-  } else if (e.key.toLowerCase() === "delete" && objectProperties.selectedObj !== null) {
+  } else if (
+    e.key.toLowerCase() === "delete" &&
+    objectProperties.selectedObj !== null
+  ) {
     Tools("delete");
   } else if (e.key.toLowerCase() === "pageup") {
-    if (objectProperties.selectedObj !== null) pageUp(objectProperties.selectedObj);
+    if (objectProperties.selectedObj !== null)
+      pageUp(objectProperties.selectedObj);
   } else if (e.key.toLowerCase() === "pagedown") {
-    if (objectProperties.selectedObj !== null) pageDown(objectProperties.selectedObj);
+    if (objectProperties.selectedObj !== null)
+      pageDown(objectProperties.selectedObj);
   } else if (e.key.toLowerCase() === "home") {
-    if (objectProperties.selectedObj) bringToFront(objectProperties.selectedObj);
+    if (objectProperties.selectedObj)
+      bringToFront(objectProperties.selectedObj);
   } else if (e.key.toLowerCase() === "end") {
     if (objectProperties.selectedObj) sendToBack(objectProperties.selectedObj);
   } else if (e.key.toLowerCase() === "l") align("left");
@@ -397,7 +495,7 @@ export async function keyDown(e){
     return;
   } else if (e.ctrlKey && e.key.toLowerCase() === "y") {
     redo();
-    return
+    return;
   } else if (e.key.toLowerCase() === "z") {
     Tools("zoom");
   } else if (e.key.toLowerCase() === "p") {

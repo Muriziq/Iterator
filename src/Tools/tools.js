@@ -7,6 +7,7 @@ import { zoomToRect } from "../Tools/others.js";
 import { notify } from "../utils/uiHelpers.js";
 import LoaderManager from "../models/loader.js";
 import { canvasSize } from "../state/canvas.js";
+import { rebuildSubArrays } from "../state/undo.js";
 export default async function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
     if (objectProperties.pen !== null && objectProperties.pen.points.length > 0) {
@@ -151,6 +152,7 @@ export default async function Tools(tool) {
           const cloneObj = objectProperties.selectedObj.showClone();
           objectProperties.objects.push(cloneObj);
           objectProperties.selectedObj = cloneObj;
+          rebuildSubArrays();
           notify("duplicated")
         } else {
           notify("Please Select An Object");
@@ -162,6 +164,7 @@ export default async function Tools(tool) {
       if (objectProperties.selectedObj) {
         let index = objectProperties.objects.indexOf(objectProperties.selectedObj);
         objectProperties.objects.splice(index, 1);
+        rebuildSubArrays();
 
         if (objectProperties.selectedObj.clipped === "objectProperties.clipped") {
           const clipIndex = objectProperties.objects.find(

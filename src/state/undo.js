@@ -14,6 +14,7 @@ export function undo() {
     if(    objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0){
       multipleSelectFunction();
     }
+    rebuildSubArrays();
     requestDraw(false);
   }
 }
@@ -29,6 +30,7 @@ export function redo() {
   if(objectProperties.multipleSelect && objectProperties.multipleSelectArr.length > 0){
       multipleSelectFunction();
     }
+    rebuildSubArrays();
     requestDraw(false);
   }
 }
@@ -38,4 +40,25 @@ function cloneObject(object) {
 export function saveState() {
   undoObject.push(cloneObject(objectProperties.objects));
   redoObject = [];
+}
+
+function getAllObjects(list) {
+  const result = [];
+  if (!list) return result;
+  list.forEach((obj) => {
+    result.push(obj);
+    if (obj.list) {
+      result.push(...getAllObjects(obj.list));
+    }
+    if (obj.clips) {
+      result.push(...getAllObjects(obj.clips));
+    }
+  });
+  return result;
+}
+
+export function rebuildSubArrays() {
+  const allObjs = getAllObjects(objectProperties.objects);
+  objectProperties.images = allObjs.filter(obj => obj.type === "image");
+  objectProperties.textBoxes = allObjs.filter(obj => obj.type === "text");
 }

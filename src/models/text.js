@@ -602,6 +602,7 @@ export default class TextBox extends Formats {
         document.querySelectorAll(".dropdown-item").forEach((div) => {
           div.addEventListener("click", async () => {
             this.fontFamily = div.textContent;
+            this._dimensionsDirty = true;
             if (!defaultFonts.includes(this.fontFamily) && !canvasProperties.domLoadedFonts.has(this.fontFamily)) {
               const result = await db
                 .collection("fonts")

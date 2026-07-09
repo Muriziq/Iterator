@@ -26,9 +26,9 @@ export const objectProperties = {
   drawingImage: null,
   selectedObj: null,
   clipped: null,
-   previousClip : null,
-   previousOpacity : 0,
-   clippedObject : null,
+  previousClip: null,
+  previousOpacity: 0,
+  clippedObject: null,
 };
 export const canvasProperties = {
   whatsMeasured: "px",
@@ -47,7 +47,7 @@ export const canvasProperties = {
     batchSize: 50,
   },
   formerName: "",
-  domLoadedFonts: new Set()
+  domLoadedFonts: new Set(),
 };
 
 export const defaultFonts = [

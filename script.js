@@ -179,6 +179,7 @@ document
         nameDiv.style.display = "flex";
         nameInput.value = projectName.replace(/\.json$/i, "");
         already.textContent = "Invalid Name Input Another";
+        already.style.display = "flex";
         return;
       }
       saveAndSend(projectName, jsonData);

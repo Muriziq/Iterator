@@ -223,7 +223,7 @@ export default class Ellipse extends Formats {
 
       <label class="field">
         <span class="field-label">Y</span>
-        <input type="number" name="y" value="${changeValues(this.y)}">
+        <input type="number" name="y" value="${changeValues(this.y - this.radiusY)}">
       </label>
 
       <label class="field">

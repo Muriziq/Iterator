@@ -1,8 +1,30 @@
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
-import { objectProperties, canvasProperties, defaultFonts, newFonts } from "../variable.js";
+import {
+  canvas,
+  ctx,
+  canvass,
+  canvassDiv,
+  propertiesBar,
+  notification,
+  editclip,
+  width,
+  height,
+  saveWorker,
+  measurementArr,
+  db,
+  projectName,
+  thresholds,
+  generationArea,
+} from "../constants.js";
+import {
+  objectProperties,
+  canvasProperties,
+  defaultFonts,
+  newFonts,
+} from "../variable.js";
 import { canvasSize } from "./canvas.js";
 import requestDraw from "../utils/draw.js";
 import { enableWakeLock, disableWakeLock } from "../utils/screenWake.js";
+import { rebuildSubArrays } from "./undo.js";
 import Rectangle from "../models/rectangle.js";
 import Ellipse from "../models/ellipse.js";
 import Polygon from "../models/polygon.js";
@@ -14,7 +36,11 @@ import Guide from "../models/guide.js";
 
 let ifAutoSave = false;
 
-export async function importLoaded(jsonData, shouldCanvas = true, saving = false) {
+export async function importLoaded(
+  jsonData,
+  shouldCanvas = true,
+  saving = false,
+) {
   const { canvasItems, revivableItems } = jsonData.reduce(
     (acc, data) => {
       if (data.type === "canvas") {
@@ -37,18 +63,23 @@ export async function importLoaded(jsonData, shouldCanvas = true, saving = false
     revivableItems.map((item) => reviveObjects(item)),
   );
   objectProperties.objects.push(...revived);
+  rebuildSubArrays();
   requestDraw();
   if (saving) {
     ifAutoSave = true;
     document.getElementById("auto-save").checked = true;
-    saveWorker.postMessage({ stopSaving: false,deleteData:true,images:JSON.stringify(objectProperties.images)});
+    saveWorker.postMessage({
+      stopSaving: false,
+    });
     saveToFile(true, true);
   }
 }
 
-
 export async function saveToFile(autosave = false, deleteData = false) {
-  const projectDocs = await db.collection("projects").orderBy("entryDate", "desc").get();
+  const projectDocs = await db
+    .collection("projects")
+    .orderBy("entryDate", "desc")
+    .get();
   const projectNames = (projectDocs || []).map((p) => p.name);
   let allData = [
     {
@@ -61,7 +92,8 @@ export async function saveToFile(autosave = false, deleteData = false) {
   ];
   allData = JSON.stringify(allData);
   let dImage = null;
-  if (objectProperties.drawingImage !== null) dImage = { ...objectProperties.drawingImage, image: null };
+  if (objectProperties.drawingImage !== null)
+    dImage = { ...objectProperties.drawingImage, image: null };
   if (autosave) {
     saveWorker.postMessage({
       formerName: canvasProperties.formerName,
@@ -69,6 +101,7 @@ export async function saveToFile(autosave = false, deleteData = false) {
       allData: allData,
       autoSave: true,
       drawingImage: dImage,
+      deleteData: deleteData,
     });
   } else {
     saveWorker.postMessage({
@@ -77,17 +110,17 @@ export async function saveToFile(autosave = false, deleteData = false) {
       allData: allData,
       justSave: true,
       drawingImage: dImage,
+      deleteData: deleteData,
     });
   }
 }
 
-
-export function pauseSaving(){
+export function pauseSaving() {
   saveWorker.postMessage({ stopSaving: true });
   enableWakeLock();
 }
 
-export function continueSaving(){
+export function continueSaving() {
   disableWakeLock();
   if (ifAutoSave) {
     saveWorker.postMessage({ stopSaving: false });
@@ -151,7 +184,10 @@ export async function reviveObjects(objData) {
       .collection(`img${canvasProperties.formerName}`)
       .doc({ id: objData.originalFiles[0] })
       .get();
-    const revivedImage = (revivedImageFile && revivedImageFile.image) ? revivedImageFile.image : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    const revivedImage =
+      revivedImageFile && revivedImageFile.image
+        ? revivedImageFile.image
+        : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
     const img = new Image();
     img.src = revivedImage;
     await new Promise((resolve) => {
@@ -163,7 +199,8 @@ export async function reviveObjects(objData) {
       img.onerror = () => {
         console.warn("Failed to load image, using fallback");
         const fallbackImg = new Image();
-        fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        fallbackImg.src =
+          "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         fallbackImg.onload = () => {
           objData.image = fallbackImg;
           objData.selectedFile = objData.originalFiles[0];
@@ -176,33 +213,36 @@ export async function reviveObjects(objData) {
     objData.isDoubleClicked = false;
     objData.textPlace = document.createElement("textarea");
     objData.measurer = false;
-      if (newFonts.includes(objData.fontFamily)) {
-        if (!canvasProperties.domLoadedFonts.has(objData.fontFamily)) {
-          const result = await db
-            .collection("fonts")
-            .doc({ id: objData.fontFamily })
-            .get();
-          if (result && result.fontData) {
-            // Create dynamic @font-face rule
-            const style = document.createElement("style");
-            const fontCSS = `
+    if (newFonts.includes(objData.fontFamily)) {
+      if (!canvasProperties.domLoadedFonts.has(objData.fontFamily)) {
+        const result = await db
+          .collection("fonts")
+          .doc({ id: objData.fontFamily })
+          .get();
+        if (result && result.fontData) {
+          // Create dynamic @font-face rule
+          const style = document.createElement("style");
+          const fontCSS = `
           @font-face {
             font-family: '${result.fontFamily}';
             src: url('${result.fontData}') format('${result.fontFormat}');
             font-display: swap;
           }
         `;
-            style.textContent = fontCSS;
-            document.head.appendChild(style);
-            canvasProperties.domLoadedFonts.add(objData.fontFamily);
-            document.fonts.ready.then(() => {
-              requestDraw();
-            });
-          }
+          style.textContent = fontCSS;
+          document.head.appendChild(style);
+          canvasProperties.domLoadedFonts.add(objData.fontFamily);
+          document.fonts.ready.then(() => {
+            requestDraw();
+          });
         }
-      } else if(!defaultFonts.includes(objData.fontFamily) && !newFonts.includes(objData.fontFamily)) {
-        objData.fontFamily = "sans-serif";
       }
+    } else if (
+      !defaultFonts.includes(objData.fontFamily) &&
+      !newFonts.includes(objData.fontFamily)
+    ) {
+      objData.fontFamily = "sans-serif";
+    }
   }
 
   // ✅ Handle clips

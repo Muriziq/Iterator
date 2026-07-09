@@ -360,7 +360,7 @@ export default class Polygon extends Formats {
 
     <label class="field">
       <span class="field-label">Y</span>
-      <input type="number" name="y" value="${changeValues(this.x + this.minY)}">
+      <input type="number" name="y" value="${changeValues(this.y + this.minY)}">
     </label>
 
     <label class="field">
@@ -572,6 +572,22 @@ ${super.similarProptiesOutput()}
     }
   }
   whereToSnap() {
+    if (this.points.length === 0) {
+      const w = this.radiusX * 2;
+      const h = this.radiusY * 2;
+      const x0 = this.x - this.radiusX;
+      const y0 = this.y - this.radiusY;
+      return {
+        x: [x0, this.x, x0 + w],
+        y: [y0, this.y, y0 + h],
+        pos: {
+          x: x0,
+          y: y0,
+          width: w,
+          height: h,
+        },
+      };
+    }
     let minX = Infinity,
       maxX = -Infinity;
     let minY = Infinity,

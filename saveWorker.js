@@ -12,7 +12,6 @@ let drawingImage = null;
 let deleteData = false;
 let db = new Localbase("db") || [];
 let stopSaving = false;
-let images = [];
 onmessage = (message) => {
   const messageData = message.data;
   if ("formerName" in messageData) {
@@ -33,9 +32,6 @@ onmessage = (message) => {
   if ("allData" in messageData) {
     allDatas = JSON.parse(messageData.allData);
   }
-  if ("images" in messageData) {
-    images = JSON.parse(messageData.images);
-  }
   if ("deleteData" in messageData) {
     deleteUnusedImage();
   }
@@ -47,8 +43,17 @@ onmessage = (message) => {
   }
 };
 
+let savePending = null;
+
 function runSave(source) {
   clearTimeout(saveTimeout);
+
+  if (isSaving) {
+    if (source === "manual" || !savePending) {
+      savePending = source || "auto";
+    }
+    return;
+  }
 
   const delay = source === "manual" ? 0 : 2000;
   saveTimeout = setTimeout(async () => {
@@ -89,6 +94,11 @@ function runSave(source) {
       console.error("Autosave error:", error);
     } finally {
       isSaving = false;
+      if (savePending && !stopSaving) {
+        const nextSource = savePending;
+        savePending = null;
+        runSave(nextSource);
+      }
     }
   }, delay);
 }
@@ -122,16 +132,34 @@ async function saveToFile() {
   }
 }
 
+function getActiveImageFiles(list) {
+  const fileSet = new Set();
+  if (!list) return fileSet;
+
+  function traverse(items) {
+    if (!items) return;
+    items.forEach((obj) => {
+      if (obj.type === "image" && obj.originalFiles) {
+        obj.originalFiles.forEach((file) => fileSet.add(file));
+      }
+      if (obj.list) {
+        traverse(obj.list);
+      }
+      if (obj.clips) {
+        traverse(obj.clips);
+      }
+    });
+  }
+
+  traverse(list);
+  return fileSet;
+}
+
 async function deleteUnusedImage() {
   const allImageFile = await db.collection(`img${formerName}`).get();
   if (drawingImage !== null) return;
   // Create Set for O(1) lookups
-  const imagesInSet = new Set();
-  images.forEach((img) => {
-    img.originalFiles?.forEach((file) => {
-      imagesInSet.add(file);
-    });
-  });
+  const imagesInSet = getActiveImageFiles(allDatas);
   // Filter IDs to delete
   const toDeleteIds = allImageFile
     .filter((doc) => !imagesInSet.has(doc.id))
