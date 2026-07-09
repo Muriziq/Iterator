@@ -19,6 +19,7 @@ let ifAutoSave = false;
 
 
 projectName.addEventListener("change", async (e) => {
+  pauseSaving()
   const newName = e.target.value.trim().toLowerCase();
   if (!newName) {
     e.target.value = canvasProperties.formerName.replace(/\.json$/i, "");
@@ -51,6 +52,7 @@ projectName.addEventListener("change", async (e) => {
   }
   canvasProperties.formerName = dbName;
   notify("changed");
+  continueSaving()
 });
 window.addEventListener("resize", () => {
   canvasSize();
