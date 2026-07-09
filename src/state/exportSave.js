@@ -204,6 +204,19 @@ export async function saveAsPDF() {
       max: 500,
       value: 50,
     },
+    {
+      name: "quality",
+      label: "Export Quality (DPI Scale)",
+      type: "select",
+      options: [
+        { value: "1", label: "Standard (72 DPI - Web)" },
+        { value: "2", label: "Medium (144 DPI - Retina)" },
+        { value: "3", label: "High Quality (216 DPI)" },
+        { value: "4", label: "Print Quality (300 DPI - Recommended)" },
+        { value: "5", label: "Ultra HD (360 DPI - Slow)" },
+      ],
+      value: "4",
+    },
   ]);
 
   if (!options) return; // User cancelled or clicked Cancel
@@ -217,7 +230,7 @@ export async function saveAsPDF() {
 
   try {
     const { jsPDF } = window.jspdf;
-    const EXPORT_SCALE = canvasProperties.generateInfo.quality || 1;
+    const EXPORT_SCALE = Number(options.quality) || 1;
     const cropX = (canvas.width - canvasProperties.measurement.width) / 2;
     const cropY = (canvas.height - canvasProperties.measurement.height) / 2;
     const cropW = canvasProperties.measurement.width;
@@ -242,8 +255,10 @@ export async function saveAsPDF() {
     const loader = new LoaderManager(iterationLength, "Exporting PDF...");
     loader.createLoader();
 
-    const pdfWidth = cropW * EXPORT_SCALE;
-    const pdfHeight = cropH * EXPORT_SCALE;
+    const pdfWidth = cropW;
+    const pdfHeight = cropH;
+    const canvasWidth = cropW * EXPORT_SCALE;
+    const canvasHeight = cropH * EXPORT_SCALE;
 
     const createPDF = () =>
       new jsPDF({
@@ -264,8 +279,8 @@ export async function saveAsPDF() {
 
     // Create exactly one offscreen canvas and reuse it
     const pc = document.createElement("canvas");
-    pc.width = pdfWidth;
-    pc.height = pdfHeight;
+    pc.width = canvasWidth;
+    pc.height = canvasHeight;
     const ptx = pc.getContext("2d");
     ptx.imageSmoothingEnabled = true;
     ptx.imageSmoothingQuality = "high";
@@ -278,9 +293,9 @@ export async function saveAsPDF() {
       ]);
 
       // 2. Reuse offscreen canvas for the card
-      ptx.clearRect(0, 0, pdfWidth, pdfHeight);
+      ptx.clearRect(0, 0, canvasWidth, canvasHeight);
       ptx.fillStyle = "#ffffff";
-      ptx.fillRect(0, 0, pdfWidth, pdfHeight);
+      ptx.fillRect(0, 0, canvasWidth, canvasHeight);
 
       ptx.save();
       ptx.scale(EXPORT_SCALE, EXPORT_SCALE);
@@ -342,6 +357,19 @@ export async function saveAsImage() {
       ],
       value: "png",
     },
+    {
+      name: "quality",
+      label: "Export Quality (Scale Factor)",
+      type: "select",
+      options: [
+        { value: "1", label: "Standard (1x - Web)" },
+        { value: "2", label: "Medium (2x - Retina)" },
+        { value: "3", label: "High Quality (3x)" },
+        { value: "4", label: "Print Quality (4x - Recommended)" },
+        { value: "5", label: "Ultra HD (5x)" },
+      ],
+      value: "4",
+    },
   ]);
 
   if (!options) return; // User cancelled or clicked Cancel
@@ -355,7 +383,7 @@ export async function saveAsImage() {
   saveBtn.textContent = "loading";
 
   try {
-    const EXPORT_SCALE = canvasProperties.generateInfo.quality || 1;
+    const EXPORT_SCALE = Number(options.quality) || 1;
     const cropX = (canvas.width - canvasProperties.measurement.width) / 2;
     const cropY = (canvas.height - canvasProperties.measurement.height) / 2;
     const cropW = canvasProperties.measurement.width;
@@ -418,7 +446,7 @@ export async function saveAsImage() {
       // Download the image
       const link = document.createElement("a");
       link.download = `${newName}-${i}.${fileExtension}`;
-      link.href = pc.toDataURL(imgFormat);
+      link.href = pc.toDataURL(imgFormat, imgFormat === "image/jpeg" ? 0.95 : undefined);
       link.click();
 
       loader.incrementOriginalState();
