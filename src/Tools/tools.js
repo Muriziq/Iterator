@@ -215,7 +215,7 @@ export async function addImage(e) {
   canvas.style.cursor = "wait";
   const file = e.target.files[0];
   if (!file) return;
-  const loader = new LoaderManager(1); // Set max items to the number of selected files
+  const loader = new LoaderManager(1, "Loading Image..."); // Set max items to the number of selected files
   loader.createLoader();
   const url = URL.createObjectURL(file);
   const img = new Image();

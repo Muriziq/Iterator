@@ -1,7 +1,25 @@
 import Formats from "./formats.js";
-import { canvas, ctx, canvass, propertiesBar,  db,  thresholds} from "../constants.js";
-import { objectProperties, defaultFonts, newFonts, canvasProperties } from "../variable.js";
-import { applyOpacityToHex, backValues, changeValues, radToDeg, getFormatFromExtension } from "../utils/convert.js";
+import {
+  canvas,
+  ctx,
+  canvass,
+  propertiesBar,
+  db,
+  thresholds,
+} from "../constants.js";
+import {
+  objectProperties,
+  defaultFonts,
+  newFonts,
+  canvasProperties,
+} from "../variable.js";
+import {
+  applyOpacityToHex,
+  backValues,
+  changeValues,
+  radToDeg,
+  getFormatFromExtension,
+} from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
 import { adapt } from "../state/canvas.js";
 import { reverseMousePos } from "../utils/mousePos.js";
@@ -164,7 +182,7 @@ export default class TextBox extends Formats {
       }
     });
 
-    if (objectProperties.selectedObj === this ) {
+    if (objectProperties.selectedObj === this) {
       targetCtx.filter = "none";
       targetCtx.shadowColor = "transparent";
       targetCtx.shadowBlur = 0;
@@ -178,10 +196,10 @@ export default class TextBox extends Formats {
         thresholds.sLineDashSpacing(),
       ]);
       targetCtx.strokeRect(
-        -this.width / 2 - thresholds.sWidth() / 2 ,
-        -this.height / 2 - thresholds.sWidth() / 2 ,
-        this.width + thresholds.sWidth() ,
-        this.height + thresholds.sWidth() ,
+        -this.width / 2 - thresholds.sWidth() / 2,
+        -this.height / 2 - thresholds.sWidth() / 2,
+        this.width + thresholds.sWidth(),
+        this.height + thresholds.sWidth(),
       );
       targetCtx.closePath();
     }
@@ -497,7 +515,10 @@ export default class TextBox extends Formats {
             this.iterated = !this.iterated;
             if (this.iterated) {
               this.originalText = this.text;
-              const lines = this.textArea.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+              const lines = this.textArea
+                .split("\n")
+                .map((l) => l.trim())
+                .filter((l) => l.length > 0);
               this.text = lines[0] || this.originalText;
             } else {
               this.text = this.originalText || "";
@@ -558,7 +579,10 @@ export default class TextBox extends Formats {
     if (name === "textarea") {
       this.textArea = e.target.value;
       if (this.iterated) {
-        const lines = this.textArea.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+        const lines = this.textArea
+          .split("\n")
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0);
         this.text = lines[0] || "";
         this._dimensionsDirty = true;
       }
@@ -679,7 +703,8 @@ export default class TextBox extends Formats {
       y: this.y,
     });
     const paddingVal = padding();
-    const borderVal = thresholds.slineWidth() / adapt(canvasProperties.scaleRatio);
+    const borderVal =
+      thresholds.slineWidth() / adapt(canvasProperties.scaleRatio);
 
     this._dimensionsDirty = true;
     this.isDoubleClicked = true;
@@ -868,28 +893,18 @@ export default class TextBox extends Formats {
 
       if (this.iterateAllign === "center") {
         this.x =
-          this.originalPosition.x +
-          this.maintainedWidth / 2 -
-          this.width / 2;
+          this.originalPosition.x + this.maintainedWidth / 2 - this.width / 2;
       } else if (this.iterateAllign === "right") {
-        this.x =
-          this.originalPosition.x +
-          this.maintainedWidth -
-          this.width;
+        this.x = this.originalPosition.x + this.maintainedWidth - this.width;
       } else {
         this.x = this.originalPosition.x;
       }
 
       if (this.iterateVAllign === "center") {
         this.y =
-          this.originalPosition.y +
-          this.maintainedHeight / 2 -
-          this.height / 2;
+          this.originalPosition.y + this.maintainedHeight / 2 - this.height / 2;
       } else if (this.iterateVAllign === "bottom") {
-        this.y =
-          this.originalPosition.y +
-          this.maintainedHeight -
-          this.height;
+        this.y = this.originalPosition.y + this.maintainedHeight - this.height;
       } else {
         this.y = this.originalPosition.y;
       }

@@ -30,7 +30,7 @@ let EXPORT_SCALE;
 let spacing, noPerRow, noPerColumn, renderPage;
 let currentPageWidth, currentPageHeight;
 let boxesPerPage;
-let cardWidth, cardHeight;  // per-card canvas size in grid mode
+let cardWidth, cardHeight; // per-card canvas size in grid mode
 let cropX, cropY, cropW, cropH;
 let scaleX, scaleY;
 let previouslySelectedObj;
@@ -45,12 +45,8 @@ export default async function generateCard() {
 
   // ---------------- Destructure ----------------
   const { renderWidth, renderHeight } = canvasProperties.generateInfo;
-  ({
-    spacing,
-    noPerRow,
-    noPerColumn,
-    renderPage,
-  } = canvasProperties.generateInfo);
+  ({ spacing, noPerRow, noPerColumn, renderPage } =
+    canvasProperties.generateInfo);
 
   generationArea.style.gap = spacing + "px";
 
@@ -65,7 +61,7 @@ export default async function generateCard() {
   // ---------------- Cell Sizing ----------------
   const localScale = Math.min(
     (currentPageWidth - spacing) / noPerRow / paperRect.width,
-    (currentPageHeight - spacing) / noPerColumn / paperRect.height
+    (currentPageHeight - spacing) / noPerColumn / paperRect.height,
   );
 
   // Individual card canvas size in grid mode (CSS px)
@@ -78,21 +74,24 @@ export default async function generateCard() {
   if (objectProperties.textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...objectProperties.textBoxes.map((tb) => tb.textArea.split("\n").length)
+      ...objectProperties.textBoxes.map((tb) => tb.textArea.split("\n").length),
     );
   }
 
   const maxImageIterLength = Math.max(
     1,
     ...objectProperties.images.map((img) =>
-      img.originalFiles.length ? img.originalFiles.length : 1
-    )
+      img.originalFiles.length ? img.originalFiles.length : 1,
+    ),
   );
 
   iterationLength = Math.max(iterationLength, maxImageIterLength);
 
   // ---------------- Batch sizing ----------------
-  const requestedBatchSize = Math.min(canvasProperties.generateInfo.batchSize || 20, iterationLength);
+  const requestedBatchSize = Math.min(
+    canvasProperties.generateInfo.batchSize || 20,
+    iterationLength,
+  );
 
   if (renderPage === "auto") {
     itemsPerBatch = requestedBatchSize;
@@ -100,7 +99,10 @@ export default async function generateCard() {
   } else {
     // In grid mode, batch = N full grid divs worth of cards.
     // totalBatches counts grid divs (pages), not individual cards.
-    pagesPerBatchTarget = Math.max(1, Math.round(requestedBatchSize / boxesPerPage));
+    pagesPerBatchTarget = Math.max(
+      1,
+      Math.round(requestedBatchSize / boxesPerPage),
+    );
     itemsPerBatch = pagesPerBatchTarget * boxesPerPage;
     const totalPages = Math.ceil(iterationLength / boxesPerPage);
     totalBatches = Math.ceil(totalPages / pagesPerBatchTarget);
@@ -141,7 +143,7 @@ export default async function generateCard() {
     clearTimeout(debounceTimer);
     pendingBatchStart = Math.min(
       (totalBatches - 1) * itemsPerBatch,
-      pendingBatchStart + itemsPerBatch
+      pendingBatchStart + itemsPerBatch,
     );
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
@@ -213,9 +215,9 @@ function makeGridDiv() {
   div.style.gridTemplateRows = `repeat(${noPerColumn}, 1fr)`;
   // div.style.gap = spacing + "px";
   div.style.padding = 0;
-  div.style.placeItems = "center"
+  div.style.placeItems = "center";
   div.style.boxSizing = "border-box";
-  div.style.backgroundColor = "#ffffff"
+  div.style.backgroundColor = "#ffffff";
   return div;
 }
 // ===================================================================
@@ -224,9 +226,9 @@ function makeGridDiv() {
 async function renderBatch(startIndex) {
   isRenderingBatch = true;
   pauseSaving();
-previouslySelectedObj = objectProperties.selectedObj
-objectProperties.selectedObj =null
-requestDraw()
+  previouslySelectedObj = objectProperties.selectedObj;
+  objectProperties.selectedObj = null;
+  requestDraw();
 
   prevBatchBtn.disabled = true;
   nextBatchBtn.disabled = true;
@@ -235,7 +237,7 @@ requestDraw()
   const endIndex = Math.min(startIndex + itemsPerBatch, iterationLength);
   const itemsInBatch = endIndex - startIndex;
 
-  const loader = new LoaderManager(itemsInBatch);
+  const loader = new LoaderManager(itemsInBatch, "Generating Cards...");
   loader.createLoader();
 
   generationArea.replaceChildren();
@@ -258,16 +260,13 @@ requestDraw()
     ]);
 
     if (renderPage === "auto") {
-
       // One full-page canvas per card — scale+translate pre-applied
       const { pc, ptx } = makeCardCanvas(currentPageWidth, currentPageHeight);
       ptx.fillStyle = "#ffffff";
       ptx.fillRect(cropX, cropY, cropW, cropH);
       objectProperties.objects.forEach((obj) => obj.addObject(ptx));
       fragment.append(pc);
-
     } else {
-
       // Start a new grid div every boxesPerPage cards
       if (localIndex === 0 || boxCountInPage >= boxesPerPage) {
         currentGridDiv = makeGridDiv();
@@ -300,7 +299,6 @@ requestDraw()
   // ---------------- Reset ----------------
   objectProperties.images.forEach((img) => img.backToDefault());
   objectProperties.textBoxes.forEach((tb) => tb.backToDefault());
-
 
   window.scrollTo({ top: generationArea.offsetTop, behavior: "smooth" });
 

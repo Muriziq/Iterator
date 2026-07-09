@@ -320,7 +320,7 @@ export default class Images extends Formats {
           notify(`File "${file ? file.name : "none"}" is not an Image File`);
           return;
         }
-        const loader = new LoaderManager(1);
+        const loader = new LoaderManager(1, "Changing Image...");
         loader.createLoader();
         const url = URL.createObjectURL(file);
         const img = new Image();
@@ -463,7 +463,7 @@ export default class Images extends Formats {
         return;
       }
       pauseSaving();
-      const loader = new LoaderManager(files.length);
+      const loader = new LoaderManager(files.length, "Uploading Images...");
       loader.createLoader();
       await new Promise((resolve) => setTimeout(resolve, 50));
       const batchSize = 10;
