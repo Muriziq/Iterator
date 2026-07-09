@@ -58,6 +58,7 @@ button{
   justify-content: space-between;
       overflow-x: auto;
       gap: 1.5rem;
+      border: 1px solid var(--border-color);
 }
 .header > section{
   display: flex;
@@ -66,6 +67,7 @@ button{
   align-items: center;
 }
 .menu-sec{
+        border: 1px solid var(--border-color);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -74,7 +76,13 @@ button{
   color: var(--h3-fill);
   background-color: var(--aligin-sec);
   height: auto;
- border-bottom: 1px solid var(--input-color); 
+  border-bottom: none;
+
+}
+.leftSidebar, #propertiesTab{
+border: 1px solid var(--border-color);
+border-top: none;
+border-bottom: none;
 }
 .home{
 position: relative;
@@ -1209,6 +1217,7 @@ footer {
   align-items: center;
   gap: 1.5rem;
   width: 100%;
+  display: none;
 }
 
 #generationArea {
@@ -1220,19 +1229,54 @@ footer {
   width: 100%;
 }
 
+.footersec{
+  border: var(--border-bottom);
+  width: 100%;
+  padding: 1rem 2rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  footer {
+    padding: 1.5rem 0.5rem;
+  }
+  .footersec {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+    align-items: center;
+  }
+  .buttonSide {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .paginationControls {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
 .buttonSide {
   display: flex;
   flex-direction: row;
   gap: 1rem;
   justify-content: center;
   align-items: center;
-  width: 100%;
+  width: auto;
 }
 
 .buttonSide button {
-  background-color: var(--input-img);
+  background-color: var(--side-color);
   color: var(--h3-fill);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   font-weight: 600;
   font-size: 0.9rem;
   padding: 0.7rem 1.5rem;
@@ -1261,10 +1305,11 @@ footer {
 }
 
 .paginationControls button {
-  background-color: var(--icon-img);
+ background-color: var(--side-color);
   color: var(--h3-fill);
-  border: none;
-  padding: 0.4rem 1rem;
+  border: 1px solid var(--border-color);
+
+  padding: 0.7rem 1.5rem;
   border-radius: 1.5rem;
   cursor: pointer;
   font-size: 0.85rem;
@@ -1283,7 +1328,7 @@ footer {
 
 .paginationControls input.batchInput {
   width: 55px;
-  background-color: var(--input-img);
+  background-color: var(--side-color);
   color: var(--input-color);
   border: 1px solid var(--border-color);
   border-radius: 0.3rem;

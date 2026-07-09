@@ -7,6 +7,7 @@ import { adapt } from "../state/canvas.js";
 import { reverseMousePos } from "../utils/mousePos.js";
 import { notify } from "../utils/uiHelpers.js";
 import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
+
 const getAllFonts = () => [...defaultFonts, ...newFonts];
 
 export default class TextBox extends Formats {
@@ -746,6 +747,7 @@ export default class TextBox extends Formats {
     this.text = this.originalText;
     this.x = this.originalPosition.x;
     this.y = this.originalPosition.y;
+    this._dimensionsDirty = true;
   }
   drawIteratedImage(i) {
     const texts = this.textArea
@@ -829,6 +831,7 @@ export default class TextBox extends Formats {
       } else {
         this.x = this.originalPosition.x;
       }
+      this._dimensionsDirty = true;
     }
   }
   whereToSnap() {

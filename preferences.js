@@ -231,7 +231,7 @@ async function importData() {
     fontProject.innerHTML = "";
     orderProjects.innerHTML = `<p style="text-align:center;margin-top:2rem;">Loading...</p>`;
     incessive.innerHTML = `
-        <div><input class="search" placeholder="Search fonts..."/></div>
+        <div><input class="search" placeholder="Search Projects..."/></div>
         <div>
         <button>Import<input type="file" multiple class="import" accept=".json"/></button>
         <button class="export-all">Export All</button>
@@ -339,6 +339,11 @@ async function importData() {
         URL.revokeObjectURL(url);
       });
 
+    document.querySelector(".search").addEventListener("input", async (e) => {
+      const searchTerm = e.target.value.trim().toLowerCase();
+      await renderData(searchTerm);
+    });
+
     await renderData();
   } catch (error) {
     console.error("Error importing data:", error);
@@ -418,15 +423,15 @@ async function importFonts() {
       try {
         for (const file of files) {
           const fileName = file.name;
-           const existingFonts = await db.collection("fonts").get();
-           const fontNames = (existingFonts || []).map((f) => f.fontFamily);
-          if (fontNames.includes(fileName)) {
-            alert("Font already imported");
+          const fileExt = fileName.substring(fileName.lastIndexOf("."));
+          const fontFamily = fileName.replace(fileExt, "");
+
+          const existingFonts = await db.collection("fonts").get();
+          const fontNames = (existingFonts || []).map((f) => f.fontFamily);
+          if (fontNames.includes(fontFamily)) {
+            alert(`Font "${fontFamily}" already imported`);
             continue;
           }
-
-          const fileExt = fileName.substring(fileName.lastIndexOf("."));
-          const fontFamily = null || fileName.replace(fileExt, "");
 
           // Read file directly (no fetch needed!)
           const reader = new FileReader();

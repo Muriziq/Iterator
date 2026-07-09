@@ -92,7 +92,7 @@ export default async function generateCard() {
   iterationLength = Math.max(iterationLength, maxImageIterLength);
 
   // ---------------- Batch sizing ----------------
-  const requestedBatchSize = canvasProperties.generateInfo.batchSize || 20;
+  const requestedBatchSize = Math.min(canvasProperties.generateInfo.batchSize || 20, iterationLength);
 
   if (renderPage === "auto") {
     itemsPerBatch = requestedBatchSize;

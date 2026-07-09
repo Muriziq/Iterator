@@ -6,22 +6,23 @@ import { changeValues, backValues, radToDeg, applyOpacityToHex } from "../utils/
 import requestDraw from "../utils/draw.js";
 import { pauseSaving, continueSaving } from "../state/save.js";
 import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";
-
+import LoaderManager from "./loader.js";
+import { notify } from "../utils/uiHelpers.js";
 export default class Images extends Formats {
-  constructor(x, y, image, width, aspectRatio, originalFile, fileName) {
+  constructor(x = 0, y = 0, image = null, width = 0, aspectRatio = 1, originalFile = null, fileName = "") {
     super();
     this.x = x;
     this.type = "image";
     this.y = y;
     this.width = width;
-    this.fileName = [fileName];
+    this.fileName = fileName ? [fileName] : [];
     this.aspectRatio = aspectRatio;
     this.height = this.width * this.aspectRatio;
     this.image = image;
     this.selectedArea = null;
-    this.originalFiles = [originalFile];
+    this.originalFiles = originalFile ? [originalFile] : [];
     this.selectedFile = originalFile;
-    this.maintainApect = false;
+    this.maintainAspect = false;
     this.clipped = "none";
     this.formatIterated = "maintainSize";
     this.isConverted = false;
@@ -45,13 +46,23 @@ export default class Images extends Formats {
     targetCtx.save();
     targetCtx.beginPath();
     targetCtx.globalAlpha = this.opacity / 100;
-    targetCtx.drawImage(
-      this.image,
-      -this.width / 2,
-      -this.height / 2,
-      this.width,
-      this.height,
-    );
+    if (this.image && this.image.complete && this.image.naturalWidth > 0) {
+      targetCtx.drawImage(
+        this.image,
+        -this.width / 2,
+        -this.height / 2,
+        this.width,
+        this.height,
+      );
+    } else {
+      targetCtx.strokeStyle = "rgba(0, 0, 0, 0.2)";
+      targetCtx.strokeRect(
+        -this.width / 2,
+        -this.height / 2,
+        this.width,
+        this.height,
+      );
+    }
     targetCtx.closePath();
     targetCtx.restore();
     if (this.blur > 0 || this.shadow) {
@@ -284,6 +295,7 @@ export default class Images extends Formats {
           newImg.onload = () => {
             this.image = newImg;
             this.selectedFile = this.originalFiles[i];
+            this.aspectRatio = newImg.height / newImg.width;
             resolve(true);
           };
           newImg.onerror = () => {
@@ -293,6 +305,7 @@ export default class Images extends Formats {
             fallbackImg.onload = () => {
               this.image = fallbackImg;
               this.selectedFile = this.originalFiles[i];
+              this.aspectRatio = fallbackImg.height / fallbackImg.width;
               resolve(true);
             };
           };
@@ -302,15 +315,20 @@ export default class Images extends Formats {
       });
 
       div.querySelector(".change").addEventListener("change", async (e) => {
-        const loader = new LoaderManager(1); // Set max items to 10
-        loader.createLoader();
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file || !file.type || !file.type.startsWith("image/")) {
+          notify(`File "${file ? file.name : "none"}" is not an Image File`);
+          return;
+        }
+        const loader = new LoaderManager(1);
+        loader.createLoader();
         const url = URL.createObjectURL(file);
         const img = new Image();
         img.src = url;
+        img.url = url;
         img.onload = () => {
           this.fileName[i] = file.name;
+          this.aspectRatio = img.height / img.width;
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = async () => {
@@ -322,6 +340,7 @@ export default class Images extends Formats {
                 entryDate: new Date().getTime(),
               });
             if (this.selectedFile === this.originalFiles[i]) {
+              if (this.image && this.image.url) URL.revokeObjectURL(this.image.url);
               this.image = img;
             }
             loader.incrementOriginalState();
@@ -359,6 +378,7 @@ export default class Images extends Formats {
               img.onload = () => {
                 this.image = img;
                 this.selectedFile = this.originalFiles[newIndex];
+                this.aspectRatio = img.height / img.width;
                 resolve(true);
               };
               img.onerror = () => {
@@ -368,6 +388,7 @@ export default class Images extends Formats {
                 fallbackImg.onload = () => {
                   this.image = fallbackImg;
                   this.selectedFile = this.originalFiles[newIndex];
+                  this.aspectRatio = fallbackImg.height / fallbackImg.width;
                   resolve(true);
                 };
               };
@@ -412,61 +433,94 @@ export default class Images extends Formats {
 
     if (name === "angle") {
       this.angle = radToDeg(Number(e.target.value) || 0, "rad");
+      requestDraw();
+      return;
     }
 
     if (e.target.type === "number") {
       let value = backValues(Number(e.target.value) || 0);
-      value = value <= 0 ? 0 : value;
+      
+      // Clamp width, height, blur, and shadowBlur to positive values.
+      // Coordinates (x, y) and shadow offsets (shadowOffsetX, shadowOffsetY) can be negative.
+      if (["width", "height", "blur", "shadowBlur"].includes(name)) {
+        value = value <= 0 ? 0 : value;
+      }
+      
       if (!isNaN(value) && value !== null) {
         if (name === "opacity") {
-          this.opacity = Number(e.target.value) || 0;
-        }
-
-        if (name !== "opacity") {
+          this.opacity = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+        } else {
           this[name] = value;
         }
       }
     }
 
     if (name === "iteratedFiles") {
-      pauseSaving()
-      const loader = new LoaderManager(e.target.files.length); // Set max items to the number of selected files
+      const files = Array.from(e.target.files).filter(
+        (file) => file.type && file.type.startsWith("image/")
+      );
+      if (files.length === 0) {
+        return;
+      }
+      pauseSaving();
+      const loader = new LoaderManager(files.length);
       loader.createLoader();
       await new Promise((resolve) => setTimeout(resolve, 50));
-      // Option 1: Use for...of loop (recommended)
-      const files = Array.from(e.target.files);
+      const batchSize = 10;
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.src = url;
-        await new Promise((resolve, reject) => {
-          img.onload = () => {
-            this.fileName.push(file.name);
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+      for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map((file) => {
+            return new Promise((resolve) => {
+              const url = URL.createObjectURL(file);
+              const img = new Image();
+              img.src = url;
+              img.url = url;
+              img.onload = () => {
+                this.fileName.push(file.name);
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
 
-            reader.onload = async () => {
-              const imageID = crypto.randomUUID();
-              await db.collection(`img${canvasProperties.formerName}`).add({
-                id: imageID,
-                image: reader.result,
-                entryDate: new Date().getTime(),
-              });
-              this.originalFiles.push(imageID);
-              loader.incrementOriginalState();
-              if (i % 10 === 0) {
-                await new Promise((resolve) => requestAnimationFrame(resolve));
-              }
-              this.formatProperties();
-              URL.revokeObjectURL(url);
-              resolve(true);
-            };
-          };
-        });
+                reader.onload = async () => {
+                  try {
+                    const imageID = crypto.randomUUID();
+                    await db.collection(`img${canvasProperties.formerName}`).add({
+                      id: imageID,
+                      image: reader.result,
+                      entryDate: new Date().getTime(),
+                    });
+                    this.originalFiles.push(imageID);
+                    loader.incrementOriginalState();
+                    URL.revokeObjectURL(url);
+                    resolve(true);
+                  } catch (err) {
+                    console.error("Failed to save image to IndexedDB:", err);
+                    loader.incrementOriginalState();
+                    URL.revokeObjectURL(url);
+                    resolve(false);
+                  }
+                };
+                reader.onerror = () => {
+                  console.error("FileReader failed for file:", file.name);
+                  loader.incrementOriginalState();
+                  URL.revokeObjectURL(url);
+                  resolve(false);
+                };
+              };
+              img.onerror = () => {
+                console.warn("Failed to load image:", file.name);
+                loader.incrementOriginalState();
+                URL.revokeObjectURL(url);
+                resolve(false);
+              };
+            });
+          })
+        );
+        this.formatProperties();
+        await new Promise((resolve) => requestAnimationFrame(resolve));
       }
-continueSaving()
+      continueSaving();
     }
 
     requestDraw();
@@ -485,6 +539,7 @@ continueSaving()
       img.src = imageIterate;
       img.onload = () => {
         this.image = img;
+        this.aspectRatio = img.height / img.width;
         resolve(true);
       };
       img.onerror = () => {
@@ -493,13 +548,14 @@ continueSaving()
         fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         fallbackImg.onload = () => {
           this.image = fallbackImg;
+          this.aspectRatio = fallbackImg.height / fallbackImg.width;
           resolve(true);
         };
       };
     });
   }
   async drawIteratedImage(i) {
-    if (this.originalFiles.length >= i) {
+    if (this.originalFiles.length > i) {
       if (i === 0) {
         this.originalWidth = this.width;
         this.originalHeight = this.height;
@@ -515,6 +571,7 @@ continueSaving()
         img.src = imageIterate;
         img.onload = () => {
           this.image = img;
+          this.aspectRatio = img.height / img.width;
           resolve(true);
         };
         img.onerror = () => {
@@ -523,6 +580,7 @@ continueSaving()
           fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
           fallbackImg.onload = () => {
             this.image = fallbackImg;
+            this.aspectRatio = fallbackImg.height / fallbackImg.width;
             resolve(true);
           };
         };
@@ -555,6 +613,7 @@ continueSaving()
         img.src = imageIterate;
         img.onload = () => {
           this.image = img;
+          this.aspectRatio = img.height / img.width;
           resolve(true);
         };
         img.onerror = () => {
@@ -563,6 +622,7 @@ continueSaving()
           fallbackImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
           fallbackImg.onload = () => {
             this.image = fallbackImg;
+            this.aspectRatio = fallbackImg.height / fallbackImg.width;
             resolve(true);
           };
         };

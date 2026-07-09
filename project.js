@@ -18,10 +18,24 @@ canvas.height = canvas.getBoundingClientRect().height;
 let ifAutoSave = false;
 
 
-projectName.addEventListener("input", async (e) => {
-  const dbName = `${e.target.value.trim().toLowerCase()}.json`;
+projectName.addEventListener("change", async (e) => {
+  const newName = e.target.value.trim().toLowerCase();
+  if (!newName) {
+    e.target.value = canvasProperties.formerName.replace(/\.json$/i, "");
+    return;
+  }
+  const dbName = `${newName}.json`;
+  if (dbName === canvasProperties.formerName) return;
+
   const projectDocs = await db.collection("projects").get();
   const names = (projectDocs || []).map((p) => p.name);
+
+  if (names.includes(dbName)) {
+    alert(`A project named "${newName}" already exists. Reverting.`);
+    e.target.value = canvasProperties.formerName.replace(/\.json$/i, "");
+    return;
+  }
+
   if (names.includes(canvasProperties.formerName)) {
     await db.collection("projects").doc({ name: canvasProperties.formerName }).update({
       name: dbName,
