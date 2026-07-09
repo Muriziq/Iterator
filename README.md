@@ -309,8 +309,8 @@ To introduce a new vector shape (e.g., a Star or Starburst):
 
 ## Future Improvements
 
+* **Native Boolean Part Operations**: Support Boolean operations (**Weld/Union**, **Trim/Subtract**, **Intersect**, and **Exclude**) on vector parts to build complex compound geometries.
 * **CSV Data Imports**: Add native support for loading external data files (.csv, .xlsx) to map text labels directly to template coordinates.
-* **Vector Path Operations**: Support Boolean operations (Union, Subtract, Intersect) on polygon shapes.
 * **WebRTC Templates Sharing**: Fast peer-to-peer templates transmission without database uploads.
 * **Batch Background Thread Rendering**: Move the main canvas drawing loop to an offscreen thread using OffscreenCanvas workers, avoiding main thread rendering entirely.
 

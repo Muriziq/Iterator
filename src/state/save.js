@@ -173,25 +173,32 @@ export async function reviveObjects(objData) {
     });
   }
   if (objData.type === "text") {
+    objData.isDoubleClicked = false;
     objData.textPlace = document.createElement("textarea");
     objData.measurer = false;
       if (newFonts.includes(objData.fontFamily)) {
-        const result = await db
-          .collection("fonts")
-          .doc({ id: objData.fontFamily })
-          .get();
-        if (result && result.fontData) {
-          // Create dynamic @font-face rule
-          const style = document.createElement("style");
-          const fontCSS = `
-        @font-face {
-          font-family: '${result.fontFamily}';
-          src: url('${result.fontData}') format('${result.fontFormat}');
-          font-display: swap;
-        }
-      `;
-          style.textContent = fontCSS;
-          document.head.appendChild(style);
+        if (!canvasProperties.domLoadedFonts.has(objData.fontFamily)) {
+          const result = await db
+            .collection("fonts")
+            .doc({ id: objData.fontFamily })
+            .get();
+          if (result && result.fontData) {
+            // Create dynamic @font-face rule
+            const style = document.createElement("style");
+            const fontCSS = `
+          @font-face {
+            font-family: '${result.fontFamily}';
+            src: url('${result.fontData}') format('${result.fontFormat}');
+            font-display: swap;
+          }
+        `;
+            style.textContent = fontCSS;
+            document.head.appendChild(style);
+            canvasProperties.domLoadedFonts.add(objData.fontFamily);
+            document.fonts.ready.then(() => {
+              requestDraw();
+            });
+          }
         }
       } else if(!defaultFonts.includes(objData.fontFamily) && !newFonts.includes(objData.fontFamily)) {
         objData.fontFamily = "sans-serif";

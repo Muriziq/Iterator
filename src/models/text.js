@@ -490,13 +490,16 @@ export default class TextBox extends Formats {
       `;
           style.textContent = fontCSS;
           document.head.appendChild(style);
+          canvasProperties.domLoadedFonts.add(fontFamily);
           this.fontFamily = fontFamily;
           if (!newFonts.includes(fontFamily)) {
             newFonts.push(fontFamily);
           }
           this.fonts = [];
           this.formatProperties();
-          requestDraw();
+          document.fonts.ready.then(() => {
+            requestDraw();
+          });
         } catch (error) {
           console.error("Error storing font:", error);
           alert("Failed to store the uploaded font. Please try again.");
@@ -607,8 +610,7 @@ export default class TextBox extends Formats {
         document.querySelectorAll(".dropdown-item").forEach((div) => {
           div.addEventListener("click", async () => {
             this.fontFamily = div.textContent;
-            const currentAllFonts = getAllFonts();
-            if (!currentAllFonts.includes(this.fontFamily)) {
+            if (!defaultFonts.includes(this.fontFamily) && !canvasProperties.domLoadedFonts.has(this.fontFamily)) {
               const result = await db
                 .collection("fonts")
                 .doc({ id: this.fontFamily })
@@ -617,15 +619,18 @@ export default class TextBox extends Formats {
                 // Create dynamic @font-face rule
                 const style = document.createElement("style");
                 const fontCSS = `
-        @font-face {
-          font-family: '${result.fontFamily}';
-          src: url('${result.fontData}') format('${result.fontFormat}');
-          font-display: swap;
-        }
-      `;
+                  @font-face {
+                    font-family: '${result.fontFamily}';
+                    src: url('${result.fontData}') format('${result.fontFormat}');
+                    font-display: swap;
+                  }
+                `;
                 style.textContent = fontCSS;
                 document.head.appendChild(style);
-
+                canvasProperties.domLoadedFonts.add(this.fontFamily);
+                document.fonts.ready.then(() => {
+                  requestDraw();
+                });
                 console.log(`Font ${this.fontFamily} loaded from IndexedDB`);
               } else {
                 notify("Font not found in database");
@@ -706,6 +711,15 @@ export default class TextBox extends Formats {
     const borderVal =
       thresholds.slineWidth() / adapt(canvasProperties.scaleRatio);
 
+    // Calculate page margins in screen coordinates
+    const pageRightWorld = (canvas.width + canvasProperties.measurement.width) / 2;
+    const pageRightScreen = reverseMousePos(canvas, { x: pageRightWorld, y: 0 }).x;
+    const maxScreenWidth = Math.max(pageRightScreen - rect.x - paddingVal * 2 - borderVal * 2, adapt(50));
+
+    const pageBottomWorld = (canvas.height + canvasProperties.measurement.height) / 2;
+    const pageBottomScreen = reverseMousePos(canvas, { x: 0, y: pageBottomWorld }).y;
+    const maxScreenHeight = Math.max(pageBottomScreen - rect.y - paddingVal * 2 - borderVal * 2, adapt(20));
+
     this._dimensionsDirty = true;
     this.isDoubleClicked = true;
     // Create or reuse a hidden measuring element
@@ -759,6 +773,8 @@ export default class TextBox extends Formats {
     this.textPlace.style.resize = "none";
     this.textPlace.style.whiteSpace = "pre";
     this.textPlace.style.wordWrap = "break-word";
+    this.textPlace.style.maxWidth = `${maxScreenWidth}px`;
+    this.textPlace.style.maxHeight = `${maxScreenHeight}px`;
 
     // Set exact width based on canvasProperties.measurement
     this.textPlace.style.width = `${Math.max(measuredWidth, adapt(10)) + adapt(2)}px`;

@@ -659,6 +659,7 @@ main > section{
   transition: all 0.3s;
   transform-origin: 0 0;
   z-index: 1;
+  overflow: hidden;
 }
 .textArea{
   padding: 0;
@@ -1390,6 +1391,10 @@ footer {
     overflow-y: hidden;
     overflow-x: auto;
     gap: 0.5rem;
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
   }
   .header{
     gap: 1.5rem;
@@ -1408,6 +1413,10 @@ footer {
     display: flex;
     flex-direction: row;
     overflow-x: auto;
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
   }
   #propertiesTab::-webkit-scrollbar,
   .leftSidebar::-webkit-scrollbar{

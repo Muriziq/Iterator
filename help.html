@@ -12,7 +12,7 @@
                     <a href="index.html">Home</a>
                     <a href="preferences.html">Storage</a>
                     <a href="#">Help</a>
-                    <a href="contact.html">Contact</a>
+                    <a href="index.html#contact-section">Contact</a>
         </nav>
   <div class="layout">
 
@@ -32,14 +32,16 @@
       <a class="nav-link" href="#generate" onclick="setActive(this)">Generate</a>
       <div class="nav-sep"></div>
       <a class="nav-link" href="#shortcuts" onclick="setActive(this)">Keyboard Shortcuts</a>
+      <a class="nav-link" href="#roadmap" onclick="setActive(this)">Roadmap</a>
     </nav>
 
     <!-- Content -->
     <main class="content">
-
+      <div>
       <p class="page-eyebrow">Documentation</p>
       <h1 class="page-title">Help &amp; Reference</h1>
       <p class="page-sub">Everything you need to know about using the Iterator. Browse by topic or search for a specific tool or shortcut.</p>
+      </div>
 
       <!-- Tools -->
       <section class="section" id="tools">
@@ -540,6 +542,47 @@
             <span class="shortcut-desc">Switch to Add Line Tool.</span>
           </div>
 
+        </div>
+      </section>
+
+      <!-- Roadmap -->
+      <section class="section" id="roadmap">
+        <div class="section-header">
+          <h2>Roadmap &amp; Future Features</h2>
+          <span class="section-badge">Upcoming</span>
+        </div>
+        <p class="section-desc" style="font-size: 0.9rem; color: var(--close-button); line-height: 1.6; margin-bottom: 1.5rem;">
+          We are actively working to expand the core tools of Iterator. Below is the list of planned native capabilities and optimizations:
+        </p>
+        <div class="tool-list">
+          <div class="tool-item" data-name="boolean part operations weld union trim subtract intersect exclude path vector logic" data-desc="Construct complex custom shapes using path Boolean logic, including Weld (Union), Trim (Subtract), Intersect, and Exclude operations directly on vector parts.">
+            <div class="tool-btn">Boolean Parts</div>
+            <div class="tool-info">
+              <span class="tool-name">Native Boolean Part Operations</span>
+              <span class="tool-desc">Construct complex custom geometries using standard Boolean vector logic: <strong>Weld (Union)</strong>, <strong>Trim (Subtract)</strong>, <strong>Intersect</strong>, and <strong>Exclude</strong> operations on overlapping paths.</span>
+            </div>
+          </div>
+          <div class="tool-item" data-name="csv data imports mapping variables tables excel xlsx" data-desc="Support mapping variables and fields to external tabular data files (.csv, .xlsx) to generate templates and pages in bulk.">
+            <div class="tool-btn">CSV Imports</div>
+            <div class="tool-info">
+              <span class="tool-name">CSV/Excel Data Mapping</span>
+              <span class="tool-desc">Upload external spreadsheets (.csv, .xlsx) to map cell columns to text boxes, enabling mass automated card iteration.</span>
+            </div>
+          </div>
+          <div class="tool-item" data-name="webrtc template sharing peer to peer direct export exchange" data-desc="Instantly share templates and workspace assets directly peer-to-peer without loading database servers.">
+            <div class="tool-btn">WebRTC Sharing</div>
+            <div class="tool-info">
+              <span class="tool-name">Peer-to-Peer Template Exchange</span>
+              <span class="tool-desc">Share project templates directly with other designers in real-time, bypassing intermediary file servers or databases.</span>
+            </div>
+          </div>
+          <div class="tool-item" data-name="offscreencanvas background rendering performance multi-threading web workers" data-desc="Offload main-thread canvas drawing onto high-performance background web workers to ensure a buttery-smooth editing frame rate.">
+            <div class="tool-btn">Performance</div>
+            <div class="tool-info">
+              <span class="tool-name">Background Worker Rendering</span>
+              <span class="tool-desc">Delegate complex canvas drawing operations to background threads using OffscreenCanvas, ensuring fluid interaction on heavy layouts.</span>
+            </div>
+          </div>
         </div>
       </section>
 

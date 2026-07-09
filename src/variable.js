@@ -46,7 +46,8 @@ export const canvasProperties = {
     quality: 1,
     batchSize: 50,
   },
-  formerName: ""
+  formerName: "",
+  domLoadedFonts: new Set()
 };
 
 export const defaultFonts = [
