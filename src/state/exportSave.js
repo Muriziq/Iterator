@@ -241,7 +241,7 @@ export async function saveAsPDF() {
     if (objectProperties.textBoxes.length > 0) {
       iterationLength = Math.max(
         iterationLength,
-        ...objectProperties.textBoxes.map((tb) => tb.textArea.split("\n").length)
+        ...objectProperties.textBoxes.map((tb) => tb.getIterationLength())
       );
     }
     const maxImageIterLength = Math.max(
@@ -394,7 +394,7 @@ export async function saveAsImage() {
     if (objectProperties.textBoxes.length > 0) {
       iterationLength = Math.max(
         iterationLength,
-        ...objectProperties.textBoxes.map((tb) => tb.textArea.split("\n").length)
+        ...objectProperties.textBoxes.map((tb) => tb.getIterationLength())
       );
     }
     const maxImageIterLength = Math.max(

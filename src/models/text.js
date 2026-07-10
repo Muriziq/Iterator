@@ -51,7 +51,7 @@ export default class TextBox extends Formats {
     this.clipped = "none";
     this.shadow = false;
     this.lineHeight = adapt(30);
-    this.textArea = "";
+    this.textArea = { default: "" };
     this.iterated = false;
     this.clipped = "none";
     this.outline = false;
@@ -84,6 +84,41 @@ export default class TextBox extends Formats {
     if (this.measurer && this.measurer.parentNode) {
       this.measurer.parentNode.removeChild(this.measurer);
       this.measurer = null;
+    }
+  }
+
+  getPlaceholders() {
+    const textToScan = this.iterated ? (this.templateText || this.originalText || this.text) : this.text;
+    const regex = /\[\[([^\]]+)\]\]/g;
+    const placeholders = [];
+    let match;
+    while ((match = regex.exec(textToScan)) !== null) {
+      if (!placeholders.includes(match[1])) {
+        placeholders.push(match[1]);
+      }
+    }
+    return placeholders;
+  }
+
+  getIterationLength() {
+    if (!this.iterated) return 1;
+    
+    if (typeof this.textArea === "string") {
+      this.textArea = { default: this.textArea };
+    }
+
+    const placeholders = this.getPlaceholders();
+    if (placeholders.length > 0) {
+      let maxLen = 1;
+      placeholders.forEach(ph => {
+        const val = this.textArea[ph] || "";
+        const len = val.split("\n").map(l => l.trim()).filter(l => l.length > 0).length;
+        if (len > maxLen) maxLen = len;
+      });
+      return maxLen;
+    } else {
+      const val = this.textArea.default || "";
+      return val.split("\n").map(l => l.trim()).filter(l => l.length > 0).length;
     }
   }
 
@@ -210,6 +245,7 @@ export default class TextBox extends Formats {
   showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.textPlace = document.createElement("textarea");
+    clone.textArea = JSON.parse(JSON.stringify(this.textArea || { default: "" }));
     if (!isUndo) {
       clone.id = crypto.randomUUID();
     }
@@ -403,7 +439,22 @@ export default class TextBox extends Formats {
         <button class="${this.iterated ? "outlinet" : "outlinef"}" id="iterateToggle"></button>
       </div>
       <div style="display:${this.iterated ? "block" : "none"}">
-      <textarea  name="textarea" class="text">${this.textArea}</textarea>
+      ${(() => {
+        if (typeof this.textArea === "string") {
+          this.textArea = { default: this.textArea };
+        }
+        const placeholders = this.getPlaceholders();
+        if (placeholders.length > 0) {
+          return placeholders.map(placeholder => `
+            <label class="uniform-div" style="margin-top:1rem; flex-direction:column; align-items:stretch; gap:0.5rem">
+              <span>[[${placeholder}]] Values (one per line)</span>
+              <textarea name="inlineVar_${placeholder}" class="text" style="height:80px">${this.textArea[placeholder] || ""}</textarea>
+            </label>
+          `).join("");
+        } else {
+          return `<textarea name="textarea" class="text">${this.textArea.default || ""}</textarea>`;
+        }
+      })()}
   <label class="uniform-div" style="margin-top:1rem">
   <span>Format Iterated</span>
   <select name="formatIterated" class="formatIterated">
@@ -517,14 +568,9 @@ export default class TextBox extends Formats {
           el.addEventListener("click", () => {
             this.iterated = !this.iterated;
             if (this.iterated) {
-              this.originalText = this.text;
-              const lines = this.textArea
-                .split("\n")
-                .map((l) => l.trim())
-                .filter((l) => l.length > 0);
-              this.text = lines[0] || this.originalText;
-            } else {
-              this.text = this.originalText || "";
+              if (typeof this.textArea === "string") {
+                this.textArea = { default: this.textArea };
+              }
             }
             this._dimensionsDirty = true;
             this.formatProperties();
@@ -580,7 +626,17 @@ export default class TextBox extends Formats {
     if (name === "lineHeight")
       this.lineHeight = backValues(Math.max(1, Number(e.target.value) || 1));
     if (name === "textarea") {
-      this.textArea = e.target.value.trim();
+      if (typeof this.textArea === "string") {
+        this.textArea = { default: this.textArea };
+      }
+      this.textArea.default = e.target.value.trim();
+    }
+    if (name.startsWith("inlineVar_")) {
+      const varName = name.replace("inlineVar_", "");
+      if (typeof this.textArea === "string") {
+        this.textArea = { default: this.textArea };
+      }
+      this.textArea[varName] = e.target.value;
     }
     if (name === "formatIterated") {
       this.formatIterated = e.target.value;
@@ -808,11 +864,14 @@ export default class TextBox extends Formats {
     this._dimensionsDirty = true;
   }
   drawIteratedImage(i) {
-    const texts = this.textArea
-      .trim()
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
+    if (typeof this.textArea === "string") {
+      this.textArea = { default: this.textArea };
+    }
+
+    const placeholders = this.getPlaceholders();
+    const isInline = placeholders.length > 0;
+    const maxIterationLength = this.getIterationLength();
+
     if (i === 0) {
       this.maintainedWidth = this.width;
       this.maintainedHeight = this.height;
@@ -825,12 +884,32 @@ export default class TextBox extends Formats {
       this.x = this.originalPosition.x;
       this.y = this.originalPosition.y;
     }
-    if (this.iterated && i < texts.length) {
+    if (this.iterated && i < maxIterationLength) {
+      let resolvedText = "";
+      if (isInline) {
+        resolvedText = this.originalText;
+        placeholders.forEach(placeholder => {
+          const valuesStr = this.textArea[placeholder] || "";
+          const lines = valuesStr.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+          const val = (i < lines.length) ? lines[i] : "";
+          resolvedText = resolvedText.replaceAll(`[[${placeholder}]]`, val);
+        });
+      } else {
+        const val = this.textArea.default || "";
+        const texts = val
+          .trim()
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        resolvedText = (i < texts.length) ? texts[i] : "";
+      }
+
       ctx.font = `${this.fontStyle} ${this.originalFontSize}px ${this.fontFamily}`;
       ctx.textAlign = this.textAllign;
       ctx.textBaseline = "alphabetic";
+
       if (this.formatIterated === "shrinkToFit") {
-        const lines = texts[i].split("\n");
+        const lines = resolvedText.split("\n");
         let maxLineWidth = 0;
         lines.forEach((l) => {
           maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
@@ -843,9 +922,9 @@ export default class TextBox extends Formats {
         } else {
           this.fontSize = this.originalFontSize;
         }
-        this.text = texts[i];
+        this.text = resolvedText;
       } else if (this.formatIterated === "Fit") {
-        const lines = texts[i].split("\n");
+        const lines = resolvedText.split("\n");
         let maxLineWidth = 0;
         lines.forEach((l) => {
           maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
@@ -854,9 +933,9 @@ export default class TextBox extends Formats {
 
         const scale = this.maintainedWidth / textWidth;
         this.fontSize = this.originalFontSize * (scale > 0 ? scale : 1);
-        this.text = texts[i];
+        this.text = resolvedText;
       } else if (this.formatIterated === "atWhiteSpace") {
-        const words = texts[i].split(" ");
+        const words = resolvedText.split(" ");
         let line = "";
         let result = "";
 
@@ -875,7 +954,7 @@ export default class TextBox extends Formats {
         result += line.trim();
         this.text = result;
       } else if (this.formatIterated === "createNewLine") {
-        const words = texts[i].split("");
+        const words = resolvedText.split("");
 
         let line = "";
         let result = "";
@@ -893,7 +972,7 @@ export default class TextBox extends Formats {
         result += line.trim();
         this.text = result;
       } else {
-        this.text = texts[i];
+        this.text = resolvedText;
       }
 
       this.recalculateDimensions(ctx);

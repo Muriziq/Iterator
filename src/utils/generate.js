@@ -74,7 +74,7 @@ export default async function generateCard() {
   if (objectProperties.textBoxes.length > 0) {
     iterationLength = Math.max(
       iterationLength,
-      ...objectProperties.textBoxes.map((tb) => tb.textArea.split("\n").length),
+      ...objectProperties.textBoxes.map((tb) => tb.getIterationLength()),
     );
   }
 
