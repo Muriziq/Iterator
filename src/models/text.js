@@ -88,7 +88,9 @@ export default class TextBox extends Formats {
   }
 
   getPlaceholders() {
-    const textToScan = this.iterated ? (this.templateText || this.originalText || this.text) : this.text;
+    const textToScan = this.iterated
+      ? this.templateText || this.originalText || this.text
+      : this.text;
     const regex = /\[\[([^\]]+)\]\]/g;
     const placeholders = [];
     let match;
@@ -102,7 +104,7 @@ export default class TextBox extends Formats {
 
   getIterationLength() {
     if (!this.iterated) return 1;
-    
+
     if (typeof this.textArea === "string") {
       this.textArea = { default: this.textArea };
     }
@@ -110,15 +112,21 @@ export default class TextBox extends Formats {
     const placeholders = this.getPlaceholders();
     if (placeholders.length > 0) {
       let maxLen = 1;
-      placeholders.forEach(ph => {
+      placeholders.forEach((ph) => {
         const val = this.textArea[ph] || "";
-        const len = val.split("\n").map(l => l.trim()).filter(l => l.length > 0).length;
+        const len = val
+          .split("\n")
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0).length;
         if (len > maxLen) maxLen = len;
       });
       return maxLen;
     } else {
       const val = this.textArea.default || "";
-      return val.split("\n").map(l => l.trim()).filter(l => l.length > 0).length;
+      return val
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0).length;
     }
   }
 
@@ -245,7 +253,9 @@ export default class TextBox extends Formats {
   showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     clone.textPlace = document.createElement("textarea");
-    clone.textArea = JSON.parse(JSON.stringify(this.textArea || { default: "" }));
+    clone.textArea = JSON.parse(
+      JSON.stringify(this.textArea || { default: "" }),
+    );
     if (!isUndo) {
       clone.id = crypto.randomUUID();
     }
@@ -445,12 +455,16 @@ export default class TextBox extends Formats {
         }
         const placeholders = this.getPlaceholders();
         if (placeholders.length > 0) {
-          return placeholders.map(placeholder => `
+          return placeholders
+            .map(
+              (placeholder) => `
             <label class="uniform-div" style="margin-top:1rem; flex-direction:column; align-items:stretch; gap:0.5rem">
               <span>[[${placeholder}]] Values (one per line)</span>
               <textarea name="inlineVar_${placeholder}" class="text" style="height:80px">${this.textArea[placeholder] || ""}</textarea>
             </label>
-          `).join("");
+          `,
+            )
+            .join("");
         } else {
           return `<textarea name="textarea" class="text">${this.textArea.default || ""}</textarea>`;
         }
@@ -549,6 +563,7 @@ export default class TextBox extends Formats {
           this.fonts = [];
           this.formatProperties();
           document.fonts.ready.then(() => {
+            this._dimensionsDirty = true;
             requestDraw();
           });
         } catch (error) {
@@ -659,7 +674,10 @@ export default class TextBox extends Formats {
           div.addEventListener("click", async () => {
             this.fontFamily = div.textContent;
             this._dimensionsDirty = true;
-            if (!defaultFonts.includes(this.fontFamily) && !canvasProperties.domLoadedFonts.has(this.fontFamily)) {
+            if (
+              !defaultFonts.includes(this.fontFamily) &&
+              !canvasProperties.domLoadedFonts.has(this.fontFamily)
+            ) {
               const result = await db
                 .collection("fonts")
                 .doc({ id: this.fontFamily })
@@ -678,6 +696,7 @@ export default class TextBox extends Formats {
                 document.head.appendChild(style);
                 canvasProperties.domLoadedFonts.add(this.fontFamily);
                 document.fonts.ready.then(() => {
+                  this._dimensionsDirty = true;
                   requestDraw();
                 });
                 console.log(`Font ${this.fontFamily} loaded from IndexedDB`);
@@ -888,10 +907,13 @@ export default class TextBox extends Formats {
       let resolvedText = "";
       if (isInline) {
         resolvedText = this.originalText;
-        placeholders.forEach(placeholder => {
+        placeholders.forEach((placeholder) => {
           const valuesStr = this.textArea[placeholder] || "";
-          const lines = valuesStr.split("\n").map(l => l.trim()).filter(l => l.length > 0);
-          const val = (i < lines.length) ? lines[i] : "";
+          const lines = valuesStr
+            .split("\n")
+            .map((l) => l.trim())
+            .filter((l) => l.length > 0);
+          const val = i < lines.length ? lines[i] : "";
           resolvedText = resolvedText.replaceAll(`[[${placeholder}]]`, val);
         });
       } else {
@@ -901,7 +923,7 @@ export default class TextBox extends Formats {
           .split("\n")
           .map((line) => line.trim())
           .filter((line) => line.length > 0);
-        resolvedText = (i < texts.length) ? texts[i] : "";
+        resolvedText = i < texts.length ? texts[i] : "";
       }
 
       ctx.font = `${this.fontStyle} ${this.originalFontSize}px ${this.fontFamily}`;

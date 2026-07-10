@@ -390,7 +390,7 @@ export default class Rectangle extends Formats {
           return true;
         }
         ctx.save();
-        ctx.setTransform(objectProperties.scale, 0, 0, objectProperties.scale, objectProperties.panX, objectProperties.panY);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         const centerX = this.x + this.width / 2;
         const centerY = this.y + this.height / 2;
         ctx.translate(centerX, centerY);

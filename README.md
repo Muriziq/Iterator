@@ -313,6 +313,7 @@ To introduce a new vector shape (e.g., a Star or Starburst):
 * **CSV Data Imports**: Add native support for loading external data files (.csv, .xlsx) to map text labels directly to template coordinates.
 * **WebRTC Templates Sharing**: Fast peer-to-peer templates transmission without database uploads.
 * **Batch Background Thread Rendering**: Move the main canvas drawing loop to an offscreen thread using OffscreenCanvas workers, avoiding main thread rendering entirely.
+* **Inline Rich Text Styling**: Allow users to highlight specific parts of text boxes to apply custom formatting (bold, italic, color, size) dynamically on canvas text layers.
 
 ---
 

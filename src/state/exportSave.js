@@ -303,10 +303,10 @@ export async function saveAsPDF() {
       objectProperties.objects.forEach((obj) => obj.addObject(ptx));
       ptx.restore();
 
-      const imgData = pc.toDataURL("image/png");
+      const imgData = pc.toDataURL("image/jpeg", 0.95);
       if (currentPageCount > 0) pdf.addPage();
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
       currentPageCount++;
 
       if (currentPageCount >= MAX_PAGES_PER_PDF || i === iterationLength - 1) {
@@ -425,6 +425,8 @@ export async function saveAsImage() {
     ptx.imageSmoothingEnabled = true;
     ptx.imageSmoothingQuality = "high";
 
+    const zip = new JSZip();
+
     for (let i = 0; i < iterationLength; i++) {
       // 1. Draw iterated content for step i
       await Promise.all([
@@ -443,18 +445,33 @@ export async function saveAsImage() {
       objectProperties.objects.forEach((obj) => obj.addObject(ptx));
       ptx.restore();
 
-      // Download the image
-      const link = document.createElement("a");
-      link.download = `${newName}-${i}.${fileExtension}`;
-      link.href = pc.toDataURL(imgFormat, imgFormat === "image/jpeg" ? 0.95 : undefined);
-      link.click();
+      // Convert canvas to blob asynchronously (faster than toDataURL)
+      const blob = await new Promise((resolve) => {
+        pc.toBlob(resolve, imgFormat, imgFormat === "image/jpeg" ? 0.95 : undefined);
+      });
+      zip.file(`${newName}-${i + 1}.${fileExtension}`, blob);
 
       loader.incrementOriginalState();
 
-      // Yield thread and add small timeout to avoid triggering browser download block
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      lastYield = Date.now();
+      // Yield thread to keep UI alive and loader drawing
+      const now = Date.now();
+      if (now - lastYield >= 16) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        lastYield = Date.now();
+      }
     }
+
+    // Generate zip file and download
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const link = document.createElement("a");
+    link.download = `${newName}-images.zip`;
+    link.href = URL.createObjectURL(zipBlob);
+    link.click();
+    
+    // Clean up URL object after a short delay
+    setTimeout(() => {
+      URL.revokeObjectURL(link.href);
+    }, 10000);
 
     // Restore state
     await Promise.all([

@@ -2,6 +2,7 @@ import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip
 import { objectProperties, canvasProperties } from "../variable.js";
 import requestDraw from "../utils/draw.js";
 
+const MAX_UNDO_LIMIT = 50;
 let undoObject = [];
 let redoObject = [];
 export function undo() {
@@ -39,6 +40,9 @@ function cloneObject(object) {
 }
 export function saveState() {
   undoObject.push(cloneObject(objectProperties.objects));
+  if (undoObject.length > MAX_UNDO_LIMIT) {
+    undoObject.shift();
+  }
   redoObject = [];
 }
 

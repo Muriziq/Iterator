@@ -355,6 +355,22 @@
             </div>
           </div>
 
+          <div class="tool-item" data-name="iteration modes" data-desc="Understand the difference between normal (full textbox replacement) and inline iteration (placeholder-based replacement).">
+            <button class="tool-btn">Iteration Modes</button>
+            <div class="tool-info">
+              <span class="tool-name">Normal vs. Inline Iteration</span>
+              <span class="tool-desc">
+                Iterator supports two types of text iteration depending on your template:
+                <br><br>
+                <strong style="color:var(--h3-fill)">Normal Iteration (Full Replacement)</strong><br>
+                If your text box contains no brackets, the entire textbox content is replaced line-by-line during iteration with the lines you write in the <strong>Iterate Textarea</strong>.
+                <br><br>
+                <strong style="color:var(--h3-fill)">Inline Iteration (Placeholders)</strong><br>
+                If your text contains double-bracketed placeholders like <code>[[text1]]</code> or <code>[[Name]]</code> (e.g. <em>"Hello [[Name]], your score is [[Score]]"</em>), the application will auto-detect them. The sidebar will render separate textareas for each variable. During iteration, the placeholders are replaced inline by their respective lines, wrapping and sizing perfectly as part of the unified text box.
+              </span>
+            </div>
+          </div>
+
         </div>
       </section>
 

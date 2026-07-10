@@ -244,6 +244,7 @@ export default class Polygon extends Formats {
         return true;
       }
       ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
 
       ctx.translate(this.x, this.y);
       ctx.rotate(this.angle);
