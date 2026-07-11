@@ -84,11 +84,16 @@ export default async function Tools(tool) {
     case "zoom":
       objectProperties.selectedObj = null;
       propertiesBar.innerHTML = `
-  <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
+      <div>
+     <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
     <button class="zoomin"><img src="imagess/zoom-in.svg"></button>
     <button class="zoomout"><img src="imagess/zoom-out.svg"></button>
-    <button class="fitToPage imageb">Fit To Page</button>
-  </div>
+  </div>  
+        <button class="fitToPage imageb">Fit To Page</button>
+    <button class="fitToContent imageb">Fit To Content</button> 
+      </div>
+
+
   `;
 
       objectProperties.isDrawing = "zoom";
@@ -97,16 +102,21 @@ export default async function Tools(tool) {
       const zoomInBtn = propertiesBar.querySelector(".zoomin");
       const zoomOutBtn = propertiesBar.querySelector(".zoomout");
       const fitBtn = propertiesBar.querySelector(".fitToPage");
+      const fitContentBtn = propertiesBar.querySelector(".fitToContent");
 
       let zoomInterval;
 
+      const ZOOM_FACTOR = 1.05;
+      const MIN_SCALE = 0.05;
+      const MAX_SCALE = 20.0;
+
       function zoomIn() {
-        objectProperties.scale += 0.01 * 0.9 ** (objectProperties.scale * 10 - 10);
+        objectProperties.scale = Math.min(objectProperties.scale * ZOOM_FACTOR, MAX_SCALE);
         requestDraw();
       }
 
       function zoomOut() {
-        objectProperties.scale -= 0.01 * 0.9 ** (objectProperties.scale * 10 - 10);
+        objectProperties.scale = Math.max(objectProperties.scale / ZOOM_FACTOR, MIN_SCALE);
         requestDraw();
       }
 
@@ -138,10 +148,50 @@ export default async function Tools(tool) {
         //   width: canvasProperties.measurement.width,
         //   height: canvasProperties.measurement.height,
         // });
-                canvasSize()
+        canvasSize()
         requestDraw();
         Tools("zoom");
+      });
 
+      /* FIT TO CONTENT */
+      fitContentBtn.addEventListener("click", () => {
+        const elements = objectProperties.objects.filter(obj => obj.type !== "guide");
+        if (elements.length === 0) {
+          canvasSize();
+          requestDraw();
+          return;
+        }
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        elements.forEach((obj) => {
+          const snap = obj.whereToSnap();
+          if (snap && snap.pos) {
+            const { x, y, width, height } = snap.pos;
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x + width > maxX) maxX = x + width;
+            if (y + height > maxY) maxY = y + height;
+          }
+        });
+
+        if (minX === Infinity || minY === Infinity || maxX === -Infinity || maxY === -Infinity) {
+          canvasSize();
+          requestDraw();
+          return;
+        }
+
+        zoomToRect({
+          x: minX,
+          y: minY,
+          width: maxX - minX,
+          height: maxY - minY,
+        });
+        requestDraw();
+        Tools("zoom");
       });
 
       requestDraw();

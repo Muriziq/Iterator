@@ -134,11 +134,12 @@ export default class Group extends Formats {
           const dx = pos.x - this.x;
           const dy = pos.y - this.y;
 
-          l.changeLocation(this.x + dx * scaleX, "x");
-          l.changeLocation(this.y + dy * scaleY, "y");
           l.changeLocation(scaleX, "scaleX");
           l.changeLocation(scaleY, "scaleY");
+          l.changeLocation(this.x + dx * scaleX, "x");
+          l.changeLocation(this.y + dy * scaleY, "y");
         });
+        this.updateBounds();
       }
     }
   }
@@ -241,12 +242,19 @@ export default class Group extends Formats {
       this.list.forEach((l) => (l[name] = e.target.value));
       this[name] = e.target.value;
     }
+    this.updateBounds();
     requestDraw();
   }
   moveClip(x, y) {
     this.x += x;
     this.y += y;
     if (this.list.length > 0) this.list.forEach((list) => list.moveClip(x, y));
+    if (typeof this.minX === "number") {
+      this.minX += x;
+      this.maxX += x;
+      this.minY += y;
+      this.maxY += y;
+    }
   }
   whereToSnap() {
     let cos = Math.cos(this.angle);
@@ -276,8 +284,8 @@ export default class Group extends Formats {
         const pos = l.whereToSnap().pos;
         const dx = pos.x - this.x;
 
-        l.changeLocation(this.x + dx * value, "x");
         l.changeLocation(value, "scaleX");
+        l.changeLocation(this.x + dx * value, "x");
       });
     } else if (type === "scaleY") {
       this.list.forEach((l) => {
@@ -285,9 +293,20 @@ export default class Group extends Formats {
         const pos = l.whereToSnap().pos;
         const dy = pos.y - this.y;
 
-        l.changeLocation(this.y + dy * value, "y");
         l.changeLocation(value, "scaleY");
+        l.changeLocation(this.y + dy * value, "y");
       });
     }
+    this.updateBounds();
+  }
+
+  updateBounds() {
+    if (this.list.length === 0) return;
+    this.minX = Math.min(...this.list.map((l) => l.whereToSnap().x[0]));
+    this.maxX = Math.max(...this.list.map((l) => l.whereToSnap().x[2]));
+    this.minY = Math.min(...this.list.map((l) => l.whereToSnap().y[0]));
+    this.maxY = Math.max(...this.list.map((l) => l.whereToSnap().y[2]));
+    this.x = (this.minX + this.maxX) / 2;
+    this.y = (this.minY + this.maxY) / 2;
   }
 }

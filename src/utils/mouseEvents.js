@@ -266,6 +266,10 @@ export async function wMouseUp() {
       });
       objectProperties.isDrawing = null;
       objectProperties.multipleSelect = true;
+      if (objectProperties.multipleSelectArr.length > 0) {
+        multipleSelectFunction();
+      }
+      requestDraw(false);
     } else {
       const drawedObject = drawingObject(true);
       if (objectProperties.isDrawing === "image") {

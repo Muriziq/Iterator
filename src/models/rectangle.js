@@ -907,19 +907,42 @@ export default class Rectangle extends Formats {
         const lastLocation = clip.whereToSnap().pos.x - this.x + value;
         clip.changeLocation(lastLocation, "x");
       });
-      this.x = value;
+      if (this.roundedOrbeveled === "shaped") {
+        this.x = value - this.minX - this.width / 2;
+      } else {
+        this.x = value;
+      }
     } else if (type === "y") {
-      {
-        this.clips.forEach((clip) => {
-          const lastLocation = clip.whereToSnap().pos.y - this.y + value;
-          clip.changeLocation(lastLocation, "y");
-        });
-
+      this.clips.forEach((clip) => {
+        const lastLocation = clip.whereToSnap().pos.y - this.y + value;
+        clip.changeLocation(lastLocation, "y");
+      });
+      if (this.roundedOrbeveled === "shaped") {
+        this.y = value - this.minY - this.height / 2;
+      } else {
         this.y = value;
       }
     } else if (type === "scaleX") {
+      if (this.roundedOrbeveled === "shaped") {
+        this.points.forEach((p) => {
+          p.points.x *= value;
+          p.controls[0].x *= value;
+          p.controls[1].x *= value;
+        });
+        if (typeof this.minX === "number") this.minX *= value;
+        if (typeof this.maxX === "number") this.maxX *= value;
+      }
       this.width *= value;
     } else if (type === "scaleY") {
+      if (this.roundedOrbeveled === "shaped") {
+        this.points.forEach((p) => {
+          p.points.y *= value;
+          p.controls[0].y *= value;
+          p.controls[1].y *= value;
+        });
+        if (typeof this.minY === "number") this.minY *= value;
+        if (typeof this.maxY === "number") this.maxY *= value;
+      }
       this.height *= value;
     }
   }

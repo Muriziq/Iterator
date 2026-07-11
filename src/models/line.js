@@ -580,12 +580,16 @@ export default class Line extends Formats {
         p.controls[0].x = p.controls[0].x * value;
         p.controls[1].x = p.controls[1].x * value;
       });
+      if (typeof this.minX === "number") this.minX *= value;
+      if (typeof this.maxX === "number") this.maxX *= value;
     } else if (type === "scaleY") {
       this.points.forEach((p) => {
         p.points.y = p.points.y * value;
         p.controls[0].y = p.controls[0].y * value;
         p.controls[1].y = p.controls[1].y * value;
       });
+      if (typeof this.minY === "number") this.minY *= value;
+      if (typeof this.maxY === "number") this.maxY *= value;
     }
   }
   moveClip(x, y) {

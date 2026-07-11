@@ -617,21 +617,35 @@ ${super.similarProptiesOutput()}
 
   changeLocation(value, type) {
     if (type === "x") {
-      this.x = value + this.radiusX;
+      if (this.points.length > 0) {
+        this.x = value - this.minX;
+      } else {
+        this.x = value + this.radiusX;
+      }
     } else if (type === "y") {
-      this.y = value + this.radiusY;
+      if (this.points.length > 0) {
+        this.y = value - this.minY;
+      } else {
+        this.y = value + this.radiusY;
+      }
     } else if (type === "scaleX") {
       this.points.forEach((p) => {
         p.points.x = p.points.x * value;
         p.controls[0].x = p.controls[0].x * value;
         p.controls[1].x = p.controls[1].x * value;
       });
+      this.radiusX *= value;
+      if (typeof this.minX === "number") this.minX *= value;
+      if (typeof this.maxX === "number") this.maxX *= value;
     } else if (type === "scaleY") {
       this.points.forEach((p) => {
         p.points.y = p.points.y * value;
         p.controls[0].y = p.controls[0].y * value;
         p.controls[1].y = p.controls[1].y * value;
       });
+      this.radiusY *= value;
+      if (typeof this.minY === "number") this.minY *= value;
+      if (typeof this.maxY === "number") this.maxY *= value;
     }
   }
 }
