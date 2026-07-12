@@ -1,8 +1,8 @@
 import Formats from "./formats.js";
 import LineUtils from "./lineUtils.js";
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import { ctx, propertiesBar, width, height, db, thresholds } from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
-import { changeValues, backValues, radToDeg, applyOpacityToHex } from "../utils/convert.js";
+import { changeValues, backValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
 import { pauseSaving, continueSaving } from "../state/save.js";
 import { initPickrs, destroyPickrs } from "../utils/colorPicker.js";

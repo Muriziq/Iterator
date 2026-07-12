@@ -1,14 +1,13 @@
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "./src/constants.js";
-import { objectProperties, canvasProperties, defaultFonts, newFonts, loadNewFonts } from "./src/variable.js";
+import { canvas, canvassDiv, propertiesBar, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds } from "./src/constants.js";
+import { objectProperties, canvasProperties, loadNewFonts } from "./src/variable.js";
 import requestDraw from "./src/utils/draw.js";
 import { canvasSize, changeOrientation } from "./src/state/canvas.js";
 import { importLoaded, saveToFile, pauseSaving, continueSaving } from "./src/state/save.js";
 import { saveAsPDF, saveAsImage } from "./src/state/exportSave.js";
 import { undo, redo } from "./src/state/undo.js";
 import Tools, { addImage } from "./src/Tools/tools.js";
-import { align, group, zoomToRect } from "./src/Tools/others.js";
+import { align, group } from "./src/Tools/others.js";
 import { backValues, changeValues } from "./src/utils/convert.js";
-import { bringToFront, sendToBack, pageUp, pageDown } from "./src/Tools/pageTo.js";
 import { cMousedown, cDoubleClick, cMouseUp, cMouseLeave, cMouseMove, wMouseUp, keyDown } from "./src/utils/mouseEvents.js";
 import generateCard from "./src/utils/generate.js";
 import { cancelGenerate, flip, notify, debounce } from "./src/utils/uiHelpers.js";

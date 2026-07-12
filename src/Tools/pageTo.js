@@ -1,4 +1,3 @@
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
 import { objectProperties } from "../variable.js";
 import requestDraw from "../utils/draw.js";
 export function bringToFront(selected) {

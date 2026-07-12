@@ -1,20 +1,4 @@
-import {
-  canvas,
-  ctx,
-  canvass,
-  canvassDiv,
-  propertiesBar,
-  notification,
-  editclip,
-  width,
-  height,
-  saveWorker,
-  measurementArr,
-  db,
-  projectName,
-  thresholds,
-  generationArea,
-} from "../constants.js";
+import { canvas, editclip, width, height, db, thresholds } from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
 import { getMousePos } from "./mousePos.js";
 import TextBox from "../models/text.js";

@@ -1,22 +1,6 @@
-import {
-  canvas,
-  ctx,
-  canvass,
-  canvassDiv,
-  propertiesBar,
-  notification,
-  editclip,
-  width,
-  height,
-  saveWorker,
-  measurementArr,
-  db,
-  projectName,
-  thresholds,
-  generationArea,
-} from "../constants.js";
+import { width, height, thresholds } from "../constants.js";
 import { objectProperties } from "../variable.js";
-import { adapt, drawingObject } from "../state/canvas.js";
+import { adapt } from "../state/canvas.js";
 import { changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
 export default class Formats {

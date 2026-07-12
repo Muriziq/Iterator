@@ -1,6 +1,6 @@
 import Formats from "./formats.js";
 import LineUtils from "./lineUtils.js";
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import { ctx, propertiesBar, editclip, width, height, thresholds } from "../constants.js";
 import { objectProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
@@ -220,11 +220,19 @@ export default class Line extends Formats {
 
         return true;
       }
-      if (Math.abs(localX - this.maxX) < thresholds.threshold()) {
+      if (
+        Math.abs(localX - this.maxX) < thresholds.threshold() &&
+        localY >= this.minY - thresholds.threshold() &&
+        localY <= this.maxY + thresholds.threshold()
+      ) {
         this.selectedArea = "scaleR";
         return true;
       }
-      if (Math.abs(localY - this.maxY) < thresholds.threshold()) {
+      if (
+        Math.abs(localY - this.maxY) < thresholds.threshold() &&
+        localX >= this.minX - thresholds.threshold() &&
+        localX <= this.maxX + thresholds.threshold()
+      ) {
         this.selectedArea = "scaleB";
         return true;
       }

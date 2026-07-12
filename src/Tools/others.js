@@ -1,4 +1,4 @@
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import { canvas, width, height } from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
 import Tools from "../Tools/tools.js";
 import Group from "../models/group.js";

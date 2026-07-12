@@ -1,4 +1,4 @@
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import { canvas, ctx, width, height } from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
 import { adapt, drawingObject } from "../state/canvas.js";
 import { saveState } from "../state/undo.js";

@@ -1,5 +1,4 @@
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
-import { objectProperties } from "../variable.js";
+import { ctx, width, height, thresholds } from "../constants.js";
 import { adapt } from "../state/canvas.js";
 
 export default class LineUtils {
@@ -288,6 +287,11 @@ export default class LineUtils {
   }
   static getNormalPostion(localX, localY, width, height, threshold) {
     let selectedArea = null;
+    const withinX = localX >= -threshold && localX <= width + threshold;
+    const withinY = localY >= -threshold && localY <= height + threshold;
+    if (!withinX || !withinY) {
+      return null;
+    }
     const nearLeft = Math.abs(localX) < threshold;
     const nearRight = Math.abs(localX - width) < threshold;
     const nearTop = Math.abs(localY) < threshold;

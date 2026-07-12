@@ -1,6 +1,6 @@
 import Formats from "./formats.js";
 import LineUtils from "./lineUtils.js";
-import { canvas, ctx, canvass, canvassDiv, propertiesBar, notification, editclip, width, height, saveWorker, measurementArr, db, projectName, thresholds, generationArea } from "../constants.js";
+import { ctx, propertiesBar, editclip, width, height, thresholds } from "../constants.js";
 import { objectProperties } from "../variable.js";
 import { applyOpacityToHex, backValues, changeValues, radToDeg } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
@@ -381,11 +381,19 @@ export default class Rectangle extends Formats {
 
           return true;
         }
-        if (Math.abs(localMouseX - this.maxX) < thresholds.threshold()) {
+        if (
+          Math.abs(localMouseX - this.maxX) < thresholds.threshold() &&
+          localMouseY >= this.minY - thresholds.threshold() &&
+          localMouseY <= this.maxY + thresholds.threshold()
+        ) {
           this.selectedArea = "scaleR";
           return true;
         }
-        if (Math.abs(localMouseY - this.maxY) < thresholds.threshold()) {
+        if (
+          Math.abs(localMouseY - this.maxY) < thresholds.threshold() &&
+          localMouseX >= this.minX - thresholds.threshold() &&
+          localMouseX <= this.maxX + thresholds.threshold()
+        ) {
           this.selectedArea = "scaleB";
           return true;
         }

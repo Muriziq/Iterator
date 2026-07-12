@@ -1,25 +1,7 @@
 import Formats from "./formats.js";
-import {
-  canvas,
-  ctx,
-  canvass,
-  propertiesBar,
-  db,
-  thresholds,
-} from "../constants.js";
-import {
-  objectProperties,
-  defaultFonts,
-  newFonts,
-  canvasProperties,
-} from "../variable.js";
-import {
-  applyOpacityToHex,
-  backValues,
-  changeValues,
-  radToDeg,
-  getFormatFromExtension,
-} from "../utils/convert.js";
+import { canvas, ctx, canvass, propertiesBar, db, thresholds } from "../constants.js";
+import { objectProperties, defaultFonts, newFonts, canvasProperties } from "../variable.js";
+import { applyOpacityToHex, backValues, changeValues, radToDeg, getFormatFromExtension } from "../utils/convert.js";
 import requestDraw from "../utils/draw.js";
 import { adapt } from "../state/canvas.js";
 import { reverseMousePos } from "../utils/mousePos.js";

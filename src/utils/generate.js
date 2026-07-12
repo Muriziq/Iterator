@@ -1,4 +1,4 @@
-import { canvas, ctx, canvassDiv, generationArea } from "../constants.js";
+import { canvas, canvassDiv, generationArea } from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
 import requestDraw from "../utils/draw.js";
 import LoaderManager from "../models/loader.js";

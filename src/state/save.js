@@ -1,26 +1,5 @@
-import {
-  canvas,
-  ctx,
-  canvass,
-  canvassDiv,
-  propertiesBar,
-  notification,
-  editclip,
-  width,
-  height,
-  saveWorker,
-  measurementArr,
-  db,
-  projectName,
-  thresholds,
-  generationArea,
-} from "../constants.js";
-import {
-  objectProperties,
-  canvasProperties,
-  defaultFonts,
-  newFonts,
-} from "../variable.js";
+import { canvas, saveWorker, db } from "../constants.js";
+import { objectProperties, canvasProperties, defaultFonts, newFonts } from "../variable.js";
 import { canvasSize } from "./canvas.js";
 import requestDraw from "../utils/draw.js";
 import { enableWakeLock, disableWakeLock } from "../utils/screenWake.js";
