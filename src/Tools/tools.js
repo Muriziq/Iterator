@@ -6,7 +6,7 @@ import { bringToFront, sendToBack, pageUp, pageDown } from "../Tools/pageTo.js";
 import { zoomToRect } from "../Tools/others.js";
 import { notify } from "../utils/uiHelpers.js";
 import LoaderManager from "../models/loader.js";
-import { canvasSize } from "../state/canvas.js";
+import { canvasSize, adapt } from "../state/canvas.js";
 import { rebuildSubArrays } from "../state/undo.js";
 export default async function Tools(tool) {
   document.querySelectorAll(".leftSidebar button").forEach((button) => {
@@ -200,10 +200,11 @@ export default async function Tools(tool) {
     case "duplicate":
         if (objectProperties.selectedObj) {
           const cloneObj = objectProperties.selectedObj.showClone();
+          const offset = adapt(5);
+          cloneObj.moveClip(offset, -offset);
           objectProperties.objects.push(cloneObj);
           objectProperties.selectedObj = cloneObj;
           rebuildSubArrays();
-          notify("duplicated")
         } else {
           notify("Please Select An Object");
           Tools("moveTool");

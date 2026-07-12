@@ -17,8 +17,12 @@ export function canvasSize() {
   const canvassRect = canvas.getBoundingClientRect();
   canvasProperties.measurement.width = Math.min(thresholds.maxCanvasSize(), canvasProperties.measurement.width);
   canvasProperties.measurement.height = Math.min(thresholds.maxCanvasSize(), canvasProperties.measurement.height);
-  width.value = changeValues(canvasProperties.measurement.width);
-  height.value = changeValues(canvasProperties.measurement.height);
+  if (document.activeElement !== width) {
+    width.value = changeValues(canvasProperties.measurement.width);
+  }
+  if (document.activeElement !== height) {
+    height.value = changeValues(canvasProperties.measurement.height);
+  }
   canvassDiv.style.width = canvasProperties.measurement.width + "px";
   canvassDiv.style.height = canvasProperties.measurement.height + "px";
 

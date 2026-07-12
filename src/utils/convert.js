@@ -51,18 +51,20 @@ export function radToDeg(val, type) {
 }
 
 export function backValues(x) {
+  let val = parseFloat(x);
+  if (isNaN(val)) val = 0;
   if (canvasProperties.whatsMeasured === "px") {
-    return x;
+    return val;
   } else if (canvasProperties.whatsMeasured === "pt") {
-    return x * 1.333;
+    return val * 1.333;
   } else if (canvasProperties.whatsMeasured === "in") {
-    return x * 96;
+    return val * 96;
   } else if (canvasProperties.whatsMeasured === "m") {
-    return x * 3780;
+    return val * 3780;
   } else if (canvasProperties.whatsMeasured === "cm") {
-    return x * 37.8;
+    return val * 37.8;
   } else if (canvasProperties.whatsMeasured === "mm") {
-    return x * 3.78;
+    return val * 3.78;
   }
 }
 

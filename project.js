@@ -143,11 +143,17 @@ width.addEventListener("input", (e) => {
   canvasProperties.measurement = { width: widthValue, height: heightValue };
   canvasSize();
 });
+width.addEventListener("blur", () => {
+  width.value = changeValues(canvasProperties.measurement.width);
+});
 height.addEventListener("input", (e) => {
   const widthValue = backValues(width.value);
   const heightValue = backValues(e.target.value);
   canvasProperties.measurement = { width: widthValue, height: heightValue };
   canvasSize();
+});
+height.addEventListener("blur", () => {
+  height.value = changeValues(canvasProperties.measurement.height);
 });
 document.getElementById("renderPage").addEventListener("change", (e) => {
   canvasProperties.generateInfo.renderPage = e.target.value;
