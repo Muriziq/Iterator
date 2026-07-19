@@ -10,6 +10,7 @@ import { align, group, zoomToRect } from "../Tools/others.js";
 import { bringToFront, sendToBack, pageUp, pageDown } from "../Tools/pageTo.js";
 import { saveToFile } from "../state/save.js";
 import { flip, notify } from "../utils/uiHelpers.js";
+import { copyToClipboard, cutToClipboard, pasteFromClipboard } from "./clipboard.js";
 
 export function cMousedown(event) {
   for (let i = objectProperties.objects.length - 1; i >= 0; i--) {
@@ -415,15 +416,20 @@ export async function keyDown(e) {
     Tools("duplicate");
   } else if (
     e.shiftKey &&
-    e.key === "@" &&
+    e.key.toLowerCase() === "@" &&
     objectProperties.selectedObj !== null
   ) {
     zoomToRect(objectProperties.selectedObj.whereToSnap().pos);
-  } else if (e.ctrlKey && e.key === "a") {
+  } else if (e.ctrlKey && e.key.toLowerCase() === "a") {
     Tools("multipleSelection");
     objectProperties.multipleSelectArr = [...objectProperties.objects];
-    objectProperties.multipleSelect = true;
     multipleSelectFunction();
+  } else if (e.ctrlKey && e.key.toLowerCase() === "c") {
+    copyToClipboard();
+  } else if (e.ctrlKey && e.key.toLowerCase() === "x") {
+    cutToClipboard();
+  } else if (e.ctrlKey && e.key.toLowerCase() === "v") {
+    pasteFromClipboard();
   } else if (
     e.ctrlKey &&
     e.key.toLowerCase() === "g" &&

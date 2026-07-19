@@ -345,10 +345,14 @@ export default class Ellipse extends Formats {
   }
   showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    clone.clips = this.clips.map((c) => c.showClone());
     if (!isUndo) {
       clone.id = crypto.randomUUID();
     }
+    clone.clips = this.clips.map((c) => {
+      const clipClone = c.showClone(isUndo);
+      clipClone.clipper = clone.id;
+      return clipClone;
+    });
     return clone;
   }
   doubleClicked(mouse) {

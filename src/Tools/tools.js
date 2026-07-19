@@ -82,7 +82,7 @@ export default async function Tools(tool) {
       break;
 
     case "zoom":
-      objectProperties.selectedObj = null;
+      // objectProperties.selectedObj = null;
       propertiesBar.innerHTML = `
       <div>
      <div style="display:flex;flex-direction:row;align-items:center; justify-content:center; gap:1rem;border:none">
@@ -91,6 +91,7 @@ export default async function Tools(tool) {
   </div>  
         <button class="fitToPage imageb">Fit To Page</button>
     <button class="fitToContent imageb">Fit To Content</button> 
+    <button class="zoomToSelected imageb">Zoom To Selected</button>
       </div>
 
 
@@ -103,6 +104,7 @@ export default async function Tools(tool) {
       const zoomOutBtn = propertiesBar.querySelector(".zoomout");
       const fitBtn = propertiesBar.querySelector(".fitToPage");
       const fitContentBtn = propertiesBar.querySelector(".fitToContent");
+      const zoomToSelected = propertiesBar.querySelector(".zoomToSelected");
 
       let zoomInterval;
 
@@ -119,6 +121,12 @@ export default async function Tools(tool) {
         objectProperties.scale = Math.max(objectProperties.scale / ZOOM_FACTOR, MIN_SCALE);
         requestDraw();
       }
+      zoomToSelected.addEventListener("click", () => {
+        if (objectProperties.selectedObj !== null) {
+          zoomToRect(objectProperties.selectedObj.whereToSnap().pos);
+          requestDraw();
+        }
+      })
 
       /* HOLD TO ZOOM IN */
       zoomInBtn.addEventListener("mousedown", () => {

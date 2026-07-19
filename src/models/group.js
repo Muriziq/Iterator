@@ -144,7 +144,7 @@ export default class Group extends Formats {
   }
   showClone(isUndo = false) {
     let clone = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    clone.list = this.list.map((obj) => obj.showClone());
+    clone.list = this.list.map((obj) => obj.showClone(isUndo));
     if (!isUndo) {
       clone.id = crypto.randomUUID();
     }

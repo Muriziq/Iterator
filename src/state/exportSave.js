@@ -1,8 +1,13 @@
-import { canvas, width, height } from "../constants.js";
+import { canvas, width, height, generationArea } from "../constants.js";
 import { objectProperties, canvasProperties } from "../variable.js";
 import { pauseSaving, continueSaving } from "./save.js";
 import LoaderManager from "../models/loader.js";
-import requestDraw from "../utils/draw.js";
+import { 
+  getExportTotalItems, 
+  exportRequestRender, 
+  exportRestoreView 
+} from "../utils/generate.js";
+
 
 function promptUserOptions(title, fields) {
   return new Promise((resolve) => {
@@ -204,22 +209,15 @@ export async function saveAsPDF() {
       max: 500,
       value: 50,
     },
-    {
-      name: "quality",
-      label: "Export Quality (DPI Scale)",
-      type: "select",
-      options: [
-        { value: "1", label: "Standard (72 DPI - Web)" },
-        { value: "2", label: "Medium (144 DPI - Retina)" },
-        { value: "3", label: "High Quality (216 DPI)" },
-        { value: "4", label: "Print Quality (300 DPI - Recommended)" },
-        { value: "5", label: "Ultra HD (360 DPI - Slow)" },
-      ],
-      value: "4",
-    },
   ]);
 
   if (!options) return; // User cancelled or clicked Cancel
+
+  const totalItems = getExportTotalItems();
+  if (totalItems === 0 || generationArea.children.length === 0) {
+    alert("Please generate cards first using the 'Done' button.");
+    return;
+  }
 
   const MAX_PAGES_PER_PDF = options.maxPages;
 
@@ -230,35 +228,12 @@ export async function saveAsPDF() {
 
   try {
     const { jsPDF } = window.jspdf;
-    const EXPORT_SCALE = Number(options.quality) || 1;
-    const cropX = (canvas.width - canvasProperties.measurement.width) / 2;
-    const cropY = (canvas.height - canvasProperties.measurement.height) / 2;
-    const cropW = canvasProperties.measurement.width;
-    const cropH = canvasProperties.measurement.height;
 
-    // Calculate iteration length
-    let iterationLength = 1;
-    if (objectProperties.textBoxes.length > 0) {
-      iterationLength = Math.max(
-        iterationLength,
-        ...objectProperties.textBoxes.map((tb) => tb.getIterationLength())
-      );
-    }
-    const maxImageIterLength = Math.max(
-      1,
-      ...objectProperties.images.map((img) =>
-        img.originalFiles.length ? img.originalFiles.length : 1
-      )
-    );
-    iterationLength = Math.max(iterationLength, maxImageIterLength);
-
-    const loader = new LoaderManager(iterationLength, "Exporting PDF...");
-    loader.createLoader();
-
-    const pdfWidth = cropW;
-    const pdfHeight = cropH;
-    const canvasWidth = cropW * EXPORT_SCALE;
-    const canvasHeight = cropH * EXPORT_SCALE;
+    // Get the display width and height of the first page to size the PDF pages
+    const firstPageEl = generationArea.children[0];
+    const pageRect = firstPageEl.getBoundingClientRect();
+    const pdfWidth = parseFloat(firstPageEl.style.width) || pageRect.width;
+    const pdfHeight = parseFloat(firstPageEl.style.height) || pageRect.height;
 
     const createPDF = () =>
       new jsPDF({
@@ -272,69 +247,56 @@ export async function saveAsPDF() {
     let pdfIndex = 1;
     const newName = canvasProperties.formerName.replace(/\.json$/i, "");
 
-    const previouslySelectedObj = objectProperties.selectedObj;
-    objectProperties.selectedObj = null;
-
-    let lastYield = Date.now();
-
-    // Create exactly one offscreen canvas and reuse it
-    const pc = document.createElement("canvas");
-    pc.width = canvasWidth;
-    pc.height = canvasHeight;
-    const ptx = pc.getContext("2d");
-    ptx.imageSmoothingEnabled = true;
-    ptx.imageSmoothingQuality = "high";
-
-    for (let i = 0; i < iterationLength; i++) {
-      // 1. Draw iterated content for step i
-      await Promise.all([
-        ...objectProperties.images.map((img) => img.drawIteratedImage(i)),
-        ...objectProperties.textBoxes.map((tb) => tb.drawIteratedImage(i)),
-      ]);
-
-      // 2. Reuse offscreen canvas for the card
-      ptx.clearRect(0, 0, canvasWidth, canvasHeight);
-      ptx.fillStyle = "#ffffff";
-      ptx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-      ptx.save();
-      ptx.scale(EXPORT_SCALE, EXPORT_SCALE);
-      ptx.translate(-cropX, -cropY);
-      objectProperties.objects.forEach((obj) => obj.addObject(ptx));
-      ptx.restore();
-
-      const imgData = pc.toDataURL("image/jpeg", 0.95);
-      if (currentPageCount > 0) pdf.addPage();
-
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
-      currentPageCount++;
-
-      if (currentPageCount >= MAX_PAGES_PER_PDF || i === iterationLength - 1) {
-        pdf.save(`${newName}-${pdfIndex}.pdf`);
-        pdfIndex++;
-        currentPageCount = 0;
-        if (i !== iterationLength - 1) {
-          pdf = createPDF();
-        }
-      }
-
-      loader.incrementOriginalState();
-
-      // Yield thread to keep UI alive and loader drawing
-      const now = Date.now();
-      if (now - lastYield >= 16) {
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-        lastYield = Date.now();
-      }
+    // Count total page elements we will export across all batches to configure loader.
+    let totalPagesToExport = 0;
+    if (canvasProperties.generateInfo.renderPage === "auto") {
+      totalPagesToExport = totalItems;
+    } else {
+      const { noPerRow, noPerColumn } = canvasProperties.generateInfo;
+      const boxesPerPage = (noPerRow || 1) * (noPerColumn || 1);
+      totalPagesToExport = Math.ceil(totalItems / boxesPerPage);
     }
 
-    // Restore state
-    await Promise.all([
-      ...objectProperties.images.map((img) => img.backToDefault()),
-      ...objectProperties.textBoxes.map((tb) => tb.backToDefault()),
-    ]);
-    objectProperties.selectedObj = previouslySelectedObj;
-    requestDraw();
+    const loader = new LoaderManager(totalPagesToExport, "Exporting PDF...");
+    loader.createLoader();
+
+    let batchIndex = 0;
+    let exportProgressIndex = 0;
+
+    while (true) {
+      const pages = await exportRequestRender(batchIndex);
+      if (!pages) break; // Finished all batches
+
+      for (let j = 0; j < pages.length; j++) {
+        const element = pages[j];
+
+        const imgData = element.toDataURL("image/jpeg", 0.85);
+        if (currentPageCount > 0) pdf.addPage();
+
+        pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+        currentPageCount++;
+
+        if (currentPageCount >= MAX_PAGES_PER_PDF || exportProgressIndex === totalPagesToExport - 1) {
+          pdf.save(`${newName}-${pdfIndex}.pdf`);
+          pdfIndex++;
+          currentPageCount = 0;
+          if (exportProgressIndex !== totalPagesToExport - 1) {
+            pdf = createPDF();
+          }
+        }
+
+        exportProgressIndex++;
+        loader.incrementOriginalState();
+
+        // Yield thread
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+
+      batchIndex++;
+    }
+
+    // Restore original batch view
+    await exportRestoreView();
 
   } catch (error) {
     console.error("Failed to generate PDF:", error);
@@ -357,22 +319,15 @@ export async function saveAsImage() {
       ],
       value: "png",
     },
-    {
-      name: "quality",
-      label: "Export Quality (Scale Factor)",
-      type: "select",
-      options: [
-        { value: "1", label: "Standard (1x - Web)" },
-        { value: "2", label: "Medium (2x - Retina)" },
-        { value: "3", label: "High Quality (3x)" },
-        { value: "4", label: "Print Quality (4x - Recommended)" },
-        { value: "5", label: "Ultra HD (5x)" },
-      ],
-      value: "4",
-    },
   ]);
 
   if (!options) return; // User cancelled or clicked Cancel
+
+  const totalItems = getExportTotalItems();
+  if (totalItems === 0 || generationArea.children.length === 0) {
+    alert("Please generate cards first using the 'Done' button.");
+    return;
+  }
 
   const imgFormat = options.format === "jpeg" ? "image/jpeg" : "image/png";
   const fileExtension = options.format === "jpeg" ? "jpg" : "png";
@@ -383,82 +338,46 @@ export async function saveAsImage() {
   saveBtn.textContent = "loading";
 
   try {
-    const EXPORT_SCALE = Number(options.quality) || 1;
-    const cropX = (canvas.width - canvasProperties.measurement.width) / 2;
-    const cropY = (canvas.height - canvasProperties.measurement.height) / 2;
-    const cropW = canvasProperties.measurement.width;
-    const cropH = canvasProperties.measurement.height;
-
-    // Calculate iteration length
-    let iterationLength = 1;
-    if (objectProperties.textBoxes.length > 0) {
-      iterationLength = Math.max(
-        iterationLength,
-        ...objectProperties.textBoxes.map((tb) => tb.getIterationLength())
-      );
-    }
-    const maxImageIterLength = Math.max(
-      1,
-      ...objectProperties.images.map((img) =>
-        img.originalFiles.length ? img.originalFiles.length : 1
-      )
-    );
-    iterationLength = Math.max(iterationLength, maxImageIterLength);
-
-    const loader = new LoaderManager(iterationLength, "Saving Images...");
-    loader.createLoader();
-
-    const imgWidth = cropW * EXPORT_SCALE;
-    const imgHeight = cropH * EXPORT_SCALE;
     const newName = canvasProperties.formerName.replace(/\.json$/i, "");
 
-    const previouslySelectedObj = objectProperties.selectedObj;
-    objectProperties.selectedObj = null;
+    // Count total page elements we will export
+    let totalPagesToExport = 0;
+    if (canvasProperties.generateInfo.renderPage === "auto") {
+      totalPagesToExport = totalItems;
+    } else {
+      const { noPerRow, noPerColumn } = canvasProperties.generateInfo;
+      const boxesPerPage = (noPerRow || 1) * (noPerColumn || 1);
+      totalPagesToExport = Math.ceil(totalItems / boxesPerPage);
+    }
 
-    let lastYield = Date.now();
-
-    // Create exactly one offscreen canvas and reuse it
-    const pc = document.createElement("canvas");
-    pc.width = imgWidth;
-    pc.height = imgHeight;
-    const ptx = pc.getContext("2d");
-    ptx.imageSmoothingEnabled = true;
-    ptx.imageSmoothingQuality = "high";
+    const loader = new LoaderManager(totalPagesToExport, "Saving Images...");
+    loader.createLoader();
 
     const zip = new JSZip();
+    let batchIndex = 0;
+    let exportProgressIndex = 0;
 
-    for (let i = 0; i < iterationLength; i++) {
-      // 1. Draw iterated content for step i
-      await Promise.all([
-        ...objectProperties.images.map((img) => img.drawIteratedImage(i)),
-        ...objectProperties.textBoxes.map((tb) => tb.drawIteratedImage(i)),
-      ]);
+    while (true) {
+      const pages = await exportRequestRender(batchIndex);
+      if (!pages) break; // Finished all batches
 
-      // 2. Reuse offscreen canvas for the card
-      ptx.clearRect(0, 0, imgWidth, imgHeight);
-      ptx.fillStyle = "#ffffff";
-      ptx.fillRect(0, 0, imgWidth, imgHeight);
+      for (let j = 0; j < pages.length; j++) {
+        const element = pages[j];
 
-      ptx.save();
-      ptx.scale(EXPORT_SCALE, EXPORT_SCALE);
-      ptx.translate(-cropX, -cropY);
-      objectProperties.objects.forEach((obj) => obj.addObject(ptx));
-      ptx.restore();
+        // Convert canvas to blob asynchronously
+        const blob = await new Promise((resolve) => {
+          element.toBlob(resolve, imgFormat, imgFormat === "image/jpeg" ? 0.85 : undefined);
+        });
+        zip.file(`${newName}-${exportProgressIndex + 1}.${fileExtension}`, blob);
 
-      // Convert canvas to blob asynchronously (faster than toDataURL)
-      const blob = await new Promise((resolve) => {
-        pc.toBlob(resolve, imgFormat, imgFormat === "image/jpeg" ? 0.95 : undefined);
-      });
-      zip.file(`${newName}-${i + 1}.${fileExtension}`, blob);
+        exportProgressIndex++;
+        loader.incrementOriginalState();
 
-      loader.incrementOriginalState();
-
-      // Yield thread to keep UI alive and loader drawing
-      const now = Date.now();
-      if (now - lastYield >= 16) {
+        // Yield thread
         await new Promise((resolve) => requestAnimationFrame(resolve));
-        lastYield = Date.now();
       }
+
+      batchIndex++;
     }
 
     // Generate zip file and download
@@ -473,13 +392,8 @@ export async function saveAsImage() {
       URL.revokeObjectURL(link.href);
     }, 10000);
 
-    // Restore state
-    await Promise.all([
-      ...objectProperties.images.map((img) => img.backToDefault()),
-      ...objectProperties.textBoxes.map((tb) => tb.backToDefault()),
-    ]);
-    objectProperties.selectedObj = previouslySelectedObj;
-    requestDraw();
+    // Restore original batch view
+    await exportRestoreView();
 
   } catch (error) {
     console.error("Failed to save as image:", error);

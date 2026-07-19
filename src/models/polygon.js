@@ -560,7 +560,11 @@ ${super.similarProptiesOutput()}
     if (!isUndo) {
       clone.id = crypto.randomUUID();
     }
-    clone.clips = this.clips.map((c) => c.showClone());
+    clone.clips = this.clips.map((c) => {
+      const clipClone = c.showClone(isUndo);
+      clipClone.clipper = clone.id;
+      return clipClone;
+    });
     return clone;
   }
   doubleClicked(mouse) {

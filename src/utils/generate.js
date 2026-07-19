@@ -34,6 +34,7 @@ let cardWidth, cardHeight; // per-card canvas size in grid mode
 let cropX, cropY, cropW, cropH;
 let scaleX, scaleY;
 let previouslySelectedObj;
+let cellW, cellH, cardWidthPx, cardHeightPx, dx, dy, sx, sy;
 
 export default async function generateCard() {
   // ---------------- Setup ----------------
@@ -121,6 +122,20 @@ export default async function generateCard() {
   scaleX = (currentPageWidth * EXPORT_SCALE) / cropW;
   scaleY = (currentPageHeight * EXPORT_SCALE) / cropH;
 
+  // Pre-calculate grid dimensions once if in grid mode
+  if (renderPage !== "auto") {
+    const pageW = currentPageWidth * EXPORT_SCALE;
+    const pageH = currentPageHeight * EXPORT_SCALE;
+    cellW = pageW / noPerRow;
+    cellH = pageH / noPerColumn;
+    cardWidthPx = cardWidth * EXPORT_SCALE;
+    cardHeightPx = cardHeight * EXPORT_SCALE;
+    dx = (cellW - cardWidthPx) / 2;
+    dy = (cellH - cardHeightPx) / 2;
+    sx = cardWidthPx / cropW;
+    sy = cardHeightPx / cropH;
+  }
+
   // ---------------- Pagination control wiring ----------------
   batchInput.min = 1;
   batchInput.max = totalBatches;
@@ -200,30 +215,11 @@ function makeCardCanvas(w, h) {
   return { pc, ptx };
 }
 
-// ===================================================================
-// makeGridDiv()
-// Creates a div styled as a CSS grid with noPerRow columns and gap,
-// sized to match the page dimensions. Each card canvas is appended
-// into it — CSS handles all the layout, no manual x/y math needed.
-// ===================================================================
-function makeGridDiv() {
-  const div = document.createElement("div");
-  div.style.width = currentPageWidth + "px";
-  div.style.height = currentPageHeight + "px";
-  div.style.display = "grid";
-  div.style.gridTemplateColumns = `repeat(${noPerRow}, 1fr)`;
-  div.style.gridTemplateRows = `repeat(${noPerColumn}, 1fr)`;
-  // div.style.gap = spacing + "px";
-  div.style.padding = 0;
-  div.style.placeItems = "center";
-  div.style.boxSizing = "border-box";
-  div.style.backgroundColor = "#ffffff";
-  return div;
-}
+
 // ===================================================================
 // renderBatch(startIndex)
 // ===================================================================
-async function renderBatch(startIndex) {
+export async function renderBatch(startIndex, isExport = false) {
   isRenderingBatch = true;
   pauseSaving();
   previouslySelectedObj = objectProperties.selectedObj;
@@ -237,8 +233,13 @@ async function renderBatch(startIndex) {
   const endIndex = Math.min(startIndex + itemsPerBatch, iterationLength);
   const itemsInBatch = endIndex - startIndex;
 
-  const loader = new LoaderManager(itemsInBatch, "Generating Cards...");
-  loader.createLoader();
+  let loader = null;
+  if (!isExport) {
+    loader = new LoaderManager(itemsInBatch, "Generating Cards...");
+    loader.createLoader();
+  }
+
+
 
   generationArea.querySelectorAll("canvas").forEach((canvas) => {
     canvas.width = 0;
@@ -247,9 +248,10 @@ async function renderBatch(startIndex) {
   generationArea.replaceChildren();
   const fragment = document.createDocumentFragment();
 
-  // In grid mode, track the current grid div being filled.
+  // In grid mode, track the current page canvas and its 2D context.
   // A new one is created every boxesPerPage cards.
-  let currentGridDiv = null;
+  let currentPageCanvas = null;
+  let currentPageCtx = null;
   let boxCountInPage = 0;
 
   let lastYield = Date.now();
@@ -271,24 +273,54 @@ async function renderBatch(startIndex) {
       objectProperties.objects.forEach((obj) => obj.addObject(ptx));
       fragment.append(pc);
     } else {
-      // Start a new grid div every boxesPerPage cards
+      // Start a new grid page canvas every boxesPerPage cards
       if (localIndex === 0 || boxCountInPage >= boxesPerPage) {
-        currentGridDiv = makeGridDiv();
-        fragment.append(currentGridDiv);
+        currentPageCanvas = document.createElement("canvas");
+        currentPageCanvas.width = currentPageWidth * EXPORT_SCALE;
+        currentPageCanvas.height = currentPageHeight * EXPORT_SCALE;
+        currentPageCanvas.style.width = currentPageWidth + "px";
+        currentPageCanvas.style.height = currentPageHeight + "px";
+        currentPageCanvas.style.backgroundColor = "#ffffff";
+        currentPageCanvas.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+        
+        currentPageCtx = currentPageCanvas.getContext("2d");
+        currentPageCtx.imageSmoothingEnabled = true;
+        currentPageCtx.imageSmoothingQuality = "high";
+        currentPageCtx.fillStyle = "#ffffff";
+        currentPageCtx.fillRect(0, 0, currentPageCanvas.width, currentPageCanvas.height);
+        
+        fragment.append(currentPageCanvas);
         boxCountInPage = 0;
       }
 
-      // Each card is its own canvas — CSS grid positions it automatically
-      const { pc, ptx } = makeCardCanvas(cardWidth, cardHeight);
-      ptx.fillStyle = "#ffffff";
-      ptx.fillRect(cropX, cropY, cropW, cropH);
-      objectProperties.objects.forEach((obj) => obj.addObject(ptx));
-      currentGridDiv.append(pc);
+      // Calculate grid placement coordinates
+      const col = boxCountInPage % noPerRow;
+      const row = Math.floor(boxCountInPage / noPerRow);
+      
+      const cellX = col * cellW;
+      const cellY = row * cellH;
+
+      // Draw the card directly onto the page canvas
+      currentPageCtx.save();
+      currentPageCtx.translate(cellX + dx, cellY + dy);
+      currentPageCtx.scale(sx, sy);
+      currentPageCtx.translate(-cropX, -cropY);
+
+      // Draw card background
+      currentPageCtx.fillStyle = "#ffffff";
+      currentPageCtx.fillRect(cropX, cropY, cropW, cropH);
+      
+      // Draw card contents
+      objectProperties.objects.forEach((obj) => obj.addObject(currentPageCtx));
+      
+      currentPageCtx.restore();
 
       boxCountInPage++;
     }
 
-    loader.incrementOriginalState();
+    if (loader) {
+      loader.incrementOriginalState();
+    }
 
     const now = Date.now();
     if (now - lastYield >= 16) {
@@ -306,7 +338,9 @@ async function renderBatch(startIndex) {
     ...objectProperties.textBoxes.map((tb) => tb.backToDefault()),
   ]);
 
-  window.scrollTo({ top: generationArea.offsetTop, behavior: "smooth" });
+  if (!isExport) {
+    window.scrollTo({ top: generationArea.offsetTop, behavior: "smooth" });
+  }
 
   objectProperties.selectedObj = previouslySelectedObj;
   requestDraw();
@@ -329,4 +363,25 @@ async function renderBatch(startIndex) {
 
   isRenderingBatch = false;
   continueSaving();
+}
+
+// ===================================================================
+// Export Helpers for exportSave.js
+// ===================================================================
+export function getExportTotalItems() {
+  return iterationLength;
+}
+
+export async function exportRequestRender(batchIndex) {
+  const startIndex = batchIndex * itemsPerBatch;
+  if (startIndex >= iterationLength) {
+    return null;
+  }
+  pendingBatchStart = startIndex;
+  await renderBatch(startIndex, true);
+  return Array.from(generationArea.children);
+}
+
+export async function exportRestoreView() {
+  await renderBatch(currentBatchStart, true);
 }
