@@ -5,5 +5,24 @@
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "localbase": "^0.7.7"
-  }
+  },
+  "name": "iterator",
+  "version": "1.0.0",
+  "description": "[![Web-based](https://img.shields.io/badge/Platform-Web-blue.svg)](#) [![Offline First](https://img.shields.io/badge/Storage-Offline--First-orange.svg)](#)",
+  "main": "script.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Muriziq/Iterator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Muriziq/Iterator/issues"
+  },
+  "homepage": "https://github.com/Muriziq/Iterator#readme"
 }
