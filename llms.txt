@@ -1,0 +1,28 @@
+# Iterator
+
+Iterator is a high-performance, offline-first vector graphic editor and bulk rendering engine designed for dynamic ID card, badge, and document template generation. It is an entirely browser-based tool bridging the gap between layout tools and programmable bulk rendering.
+
+## Key Features
+- **Vector Design Canvas**: Supports Rectangles, Ellipses, Polygons, Lines, and Text with full transform, layer, and snapping capabilities.
+- **Dynamic Iteration**: Bind sequences of text or images to canvas properties for mass generation of customized assets.
+- **Offline First**: Uses IndexedDB (via Localbase) to store layout states and media without server dependencies, managed efficiently off-thread by Web Workers.
+- **Memory-Safe Rendering**: Custom offscreen batch generation engine ensures the browser doesn't crash when producing huge multi-page PDFs.
+
+## Technology Stack
+- Vanilla JavaScript (ES6 Modules)
+- HTML5 Canvas (2D Context and OffscreenCanvas)
+- Local Storage APIs (IndexedDB, Web Worker API, Screen Wake Lock API)
+- Vendors: jsPDF, html2canvas, JSZip
+
+## Architecture & Directory Structure
+- `/index.html` & `script.js`: Landing dashboard for managing projects.
+- `/project.html` & `project.js`: The main vector graphic editor UI.
+- `/saveWorker.js`: Background thread handling IndexedDB saves and asset garbage collection.
+- `/src/models/`: Object-Oriented models for all vector paths and logic (inheriting from `formats.js`).
+- `/src/state/`: Managers for undo/redo stacks, canvas scaling, and file serialization.
+- `/src/Tools/`: User interaction tool controllers (Move, Pan, Add Shape, Clip).
+- `/src/utils/`: High-performance utilities, rendering loop schedulers (`draw.js`), and bulk generation handlers (`generate.js`).
+
+## Markdown Mirrors
+- [README.md](README.md) - Comprehensive project overview, technical challenges, and setup instructions.
+- [content-log.md](content-log.md) - Detailed development log and changelog of all features and bug fixes.

@@ -1,11 +1,9 @@
 {
   "dependencies": {
-    "@simonwep/pickr": "^1.9.1",
+    "@simonwep/pickr": "^1.10.0",
     "html2canvas": "^1.4.1",
-    "install": "^0.13.0",
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
-    "localbase": "^0.7.7",
-    "npm": "^11.18.0"
+    "localbase": "^0.7.7"
   }
 }

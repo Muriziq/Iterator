@@ -28,7 +28,7 @@ export async function copyToClipboard() {
   const clipboardData = {
     signature: "IteratorCanvasObjects",
     version: "1.0",
-    objects: targets.map((obj) => obj.showClone()),
+    objects: targets,
   };
 
   const jsonString = JSON.stringify(clipboardData);
