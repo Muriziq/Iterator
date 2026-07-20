@@ -1,16 +1,8 @@
 {
-  "dependencies": {
-    "@simonwep/pickr": "^1.10.0",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^4.2.1",
-    "jszip": "^3.10.1",
-    "localbase": "^0.7.7"
-  },
   "name": "iterator",
   "version": "1.0.0",
   "description": "[![Web-based](https://img.shields.io/badge/Platform-Web-blue.svg)](#) [![Offline First](https://img.shields.io/badge/Storage-Offline--First-orange.svg)](#)",
-  "main": "script.js",
-  "devDependencies": {},
+  "main": "help.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -24,5 +16,12 @@
   "bugs": {
     "url": "https://github.com/Muriziq/Iterator/issues"
   },
-  "homepage": "https://github.com/Muriziq/Iterator#readme"
+  "homepage": "https://github.com/Muriziq/Iterator#readme",
+  "dependencies": {
+    "@simonwep/pickr": "^1.10.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
+    "localbase": "^0.7.7"
+  }
 }

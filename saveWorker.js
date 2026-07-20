@@ -1,5 +1,5 @@
-// importScripts("https://unpkg.com/localbase/dist/localbase.dev.js")
-importScripts("node_modules/localbase/dist/localbase.min.js");
+
+importScripts("vendor/localbase/localbase.min.js");
 let allDatas = [];
 let names = [];
 let formerName = "";
